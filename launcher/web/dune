@@ -1,0 +1,15 @@
+; claude: tinybox's menu in a browser, Tinybox_web (plan_tinybox_web.md):
+; the menu and its data, no program, no sources; a program chosen is
+; its own page. make website builds it with --profile=release-js and
+; puts it in the assets beside the programs, its page docs/tinybox.html.
+(executable
+ (name Tinybox_web)
+ (modules Tinybox_web)
+ (libraries
+   caps elm_core elm_playground catalogue
+   tinybox_menu
+   ojs ; the page's location
+   elm_playground_web ; implem of virtual elm_playground
+ )
+ (modes js)
+ (link_flags -no-check-prims))

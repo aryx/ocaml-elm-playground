@@ -1,9 +1,10 @@
 ; claude: code generation for tinybox: the build-time program that writes
-; the menu's generated OCaml modules, Tinybox_data.ml (the catalogue),
-; Tinybox_thumbs_k.ml (the thumbnails, in shards) and Tinybox_sources.ml
-; (the repository's sources, for the code map, and each program's size:
-; ../codemap/deps); see make_tinybox_data.ml
-; and ../dune's rules
+; the menu's generated OCaml modules, Tinybox_data.ml (the catalogue and
+; each program's size, ../codemap/deps: the menu's, ../menu),
+; Tinybox_thumbs_k.ml and Tinybox_thumbs.ml (the thumbnails, in shards)
+; and Tinybox_sources.ml (the repository's sources, for the code map):
+; the native tinybox's, ../native; see make_tinybox_data.ml
+; and ../menu/dune's and ../native/dune's rules
 (executable
  (name make_tinybox_data)
  (libraries catalogue golden_scenes graphics_rgba graphics_png graphics_imaging tinybox_codedeps))

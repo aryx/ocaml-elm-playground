@@ -97,9 +97,9 @@ let generated (path : string) (text : string) : bool =
   || Filename.basename path = "Hud_render.mli"
 
 (* claude: tinybox's own code too, the code map showing itself: in
- * _build, launcher/ also holds the programs it copies in (copy_files)
- * and the modules it generates, among them the one being written from
- * this list; so of its top level only its own modules, Tinybox*, but
+ * _build, launcher/native/ also holds the programs it copies in
+ * (copy_files) and the modules it generates, among them the one being
+ * written from this list; so of it only its own modules, Tinybox*, but
  * the generated ones *)
 let launcher_own (f : string) : bool =
   starts "Tinybox" f && not (List.exists (fun p -> starts p f) [ "Tinybox_data"; "Tinybox_sources"; "Tinybox_thumbs" ])
@@ -110,7 +110,7 @@ let repository_sources ~(root : string) : (string * string) list =
     |> List.concat_map (fun f ->
            let path = Filename.concat dir f in
            if Sys.is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
-           else if dir = "launcher" && not (launcher_own f) then []
+           else if dir = "launcher/native" && not (launcher_own f) then []
            else if is_impl f || Filename.check_suffix f ".mli" then
              let text = read (Filename.concat root path) in
              if generated path text then [] else [ (path, text) ]

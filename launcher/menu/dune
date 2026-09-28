@@ -1,0 +1,22 @@
+; claude: tinybox's menu, the same natively (../native) and on the web
+; (../web), each giving it its host (Tinybox_menu.mli,
+; plan_tinybox_web.md): no program, no Unix, nothing embedded but the
+; catalogue and each program's size (Tinybox_data, made at build time)
+(library
+ (name tinybox_menu)
+ (wrapped false)
+ (modules Tinybox_menu Tinybox_data)
+ (libraries caps elm_core elm_playground catalogue tinybox_codemap))
+
+; claude: the programs' own code only (what own_size counts), not
+; launcher/: that is where this target is
+(rule
+ (targets Tinybox_data.ml)
+ (deps
+  %{project_root}/CATALOG.md
+  (glob_files_rec %{project_root}/games/*.{ml,mli})
+  (glob_files_rec %{project_root}/apps/*.{ml,mli})
+  (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
+  (glob_files_rec %{project_root}/appkits/*.{ml,mli})
+  (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly}))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} catalogue)))))

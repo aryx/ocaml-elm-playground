@@ -901,13 +901,20 @@ let fetch_response ?post (url : string) (k : (Cmd.http_response, Cmd.http_error)
 (* when using the simple DOM *)
 (* claude: [network] unused: the browser downloads the images, by its
  * own rules (the page's site, or CORS) *)
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ ?screen:_ app =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ ?screen app =
   Audio.set_fetcher fetch_web;
   Transport.set_connect Web_connect.connect;
   Window.set_onload window (fun () ->
 
-    let sx = Playground.default_width in
-    let sy = Playground.default_height in
+    (* claude: the program's screen, 1000 by 1000 unless it asks for
+     * another shape (tinybox's menu, 16:9), as natively; the viewBox
+     * follows, the browser letterboxing it to the window *)
+    let sx, sy =
+      match screen with
+      | Some (w, h) -> (float_of_int w, float_of_int h)
+      | None -> (Playground.default_width, Playground.default_height)
+    in
+    let resized = screen in
     let screen = Playground.to_screen sx sy in
 
     let (initmodel, init_cmd) = app.Playground.init flags in
@@ -933,6 +940,15 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
              | None | Batch _ -> ())
     in
     perform init_cmd;
+    (* claude: a screen other than the default, said to the program
+     * before its first frame, through its own subscriptions (as the
+     * native platform does) *)
+    Option.iter
+      (fun (w, h) ->
+        match E.event_to_msgopt (E.EResized (w, h)) (app.Playground.subscriptions !model) with
+        | Some msg -> apply_msg msg
+        | None -> ())
+      resized;
 
     let process_playground_event event = 
       let subs = app.Playground.subscriptions !model in

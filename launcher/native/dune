@@ -22,32 +22,32 @@
 ; backend compiles its own copy of the HUD's rasterizer (Hud_render, see
 ; playground/platforms/native/dune).
 
-(copy_files# ../games/shmup/*.{ml,mli})
-(copy_files# ../games/fighting/*.{ml,mli})
-(copy_files# ../games/platform/*.{ml,mli})
-(copy_files# ../games/arcade/*.{ml,mli})
-(copy_files# ../games/puzzle/*.{ml,mli})
-(copy_files# ../games/cards/*.{ml,mli})
-(copy_files# ../games/adventure/*.{ml,mli})
-(copy_files# ../games/rpg/*.{ml,mli})
-(copy_files# ../games/fps/*.{ml,mli})
-(copy_files# ../games/flight/*.{ml,mli})
-(copy_files# ../games/racing/*.{ml,mli})
-(copy_files# ../games/sports/*.{ml,mli})
-(copy_files# ../games/strategy/*.{ml,mli})
-(copy_files# ../games/rhythm/*.{ml,mli})
-(copy_files# ../games/programming/*.{ml,mli})
-(copy_files# ../apps/cad/*.{ml,mli})
-(copy_files# ../apps/devtools/*.{ml,mli})
-(copy_files# ../apps/education/*.{ml,mli})
-(copy_files# ../apps/gamedev/Tiny*.{ml,mli}) ; its Mario_xpm is games/platform's, the same
-(copy_files# ../apps/graphics/*.{ml,mli})
-(copy_files# ../apps/internet/Tiny*.{ml,mli}) ; its other modules are its library's
-(copy_files# ../apps/media/Tiny*.{ml,mli}) ; its other modules are its library's
-(copy_files# ../apps/music/Tiny*.{ml,mli}) ; its other modules are its library's
-(copy_files# ../apps/office/*.{ml,mli})
-(copy_files# ../apps/pim/*.{ml,mli})
-(copy_files# ../apps/system/*.{ml,mli})
+(copy_files# ../../games/shmup/*.{ml,mli})
+(copy_files# ../../games/fighting/*.{ml,mli})
+(copy_files# ../../games/platform/*.{ml,mli})
+(copy_files# ../../games/arcade/*.{ml,mli})
+(copy_files# ../../games/puzzle/*.{ml,mli})
+(copy_files# ../../games/cards/*.{ml,mli})
+(copy_files# ../../games/adventure/*.{ml,mli})
+(copy_files# ../../games/rpg/*.{ml,mli})
+(copy_files# ../../games/fps/*.{ml,mli})
+(copy_files# ../../games/flight/*.{ml,mli})
+(copy_files# ../../games/racing/*.{ml,mli})
+(copy_files# ../../games/sports/*.{ml,mli})
+(copy_files# ../../games/strategy/*.{ml,mli})
+(copy_files# ../../games/rhythm/*.{ml,mli})
+(copy_files# ../../games/programming/*.{ml,mli})
+(copy_files# ../../apps/cad/*.{ml,mli})
+(copy_files# ../../apps/devtools/*.{ml,mli})
+(copy_files# ../../apps/education/*.{ml,mli})
+(copy_files# ../../apps/gamedev/Tiny*.{ml,mli}) ; its Mario_xpm is games/platform's, the same
+(copy_files# ../../apps/graphics/*.{ml,mli})
+(copy_files# ../../apps/internet/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../../apps/media/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../../apps/music/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../../apps/office/*.{ml,mli})
+(copy_files# ../../apps/pim/*.{ml,mli})
+(copy_files# ../../apps/system/*.{ml,mli})
 
 (library
  (name tinybox_collect)
@@ -58,7 +58,7 @@
 
 (library
  (name tinybox_programs)
- (modules :standard \ Tinybox Tinybox_collect Tinybox_menu Tinybox_data Tinybox_sources Preview3d_render
+ (modules :standard \ Tinybox Tinybox_collect Tinybox_native Tinybox_thumbs Tinybox_sources Preview3d_render
    Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (wrapped false)
  (library_flags (-linkall))
@@ -81,9 +81,10 @@
    physics_2d physics_3d random scratch smalltalk unix lang_html lang_css browser_layout
  ))
 
-; claude: the menu's data, made at build time: the catalogue, and each
-; program's first golden frame shrunk to a thumbnail, in 8 shards made
-; side by side (a thumbnail takes 0.3 s: make_tinybox_data.ml)
+; claude: the native menu's data, made at build time (the catalogue and
+; the sizes are the menu's, ../menu/dune): each program's first golden
+; frame shrunk to a thumbnail, in 8 shards made side by side (a
+; thumbnail takes 0.3 s: make_tinybox_data.ml)
 (rule
  (alias tinybox_frames)
  (deps
@@ -93,9 +94,8 @@
  (action (progn)))
 
 (rule
- (targets Tinybox_data.ml)
- (deps %{project_root}/CATALOG.md)
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} catalogue 8)))))
+ (targets Tinybox_thumbs.ml)
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbs 8)))))
 ; claude: the repository's sources, for the code map (codemap/): the
 ; games', the apps', the kits', the playground's and the libraries' (see
 ; make_tinybox_data.ml for which), 10 MB
@@ -110,45 +110,47 @@
   (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly})
   (glob_files_rec %{project_root}/playground/*.{ml,mli})
   (glob_files_rec %{project_root}/libs/*.{ml,mli})
-  ; claude: and tinybox's own (not a glob of launcher/: this target is there)
-  Tinybox.ml Tinybox_collect.ml Tinybox_collect.mli Tinybox_menu.ml Tinybox_menu.mli
+  ; claude: and tinybox's own (not a glob of native/: this target is there)
+  Tinybox.ml Tinybox_collect.ml Tinybox_collect.mli Tinybox_native.ml Tinybox_native.mli
+  %{project_root}/launcher/menu/Tinybox_menu.ml %{project_root}/launcher/menu/Tinybox_menu.mli
+  %{project_root}/launcher/web/Tinybox_web.ml
   (glob_files_rec %{project_root}/launcher/catalogue/*.{ml,mli})
   (glob_files_rec %{project_root}/launcher/codegen/*.{ml,mli})
   (glob_files_rec %{project_root}/launcher/codemap/*.{ml,mli}))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} sources)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} sources)))))
 
 (rule
  (targets Tinybox_thumbs_0.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 0 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 0 8)))))
 (rule
  (targets Tinybox_thumbs_1.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 1 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 1 8)))))
 (rule
  (targets Tinybox_thumbs_2.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 2 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 2 8)))))
 (rule
  (targets Tinybox_thumbs_3.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 3 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 3 8)))))
 (rule
  (targets Tinybox_thumbs_4.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 4 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 4 8)))))
 (rule
  (targets Tinybox_thumbs_5.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 5 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 5 8)))))
 (rule
  (targets Tinybox_thumbs_6.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 6 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 6 8)))))
 (rule
  (targets Tinybox_thumbs_7.ml)
  (deps (alias tinybox_frames))
- (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 7 8)))))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} thumbnails 7 8)))))
 
 ; claude: the 3D previews are drawn by the software rasterizer, into an
 ; image shown in the menu's panel (Tinybox_menu, "Previews"): a copy of
@@ -160,22 +162,22 @@
 ; of its library, only graphics/'s, so the copy compiles alone. Edit the
 ; original, never Preview3d_render.ml (it is in _build only).
 (rule
- (action (copy ../playground/platforms/software/Shape3d_render_software.ml Preview3d_render.ml)))
+ (action (copy ../../playground/platforms/software/Shape3d_render_software.ml Preview3d_render.ml)))
 (rule
- (action (copy ../playground/platforms/software/Shape3d_render_software.mli Preview3d_render.mli)))
+ (action (copy ../../playground/platforms/software/Shape3d_render_software.mli Preview3d_render.mli)))
 
 (executable
  (name Tinybox)
  (public_name tinybox)
  (package tinybox)
- (modules Tinybox Tinybox_menu Tinybox_data Tinybox_sources Preview3d_render
+ (modules Tinybox Tinybox_native Tinybox_thumbs Tinybox_sources Preview3d_render
    Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
  (libraries
    tinybox_programs
    caps
    unix ; the menu's child process
+   tinybox_menu ; the menu, this host's (Tinybox_native)
    catalogue graphics_png graphics_rgba ; the menu's data
-   tinybox_codemap ; the code map
    golden_scenes elm_playground_native_common ; the previews: the scenes' scripts, Input_script
    graphics_core graphics_3d graphics_3d_geometry graphics_raytrace graphics_images ; the 3D previews' renderer (Preview3d_render)
    terminal_unix ; Tty_unix, for -tty

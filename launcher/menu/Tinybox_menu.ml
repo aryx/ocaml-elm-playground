@@ -48,9 +48,8 @@
  * pulsing, scanlines over everything (thin translucent rectangles, a
  * CRT's gaps between its lines).
  *
- * The thumbnails are PNGs (250 by 250) in the binary, decoded when first
- * shown; a backend keeps the last 32 bitmaps it converted, so the grid
- * shows 12 at a time, plus the chosen one enlarged (the same bitmap).
+ * The thumbnails (250 by 250) are the host's: natively PNGs in the
+ * binary, on the web URLs (Tinybox_menu.mli).
  *
  * The code: s opens the chosen program's code map (codemap/, after
  * codemap), its files and what it uses as a treemap to zoom into, a file
@@ -58,7 +57,7 @@
  *
  * The previews: a second (60 frames) on a program, and its picture comes
  * alive -- the program itself, playing its golden scene's script in the
- * detail panel, run by the menu (see "Previews" below).
+ * detail panel, run by the menu (natively: Tinybox_native's "Previews").
  *)
 
 open Playground
@@ -68,11 +67,6 @@ open Playground
 (*****************************************************************************)
 
 let sections : Catalogue.section array = Array.of_list (Catalogue.parse Tinybox_data.catalogue)
-
-let thumbnails : (string, Rgba_image.t Lazy.t) Hashtbl.t =
-  let h = Hashtbl.create 256 in
-  List.iter (fun (name, png) -> Hashtbl.replace h name (lazy (Png.decode png))) Tinybox_data.thumbnails;
-  h
 
 let everything : Catalogue.program list =
   Array.to_list sections |> List.concat_map (fun (s : Catalogue.section) -> s.programs)
@@ -142,12 +136,12 @@ type group = { title : string; intro : string; games : bool option; programs : C
 let by_year (ps : Catalogue.program list) = List.stable_sort (fun (a : Catalogue.program) b -> compare a.year b.year) ps
 
 (* claude: the size of a program's own code (files, lines), as its code
- * map in the panel shows it: counted at build time (Tinybox_sources.sizes,
+ * map in the panel shows it: counted at build time (Tinybox_data.sizes,
  * launcher/codegen) *)
 let sizes : (string, int * int) Hashtbl.t Lazy.t =
   lazy
     (let h = Hashtbl.create 256 in
-     List.iter (fun (name, s) -> Hashtbl.replace h name s) Tinybox_sources.sizes;
+     List.iter (fun (name, s) -> Hashtbl.replace h name s) Tinybox_data.sizes;
      h)
 
 let size_of (p : Catalogue.program) : int * int = Option.value ~default:(0, 0) (Hashtbl.find_opt (Lazy.force sizes) p.name)
@@ -213,7 +207,22 @@ let contains (s : string) (q : string) : bool =
 (* Model *)
 (*****************************************************************************)
 
-type child = { pid : int; name : string }
+(* see Tinybox_menu.mli *)
+type host = {
+  runnable : string list;
+  thumbnail : Catalogue.program -> number -> shape option;
+  play : Catalogue.program -> string;
+  running : unit -> string option;
+  ended : unit -> string option;
+  sources : (string * string) list Lazy.t option;
+  preview : preview option;
+}
+
+and preview = {
+  step : now:number -> dwell:int -> Catalogue.program option -> unit;
+  shapes : Catalogue.program -> shape list option;
+  note : Catalogue.program -> string option;
+}
 
 type model = {
   grouping : grouping;
@@ -223,13 +232,12 @@ type model = {
   search : string option; (* Some q: searching, the grid is every match *)
   before : string Set_.t; (* the keys down the frame before *)
   repeat : (string * float) option; (* an arrow held, when it moves again *)
-  child : child option; (* the program running *)
   status : string; (* what happened to the last one *)
   code : Codemap.t option; (* the chosen one's code, shown instead of the menu *)
 }
 
 let initial_model : model =
-  { grouping = By_genre; filters = no_filters; section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; child = None; status = ""; code = None }
+  { grouping = By_genre; filters = no_filters; section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; status = ""; code = None }
 
 (* the section shown, if any passes the filters *)
 let current_group (m : model) : group option =
@@ -248,252 +256,22 @@ let shown (m : model) : Catalogue.program list =
 let chosen (m : model) : Catalogue.program option = List.nth_opt (shown m) m.pos
 
 (*****************************************************************************)
-(* Previews *)
+(* The chosen one *)
 (*****************************************************************************)
 
-(* claude: the chosen program playing in the detail panel, after
- * Netflix's autoplay: every program is linked in tinybox and already
- * initialized, so starting one is instant -- no process, no window. Its
- * main is called with Playground.capture set, and the native platform's
- * run_app hands its app over instead of opening a window; the menu then
- * plays the app itself, a small platform: each frame the keys its golden
- * scene's script presses (Scenes_2d, Input_script), then a tick, each
- * turned into the app's messages by its subscriptions (Sub.event), as
- * Native_loop_2d turns SDL's events; its view scaled into the panel.
- * Silently (Audio.silently): a preview is seen, not heard.
- *
- * Not previewed, kept as pictures: the 3D programs (their main would open
- * an OpenGL window), and the programs whose main calls Cap.main (a second
- * Cap.main fails: a preview gets no authority, by design). A program
- * without a scripted scene previews its title screen, animated. *)
-
-type preview =
-  | Playing : {
-      name : string;
-      app : ('model, 'msg) app;
-      mutable model : 'model;
-      mutable frame : int;
-      script : Input_script.t option;
-      length : int; (* the frames before it starts over *)
-    }
-      -> preview
-  (* claude: a 3D program: no messages, a computer given each frame, its
-   * keyboard kept here; its views drawn by the software rasterizer *)
-  | Playing3d : {
-      name : string;
-      app : ('model, 'msg) Playground3d.app3d;
-      mutable model : 'model;
-      mutable frame : int;
-      script : Input_script.t option;
-      length : int;
-      mutable keyboard : keyboard;
-      mutable computer : computer; (* the last one, for its views *)
-      mutable ms : float; (* the rasterizer's time a frame, averaged *)
-      options : Render.options; (* the program's rendering, as the software backend makes it *)
-      mutable image : Rgba_image.t option; (* the last frame rasterized *)
-    }
-      -> preview
-
-let preview_name = function Playing p -> p.name | Playing3d p -> p.name
-
 (* the menu's frames, counted by update: the previews' clock, frames
- * rather than seconds, so that -fixed-time shows them too *)
+ * rather than seconds, so that -fixed-time shows them too (the host's
+ * previews, and the code's in the panel) *)
 let frames = ref 0
 
 (* the program chosen, and the frame it was *)
 let chosen_since : (string * int) ref = ref ("", 0)
-let preview : preview option ref = ref None
 
-(* what a program's main gave, taken once *)
-type captured = App of any_app | App3d of Playground3d.any_app3d * Playground3d.rendering
-let captured : (string, captured option) Hashtbl.t = Hashtbl.create 16
-
-let capture (p : Catalogue.program) : captured option =
-  match Hashtbl.find_opt captured p.name with
-  | Some a -> a
-  | None ->
-      let got = ref None in
-      (match List.assoc_opt p.name (Program.collected ()) with
-      | None -> ()
-      | Some entry ->
-          Playground.capture := Some (fun a -> got := Some (App a));
-          Playground3d.capture3d := Some (fun a rendering -> got := Some (App3d (a, rendering)));
-          (* claude: a main calling Cap.main fails here, by design *)
-          (try Audio.silently entry with _ -> ());
-          Playground.capture := None;
-          Playground3d.capture3d := None);
-      Hashtbl.replace captured p.name !got;
-      !got
-
-(* the program's first scripted scene: its keys, and how long it lasts *)
-let scene (name : string) : (Input_script.t * int) option =
-  List.find_map
-    (fun ((exe, _, frame, script) : Golden_scene.scripted) ->
-      if Filename.basename exe <> name then None
-      else match Input_script.parse script with Ok sc -> Some (sc, frame) | Error _ -> None)
-    (Scenes_2d.scripted @ Scenes_3d.scripted)
-
-(* the screen a preview's program sees: the window it would have had *)
-let preview_screen = to_screen 1000. 1000.
-
-let start_preview (name : string) (c : captured) : preview option =
-  let script, length = match scene name with Some (sc, n) -> (Some sc, n + 90) | None -> (None, 600) in
-  match c with
-  | App (Any_app app) -> (
-      match Audio.silently (fun () -> app.init []) with
-      | model, _cmd -> Some (Playing { name; app; model; frame = 0; script; length })
-      | exception _ -> None)
-  | App3d (Playground3d.Any_app3d app, rendering) -> (
-      match Audio.silently (fun () -> Playground3d.init3d app ()) with
-      | model ->
-          let computer = { initial_computer with screen = preview_screen } in
-          (* claude: as software/Playground3d_platform.ml makes its options *)
-          let options =
-            {
-              Render.default_options with
-              shading =
-                (match rendering.shading with
-                | No_lighting -> Shading.Flat_color
-                | Flat -> Shading.Flat_shading
-                | Smooth -> Shading.Phong);
-              backface_culling = rendering.backface_culling;
-              bilinear = rendering.smooth_textures;
-            }
-          in
-          Some
-            (Playing3d { name; app; model; frame = 0; script; length; keyboard = computer.keyboard; computer; ms = 0.; options; image = None })
-      | exception _ -> None)
-
-(* one frame of the preview: the script's keys, then a tick *)
-let step_preview (now : number) (pv : preview) : unit =
-  match pv with
-  | Playing p ->
-      let apply event =
-        match Sub.event_to_msgopt event (p.app.subscriptions p.model) with
-        | Some msg -> p.model <- fst (p.app.update msg p.model)
-        | None -> ()
-      in
-      p.frame <- p.frame + 1;
-      Audio.silently (fun () ->
-          Option.iter
-            (fun sc -> List.iter (fun (key, down) -> apply (Sub.EKeyChanged (down, key))) (Input_script.changes sc p.frame))
-            p.script;
-          apply (Sub.ETick now))
-  | Playing3d p ->
-      p.frame <- p.frame + 1;
-      Option.iter
-        (fun sc ->
-          List.iter (fun (key, down) -> p.keyboard <- update_keyboard down key p.keyboard) (Input_script.changes sc p.frame))
-        p.script;
-      p.computer <- { p.computer with keyboard = p.keyboard; time = Time now };
-      p.model <- Audio.silently (fun () -> Playground3d.update3d p.app p.computer p.model)
-
-(* the preview of the program chosen: started after 60 frames on it,
- * started again when its scene is over, stopped on a failure *)
-let preview_of (now : number) (chosen : Catalogue.program option) : unit =
+(* a frame: the one chosen now, and how long it has been *)
+let track (chosen : Catalogue.program option) : int =
   incr frames;
-  let frame_length = function Playing q -> (q.frame, q.length) | Playing3d q -> (q.frame, q.length) in
-  match chosen with
-  | None -> preview := None
-  | Some p -> (
-      if fst !chosen_since <> p.name then (
-        chosen_since := (p.name, !frames);
-        preview := None);
-      match !preview with
-      | Some pv when preview_name pv = p.name ->
-          let frame, length = frame_length pv in
-          if frame >= length then preview := Option.bind (capture p) (start_preview p.name)
-          else (try step_preview now pv with _ -> preview := None)
-      | _ ->
-          if !frames - snd !chosen_since >= 60 then preview := Option.bind (capture p) (start_preview p.name))
-
-(* claude: the 3D previews' drawing: a view at a time into a framebuffer
- * the panel's size (a split screen's views each into their area, as
- * the software backend's draw_view), then the pixels as an image *)
-let buffers : (int * int, Framebuffer.t * Zbuffer.t) Hashtbl.t = Hashtbl.create 4
-
-let buffer (w : int) (h : int) : Framebuffer.t * Zbuffer.t =
-  match Hashtbl.find_opt buffers (w, h) with
-  | Some b -> b
-  | None ->
-      let b = (Framebuffer.create ~width:w ~height:h, Zbuffer.create ~width:w ~height:h) in
-      Hashtbl.replace buffers (w, h) b;
-      b
-
-let image_of (fb : Framebuffer.t) : Rgba_image.t =
-  let img = Rgba_image.create ~width:fb.width ~height:fb.height in
-  for y = 0 to fb.height - 1 do
-    for x = 0 to fb.width - 1 do
-      let c = Framebuffer.get_rgb fb ~x ~y and i = 4 * ((y * fb.width) + x) in
-      Bigarray.Array1.unsafe_set img.rgba i ((c lsr 16) land 0xFF);
-      Bigarray.Array1.unsafe_set img.rgba (i + 1) ((c lsr 8) land 0xFF);
-      Bigarray.Array1.unsafe_set img.rgba (i + 2) (c land 0xFF);
-      Bigarray.Array1.unsafe_set img.rgba (i + 3) 0xFF
-    done
-  done;
-  img
-
-let render3d (options : Render.options) (size : int) (views : Playground3d.view list) : Rgba_image.t =
-  let fb, _ = buffer size size in
-  Texture_decode.load_queued ();
-  Framebuffer.clear fb ~rgb:0xFFFFFF;
-  List.iter
-    (fun (v : Playground3d.view) ->
-      let x0 = int_of_float (Float.round (v.area.x *. float_of_int size)) in
-      let x1 = int_of_float (Float.round ((v.area.x +. v.area.w) *. float_of_int size)) in
-      (* the framebuffer's rows go down, the area's y up *)
-      let y0 = int_of_float (Float.round ((1. -. v.area.y -. v.area.h) *. float_of_int size)) in
-      let y1 = int_of_float (Float.round ((1. -. v.area.y) *. float_of_int size)) in
-      let w = x1 - x0 and h = y1 - y0 in
-      if w > 0 && h > 0 then begin
-        let sub, zb = buffer w h in
-        if sub != fb then Framebuffer.clear sub ~rgb:0xFFFFFF;
-        Preview3d_render.render ~options sub zb v.camera (Playground3d.group3d v.shapes);
-        if sub != fb then
-          for r = 0 to h - 1 do
-            Bigarray.Array1.blit (Bigarray.Array2.slice_left sub.pixels r)
-              (Bigarray.Array1.sub (Bigarray.Array2.slice_left fb.pixels (y0 + r)) x0 w)
-          done
-      end)
-    views;
-  image_of fb
-
-(* the panel's size in pixels (Layout's [shot]) *)
-let preview_pixels = 400
-
-(* claude: a scene slower than this to rasterize is rasterized every
- * n-th frame only (its program still updated every frame), the last
- * picture shown between: the menu stays smooth (TinyMinecraft: 236 ms) *)
-let budget_ms = 20.
-
-let every (ms : float) : int = max 1 (int_of_float (ms /. budget_ms))
-
-(* the preview's view, in the program's 1000 by 1000, if it is the
- * program's: a 2D program's shapes; a 3D program's frame, rasterized at
- * the panel's size and shown at 1000 (so, in the panel, pixel for pixel),
- * and its HUD's shapes over it *)
-let preview_shapes (p : Catalogue.program) : shape list option =
-  match !preview with
-  | Some (Playing q) when q.name = p.name -> ( try Some (q.app.view q.model) with _ -> None)
-  | Some (Playing3d q) when q.name = p.name -> (
-      try
-        let views = Playground3d.views3d q.app q.computer q.model in
-        (match q.image with
-        | Some _ when q.frame mod every q.ms <> 0 -> ()
-        | _ ->
-            let t0 = Unix.gettimeofday () in
-            q.image <- Some (render3d q.options preview_pixels views);
-            let ms = (Unix.gettimeofday () -. t0) *. 1000. in
-            q.ms <- (if q.ms = 0. then ms else (0.8 *. q.ms) +. (0.2 *. ms)));
-        match q.image with
-        | Some img -> Some (bitmap 1000. 1000. img :: Playground3d.views_hud preview_screen views)
-        | None -> None
-      with _ -> None)
-  | _ -> None
-
-(* the 3D preview's rasterizer time, for the panel *)
-let preview_ms (p : Catalogue.program) : float option =
-  match !preview with Some (Playing3d q) when q.name = p.name && q.frame > 10 -> Some q.ms | _ -> None
+  (match chosen with Some p when fst !chosen_since <> p.name -> chosen_since := (p.name, !frames) | _ -> ());
+  !frames - snd !chosen_since
 
 (*****************************************************************************)
 (* Layout *)
@@ -570,30 +348,14 @@ let to_shelf (m : model) (games : bool) : model =
   let rec go i = if i >= Array.length gs || gs.(i).games = Some games then i else go (i + 1) in
   { m with grouping = By_genre; section = min (go 0) (max 0 (Array.length gs - 1)); pos = 0; search = None }
 
-(* claude: the program started in a process of its own, this same
- * binary under its name (tinybox <Name>): its window, its Cap.main, and
- * a crash that is not the menu's *)
-let start (_caps : < Cap.fork ; Cap.exec ; .. >) (runnable : string list) (m : model) : model =
-  match (chosen m, m.child) with
-  | Some p, None when List.mem p.name runnable ->
-      let exe = Sys.executable_name in
-      let pid = Unix.create_process exe [| exe; p.name |] Unix.stdin Unix.stdout Unix.stderr in
-      { m with child = Some { pid; name = p.name }; status = "" }
-  | Some p, None -> { m with status = p.name ^ " is not in this tinybox" }
-  | _, Some c -> { m with status = c.name ^ " is still running" }
-  | None, None -> m
+(* the program chosen started, the host's way (a process of its own, or
+ * its page) *)
+let start (host : host) (m : model) : model =
+  match chosen m with Some p -> { m with status = host.play p } | None -> m
 
-(* the program running, looked at once a frame *)
-let wait (_caps : < Cap.wait ; .. >) (m : model) : model =
-  match m.child with
-  | None -> m
-  | Some c -> (
-      match Unix.waitpid [ Unix.WNOHANG ] c.pid with
-      | 0, _ -> m
-      | _, Unix.WEXITED 0 -> { m with child = None; status = "" }
-      | _, Unix.WEXITED n -> { m with child = None; status = Printf.sprintf "%s exited with %d" c.name n }
-      | _, (Unix.WSIGNALED n | Unix.WSTOPPED n) -> { m with child = None; status = Printf.sprintf "%s killed by signal %d" c.name n }
-      | exception Unix.Unix_error _ -> { m with child = None })
+(* the program running, if the menu waits for one: looked at once a frame *)
+let wait (host : host) (m : model) : model =
+  match host.ended () with Some status -> { m with status } | None -> m
 
 (* an arrow's press, and then, held, again every 0.08 s after 0.4 s *)
 let arrow (computer : computer) (m : model) : string option * (string * float) option =
@@ -643,11 +405,15 @@ let bar_key (computer : computer) (m : model) (key : string) : model =
  * above and the status and keys below *)
 let code_map_area (screen : screen) = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162)
 
+(* claude: where the host has no sources (the web, for now), no code map *)
+let no_code = "its code: not here yet (tinybox, natively, has it)"
+
 (* the chosen program's code map *)
-let open_code (screen : screen) (m : model) : model =
-  match chosen m with
-  | Some p -> { m with code = Some (Codemap.make ~area:(code_map_area screen) ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source) }
-  | None -> m
+let open_code (host : host) (screen : screen) (m : model) : model =
+  match (chosen m, host.sources) with
+  | Some p, Some sources -> { m with code = Some (Codemap.make ~area:(code_map_area screen) ~sources:(Lazy.force sources) ~program:p.name ~path:p.source) }
+  | Some _, None -> { m with status = no_code }
+  | None, _ -> m
 
 (* claude: tinybox's own code map, the menu and the code map showing
  * themselves: all of launcher/ its own code, from its main, the
@@ -655,14 +421,16 @@ let open_code (screen : screen) (m : model) : model =
  * analysis it does (libs/code: Highlight_code); not the
  * kits, which it names only to run the programs they are (the editors,
  * -tty) *)
-let tinybox_code (screen : screen) (m : model) : model =
+let tinybox_code (host : host) (screen : screen) (m : model) : model =
   let starts pre p = String.length p >= String.length pre && String.sub p 0 (String.length pre) = pre in
   let own p = starts "launcher/" p || starts "languages/" p || starts "libs/code/" p in
-  { m with code = Some (Codemap.make_own ~own ~area:(code_map_area screen) ~sources:Tinybox_sources.sources ~program:"tinybox" ~path:"launcher/Tinybox.ml") }
+  match host.sources with
+  | Some sources ->
+      { m with code = Some (Codemap.make_own ~own ~area:(code_map_area screen) ~sources:(Lazy.force sources) ~program:"tinybox" ~path:"launcher/native/Tinybox.ml") }
+  | None -> { m with status = no_code }
 
-let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) (computer : computer) (m : model) :
-    model =
-  let m = wait caps m in
+let update (host : host) (computer : computer) (m : model) : model =
+  let m = wait host m in
   match m.code with
   | Some code ->
       let keys = computer.keyboard.keys in
@@ -693,7 +461,7 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
         else if pressed "PageUp" then to_section m (step_section m (-1))
         else if pressed "g" then to_shelf m true
         else if pressed "a" then to_shelf m false
-        else if pressed "s" then open_code computer.screen m
+        else if pressed "s" then open_code host computer.screen m
         else if pressed "o" then (
           (* claude: the panel's magnifying glass: round, wide, none *)
           Code_map.cycle_glass ();
@@ -703,7 +471,7 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
           | Some k -> bar_key computer m k
           | None -> m
   in
-  let m = if pressed "Enter" then start caps runnable m else m in
+  let m = if pressed "Enter" then start host m else m in
   (* the mouse *)
   let mouse = computer.mouse in
   let at = (mouse.mx, mouse.my) in
@@ -712,10 +480,10 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
   in
   let m =
     if not (mouse.mclick || mouse.mdouble) then m
-    else if near (left_edge +. 90., 452.) at ~w:190. ~h:44. then tinybox_code computer.screen m
+    else if near (left_edge +. 90., 452.) at ~w:190. ~h:44. then tinybox_code host computer.screen m
     else if near games_tab at ~w:90. ~h:36. then to_shelf m true
     else if near apps_tab at ~w:80. ~h:36. then to_shelf m false
-    else if in_code_area at then open_code computer.screen m
+    else if in_code_area at then open_code host computer.screen m
     else if near prev_arrow at ~w:40. ~h:40. then to_section m (step_section m (-1))
     else if near next_arrow at ~w:40. ~h:40. then to_section m (step_section m 1)
     else
@@ -724,10 +492,11 @@ let update (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string l
       | None ->
       let n = List.length (shown m) in
       match List.find_opt (fun i -> match cell_centre m i with Some c -> near c at ~w:thumb ~h:(thumb +. 30.) | None -> false) (List.init n Fun.id) with
-      | Some i -> if mouse.mdouble then start caps runnable { m with pos = i } else { m with pos = i }
+      | Some i -> if mouse.mdouble then start host { m with pos = i } else { m with pos = i }
       | None -> m
   in
-  preview_of (now computer) (chosen m);
+  let dwell = track (chosen m) in
+  Option.iter (fun pv -> pv.step ~now:(now computer) ~dwell (chosen m)) host.preview;
   { m with before = keys }
 
 (*****************************************************************************)
@@ -792,10 +561,14 @@ let frame (color : color) (w : number) (h : number) (t : number) : shape =
       rectangle color t h |> move_x ((w +. t) /. 2.);
     ]
 
-let picture (p : Catalogue.program) (size : number) : shape =
-  match Hashtbl.find_opt thumbnails p.name with
-  | Some img -> bitmap size size (Lazy.force img)
+let picture (host : host) (p : Catalogue.program) (size : number) : shape =
+  match host.thumbnail p size with
+  | Some shape -> shape
   | None -> group [ rectangle panel size size; centred dim 0. 0. "no picture" ]
+
+(* the chosen one playing, if the host previews it *)
+let preview_shapes (host : host) (p : Catalogue.program) : shape list option =
+  Option.bind host.preview (fun pv -> pv.shapes p)
 
 let header (computer : computer) (m : model) : shape list =
   let shelf = match (m.search, current_group m) with None, Some g -> g.games | _ -> None in
@@ -859,7 +632,7 @@ let start_here (m : model) : string option =
   | By_genre, None, (_ :: _ :: _ as ps) -> Some (List.hd (by_lines ps)).name
   | _ -> None
 
-let grid (computer : computer) (runnable : string list) (m : model) : shape list =
+let grid (computer : computer) (host : host) (m : model) : shape list =
   (* claude: by genre, the section's smallest program: where to start
    * reading it (tinybox is first for learning) *)
   let start = start_here m in
@@ -870,12 +643,12 @@ let grid (computer : computer) (runnable : string list) (m : model) : shape list
          | None -> []
          | Some (x, y) ->
              let on = i = m.pos in
-             let ok = List.mem p.name runnable in
+             let ok = List.mem p.name host.runnable in
              let glow = wave 0.35 1. 1.2 computer.time in
              [
                group
                  ((if on then [ frame cyan thumb thumb 4. |> fade glow ] else [ frame grey thumb thumb 1. ])
-                 @ [ picture p thumb |> fade (if ok then 1. else 0.35) ]
+                 @ [ picture host p thumb |> fade (if ok then 1. else 0.35) ]
                  (* claude: grouped by size, its lines on a badge at the
                   * thumbnail's bottom right *)
                  @
@@ -904,21 +677,26 @@ let players_text (p : Catalogue.program) : string =
  * picture) *)
 let code_preview : (string * Code_map.t) option ref = ref None
 
-let code_of (p : Catalogue.program) : Code_map.t option =
-  match !code_preview with
-  | Some (name, c) when name = p.name -> Some c
-  | _ ->
+let code_of (host : host) (p : Catalogue.program) : Code_map.t option =
+  match (!code_preview, host.sources) with
+  | Some (name, c), _ when name = p.name -> Some c
+  | _, None -> None
+  | _, Some sources ->
       if fst !chosen_since = p.name && !frames - snd !chosen_since >= 20 then begin
-        let c = Codemap.preview ~area:code_area ~sources:Tinybox_sources.sources ~program:p.name ~path:p.source in
+        let c = Codemap.preview ~area:code_area ~sources:(Lazy.force sources) ~program:p.name ~path:p.source in
         code_preview := Some (p.name, c);
         Some c
       end
       else None
 
-let code_panel (computer : computer) (p : Catalogue.program) : shape list =
+let code_panel (host : host) (computer : computer) (p : Catalogue.program) : shape list =
   let x, y, w, h = code_area in
   let w = float_of_int w and h = float_of_int h in
   let cx = x +. (w /. 2.) and cy = y -. (h /. 2.) in
+  let code_of = code_of host in
+  if host.sources = None then
+    [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy no_code; frame cyan w h 2. |> move cx cy ]
+  else
   (* claude: how much code, all the files shown, once the map is made *)
   let size =
     match code_of p with
@@ -934,14 +712,14 @@ let code_panel (computer : computer) (p : Catalogue.program) : shape list =
   @ match code_of p with Some c -> Code_map.glass computer c | None -> []
 
 (* the chosen one, large, and what the catalogue says of it *)
-let details (computer : computer) (runnable : string list) (m : model) : shape list =
+let details (computer : computer) (host : host) (m : model) : shape list =
   match chosen m with
   | None -> [ centred ~size:18. dim shot_x shot_y "nothing here" ]
   | Some p ->
       let left = text_x in
-      let ok = List.mem p.name runnable in
+      let ok = List.mem p.name host.runnable in
       [ frame magenta shot shot 3. |> move shot_x shot_y ]
-      @ (match preview_shapes p with Some _ -> [] | None -> [ picture p shot |> move shot_x shot_y ])
+      @ (match preview_shapes host p with Some _ -> [] | None -> [ picture host p shot |> move shot_x shot_y ])
       @ [
           text ~size:24. ink left 410. (cut ~size:24. ~width:(text_w -. 60.) p.name);
           text ~size:16. yellow (left +. text_w -. 40.) 410. p.look;
@@ -958,22 +736,20 @@ let details (computer : computer) (runnable : string list) (m : model) : shape l
                 (cut ~size:12. ~width:text_w
                    (Printf.sprintf "start here: the smallest in %s (its own code: libs/ not counted)" g.title)) ]
         | _ -> [])
-      (* claude: the software rasterizer's time on a 3D preview: tinybox
-       * as its stress test, every 3D game drawn live *)
-      @ (match preview_ms p with
-        | Some ms ->
-            let n = every ms in
-            [ text ~size:11. dim left 358.
-                (Printf.sprintf "rasterized in %.0f ms%s" ms (if n = 1 then "" else Printf.sprintf ", one frame in %d" n)) ]
+      (* claude: what the host says of its preview (natively, the
+       * software rasterizer's time on a 3D one: tinybox as its stress
+       * test, every 3D game drawn live) *)
+      @ (match Option.bind host.preview (fun pv -> pv.note p) with
+        | Some note -> [ text ~size:11. dim left 358. note ]
         | None -> [])
       @ paragraph ~size:14. cyan left 330. ~width:text_w ~lines:2 ("After " ^ p.after)
       @ paragraph ~size:14. ink left 280. ~width:text_w ~lines:3 p.one_line
       @ paragraph ~size:12. dim left 210. ~width:text_w ~lines:9 p.brought
       @ (if ok then [] else [ text ~size:14. magenta left 45. "not in this tinybox" ])
-      @ code_panel computer p
+      @ code_panel host computer p
 
-let footer (m : model) : shape list =
-  let playing = match m.child with Some c -> [ text ~size:18. yellow left_edge (-440.) ("> " ^ c.name ^ " is running") ] | None -> [] in
+let footer (host : host) (m : model) : shape list =
+  let playing = match host.running () with Some name -> [ text ~size:18. yellow left_edge (-440.) ("> " ^ name ^ " is running") ] | None -> [] in
   [ text ~size:13. dim left_edge (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   s read its code   enter play it" ]
   @ playing
   @ if m.status = "" then [] else [ text ~size:16. magenta (-400.) (-440.) (cut ~size:16. ~width:340. m.status) ]
@@ -986,8 +762,8 @@ let scanlines (screen : screen) : shape list =
 (* claude: the preview, its 1000 by 1000 scaled to the panel's 400, and
  * then the background's colour all round the panel, over whatever the
  * program draws beyond its screen (the playground has no clipping) *)
-let live (screen : screen) (m : model) : shape list =
-  match Option.bind (chosen m) preview_shapes with
+let live (host : host) (screen : screen) (m : model) : shape list =
+  match Option.bind (chosen m) (preview_shapes host) with
   | None -> []
   | Some shapes ->
       let half = shot /. 2. in
@@ -1001,7 +777,7 @@ let live (screen : screen) (m : model) : shape list =
         band (screen.right -. (shot_x +. half)) shot ((screen.right +. shot_x +. half) /. 2.) shot_y;
       ]
 
-let view (runnable : string list) (computer : computer) (m : model) : shape list =
+let view (host : host) (computer : computer) (m : model) : shape list =
   let screen = computer.screen in
   match m.code with
   | Some code ->
@@ -1017,13 +793,14 @@ let view (runnable : string list) (computer : computer) (m : model) : shape list
         | _ -> [])
   | None ->
   [ rectangle background screen.width screen.height ]
-  @ live screen m
-  @ header computer m @ section_bar m @ filter_bar m @ grid computer runnable m @ details computer runnable m @ footer m @ scanlines screen
+  @ live host screen m
+  @ header computer m @ section_bar m @ filter_bar m @ grid computer host m @ details computer host m @ footer host m @ scanlines screen
 
 (*****************************************************************************)
 (* Entry point *)
 (*****************************************************************************)
 
-let run (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) : unit =
-  let caps = (caps :> < Cap.fork ; Cap.exec ; Cap.wait >) in
-  Playground_platform.run_app ~screen:(screen_w, screen_h) ~flags:(Playground_platform.flags ()) (game (view runnable) (update caps runnable) initial_model)
+let run ?(network : < Cap.network ; .. > option) (host : host) : unit =
+  let network = (network :> < Cap.network > option) in
+  Playground_platform.run_app ~screen:(screen_w, screen_h) ~flags:(Playground_platform.flags ()) ?network
+    (game (view host) (update host) initial_model)

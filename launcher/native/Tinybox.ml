@@ -130,7 +130,7 @@ let start (query : string) (args : string list) : unit =
   | Ok name -> Program.run name ~argv:(Array.of_list (name :: args))
 
 (* the menu, one more program: its entry, Cap.main and all *)
-let () = Program.main menu (fun () -> Cap.main (fun caps -> Tinybox_menu.run caps (programs ())))
+let () = Program.main menu (fun () -> Cap.main (fun caps -> Tinybox_menu.run (Tinybox_native.host caps (programs ()))))
 
 let () =
   let invoked = Filename.remove_extension (Filename.basename Sys.argv.(0)) in

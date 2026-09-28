@@ -15,7 +15,8 @@ val run_app:
  * that shape and the program is told its size at once (Sub.on_resize,
  * which Playground.game follows: computer.screen). The window still
  * scales the picture to fit it, whatever its size. The native Cairo
- * platform only, for now; the others keep 1000 by 1000. *)
+ * platform and the web's (the browser letterboxing it), for now; the
+ * others keep 1000 by 1000. *)
 (* claude: [network], the program's capability to reach the network
  * (plan_caps.md), for what the platform does on its behalf: download
  * an image given by URL (Download.grant). A program granting it says

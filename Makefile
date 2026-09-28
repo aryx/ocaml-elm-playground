@@ -157,6 +157,9 @@ doc:
 # generated (launcher/website/make_website.ml, from CATALOG.md), with
 # each program's thumbnail, tinybox's, in $(ASSETS)/pngs/; these
 # directories are emptied first, so that a program gone leaves no page.
+# And tinybox's menu for the web (launcher/web/, plan_tinybox_web.md),
+# docs/tinybox.html, its program beside the others in the assets: a
+# program chosen there is its own page, docs/<dir>/<Name>.html.
 VERSION=$(shell sed -n 's/^(version "\(.*\)")/\1/p' dune-project)
 ASSETS ?= $(HOME)/github/assets
 ASSETS_URL=https://aryx.github.io/assets
@@ -199,6 +202,10 @@ website:
 	dune build launcher/codegen/make_tinybox_data.exe launcher/website/make_website.exe
 	./_build/default/launcher/codegen/make_tinybox_data.exe pngs $(ASSETS)/pngs
 	./_build/default/launcher/website/make_website.exe $(ASSETS_URL)
+	mkdir -p $(ASSETS)/js/launcher
+	install -m 644 _build/default/launcher/web/Tinybox_web.bc.js $(ASSETS)/js/launcher/
+	printf '<html>\n  <head>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
+	  $(ASSETS_URL)/js/launcher/Tinybox_web.bc.js > docs/tinybox.html
 
 # Preview the site at http://localhost:8000
 serve:
@@ -218,6 +225,7 @@ js:
 	dune build $(GENRES:%=%/web) $(APPS:%=%/web) --profile=release-js
 	dune build examples/web --profile=release-js
 	dune build examples/svg --profile=release-js
+	dune build launcher/web --profile=release-js
 
 ###############################################################################
 # Developer targets

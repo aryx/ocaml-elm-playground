@@ -218,7 +218,7 @@
   to TinySmalltalk80), run by name, `tinybox TinyMario`. 2D on Cairo,
   3D on OpenGL.
 ")
-  ; claude: see launcher/dune and plan_launcher.md
+  ; claude: see launcher/native/dune and plan_launcher.md
   (depends
     (ocaml (>= "4.08.0"))
     (elm_playground_native (= :version))
