@@ -40,5 +40,8 @@ and preview = {
 }
 
 (* [run ?network host]: the menu; [network], to fetch the thumbnails
- * when they are URLs (Playground_platform.run_app's) *)
+ * when they are URLs (Playground_platform.run_app's). Its flags (the
+ * command line, the URL's query): chosen=<Name> starts it on a program,
+ * code=<Name> in that program's code map -- tinybox.html?code=TinyVi,
+ * a link to a program's code to read *)
 val run : ?network:< Cap.network ; .. > -> host -> unit

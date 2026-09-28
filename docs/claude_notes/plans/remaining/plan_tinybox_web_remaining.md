@@ -10,14 +10,15 @@ encoded by the browser; zooming at 30 frames a second). Published by
 https://aryx.github.io/ocaml-elm-playground/tinybox.html. What's left,
 roughly from most to least worth doing.
 
-## 1. Back returns to the program chosen
+## 1. Back returns to the program chosen -- done
 
-Back from a program's page reloads the menu at its first section, not
-on the program left. Fix: before leaving, the web host replaces the
-menu's URL with `?chosen=<Name>` (`history.replaceState`); the menu, at
-its first frame, finds that flag and moves to the program (its section,
-its position in the grid). The native menu ignores it (it never leaves).
-Small, in the host and the menu's init; no shared code.
+The menu's flags `chosen=<Name>` (the menu on that program) and
+`code=<Name>` (in its code map, once the sources are here), natively
+too (`tinybox code=vi`); the web host replaces its URL with
+`?chosen=<Name>` before leaving (`history.replaceState`), so Back comes
+back to the menu on it. And a program's code is a link to give:
+https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyTurboPascal
+(the name in any case, "Tiny" optional).
 
 ## 2. A way back from a program's page
 
@@ -76,12 +77,11 @@ scrolls the grid (the wheel). Whether the web platform turns touches
 into the mouse's events is to be checked first; then the menu's layout,
 16:9, is small on a phone held upright.
 
-## 8. From the website's index pages
+## 8. From the website's index pages -- done
 
-The cards of `docs/games/`, `docs/apps/` and `docs/by-size/` could link
-to the menu on their program (`tinybox.html?chosen=<Name>`, once 1 is
-done) and to its code map (`&code=1`), making the code map the
-website's way to read a program.
+Each card of `docs/games/`, `docs/apps/` and `docs/by-size/` links to
+its program's code map (`../tinybox.html?code=<Name>`), beside its
+source on GitHub.
 
 ## 9. Small things
 

@@ -12,173 +12,242 @@
       .card img { width: 100%; aspect-ratio: 1; display: block; }
       .card .name { font-weight: bold; }
       .card .meta, .card .src { color: #777; }
+      h2 a { color: inherit; text-decoration: none; }
+      :target { scroll-margin-top: 12px; }
     </style>
   </head>
   <body>
     <main class="content">
       <p><a href="../index.html">up</a></p>
       <h1>Apps</h1>
-<h2>Word processing and publishing</h2>
+<p><a href="#word-processing-and-publishing">Word processing and publishing</a> &middot;
+<a href="#spreadsheets">Spreadsheets</a> &middot;
+<a href="#presentations">Presentations</a> &middot;
+<a href="#authoring-and-compound-documents">Authoring and compound documents</a> &middot;
+<a href="#graphics">Graphics</a> &middot;
+<a href="#cad">CAD</a> &middot;
+<a href="#education">Education</a> &middot;
+<a href="#pim">PIM</a> &middot;
+<a href="#game-making">Game making</a> &middot;
+<a href="#music">Music</a> &middot;
+<a href="#media">Media</a> &middot;
+<a href="#internet">Internet</a> &middot;
+<a href="#system">System</a> &middot;
+<a href="#programming-tools">Programming tools</a></p>
+<h2 id="word-processing-and-publishing"><a href="#word-processing-and-publishing">Word processing and publishing</a></h2>
 <p></p>
 <div class="grid">
-<div class="card" title="after Bravo (Butler Lampson and Charles Simonyi, Xerox PARC, 1974)"><a href="office/TinyBravo.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyBravo.png" alt="TinyBravo"/>
-<span class="name">TinyBravo</span></a> <span class="meta">app, 1974</span><br/>The first editor where the screen looked like the page. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyBravo.ml">source</a></div>
-<div class="card" title="after Microsoft Word (1983 on DOS, 1985 on the Macintosh)"><a href="office/TinyWord.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyWord.png" alt="TinyWord"/>
-<span class="name">TinyWord</span></a> <span class="meta">app, 1983</span><br/>The same text as TinyBravo, with no modes. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyWord.ml">source</a></div>
-<div class="card" title="after FrameMaker (Charles Corfield, Frame Technology, 1986)"><a href="office/TinyFrameMaker.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyFrameMaker.png" alt="TinyFrameMaker"/>
-<span class="name">TinyFrameMaker</span></a> <span class="meta">app, 1986</span><br/>A long document that lays itself out in columns and pages. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyFrameMaker.ml">source</a></div>
+<div class="card" id="TinyBravo" title="after Bravo (Butler Lampson and Charles Simonyi, Xerox PARC, 1974)"><a href="office/TinyBravo.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyBravo.png" alt="TinyBravo"/>
+<span class="name">TinyBravo</span></a> <span class="meta">app, 1974</span><br/>The first editor where the screen looked like the page. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyBravo.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyBravo">code map</a></div>
+<div class="card" id="TinyWord" title="after Microsoft Word (1983 on DOS, 1985 on the Macintosh)"><a href="office/TinyWord.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyWord.png" alt="TinyWord"/>
+<span class="name">TinyWord</span></a> <span class="meta">app, 1983</span><br/>The same text as TinyBravo, with no modes. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyWord.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyWord">code map</a></div>
+<div class="card" id="TinyFrameMaker" title="after FrameMaker (Charles Corfield, Frame Technology, 1986)"><a href="office/TinyFrameMaker.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyFrameMaker.png" alt="TinyFrameMaker"/>
+<span class="name">TinyFrameMaker</span></a> <span class="meta">app, 1986</span><br/>A long document that lays itself out in columns and pages. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyFrameMaker.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyFrameMaker">code map</a></div>
 </div>
-<h2>Spreadsheets</h2>
+<h2 id="spreadsheets"><a href="#spreadsheets">Spreadsheets</a></h2>
 <p></p>
 <div class="grid">
-<div class="card" title="after VisiCalc (Dan Bricklin and Bob Frankston, 1979)"><a href="office/TinyVisiCalc.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyVisiCalc.png" alt="TinyVisiCalc"/>
-<span class="name">TinyVisiCalc</span></a> <span class="meta">app, 1979</span><br/>The program that sold the Apple II: cells and formulas. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyVisiCalc.ml">source</a></div>
-<div class="card" title="after Excel (Microsoft, 1985, on the Macintosh)"><a href="office/TinyExcel.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyExcel.png" alt="TinyExcel"/>
-<span class="name">TinyExcel</span></a> <span class="meta">app, 1985</span><br/>The same spreadsheet six years later, with the mouse. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyExcel.ml">source</a></div>
+<div class="card" id="TinyVisiCalc" title="after VisiCalc (Dan Bricklin and Bob Frankston, 1979)"><a href="office/TinyVisiCalc.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyVisiCalc.png" alt="TinyVisiCalc"/>
+<span class="name">TinyVisiCalc</span></a> <span class="meta">app, 1979</span><br/>The program that sold the Apple II: cells and formulas. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyVisiCalc.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyVisiCalc">code map</a></div>
+<div class="card" id="TinyExcel" title="after Excel (Microsoft, 1985, on the Macintosh)"><a href="office/TinyExcel.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyExcel.png" alt="TinyExcel"/>
+<span class="name">TinyExcel</span></a> <span class="meta">app, 1985</span><br/>The same spreadsheet six years later, with the mouse. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyExcel.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyExcel">code map</a></div>
 </div>
-<h2>Presentations</h2>
+<h2 id="presentations"><a href="#presentations">Presentations</a></h2>
 <p></p>
 <div class="grid">
-<div class="card" title="after PowerPoint (Robert Gaskins and Dennis Austin, Forethought, 1987)"><a href="office/TinyPowerPoint.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyPowerPoint.png" alt="TinyPowerPoint"/>
-<span class="name">TinyPowerPoint</span></a> <span class="meta">app, 1987</span><br/>Slides, an outline, a master, a sorter, and the show. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyPowerPoint.ml">source</a></div>
+<div class="card" id="TinyPowerPoint" title="after PowerPoint (Robert Gaskins and Dennis Austin, Forethought, 1987)"><a href="office/TinyPowerPoint.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyPowerPoint.png" alt="TinyPowerPoint"/>
+<span class="name">TinyPowerPoint</span></a> <span class="meta">app, 1987</span><br/>Slides, an outline, a master, a sorter, and the show. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyPowerPoint.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyPowerPoint">code map</a></div>
 </div>
-<h2>Authoring and compound documents</h2>
+<h2 id="authoring-and-compound-documents"><a href="#authoring-and-compound-documents">Authoring and compound documents</a></h2>
 <p></p>
 <div class="grid">
-<div class="card" title="after HyperCard (Bill Atkinson, Apple, 1987)"><a href="office/TinyHyperCard.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyHyperCard.png" alt="TinyHyperCard"/>
-<span class="name">TinyHyperCard</span></a> <span class="meta">app, 1987</span><br/>Cards, buttons and scripts: programming for non-programmers. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyHyperCard.ml">source</a></div>
-<div class="card" title="after OpenDoc (Apple, IBM and CI Labs, 1994-97)"><a href="office/TinyOpenDoc.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOpenDoc.png" alt="TinyOpenDoc"/>
-<span class="name">TinyOpenDoc</span></a> <span class="meta">app, 1994</span><br/>A document with no application: text, sheet, picture and drawing parts. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyOpenDoc.ml">source</a></div>
-<div class="card" title="after today's office suites (Microsoft 365, iWork, LibreOffice)"><a href="office/TinyOffice.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOffice.png" alt="TinyOffice"/>
-<span class="name">TinyOffice</span></a> <span class="meta">app, 2020</span><br/>Choose a document, sheet, presentation, picture or drawing; each holds the others. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyOffice.ml">source</a></div>
+<div class="card" id="TinyHyperCard" title="after HyperCard (Bill Atkinson, Apple, 1987)"><a href="office/TinyHyperCard.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyHyperCard.png" alt="TinyHyperCard"/>
+<span class="name">TinyHyperCard</span></a> <span class="meta">app, 1987</span><br/>Cards, buttons and scripts: programming for non-programmers. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyHyperCard.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyHyperCard">code map</a></div>
+<div class="card" id="TinyOpenDoc" title="after OpenDoc (Apple, IBM and CI Labs, 1994-97)"><a href="office/TinyOpenDoc.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOpenDoc.png" alt="TinyOpenDoc"/>
+<span class="name">TinyOpenDoc</span></a> <span class="meta">app, 1994</span><br/>A document with no application: text, sheet, picture and drawing parts. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyOpenDoc.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyOpenDoc">code map</a></div>
+<div class="card" id="TinyOffice" title="after today's office suites (Microsoft 365, iWork, LibreOffice)"><a href="office/TinyOffice.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOffice.png" alt="TinyOffice"/>
+<span class="name">TinyOffice</span></a> <span class="meta">app, 2020</span><br/>Choose a document, sheet, presentation, picture or drawing; each holds the others. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/office/TinyOffice.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyOffice">code map</a></div>
 </div>
-<h2>Graphics</h2>
+<h2 id="graphics"><a href="#graphics">Graphics</a></h2>
 <p>apps/graphics/: the programs pictures are made with -- the two ways of keeping one, as dots (TinyMacPaint) and as objects (TinyMacDraw), both Apple's of 1984; the Amiga's dots, each a colour's number in a palette that can turn (TinyDeluxePaint); and what the dots became with 24 bits each (TinyPhotoshop, over libs/graphics/imaging: plan_photoshop.md); and a 3D scene built and ray traced (TinyBlender, over appkits/modeler and the Povray way).</p>
 <div class="grid">
-<div class="card" title="after MacPaint (Bill Atkinson, Apple, 1984)"><a href="graphics/TinyMacPaint.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMacPaint.png" alt="TinyMacPaint"/>
-<span class="name">TinyMacPaint</span></a> <span class="meta">app, 1984</span><br/>Paint with dots: pencil, brush, shapes, bucket, and a selection to move. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyMacPaint.ml">source</a></div>
-<div class="card" title="after MacDraw (Apple, 1984)"><a href="graphics/TinyMacDraw.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMacDraw.png" alt="TinyMacDraw"/>
-<span class="name">TinyMacDraw</span></a> <span class="meta">app, 1984</span><br/>A picture made of objects you can select, move and group. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyMacDraw.ml">source</a></div>
-<div class="card" title="after Deluxe Paint (Dan Silva, Electronic Arts, 1985, on the Amiga)"><a href="graphics/TinyDeluxePaint.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyDeluxePaint.png" alt="TinyDeluxePaint"/>
-<span class="name">TinyDeluxePaint</span></a> <span class="meta">app, 1985</span><br/>A picture of 32 colours whose waterfall and fire move by the palette alone: Tab, and the colours cycle. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyDeluxePaint.ml">source</a></div>
-<div class="card" title="after Photoshop 1.0 (Thomas and John Knoll, Adobe, 1990)"><a href="graphics/TinyPhotoshop.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyPhotoshop.png" alt="TinyPhotoshop"/>
-<span class="name">TinyPhotoshop</span></a> <span class="meta">app, 1990</span><br/>NASA's Blue Marble to retouch: select with the magic wand, adjust Levels or Hue/Saturation, filter, paint. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyPhotoshop.ml">source</a></div>
-<div class="card" title="after Blender 2.8 (Ton Roosendaal, NeoGeo 1994, open source 2002; 2.8 in 2019)"><a href="graphics/TinyBlender.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyBlender.png" alt="TinyBlender"/>
-<span class="name">TinyBlender</span></a> <span class="meta">app, 1994</span><br/>Blender's default cube in the quad view, moved with G, R and S, the camera's view ray traced live. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyBlender.ml">source</a></div>
+<div class="card" id="TinyMacPaint" title="after MacPaint (Bill Atkinson, Apple, 1984)"><a href="graphics/TinyMacPaint.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMacPaint.png" alt="TinyMacPaint"/>
+<span class="name">TinyMacPaint</span></a> <span class="meta">app, 1984</span><br/>Paint with dots: pencil, brush, shapes, bucket, and a selection to move. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyMacPaint.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyMacPaint">code map</a></div>
+<div class="card" id="TinyMacDraw" title="after MacDraw (Apple, 1984)"><a href="graphics/TinyMacDraw.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMacDraw.png" alt="TinyMacDraw"/>
+<span class="name">TinyMacDraw</span></a> <span class="meta">app, 1984</span><br/>A picture made of objects you can select, move and group. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyMacDraw.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyMacDraw">code map</a></div>
+<div class="card" id="TinyDeluxePaint" title="after Deluxe Paint (Dan Silva, Electronic Arts, 1985, on the Amiga)"><a href="graphics/TinyDeluxePaint.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyDeluxePaint.png" alt="TinyDeluxePaint"/>
+<span class="name">TinyDeluxePaint</span></a> <span class="meta">app, 1985</span><br/>A picture of 32 colours whose waterfall and fire move by the palette alone: Tab, and the colours cycle. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyDeluxePaint.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyDeluxePaint">code map</a></div>
+<div class="card" id="TinyPhotoshop" title="after Photoshop 1.0 (Thomas and John Knoll, Adobe, 1990)"><a href="graphics/TinyPhotoshop.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyPhotoshop.png" alt="TinyPhotoshop"/>
+<span class="name">TinyPhotoshop</span></a> <span class="meta">app, 1990</span><br/>NASA's Blue Marble to retouch: select with the magic wand, adjust Levels or Hue/Saturation, filter, paint. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyPhotoshop.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyPhotoshop">code map</a></div>
+<div class="card" id="TinyBlender" title="after Blender 2.8 (Ton Roosendaal, NeoGeo 1994, open source 2002; 2.8 in 2019)"><a href="graphics/TinyBlender.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyBlender.png" alt="TinyBlender"/>
+<span class="name">TinyBlender</span></a> <span class="meta">app, 1994</span><br/>Blender's default cube in the quad view, moved with G, R and S, the camera's view ray traced live. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/graphics/TinyBlender.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyBlender">code map</a></div>
 </div>
-<h2>CAD</h2>
+<h2 id="cad"><a href="#cad">CAD</a></h2>
 <p>apps/cad/: the drawings that are models rather than pictures -- geometry that keeps its own rules, constraints the program maintains, parts placed as instances of other drawings (plan_cad.md), faces that appear where lines close a loop.</p>
 <div class="grid">
-<div class="card" title="after Sketchpad (Ivan Sutherland, MIT Lincoln Laboratory's TX-2, 1963)"><a href="cad/TinySketchpad.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySketchpad.png" alt="TinySketchpad"/>
-<span class="name">TinySketchpad</span></a> <span class="meta">app, 1963</span><br/>Draw with the light pen, then tell the drawing its rules: a rough hexagon becomes regular, a linkage moves. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/cad/TinySketchpad.ml">source</a></div>
-<div class="card" title="after AutoCAD Release 12 (Autodesk, 1992; AutoCAD 1982)"><a href="cad/TinyAutoCAD.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyAutoCAD.png" alt="TinyAutoCAD"/>
-<span class="name">TinyAutoCAD</span></a> <span class="meta">app, 1992</span><br/>A bracket drawn on layers, by a command line that asks and a crosshair that snaps. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/cad/TinyAutoCAD.ml">source</a></div>
-<div class="card" title="after SketchUp (Brad Schell and Joe Esch, @Last Software, 2000; Google SketchUp 8, 2010)"><a href="cad/TinySketchup.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySketchup.png" alt="TinySketchup"/>
-<span class="name">TinySketchup</span></a> <span class="meta">app, 2000</span><br/>A house pushed and pulled out of a rectangle: draw a line across a face, pull the face, lift the ridge. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/cad/TinySketchup.ml">source</a></div>
+<div class="card" id="TinySketchpad" title="after Sketchpad (Ivan Sutherland, MIT Lincoln Laboratory's TX-2, 1963)"><a href="cad/TinySketchpad.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySketchpad.png" alt="TinySketchpad"/>
+<span class="name">TinySketchpad</span></a> <span class="meta">app, 1963</span><br/>Draw with the light pen, then tell the drawing its rules: a rough hexagon becomes regular, a linkage moves. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/cad/TinySketchpad.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinySketchpad">code map</a></div>
+<div class="card" id="TinyAutoCAD" title="after AutoCAD Release 12 (Autodesk, 1992; AutoCAD 1982)"><a href="cad/TinyAutoCAD.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyAutoCAD.png" alt="TinyAutoCAD"/>
+<span class="name">TinyAutoCAD</span></a> <span class="meta">app, 1992</span><br/>A bracket drawn on layers, by a command line that asks and a crosshair that snaps. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/cad/TinyAutoCAD.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyAutoCAD">code map</a></div>
+<div class="card" id="TinySketchup" title="after SketchUp (Brad Schell and Joe Esch, @Last Software, 2000; Google SketchUp 8, 2010)"><a href="cad/TinySketchup.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySketchup.png" alt="TinySketchup"/>
+<span class="name">TinySketchup</span></a> <span class="meta">app, 2000</span><br/>A house pushed and pulled out of a rectangle: draw a line across a face, pull the face, lift the ridge. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/cad/TinySketchup.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinySketchup">code map</a></div>
 </div>
-<h2>Education</h2>
+<h2 id="education"><a href="#education">Education</a></h2>
 <p>apps/education/: the programs made for a learner of a subject -- the sky, geometry, logic, typing -- rather than for getting work done. Learning to program is elsewhere (the programming games, the ways, the programming tools), and so are the educational games, which are played.</p>
 <div class="grid">
-<div class="card" title="after Interactive Physics (Knowledge Revolution: David Baszucki and Erik Cassel, 1989) and Working Model (1993)"><a href="education/TinyInteractivePhysics.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyInteractivePhysics.png" alt="TinyInteractivePhysics"/>
-<span class="name">TinyInteractivePhysics</span></a> <span class="meta">app, 1989</span><br/>Draw disks and blocks, tie them with springs, ropes, rods and pins, press Run: the meters plot the energies, the tape rewinds. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/education/TinyInteractivePhysics.ml">source</a></div>
-<div class="card" title="after Stellarium (Fabien Chereau, 2001), after the planetarium projector (Zeiss Mark I, 1923)"><a href="education/TinyStellarium.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyStellarium.png" alt="TinyStellarium"/>
-<span class="name">TinyStellarium</span></a> <span class="meta">app, 2001</span><br/>The sky of a place at an instant, as you would see it standing there; time runs as fast as you like, the sky turns, the Moon waxes and the planets wander. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/education/TinyStellarium.ml">source</a></div>
+<div class="card" id="TinyInteractivePhysics" title="after Interactive Physics (Knowledge Revolution: David Baszucki and Erik Cassel, 1989) and Working Model (1993)"><a href="education/TinyInteractivePhysics.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyInteractivePhysics.png" alt="TinyInteractivePhysics"/>
+<span class="name">TinyInteractivePhysics</span></a> <span class="meta">app, 1989</span><br/>Draw disks and blocks, tie them with springs, ropes, rods and pins, press Run: the meters plot the energies, the tape rewinds. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/education/TinyInteractivePhysics.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyInteractivePhysics">code map</a></div>
+<div class="card" id="TinyStellarium" title="after Stellarium (Fabien Chereau, 2001), after the planetarium projector (Zeiss Mark I, 1923)"><a href="education/TinyStellarium.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyStellarium.png" alt="TinyStellarium"/>
+<span class="name">TinyStellarium</span></a> <span class="meta">app, 2001</span><br/>The sky of a place at an instant, as you would see it standing there; time runs as fast as you like, the sky turns, the Moon waxes and the planets wander. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/education/TinyStellarium.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyStellarium">code map</a></div>
 </div>
-<h2>PIM</h2>
+<h2 id="pim"><a href="#pim">PIM</a></h2>
 <p>apps/pim/: the personal information managers -- the time, the calendar, and the Palm Pilot's address book and to-do list to come (plan_pim.md), over core's Civil and Clock.</p>
 <div class="grid">
-<div class="card" title="after cal (Unix, 1971), iCal (Apple, 2002)"><a href="pim/TinyCalendar.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyCalendar.png" alt="TinyCalendar"/>
-<span class="name">TinyCalendar</span></a> <span class="meta">app, 1971</span><br/>A month or a week of events, dragged, stretched and repeated; September 1752 as England lived it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/pim/TinyCalendar.ml">source</a></div>
-<div class="card" title="after the Alarm Clock (Apple, Macintosh, 1984), xclock (X Window System, mid-1980s)"><a href="pim/TinyClock.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyClock.png" alt="TinyClock"/>
-<span class="name">TinyClock</span></a> <span class="meta">app, 1984</span><br/>The time here and in six cities, on hands or in a strip, and an alarm. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/pim/TinyClock.ml">source</a></div>
-<div class="card" title="after the Pilot (Jeff Hawkins, Donna Dubinsky and Ed Colligan, Palm Computing, 1996)"><a href="pim/TinyPalmPilot.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyPalmPilot.png" alt="TinyPalmPilot"/>
-<span class="name">TinyPalmPilot</span></a> <span class="meta">app, 1996</span><br/>A Date Book, an Address book, a To Do list and a Memo Pad behind four buttons, on a 160 x 160 screen. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/pim/TinyPalmPilot.ml">source</a></div>
+<div class="card" id="TinyCalendar" title="after cal (Unix, 1971), iCal (Apple, 2002)"><a href="pim/TinyCalendar.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyCalendar.png" alt="TinyCalendar"/>
+<span class="name">TinyCalendar</span></a> <span class="meta">app, 1971</span><br/>A month or a week of events, dragged, stretched and repeated; September 1752 as England lived it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/pim/TinyCalendar.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyCalendar">code map</a></div>
+<div class="card" id="TinyClock" title="after the Alarm Clock (Apple, Macintosh, 1984), xclock (X Window System, mid-1980s)"><a href="pim/TinyClock.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyClock.png" alt="TinyClock"/>
+<span class="name">TinyClock</span></a> <span class="meta">app, 1984</span><br/>The time here and in six cities, on hands or in a strip, and an alarm. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/pim/TinyClock.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyClock">code map</a></div>
+<div class="card" id="TinyPalmPilot" title="after the Pilot (Jeff Hawkins, Donna Dubinsky and Ed Colligan, Palm Computing, 1996)"><a href="pim/TinyPalmPilot.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyPalmPilot.png" alt="TinyPalmPilot"/>
+<span class="name">TinyPalmPilot</span></a> <span class="meta">app, 1996</span><br/>A Date Book, an Address book, a To Do list and a Memo Pad behind four buttons, on a 160 x 160 screen. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/pim/TinyPalmPilot.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyPalmPilot">code map</a></div>
 </div>
-<h2>Game making</h2>
+<h2 id="game-making"><a href="#game-making">Game making</a></h2>
 <p>apps/gamedev/: the tools making what any game can use -- sprites, maps, sounds -- written in the format of the playground layer that reads them, in files the games embed at build time.</p>
 <div class="grid">
-<div class="card" title="after Aseprite (David Capello, 2001)"><a href="gamedev/TinyAseprite.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyAseprite.png" alt="TinyAseprite"/>
-<span class="name">TinyAseprite</span></a> <span class="meta">app, 2001</span><br/>TinyMario's hero, four frames of pixel art: paint them, play them, export them. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/gamedev/TinyAseprite.ml">source</a></div>
-<div class="card" title="after Tiled (Thorbjorn Lindeijer, 2008)"><a href="gamedev/TinyTiled.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTiled.png" alt="TinyTiled"/>
-<span class="name">TinyTiled</span></a> <span class="meta">app, 2008</span><br/>TinyMario's level, a cell at a time, the camera following the cursor along it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/gamedev/TinyTiled.ml">source</a></div>
+<div class="card" id="TinyAseprite" title="after Aseprite (David Capello, 2001)"><a href="gamedev/TinyAseprite.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyAseprite.png" alt="TinyAseprite"/>
+<span class="name">TinyAseprite</span></a> <span class="meta">app, 2001</span><br/>TinyMario's hero, four frames of pixel art: paint them, play them, export them. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/gamedev/TinyAseprite.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyAseprite">code map</a></div>
+<div class="card" id="TinyTiled" title="after Tiled (Thorbjorn Lindeijer, 2008)"><a href="gamedev/TinyTiled.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTiled.png" alt="TinyTiled"/>
+<span class="name">TinyTiled</span></a> <span class="meta">app, 2008</span><br/>TinyMario's level, a cell at a time, the camera following the cursor along it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/gamedev/TinyTiled.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyTiled">code map</a></div>
 </div>
-<h2>Music</h2>
+<h2 id="music"><a href="#music">Music</a></h2>
 <p>apps/music/: instruments played live, their voices built from audio/'s blocks (plan_synth_teaching.md), and the tracker.</p>
 <div class="grid">
-<div class="card" title="after Hammond B-3 (1955) and its Leslie 122 (1965)"><a href="music/TinyHammond.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyHammond.png" alt="TinyHammond"/>
-<span class="name">TinyHammond</span></a> <span class="meta">app, 1955</span><br/>Nine drawbars pulled into a registration, chords on the computer's keys, the Leslie's horn and drum turning slow or fast. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyHammond.ml">source</a></div>
-<div class="card" title="after Fender Rhodes Mark I (1970) and its Suitcase; the Wurlitzer 200A (1974) and the Clavinet D6 (1971)"><a href="music/TinyRhodes.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyRhodes.png" alt="TinyRhodes"/>
-<span class="name">TinyRhodes</span></a> <span class="meta">app, 1970</span><br/>The electric pianos: a Rhodes to play softly or hard, its pickup's curve drawn with the tine's swing across it, the Suitcase's tremolo moving between its speakers. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyRhodes.ml">source</a></div>
-<div class="card" title="after Minimoog Model D (Moog Music, 1970)"><a href="music/TinyMinimoog.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMinimoog.png" alt="TinyMinimoog"/>
-<span class="name">TinyMinimoog</span></a> <span class="meta">app, 1970</span><br/>Three oscillators, the ladder filter and two contours, played from the computer's keys. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyMinimoog.ml">source</a></div>
-<div class="card" title="after Yamaha CS-80 (1977)"><a href="music/TinyCS80.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyCS80.png" alt="TinyCS80"/>
-<span class="name">TinyCS80</span></a> <span class="meta">app, 1977</span><br/>Vangelis's synthesizer: two synthesizers per key, a chord held and one of its notes pressed harder to open it alone, a ribbon to bend them. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyCS80.ml">source</a></div>
-<div class="card" title="after Roland TR-808 Rhythm Composer (1980)"><a href="music/TinyTR808.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTR808.png" alt="TinyTR808"/>
-<span class="name">TinyTR808</span></a> <span class="meta">app, 1980</span><br/>The drum machine of electro, hip hop and house: eleven drums with their knobs, the 16 coloured step buttons, the whole pattern shown as a grid. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyTR808.ml">source</a></div>
-<div class="card" title="after Roland TB-303 Bass Line (1981)"><a href="music/TinyTB303.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTB303.png" alt="TinyTB303"/>
-<span class="name">TinyTB303</span></a> <span class="meta">app, 1981</span><br/>A 16-step bass line playing itself, its pattern a grid to click, its knobs turned while it plays: acid. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyTB303.ml">source</a></div>
-<div class="card" title="after Yamaha DX7 (1983)"><a href="music/TinyDX7.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyDX7.png" alt="TinyDX7"/>
-<span class="name">TinyDX7</span></a> <span class="meta">app, 1983</span><br/>The FM synthesizer of the 1980s: 145 parameters edited one at a time on its LCD, as the DX7 made you, beside what it hid -- the algorithm drawn as a graph lit as it plays, the six envelopes; its cartridges read. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyDX7.ml">source</a></div>
-<div class="card" title="after Roland Juno-106 (1984)"><a href="music/TinyJuno.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyJuno.png" alt="TinyJuno"/>
-<span class="name">TinyJuno</span></a> <span class="meta">app, 1984</span><br/>The polyphonic synthesizer everyone could afford: its sliders in their sections, six voices, and the chorus that makes one oscillator sound like an orchestra. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyJuno.ml">source</a></div>
-<div class="card" title="after Ultimate Soundtracker (Karsten Obarski, Amiga, 1987)"><a href="music/TinySoundtracker.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySoundtracker.png" alt="TinySoundtracker"/>
-<span class="name">TinySoundtracker</span></a> <span class="meta">app, 1987</span><br/>A song as a grid of notes in four channels, typed on a piano of letters, played as it's edited. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinySoundtracker.ml">source</a></div>
-<div class="card" title="after ReBirth RB-338 (Propellerhead, 1997)"><a href="music/TinyReBirth.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyReBirth.png" alt="TinyReBirth"/>
-<span class="name">TinyReBirth</span></a> <span class="meta">app, 1997</span><br/>The techno studio in a computer: two TB-303s, a TR-808 and a TR-909 playing together, each machine's pattern chosen, mixed, through distortion, delay, compressor and the pattern controlled filter. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyReBirth.ml">source</a></div>
-<div class="card" title="after OP-1 (Teenage Engineering, 2011)"><a href="music/TinyOp1.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOp1.png" alt="TinyOp1"/>
-<span class="name">TinyOp1</span></a> <span class="meta">app, 2011</span><br/>The synthesizer and four-track studio the size of a keyboard: six engines, an envelope, an effect and an LFO, each on the same four coloured encoders, eight sounds, and a tape recording what you play over what it plays back. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyOp1.ml">source</a></div>
-<div class="card" title="after Reface YC, CP, DX and CS (Yamaha, 2015)"><a href="music/TinyReface.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyReface.png" alt="TinyReface"/>
-<span class="name">TinyReface</span></a> <span class="meta">app, 2015</span><br/>Four small keyboards in one case: a switch for the combo organ, the electric piano, FM and virtual analog, each our original behind it -- the Hammond, the Rhodes, the DX7, the CS-80 -- on 37 mini keys. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyReface.ml">source</a></div>
-<div class="card" title="after OP-XY (Teenage Engineering, 2024)"><a href="music/TinyOpxy.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOpxy.png" alt="TinyOpxy"/>
-<span class="name">TinyOpxy</span></a> <span class="meta">app, 2024</span><br/>The groovebox: eight tracks stepping together -- an 808 kit sampled, a bass, sampled electric piano chords, a lead -- their 16 steps, parameter locks, scenes switched at the bar, and the brain moving the song into another key and scale. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyOpxy.ml">source</a></div>
+<div class="card" id="TinyHammond" title="after Hammond B-3 (1955) and its Leslie 122 (1965)"><a href="music/TinyHammond.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyHammond.png" alt="TinyHammond"/>
+<span class="name">TinyHammond</span></a> <span class="meta">app, 1955</span><br/>Nine drawbars pulled into a registration, chords on the computer's keys, the Leslie's horn and drum turning slow or fast. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyHammond.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyHammond">code map</a></div>
+<div class="card" id="TinyRhodes" title="after Fender Rhodes Mark I (1970) and its Suitcase; the Wurlitzer 200A (1974) and the Clavinet D6 (1971)"><a href="music/TinyRhodes.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyRhodes.png" alt="TinyRhodes"/>
+<span class="name">TinyRhodes</span></a> <span class="meta">app, 1970</span><br/>The electric pianos: a Rhodes to play softly or hard, its pickup's curve drawn with the tine's swing across it, the Suitcase's tremolo moving between its speakers. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyRhodes.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyRhodes">code map</a></div>
+<div class="card" id="TinyMinimoog" title="after Minimoog Model D (Moog Music, 1970)"><a href="music/TinyMinimoog.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMinimoog.png" alt="TinyMinimoog"/>
+<span class="name">TinyMinimoog</span></a> <span class="meta">app, 1970</span><br/>Three oscillators, the ladder filter and two contours, played from the computer's keys. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyMinimoog.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyMinimoog">code map</a></div>
+<div class="card" id="TinyCS80" title="after Yamaha CS-80 (1977)"><a href="music/TinyCS80.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyCS80.png" alt="TinyCS80"/>
+<span class="name">TinyCS80</span></a> <span class="meta">app, 1977</span><br/>Vangelis's synthesizer: two synthesizers per key, a chord held and one of its notes pressed harder to open it alone, a ribbon to bend them. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyCS80.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyCS80">code map</a></div>
+<div class="card" id="TinyTR808" title="after Roland TR-808 Rhythm Composer (1980)"><a href="music/TinyTR808.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTR808.png" alt="TinyTR808"/>
+<span class="name">TinyTR808</span></a> <span class="meta">app, 1980</span><br/>The drum machine of electro, hip hop and house: eleven drums with their knobs, the 16 coloured step buttons, the whole pattern shown as a grid. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyTR808.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyTR808">code map</a></div>
+<div class="card" id="TinyTB303" title="after Roland TB-303 Bass Line (1981)"><a href="music/TinyTB303.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTB303.png" alt="TinyTB303"/>
+<span class="name">TinyTB303</span></a> <span class="meta">app, 1981</span><br/>A 16-step bass line playing itself, its pattern a grid to click, its knobs turned while it plays: acid. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyTB303.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyTB303">code map</a></div>
+<div class="card" id="TinyDX7" title="after Yamaha DX7 (1983)"><a href="music/TinyDX7.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyDX7.png" alt="TinyDX7"/>
+<span class="name">TinyDX7</span></a> <span class="meta">app, 1983</span><br/>The FM synthesizer of the 1980s: 145 parameters edited one at a time on its LCD, as the DX7 made you, beside what it hid -- the algorithm drawn as a graph lit as it plays, the six envelopes; its cartridges read. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyDX7.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyDX7">code map</a></div>
+<div class="card" id="TinyJuno" title="after Roland Juno-106 (1984)"><a href="music/TinyJuno.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyJuno.png" alt="TinyJuno"/>
+<span class="name">TinyJuno</span></a> <span class="meta">app, 1984</span><br/>The polyphonic synthesizer everyone could afford: its sliders in their sections, six voices, and the chorus that makes one oscillator sound like an orchestra. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyJuno.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyJuno">code map</a></div>
+<div class="card" id="TinySoundtracker" title="after Ultimate Soundtracker (Karsten Obarski, Amiga, 1987)"><a href="music/TinySoundtracker.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySoundtracker.png" alt="TinySoundtracker"/>
+<span class="name">TinySoundtracker</span></a> <span class="meta">app, 1987</span><br/>A song as a grid of notes in four channels, typed on a piano of letters, played as it's edited. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinySoundtracker.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinySoundtracker">code map</a></div>
+<div class="card" id="TinyReBirth" title="after ReBirth RB-338 (Propellerhead, 1997)"><a href="music/TinyReBirth.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyReBirth.png" alt="TinyReBirth"/>
+<span class="name">TinyReBirth</span></a> <span class="meta">app, 1997</span><br/>The techno studio in a computer: two TB-303s, a TR-808 and a TR-909 playing together, each machine's pattern chosen, mixed, through distortion, delay, compressor and the pattern controlled filter. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyReBirth.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyReBirth">code map</a></div>
+<div class="card" id="TinyOp1" title="after OP-1 (Teenage Engineering, 2011)"><a href="music/TinyOp1.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOp1.png" alt="TinyOp1"/>
+<span class="name">TinyOp1</span></a> <span class="meta">app, 2011</span><br/>The synthesizer and four-track studio the size of a keyboard: six engines, an envelope, an effect and an LFO, each on the same four coloured encoders, eight sounds, and a tape recording what you play over what it plays back. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyOp1.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyOp1">code map</a></div>
+<div class="card" id="TinyReface" title="after Reface YC, CP, DX and CS (Yamaha, 2015)"><a href="music/TinyReface.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyReface.png" alt="TinyReface"/>
+<span class="name">TinyReface</span></a> <span class="meta">app, 2015</span><br/>Four small keyboards in one case: a switch for the combo organ, the electric piano, FM and virtual analog, each our original behind it -- the Hammond, the Rhodes, the DX7, the CS-80 -- on 37 mini keys. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyReface.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyReface">code map</a></div>
+<div class="card" id="TinyOpxy" title="after OP-XY (Teenage Engineering, 2024)"><a href="music/TinyOpxy.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyOpxy.png" alt="TinyOpxy"/>
+<span class="name">TinyOpxy</span></a> <span class="meta">app, 2024</span><br/>The groovebox: eight tracks stepping together -- an 808 kit sampled, a bass, sampled electric piano chords, a lead -- their 16 steps, parameter locks, scenes switched at the bar, and the brain moving the song into another key and scale. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/music/TinyOpxy.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyOpxy">code map</a></div>
 </div>
-<h2>Media</h2>
+<h2 id="media"><a href="#media">Media</a></h2>
 <p>apps/media/: programs for files of every kind -- sounds, tunes, pictures, and videos as graphics/videos/ comes (plan_video_teaching.md).</p>
 <div class="grid">
-<div class="card" title="after Media Player (Microsoft, 1991), VLC (VideoLAN, 2001)"><a href="media/TinyMediaPlayer.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMediaPlayer.png" alt="TinyMediaPlayer"/>
-<span class="name">TinyMediaPlayer</span></a> <span class="meta">app, 1991</span><br/>One player for every file this repository reads: recordings (WAV, MP2, MP3), tunes, modules, pictures, an animation, a video, and an .mpg with its sound. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/media/TinyMediaPlayer.ml">source</a></div>
-<div class="card" title="after Winamp 2 (Nullsoft, 1998)"><a href="media/TinyWinamp.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyWinamp.png" alt="TinyWinamp"/>
-<span class="name">TinyWinamp</span></a> <span class="meta">app, 1998</span><br/>The MP3 player of the MP3 years in its three windows: the LCD time, the title scrolling, the analyzer, the ten-band equalizer and the playlist. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/media/TinyWinamp.ml">source</a></div>
+<div class="card" id="TinyMediaPlayer" title="after Media Player (Microsoft, 1991), VLC (VideoLAN, 2001)"><a href="media/TinyMediaPlayer.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMediaPlayer.png" alt="TinyMediaPlayer"/>
+<span class="name">TinyMediaPlayer</span></a> <span class="meta">app, 1991</span><br/>One player for every file this repository reads: recordings (WAV, MP2, MP3), tunes, modules, pictures, an animation, a video, and an .mpg with its sound. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/media/TinyMediaPlayer.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyMediaPlayer">code map</a></div>
+<div class="card" id="TinyWinamp" title="after Winamp 2 (Nullsoft, 1998)"><a href="media/TinyWinamp.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyWinamp.png" alt="TinyWinamp"/>
+<span class="name">TinyWinamp</span></a> <span class="meta">app, 1998</span><br/>The MP3 player of the MP3 years in its three windows: the LCD time, the title scrolling, the analyzer, the ten-band equalizer and the playlist. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/media/TinyWinamp.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyWinamp">code map</a></div>
 </div>
-<h2>Internet</h2>
+<h2 id="internet"><a href="#internet">Internet</a></h2>
 <p>apps/internet/: programs that talk to other computers, over networking/, the servers they talk to small enough to run beside them.</p>
 <div class="grid">
-<div class="card" title="after Eudora (Steve Dorner, University of Illinois, 1988)"><a href="internet/TinyEudora.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyEudora.png" alt="TinyEudora"/>
-<span class="name">TinyEudora</span></a> <span class="meta">app, 1988</span><br/>Mailboxes and a message: the list with Eudora's columns, a message read under it, its headers all shown with b, its attachment saved; a reply written, queued in Out, and sent; Check Mail; your own Gmail; the list by conversation, filters. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyEudora.ml">source</a></div>
-<div class="card" title="after ircII (Michael Sandrof, 1989), for IRC (Jarkko Oikarinen, 1988)"><a href="internet/TinyIRC.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyIRC.png" alt="TinyIRC"/>
-<span class="name">TinyIRC</span></a> <span class="meta">app, 1989</span><br/>Channels and nicks: join #tiny, type a line, everyone in it reads it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyIRC.ml">source</a></div>
-<div class="card" title="after NCSA Mosaic (Marc Andreessen and Eric Bina, 1993)"><a href="internet/TinyMosaic.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMosaic.png" alt="TinyMosaic"/>
-<span class="name">TinyMosaic</span></a> <span class="meta">app, 1993</span><br/>A web browser: a page fetched, read and drawn, its links followed. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyMosaic.ml">source</a></div>
-<div class="card" title="after Netscape Navigator 1.0 (Marc Andreessen and the Mosaic Communications team, 1994)"><a href="internet/TinyNetscape.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyNetscape.png" alt="TinyNetscape"/>
-<span class="name">TinyNetscape</span></a> <span class="meta">app, 1994</span><br/>Mosaic's successor: a toolbar, a Location field to type in, pictures arriving four at a time. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyNetscape.ml">source</a></div>
-<div class="card" title="after Firefox 1.0 (the Mozilla Foundation, 2004), and Firebug (Joe Hewitt, 2006)"><a href="internet/TinyFirefox.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyFirefox.png" alt="TinyFirefox"/>
-<span class="name">TinyFirefox</span></a> <span class="meta">app, 2004</span><br/>A browser that runs the page's own program: click, type, and watch the console and the page's tree change. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyFirefox.ml">source</a></div>
-<div class="card" title="after Google Chrome (2008)"><a href="internet/TinyChrome.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyChrome.png" alt="TinyChrome"/>
-<span class="name">TinyChrome</span></a> <span class="meta">app, 2008</span><br/>A small browser for the real web: Hacker News, Wikipedia (its search from the omnibox), Google's home page, GitHub, drawn mostly as their authors meant, in tabs, with developer tools; Hacker News' own script run, a thread folded; TinyTube, a video site of our own. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyChrome.ml">source</a></div>
+<div class="card" id="TinyEudora" title="after Eudora (Steve Dorner, University of Illinois, 1988)"><a href="internet/TinyEudora.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyEudora.png" alt="TinyEudora"/>
+<span class="name">TinyEudora</span></a> <span class="meta">app, 1988</span><br/>Mailboxes and a message: the list with Eudora's columns, a message read under it, its headers all shown with b, its attachment saved; a reply written, queued in Out, and sent; Check Mail; your own Gmail; the list by conversation, filters. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyEudora.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyEudora">code map</a></div>
+<div class="card" id="TinyIRC" title="after ircII (Michael Sandrof, 1989), for IRC (Jarkko Oikarinen, 1988)"><a href="internet/TinyIRC.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyIRC.png" alt="TinyIRC"/>
+<span class="name">TinyIRC</span></a> <span class="meta">app, 1989</span><br/>Channels and nicks: join #tiny, type a line, everyone in it reads it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyIRC.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyIRC">code map</a></div>
+<div class="card" id="TinyMosaic" title="after NCSA Mosaic (Marc Andreessen and Eric Bina, 1993)"><a href="internet/TinyMosaic.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyMosaic.png" alt="TinyMosaic"/>
+<span class="name">TinyMosaic</span></a> <span class="meta">app, 1993</span><br/>A web browser: a page fetched, read and drawn, its links followed. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyMosaic.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyMosaic">code map</a></div>
+<div class="card" id="TinyNetscape" title="after Netscape Navigator 1.0 (Marc Andreessen and the Mosaic Communications team, 1994)"><a href="internet/TinyNetscape.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyNetscape.png" alt="TinyNetscape"/>
+<span class="name">TinyNetscape</span></a> <span class="meta">app, 1994</span><br/>Mosaic's successor: a toolbar, a Location field to type in, pictures arriving four at a time. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyNetscape.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyNetscape">code map</a></div>
+<div class="card" id="TinyFirefox" title="after Firefox 1.0 (the Mozilla Foundation, 2004), and Firebug (Joe Hewitt, 2006)"><a href="internet/TinyFirefox.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyFirefox.png" alt="TinyFirefox"/>
+<span class="name">TinyFirefox</span></a> <span class="meta">app, 2004</span><br/>A browser that runs the page's own program: click, type, and watch the console and the page's tree change. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyFirefox.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyFirefox">code map</a></div>
+<div class="card" id="TinyChrome" title="after Google Chrome (2008)"><a href="internet/TinyChrome.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyChrome.png" alt="TinyChrome"/>
+<span class="name">TinyChrome</span></a> <span class="meta">app, 2008</span><br/>A small browser for the real web: Hacker News, Wikipedia (its search from the omnibox), Google's home page, GitHub, drawn mostly as their authors meant, in tabs, with developer tools; Hacker News' own script run, a thread folded; TinyTube, a video site of our own. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/internet/TinyChrome.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyChrome">code map</a></div>
 </div>
-<h2>System</h2>
+<h2 id="system"><a href="#system">System</a></h2>
 <p>apps/system/: the programs a computer is used through before any application -- so far the terminal and its shell, over the playground's Teletype way and libs/terminal/ (plan_terminal.md).</p>
 <div class="grid">
-<div class="card" title="after the VT100 (DEC, 1978), the Unix shell (Ken Thompson, 1971; Stephen Bourne, 1979)"><a href="system/TinyTerminal.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTerminal.png" alt="TinyTerminal"/>
-<span class="name">TinyTerminal</span></a> <span class="meta">app, 1978</span><br/>A screen of 80 by 24 and a prompt: type a command, run Hangman, stop it with Control-C; basic, then RUN MANDEL. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/system/TinyTerminal.ml">source</a></div>
+<div class="card" id="TinyTerminal" title="after the VT100 (DEC, 1978), the Unix shell (Ken Thompson, 1971; Stephen Bourne, 1979)"><a href="system/TinyTerminal.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTerminal.png" alt="TinyTerminal"/>
+<span class="name">TinyTerminal</span></a> <span class="meta">app, 1978</span><br/>A screen of 80 by 24 and a prompt: type a command, run Hangman, stop it with Control-C; basic, then RUN MANDEL. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/system/TinyTerminal.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyTerminal">code map</a></div>
 </div>
-<h2>Programming tools</h2>
+<h2 id="programming-tools"><a href="#programming-tools">Programming tools</a></h2>
 <p>apps/devtools/: the programs programs are written with -- so far a BASIC as a home computer had it, over languages/basic (plan_terminal.md, section 5), and the two text editors, full-screen programs of the terminal over appkits/editor (section 6), Emacs's Lisp over languages/lisp, Turbo Pascal's IDE over languages/pascal, Smalltalk-80's environment over languages/smalltalk (plan_tiny_smalltalk.md), and Scratch's blocks and Snap!'s over languages/scratch and appkits/blocks.</p>
 <div class="grid">
-<div class="card" title="after Tiny BASIC (Dennis Allison, 1975; Li-Chen Wang, Palo Alto, 1976) and Applesoft (Microsoft, 1978), on the Apple II's screen (Steve Wozniak's Integer BASIC, 1977)"><a href="devtools/TinyBasic.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyBasic.png" alt="TinyBasic"/>
-<span class="name">TinyBasic</span></a> <span class="meta">app, 1975</span><br/>Type a program a numbered line at a time, LIST it, RUN it; FP for floating point; Guess the Number is typed in already. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyBasic.ml">source</a></div>
-<div class="card" title="after vi (Bill Joy, Berkeley, 1976), on ex and ed (Ken Thompson, 1969)"><a href="devtools/TinyVi.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyVi.png" alt="TinyVi"/>
-<span class="name">TinyVi</span></a> <span class="meta">app, 1976</span><br/>A screen editor with modes: keys are commands until i, text until Escape; README says them. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyVi.ml">source</a></div>
-<div class="card" title="after Smalltalk-80 (Alan Kay, Dan Ingalls, Adele Goldberg, Xerox PARC, 1980; Byte, August 1981; the Blue Book, 1983)"><a href="devtools/TinySmalltalk80.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySmalltalk80.png" alt="TinySmalltalk80"/>
-<span class="name">TinySmalltalk80</span></a> <span class="meta">app, 1980</span><br/>A System Browser, a Workspace and a Transcript on a grey screen: print it on 100 factorial, accept a method into Point, and when a message is not understood, define it in the debugger and proceed. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinySmalltalk80.ml">source</a></div>
-<div class="card" title="after Turbo Pascal (Anders Hejlsberg, Borland, 1983), in the look of Turbo Pascal 7 (1992)"><a href="devtools/TinyTurboPascal.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTurboPascal.png" alt="TinyTurboPascal"/>
-<span class="name">TinyTurboPascal</span></a> <span class="meta">app, 1983</span><br/>Wirth's eight queens in a blue window: F9 compiles, Ctrl-F9 runs, the error in a red bar with the cursor on it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyTurboPascal.ml">source</a></div>
-<div class="card" title="after GNU Emacs (Richard Stallman, 1985), after EMACS on TECO (1976)"><a href="devtools/TinyEmacs.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyEmacs.png" alt="TinyEmacs"/>
-<span class="name">TinyEmacs</span></a> <span class="meta">app, 1985</span><br/>An editor that is a Lisp machine: type (+ 1 2) then C-j in *scratch*, or C-h k and a key to see what it runs. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyEmacs.ml">source</a></div>
-<div class="card" title="after Scratch (Mitchel Resnick, John Maloney, Natalie Rusk and the Lifelong Kindergarten group, MIT Media Lab, 2007), in the look of Scratch 2.0 (2013)"><a href="devtools/TinyScratch.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyScratch.png" alt="TinyScratch"/>
-<span class="name">TinyScratch</span></a> <span class="meta">app, 2007</span><br/>Click the green flag: the cat walks and bounces while the pencil draws a flower; drag blocks from the palette to change them, click a script to run it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyScratch.ml">source</a></div>
-<div class="card" title="after Snap! (Jens Mönig and Brian Harvey, UC Berkeley, 2011; BYOB, 2008), in the look of Snap! 4 (2015)"><a href="devtools/TinySnap.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySnap.png" alt="TinySnap"/>
-<span class="name">TinySnap</span></a> <span class="meta">app, 2011</span><br/>Click the green flag: the turtle draws a tree by a recursive block of its own, then says the squares of one to six, by map; click it for 10 factorial. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinySnap.ml">source</a></div>
+<div class="card" id="TinyBasic" title="after Tiny BASIC (Dennis Allison, 1975; Li-Chen Wang, Palo Alto, 1976) and Applesoft (Microsoft, 1978), on the Apple II's screen (Steve Wozniak's Integer BASIC, 1977)"><a href="devtools/TinyBasic.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyBasic.png" alt="TinyBasic"/>
+<span class="name">TinyBasic</span></a> <span class="meta">app, 1975</span><br/>Type a program a numbered line at a time, LIST it, RUN it; FP for floating point; Guess the Number is typed in already. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyBasic.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyBasic">code map</a></div>
+<div class="card" id="TinyVi" title="after vi (Bill Joy, Berkeley, 1976), on ex and ed (Ken Thompson, 1969)"><a href="devtools/TinyVi.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyVi.png" alt="TinyVi"/>
+<span class="name">TinyVi</span></a> <span class="meta">app, 1976</span><br/>A screen editor with modes: keys are commands until i, text until Escape; README says them. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyVi.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyVi">code map</a></div>
+<div class="card" id="TinySmalltalk80" title="after Smalltalk-80 (Alan Kay, Dan Ingalls, Adele Goldberg, Xerox PARC, 1980; Byte, August 1981; the Blue Book, 1983)"><a href="devtools/TinySmalltalk80.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySmalltalk80.png" alt="TinySmalltalk80"/>
+<span class="name">TinySmalltalk80</span></a> <span class="meta">app, 1980</span><br/>A System Browser, a Workspace and a Transcript on a grey screen: print it on 100 factorial, accept a method into Point, and when a message is not understood, define it in the debugger and proceed. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinySmalltalk80.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinySmalltalk80">code map</a></div>
+<div class="card" id="TinyTurboPascal" title="after Turbo Pascal (Anders Hejlsberg, Borland, 1983), in the look of Turbo Pascal 7 (1992)"><a href="devtools/TinyTurboPascal.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyTurboPascal.png" alt="TinyTurboPascal"/>
+<span class="name">TinyTurboPascal</span></a> <span class="meta">app, 1983</span><br/>Wirth's eight queens in a blue window: F9 compiles, Ctrl-F9 runs, the error in a red bar with the cursor on it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyTurboPascal.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyTurboPascal">code map</a></div>
+<div class="card" id="TinyEmacs" title="after GNU Emacs (Richard Stallman, 1985), after EMACS on TECO (1976)"><a href="devtools/TinyEmacs.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyEmacs.png" alt="TinyEmacs"/>
+<span class="name">TinyEmacs</span></a> <span class="meta">app, 1985</span><br/>An editor that is a Lisp machine: type (+ 1 2) then C-j in *scratch*, or C-h k and a key to see what it runs. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyEmacs.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyEmacs">code map</a></div>
+<div class="card" id="TinyScratch" title="after Scratch (Mitchel Resnick, John Maloney, Natalie Rusk and the Lifelong Kindergarten group, MIT Media Lab, 2007), in the look of Scratch 2.0 (2013)"><a href="devtools/TinyScratch.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinyScratch.png" alt="TinyScratch"/>
+<span class="name">TinyScratch</span></a> <span class="meta">app, 2007</span><br/>Click the green flag: the cat walks and bounces while the pencil draws a flower; drag blocks from the palette to change them, click a script to run it. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinyScratch.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinyScratch">code map</a></div>
+<div class="card" id="TinySnap" title="after Snap! (Jens Mönig and Brian Harvey, UC Berkeley, 2011; BYOB, 2008), in the look of Snap! 4 (2015)"><a href="devtools/TinySnap.html"><img loading="lazy" src="https://aryx.github.io/assets/pngs/TinySnap.png" alt="TinySnap"/>
+<span class="name">TinySnap</span></a> <span class="meta">app, 2011</span><br/>Click the green flag: the turtle draws a tree by a recursive block of its own, then says the squares of one to six, by map; click it for 10 factorial. <a class="src" href="https://github.com/aryx/ocaml-elm-playground/blob/master/apps/devtools/TinySnap.ml">source</a> &middot;
+<a class="src" href="../tinybox.html?code=TinySnap">code map</a></div>
 </div>
 
     </main>

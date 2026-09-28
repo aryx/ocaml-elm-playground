@@ -95,7 +95,8 @@ let columns (names : string list) : string =
   Buffer.contents b
 
 let usage =
-  "usage: tinybox [-platform flags | list | <program> [args] | <program> -tty]\n\
+  "usage: tinybox [-platform flags | chosen=<program> | code=<program> | list | <program> [args] | <program> -tty]\n\
+  \  chosen=, code=: the menu on a program, or in its code map\n\
   \  <program>: its name, case-insensitive, \"Tiny\" optional, or a unique part of it\n\
   \  args: the program's own, e.g. -debug-keys, artwork=shapes\n"
 
@@ -139,9 +140,11 @@ let () =
   | _ :: args when String.lowercase_ascii invoked <> "tinybox" -> start invoked args
   | [ _; "list" ] -> list_programs ()
   | [ _; ("-h" | "-help" | "--help") ] -> Cap.main (fun caps -> print caps usage)
-  (* the menu, with the platform's flags if any (-fixed-time, -dump-frame) *)
+  (* the menu, with the platform's flags if any (-fixed-time, -dump-frame),
+   * claude: and its own, name=value (code=TinyVi: Tinybox_menu.run), no
+   * program's name having an = *)
   | [ exe ] -> Program.run menu ~argv:[| exe |]
-  | exe :: (flag :: _ as args) when String.length flag > 1 && flag.[0] = '-' ->
+  | exe :: (flag :: _ as args) when String.length flag > 1 && (flag.[0] = '-' || String.contains flag '=') ->
       Program.run menu ~argv:(Array.of_list (exe :: args))
   | _ :: query :: args -> start query args
   | [] -> fail usage

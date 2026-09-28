@@ -15,8 +15,10 @@
  *
  * writes docs/games/index.html and docs/apps/index.html, from CATALOG.md:
  * a section per genre or category, its definition, and a card per
- * program -- its thumbnail, what it is after, a link to play it and one
- * to its source. The programs and their thumbnails are in the assets
+ * program -- its thumbnail, what it is after, a link to play it, one to
+ * its source, and one to its code map (tinybox's, on the web:
+ * tinybox.html?code=<Name>). Each section and card an anchor, a link
+ * to give: games/#shoot-em-up, games/#TinyPong. The programs and their thumbnails are in the assets
  * repository (the argument), too many to commit here; the pages that
  * run them, docs/games/<genre>/<Name>.html, are here.
  *
@@ -73,6 +75,8 @@ let page ~(title : string) (body : string) : string =
       .card img { width: 100%%; aspect-ratio: 1; display: block; }
       .card .name { font-weight: bold; }
       .card .meta, .card .src { color: #777; }
+      h2 a { color: inherit; text-decoration: none; }
+      :target { scroll-margin-top: 12px; }
     </style>
   </head>
   <body>
@@ -99,25 +103,49 @@ let subdir (p : Catalogue.program) : string = Filename.basename (Filename.dirnam
 let card ~(assets : string) ~(base : string) ~(meta : string) (p : Catalogue.program) : string =
   let play = Printf.sprintf "%s%s/%s.html" base (subdir p) p.name in
   Printf.sprintf
-    {|<div class="card" title="after %s"><a href="%s"><img loading="lazy" src="%s/pngs/%s.png" alt="%s"/>
-<span class="name">%s</span></a> <span class="meta">%s</span><br/>%s <a class="src" href="%s%s">source</a></div>
+    {|<div class="card" id="%s" title="after %s"><a href="%s"><img loading="lazy" src="%s/pngs/%s.png" alt="%s"/>
+<span class="name">%s</span></a> <span class="meta">%s</span><br/>%s <a class="src" href="%s%s">source</a> &middot;
+<a class="src" href="../tinybox.html?code=%s">code map</a></div>
 |}
-    (escape p.after) play assets p.name p.name p.name meta (escape p.one_line) github p.source
+    p.name (escape p.after) play assets p.name p.name p.name meta (escape p.one_line) github p.source p.name
 
 (* "2D, 1978", "app, 1983" *)
 let look_year ~(games : bool) (p : Catalogue.program) : string =
   Printf.sprintf "%s, %d" (if games then p.look else "app") p.year
 
+(* claude: a section's anchor, from its title (several apps' sections
+ * share a directory, apps/office/): "Shoot 'em up" -> "shoot-em-up",
+ * games/#shoot-em-up a link to give *)
+let anchor (title : string) : string =
+  let b = Buffer.create (String.length title) in
+  String.iter
+    (fun c ->
+      match Char.lowercase_ascii c with
+      | ('a' .. 'z' | '0' .. '9') as c -> Buffer.add_char b c
+      | ' ' | '-' | '/' -> if Buffer.length b > 0 && Buffer.nth b (Buffer.length b - 1) <> '-' then Buffer.add_char b '-'
+      | _ -> ())
+    title;
+  Buffer.contents b
+
 let index ~(assets : string) ~(games : bool) (sections : Catalogue.section list) : string =
   let kind = if games then "games" else "apps" in
+  let sections = List.filter (fun (s : Catalogue.section) -> s.games = games) sections in
+  (* the sections first, each a link to its own *)
+  let contents =
+    sections
+    |> List.map (fun (s : Catalogue.section) -> Printf.sprintf {|<a href="#%s">%s</a>|} (anchor s.title) (escape s.title))
+    |> String.concat " &middot;\n"
+    |> Printf.sprintf "<p>%s</p>\n"
+  in
   sections
-  |> List.filter (fun (s : Catalogue.section) -> s.games = games)
   |> List.map (fun (s : Catalogue.section) ->
-         Printf.sprintf "<h2>%s</h2>\n<p>%s</p>\n<div class=\"grid\">\n%s</div>\n" (escape s.title)
+         Printf.sprintf "<h2 id=\"%s\"><a href=\"#%s\">%s</a></h2>\n<p>%s</p>\n<div class=\"grid\">\n%s</div>\n" (anchor s.title)
+           (anchor s.title) (escape s.title)
            (escape (Catalogue.plain s.intro))
            (String.concat ""
               (List.map (fun p -> card ~assets ~base:"" ~meta:(look_year ~games p) p) s.programs)))
   |> String.concat ""
+  |> ( ^ ) contents
   |> page ~title:(String.capitalize_ascii kind)
 
 (*****************************************************************************)

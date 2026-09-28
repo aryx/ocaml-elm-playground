@@ -119,6 +119,12 @@ let host : Tinybox_menu.host =
     thumbnail = (fun p size -> Some (image size size (Printf.sprintf "%s/pngs/%s.png" (assets ()) p.name)));
     play =
       (fun p ->
+        (* claude: this page's URL first made ?chosen=<Name> (replaced, not
+         * a new entry in the history): Back from the program comes back
+         * to the menu on it (Tinybox_menu.initial) *)
+        ignore
+          (Ojs.call (Ojs.get_prop_ascii Ojs.global "history") "replaceState"
+             [| Ojs.null; Ojs.string_to_js ""; Ojs.string_to_js ("?chosen=" ^ p.name) |]);
         go (page p);
         "");
     running = (fun () -> None);

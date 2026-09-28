@@ -236,10 +236,38 @@ type model = {
   repeat : (string * float) option; (* an arrow held, when it moves again *)
   status : string; (* what happened to the last one *)
   code : Codemap.t option; (* the chosen one's code, shown instead of the menu *)
+  code_asked : bool; (* its code to be opened once the sources are here (code=) *)
 }
 
 let initial_model : model =
-  { grouping = By_genre; filters = no_filters; section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; status = ""; code = None }
+  { grouping = By_genre; filters = no_filters; section = 0; pos = 0; search = None; before = Set_.empty; repeat = None; status = ""; code = None; code_asked = false }
+
+(* claude: a program named as tinybox's command line names one: its
+ * name, in any case, "Tiny" optional (turbopascal, TinyTurboPascal) *)
+let find_program (name : string) : Catalogue.program option =
+  let q = lowercase name in
+  List.find_opt (fun (p : Catalogue.program) -> lowercase p.name = q || lowercase p.name = "tiny" ^ q) everything
+
+(* claude: the menu started on a program, its flags (natively the
+ * command line's, on the web the URL's): chosen=<Name> puts it in the
+ * grid on that program, code=<Name> opens that program's code map too --
+ * so a link, tinybox.html?code=TinyTurboPascal, is a program's code to
+ * read (the website's cards link there) *)
+let initial (flags : flags) : model =
+  let named key = Option.bind (List.assoc_opt key flags) find_program in
+  match (named "code", named "chosen") with
+  | None, None -> initial_model
+  | Some p, _ | None, Some p ->
+      let gs = groups By_genre no_filters in
+      let rec find i =
+        if i >= Array.length gs then initial_model
+        else
+          let rec index k = function [] -> None | (q : Catalogue.program) :: rest -> if q.name = p.name then Some k else index (k + 1) rest in
+          match index 0 gs.(i).programs with
+          | Some pos -> { initial_model with section = i; pos }
+          | None -> find (i + 1)
+      in
+      { (find 0) with code_asked = named "code" <> None }
 
 (* the section shown, if any passes the filters *)
 let current_group (m : model) : group option =
@@ -433,6 +461,16 @@ let tinybox_code (host : host) (screen : screen) (m : model) : model =
 
 let update (host : host) (computer : computer) (m : model) : model =
   let m = wait host m in
+  (* claude: code= asked for its code map: opened when the sources are
+   * here (on the web, a few seconds after the page) *)
+  let m =
+    if not m.code_asked then m
+    else
+      match host.sources () with
+      | Sources _ -> { (open_code host computer.screen m) with code_asked = false; status = "" }
+      | Loading as s -> { m with status = not_yet s }
+      | No_sources _ as s -> { m with code_asked = false; status = not_yet s }
+  in
   match m.code with
   | Some code ->
       let keys = computer.keyboard.keys in
@@ -807,5 +845,5 @@ let view (host : host) (computer : computer) (m : model) : shape list =
 
 let run ?(network : < Cap.network ; .. > option) (host : host) : unit =
   let network = (network :> < Cap.network > option) in
-  Playground_platform.run_app ~screen:(screen_w, screen_h) ~flags:(Playground_platform.flags ()) ?network
-    (game (view host) (update host) initial_model)
+  let flags = Playground_platform.flags () in
+  Playground_platform.run_app ~screen:(screen_w, screen_h) ~flags ?network (game (view host) (update host) (initial flags))
