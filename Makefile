@@ -129,8 +129,6 @@ doc:
 # so it assumes all the html are under docs/.
 # Note that if you change the settings, you need to commit in
 # the master branch to trigger a redeploy
-# TODO: automatically update games/ and examples/
-# and add entries for those dirs.
 # claude: website used to 'rm -rf docs' and replace it with the odoc
 # output, which also deleted the hand-written parts of docs/
 # (index.html, screenshots/, toy-*-example/, claude_notes/,
@@ -149,7 +147,19 @@ doc:
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 # claude: since docs/index.html is not regenerated, its package version
 # numbers are refreshed from dune-project instead.
+# claude: the games' and apps' programs, 200 of them (44 MB), are not
+# committed here but in the assets repository, served by its own GitHub
+# Pages: games/arcade/web/TinyPong.bc.js goes to
+# $(ASSETS)/js/games/arcade/, and its page, docs/games/arcade/TinyPong.html,
+# loads it from $(ASSETS_URL)/js/games/arcade/. Commit and push the
+# assets first, so that no page points at a program not yet online.
+# The index pages of docs/games/, docs/apps/ and docs/examples/ are
+# generated (launcher/website/make_website.ml, from CATALOG.md), with
+# each program's thumbnail, tinybox's, in $(ASSETS)/pngs/; these
+# directories are emptied first, so that a program gone leaves no page.
 VERSION=$(shell sed -n 's/^(version "\(.*\)")/\1/p' dune-project)
+ASSETS ?= $(HOME)/github/assets
+ASSETS_URL=https://aryx.github.io/assets
 ODOC_DIRS=odoc.support \
   elm_playground elm_playground_native elm_playground_web\
   elm_playground_software
@@ -163,11 +173,20 @@ website:
 	done
 	perl -pi -e 's|<span class="version">[^<]*</span>|<span class="version">$(VERSION)</span>|' docs/index.html
 	make js
-	for d in examples $(GENRES); do \
-	  mkdir -p docs/$$d; \
+	rm -rf docs/examples docs/games docs/apps
+	mkdir -p docs/examples docs/games docs/apps $(ASSETS)/pngs
+	for js in _build/default/examples/web/*.bc.js; do \
+	  b=`basename $$js .bc.js`; \
+	  install -m 644 $$js examples/web/$$b.html docs/examples/; \
+	done
+	for d in $(GENRES) $(APPS); do \
+	  a=js/$$d; \
+	  mkdir -p docs/$$d $(ASSETS)/$$a; \
 	  for js in _build/default/$$d/web/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
-	    install -m 644 $$js $$d/web/$$b.html docs/$$d/; \
+	    install -m 644 $$js $(ASSETS)/$$a/; \
+	    install -m 644 $$d/web/$$b.html docs/$$d/; \
+	    perl -pi -e "s|src=\"$$b.bc.js\"|src=\"$(ASSETS_URL)/$$a/$$b.bc.js\"|" docs/$$d/$$b.html; \
 	  done; \
 	done
 	mkdir -p docs/examples/svg
@@ -177,6 +196,9 @@ website:
 	done
 	mkdir -p docs/examples/examples
 	install -m 644 examples/checker.png docs/examples/examples/
+	dune build launcher/codegen/make_tinybox_data.exe launcher/website/make_website.exe
+	./_build/default/launcher/codegen/make_tinybox_data.exe pngs $(ASSETS)/pngs
+	./_build/default/launcher/website/make_website.exe $(ASSETS_URL)
 
 # Preview the site at http://localhost:8000
 serve:
@@ -187,15 +209,15 @@ serve:
 GENRES=$(addprefix games/,shmup fighting platform arcade puzzle cards \
   adventure rpg fps flight racing sports strategy rhythm programming)
 
+# claude: the apps' categories' directories (apps/<category>/, each with
+# its own web/)
+APPS=$(addprefix apps/,office graphics gamedev cad education devtools \
+  internet media music pim system)
+
 js:
-	dune build $(GENRES:%=%/web) --profile=release-js
+	dune build $(GENRES:%=%/web) $(APPS:%=%/web) --profile=release-js
 	dune build examples/web --profile=release-js
 	dune build examples/svg --profile=release-js
-	dune build apps/office/web --profile=release-js
-	dune build apps/graphics/web --profile=release-js
-	dune build apps/gamedev/web --profile=release-js
-	dune build apps/cad/web --profile=release-js
-	dune build apps/education/web --profile=release-js
 
 ###############################################################################
 # Developer targets

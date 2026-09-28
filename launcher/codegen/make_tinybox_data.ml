@@ -35,6 +35,8 @@
  *                                      program from the k-th
  *   make_tinybox_data catalogue n      Tinybox_data.ml, the catalogue
  *                                      and the n shards' lists joined
+ *   make_tinybox_data pngs dir         the thumbnails as dir/<Name>.png,
+ *                                      for the website
  *   make_tinybox_data sources          Tinybox_sources.ml, the sources of
  *                                      the games, apps, kits, playground
  *                                      and libs, for the code map
@@ -66,7 +68,8 @@ let frame (p : Catalogue.program) : string =
 
 let () =
   let catalogue = read "CATALOG.md" in
-  print_string "(* generated from CATALOG.md and the golden frames by launcher/codegen/make_tinybox_data.ml *)\n";
+  if Sys.argv.(1) <> "pngs" then
+    print_string "(* generated from CATALOG.md and the golden frames by launcher/codegen/make_tinybox_data.ml *)\n";
   match Array.to_list Sys.argv with
   | [ _; "catalogue"; n ] ->
       Printf.printf "let catalogue = %S\n\n" catalogue;
@@ -96,4 +99,16 @@ let () =
              let files, lines = Code_deps.own_size sources p.source in
              Printf.printf "  (%S, (%d, %d));\n" p.name files lines);
       print_string "]\n"
-  | _ -> failwith "usage: make_tinybox_data (catalogue n | thumbnails k n | sources)"
+  (* claude: the same thumbnails as PNG files, <dir>/<Name>.png, for the
+   * website's pages of games and apps (the Makefile's website target) *)
+  | [ _; "pngs"; dir ] ->
+      Catalogue.parse catalogue
+      |> List.concat_map (fun (s : Catalogue.section) -> s.programs)
+      |> List.iter (fun (p : Catalogue.program) ->
+             let frame = frame p in
+             if Sys.file_exists frame then begin
+               let oc = open_out_bin (Filename.concat dir (p.name ^ ".png")) in
+               output_string oc (thumbnail (read frame));
+               close_out oc
+             end)
+  | _ -> failwith "usage: make_tinybox_data (catalogue n | thumbnails k n | sources | pngs dir)"

@@ -1,0 +1,5 @@
+; claude: the website's index pages of the games, apps and examples, from
+; CATALOG.md (see make_website.ml), run by the Makefile's website target
+(executable
+ (name make_website)
+ (libraries catalogue))

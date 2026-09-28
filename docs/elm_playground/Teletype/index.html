@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Teletype (elm_playground.Teletype)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../odoc.support/odoc.css"/><meta name="generator" content="odoc 3.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">Index</a> &#x00BB; <a href="../index.html">elm_playground</a> &#x00BB; Teletype</nav><header class="odoc-preamble"><h1>Module <code><span>Teletype</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-keyboard_bytes"><a href="#val-keyboard_bytes" class="anchor"></a><code><span><span class="keyword">val</span> keyboard_bytes : 
+  <span><a href="../Playground/index.html#type-computer">Playground.computer</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">before</span>:<a href="../Playground/index.html#type-keyboard">Playground.keyboard</a> <span class="arrow">&#45;&gt;</span></span>
+  string</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-size"><a href="#val-size" class="anchor"></a><code><span><span class="keyword">val</span> size : 
+  <span><a href="../Playground/index.html#type-computer">Playground.computer</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Talk/index.html#type-machine">Talk.machine</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../Playground/index.html#type-number">Playground.number</a> * <a href="../Playground/index.html#type-number">Playground.number</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-screen_size"><a href="#val-screen_size" class="anchor"></a><code><span><span class="keyword">val</span> screen_size : 
+  <span><a href="../Playground/index.html#type-computer">Playground.computer</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Vt/index.html#type-t">Vt.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <a href="../Playground/index.html#type-number">Playground.number</a> * <a href="../Playground/index.html#type-number">Playground.number</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-draw"><a href="#val-draw" class="anchor"></a><code><span><span class="keyword">val</span> draw : 
+  <span><span class="optlabel">?paper</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?capitals</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?phosphor</span>:<a href="../Playground/index.html#type-color">Playground.color</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Playground/index.html#type-computer">Playground.computer</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Talk/index.html#type-machine">Talk.machine</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Playground/index.html#type-shape">Playground.shape</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-draw_screen"><a href="#val-draw_screen" class="anchor"></a><code><span><span class="keyword">val</span> draw_screen : 
+  <span><span class="optlabel">?paper</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?capitals</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?phosphor</span>:<a href="../Playground/index.html#type-color">Playground.color</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?pc</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">cursor</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Playground/index.html#type-computer">Playground.computer</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Vt/index.html#type-t">Vt.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Playground/index.html#type-shape">Playground.shape</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec type anchored" id="type-state"><a href="#type-state" class="anchor"></a><code><span><span class="keyword">type</span> state</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-teletype"><a href="#val-teletype" class="anchor"></a><code><span><span class="keyword">val</span> teletype : 
+  <span><span class="optlabel">?rows</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?cols</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="optlabel">?view</span>:<span>(<span><a href="../Playground/index.html#type-computer">Playground.computer</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Talk/index.html#type-machine">Talk.machine</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Playground/index.html#type-shape">Playground.shape</a> list</span>)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>unit <a href="../Talk/index.html#type-talk">Talk.talk</a></span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>(<span><a href="#type-state">state</a> <a href="../Playground/index.html#type-game">Playground.game</a></span>, <a href="../Playground/index.html#type-msg">Playground.msg</a>)</span> <a href="../Playground/index.html#type-app">Playground.app</a></span></span></code></div></div></div></body></html>

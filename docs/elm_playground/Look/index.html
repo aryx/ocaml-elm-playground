@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>Look (elm_playground.Look)</title><meta charset="utf-8"/><link rel="stylesheet" href="../../odoc.support/odoc.css"/><meta name="generator" content="odoc 3.1.0"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><script src="../../odoc.support/highlight.pack.js"></script><script>hljs.initHighlightingOnLoad();</script></head><body class="odoc"><nav class="odoc-nav"><a href="../index.html">Up</a> – <a href="../../index.html">Index</a> &#x00BB; <a href="../index.html">elm_playground</a> &#x00BB; Look</nav><header class="odoc-preamble"><h1>Module <code><span>Look</span></code></h1></header><div class="odoc-content"><div class="odoc-spec"><div class="spec value anchored" id="val-face"><a href="#val-face" class="anchor"></a><code><span><span class="keyword">val</span> face : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span> <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span> <a href="../Color/index.html#type-t">Color.t</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-text_at"><a href="#val-text_at" class="anchor"></a><code><span><span class="keyword">val</span> text_at : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span> <span>string <span class="arrow">&#45;&gt;</span></span> <a href="../Widget/index.html#type-paint">Widget.paint</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-label"><a href="#val-label" class="anchor"></a><code><span><span class="keyword">val</span> label : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span> <span>string <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-button"><a href="#val-button" class="anchor"></a><code><span><span class="keyword">val</span> button : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">enabled</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-checkbox"><a href="#val-checkbox" class="anchor"></a><code><span><span class="keyword">val</span> checkbox : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">checked</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-slider"><a href="#val-slider" class="anchor"></a><code><span><span class="keyword">val</span> slider : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">fraction</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-knob"><a href="#val-knob" class="anchor"></a><code><span><span class="keyword">val</span> knob : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">fraction</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-knob_angle"><a href="#val-knob_angle" class="anchor"></a><code><span><span class="keyword">val</span> knob_angle : <span>float <span class="arrow">&#45;&gt;</span></span> float</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-rocker"><a href="#val-rocker" class="anchor"></a><code><span><span class="keyword">val</span> rocker : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">on</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-selector"><a href="#val-selector" class="anchor"></a><code><span><span class="keyword">val</span> selector : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>string list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">index</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-selector_angle"><a href="#val-selector_angle" class="anchor"></a><code><span><span class="keyword">val</span> selector_angle : <span>int <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> float</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-slider_value"><a href="#val-slider_value" class="anchor"></a><code><span><span class="keyword">val</span> slider_value : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">from</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">to_</span>:float <span class="arrow">&#45;&gt;</span></span>
+  <span>float <span class="arrow">&#45;&gt;</span></span>
+  <span>float option</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-progress"><a href="#val-progress" class="anchor"></a><code><span><span class="keyword">val</span> progress : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span> <span>float <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-field"><a href="#val-field" class="anchor"></a><code><span><span class="keyword">val</span> field : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">caret</span>:<span>int option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">enabled</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-field_column_at"><a href="#val-field_column_at" class="anchor"></a><code><span><span class="keyword">val</span> field_column_at : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">caret</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span>float <span class="arrow">&#45;&gt;</span></span>
+  int</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-text_area"><a href="#val-text_area" class="anchor"></a><code><span><span class="keyword">val</span> text_area : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span><span>(int * string)</span> list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">range</span>:<span>(int * int)</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">caret</span>:<span><span>(int * int)</span> option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">first</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-columns"><a href="#val-columns" class="anchor"></a><code><span><span class="keyword">val</span> columns : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span> int</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-rows"><a href="#val-rows" class="anchor"></a><code><span><span class="keyword">val</span> rows : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span> int</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-text_area_place"><a href="#val-text_area_place" class="anchor"></a><code><span><span class="keyword">val</span> text_area_place : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">first</span>:int <span class="arrow">&#45;&gt;</span></span>
+  <span>float <span class="arrow">&#45;&gt;</span></span>
+  <span>float <span class="arrow">&#45;&gt;</span></span>
+  int * int</span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-list"><a href="#val-list" class="anchor"></a><code><span><span class="keyword">val</span> list : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>string list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">selected</span>:<span>int option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-list_row"><a href="#val-list_row" class="anchor"></a><code><span><span class="keyword">val</span> list_row : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <a href="../Widget/index.html#type-box">Widget.box</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-menu_closed"><a href="#val-menu_closed" class="anchor"></a><code><span><span class="keyword">val</span> menu_closed : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span>string <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">hot</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">held</span>:bool <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-menu_item"><a href="#val-menu_item" class="anchor"></a><code><span><span class="keyword">val</span> menu_item : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span> <span>int <span class="arrow">&#45;&gt;</span></span> <a href="../Widget/index.html#type-box">Widget.box</a></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-menu_items"><a href="#val-menu_items" class="anchor"></a><code><span><span class="keyword">val</span> menu_items : 
+  <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-box">Widget.box</a> <span class="arrow">&#45;&gt;</span></span>
+  <span><span>string list</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><span class="label">under</span>:<span>int option</span> <span class="arrow">&#45;&gt;</span></span>
+  <span><a href="../Widget/index.html#type-paint">Widget.paint</a> list</span></span></code></div></div><div class="odoc-spec"><div class="spec value anchored" id="val-context_box"><a href="#val-context_box" class="anchor"></a><code><span><span class="keyword">val</span> context_box : <span><a href="../Theme/index.html#type-t">Theme.t</a> <span class="arrow">&#45;&gt;</span></span> <span><span>(float * float)</span> <span class="arrow">&#45;&gt;</span></span> <span><span>string list</span> <span class="arrow">&#45;&gt;</span></span> <a href="../Widget/index.html#type-box">Widget.box</a></span></code></div></div></div></body></html>
