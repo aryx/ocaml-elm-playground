@@ -36,6 +36,7 @@ type category =
   | Attribute
   | Normal
   | Error
+  | Field
 
 let show = function
   | Comment -> "Comment"
@@ -63,11 +64,14 @@ let show = function
   | Attribute -> "Attribute"
   | Normal -> "Normal"
   | Error -> "Error"
+  | Field -> "Field"
 
+(* claude: a new category goes at the end: a category's place here is
+ * its byte in a code map's picture of a file *)
 let all =
   [| Comment; Comment_section; Keyword; Keyword_control; Keyword_module; Def_function; Def_value; Def_type; Def_module;
      Parameter; Local; Global; Module; Constructor; Type; Type_var; Label; Capability; Number; String; Operator;
-     Punctuation; Attribute; Normal; Error |]
+     Punctuation; Attribute; Normal; Error; Field |]
 
 let index (c : category) : int =
   let rec go i = if all.(i) = c then i else go (i + 1) in
@@ -104,6 +108,7 @@ let rgb = function
   | Attribute -> (238, 118, 0) (* DarkOrange2 *)
   | Normal -> (245, 222, 179) (* wheat *)
   | Error -> (255, 99, 71) (* tomato *)
+  | Field -> (159, 121, 238) (* MediumPurple2, codemap's field *)
 
 let background = (47, 79, 79) (* DarkSlateGray *)
 

@@ -38,6 +38,7 @@ type category =
   | Attribute (* [@...], a preprocessor's line *)
   | Normal
   | Error
+  | Field (* a record's field, where it is declared and where it is read: p.x *)
 
 val show : category -> string
 

@@ -50,7 +50,13 @@ let is_caps (s : string) : bool = String.length s >= 4 && String.sub s 0 4 = "ca
 (* a banner comment: (*****...*) *)
 let is_banner (t : Token_ml.t) : bool = t.kind = Comment && String.length t.text >= 6 && String.sub t.text 0 6 = "(*****"
 
-let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list =
+(*****************************************************************************)
+(* From the tokens: a guess *)
+(*****************************************************************************)
+
+(* claude: what the neighbours say; the tree then says better where it
+ * can ("From the tree" below) *)
+let guess (toks : Token_ml.t list) : (Token_ml.t * category) list =
   (* the code, without the comments, for looking at neighbours *)
   let code = Array.of_list (List.filter (fun (t : Token_ml.t) -> t.kind <> Comment) toks) in
   let m = Array.length code in
@@ -220,6 +226,184 @@ let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list =
     out := (t, c) :: !out
   done;
   List.rev !out
+
+(*****************************************************************************)
+(* From the tree *)
+(*****************************************************************************)
+
+(* claude: what the tree says of a name (Parse_ml, Ast_ml): the scopes
+ * (a parameter until its function ends, a local until its let's body or
+ * its case ends), the fields (p.x, { x = ... }, a record type's), the
+ * definitions, the constructors, types and modules where they are used.
+ * A token index to its category; what is not in it keeps the guess. *)
+open Ast_ml
+
+(* the names in scope: a parameter or a local *)
+type env = (string * category) list
+
+let resolve (file : file) : (int, category) Hashtbl.t =
+  let out = Hashtbl.create 1024 in
+  let mark (n : name) (c : category) = if n.tok >= 0 then Hashtbl.replace out n.tok c in
+  (* M.N.x: the modules, then the last as [last] *)
+  let path (l : longid) (last : category) =
+    List.iteri (fun i (n : name) -> mark n (if i = List.length l - 1 then last else Module)) l
+  in
+  let rec ty (t : ty) =
+    match t with
+    | Tany -> ()
+    | Tvar n -> mark n Type_var
+    | Tarrow (a, b) -> ty a; ty b
+    | Ttuple ts -> List.iter ty ts
+    | Tconstr (l, ts) -> path l Type; List.iter ty ts
+    | Tobject ms -> List.iter (fun (m, t) -> mark m Field; ty t) ms
+    | Tvariant (tags, others) -> List.iter (fun (n, ts) -> mark n Constructor; List.iter ty ts) tags; List.iter ty others
+    | Tpoly (ns, t) -> List.iter (fun n -> mark n Type_var) ns; ty t
+    | Tpackage l -> path l Module
+  in
+  (* a pattern's names, bound as [c]; returned, in scope after *)
+  let rec pat (c : category) (p : pat) : env =
+    match p with
+    | Pany | Pconst -> []
+    | Pvar n -> mark n c; [ (n.text, c) ]
+    | Ptuple ps | Plist ps -> List.concat_map (pat c) ps
+    | Pconstr (l, arg) -> path l Constructor; (match arg with Some p -> pat c p | None -> [])
+    | Pvariant (n, arg) -> mark n Constructor; (match arg with Some p -> pat c p | None -> [])
+    | Precord fields ->
+        List.concat_map
+          (fun (l, p) ->
+            path l Field;
+            (* { x } binds x *)
+            match p with Some p -> pat c p | None -> ( match List.rev l with n :: _ -> [ ({ n with tok = -1 }).text, c ] | [] -> []))
+          fields
+    | Por (a, b) -> pat c a @ pat c b
+    | Palias (p, n) -> mark n c; (n.text, c) :: pat c p
+    | Pconstraint (p, t) -> ty t; pat c p
+    | Pmodule n -> mark n Module; []
+    | Popen (l, p) -> path l Module; pat c p
+    | Pinner p -> pat c p
+  in
+  let rec expr (env : env) (e : expr) =
+    match e with
+    | Econst -> ()
+    (* in scope, or not a parameter nor a local at all: the guess, which
+     * knows a definition's locals but not where their scopes end, is
+     * overruled *)
+    | Eident [ n ] -> mark n (match List.assoc_opt n.text env with Some c -> c | None -> Normal)
+    | Eident l -> path l Global
+    | Econstr (l, arg) -> path l Constructor; Option.iter (expr env) arg
+    | Evariant (n, arg) -> mark n Constructor; Option.iter (expr env) arg
+    | Etuple es | Elist es | Eseq es | Emisc es -> List.iter (expr env) es
+    | Erecord (base, fields) ->
+        Option.iter (expr env) base;
+        List.iter (fun (l, v) -> path l Field; Option.iter (expr env) v) fields
+    | Efield (e, l) -> expr env e; path l Field
+    | Esetfield (e, l, v) -> expr env e; path l Field; expr env v
+    | Eapply (f, args) -> expr env f; List.iter (expr env) args
+    | Elet (recursive, bs, body) ->
+        let bound = List.concat_map (fun b -> pat Local b.bpat) bs in
+        List.iter (binding (if recursive then bound @ env else env)) bs;
+        expr (bound @ env) body
+    | Eletop (bs, body) ->
+        let bound = List.concat_map (fun b -> pat Local b.bpat) bs in
+        List.iter (binding env) bs;
+        expr (bound @ env) body
+    | Efun (ps, body) -> expr (params env ps @ env) body
+    | Efunction cs -> cases env cs
+    | Ematch (e, cs) -> expr env e; cases env cs
+    | Eif (c, a, b) -> expr env c; expr env a; Option.iter (expr env) b
+    | Ewhile (c, b) -> expr env c; expr env b
+    | Efor (i, a, b, body) -> mark i Local; expr env a; expr env b; expr ((i.text, Local) :: env) body
+    | Econstraint (e, t) -> expr env e; ty t
+    | Eletmodule (n, m, body) -> mark n Module; modexpr m; expr env body
+    | Eopen (m, e) -> modexpr m; expr env e
+    | Enewtype (n, e) -> mark n Type; expr env e
+    | Epack m -> modexpr m
+  (* a function's parameters, and their defaults *)
+  and params (env : env) (ps : param list) : env =
+    List.concat_map (fun (p, default) -> Option.iter (expr env) default; pat Parameter p) ps
+  and cases env cs =
+    List.iter
+      (fun c ->
+        let bound = pat Local c.cpat @ env in
+        Option.iter (expr bound) c.guard;
+        expr bound c.cbody)
+      cs
+  (* a local let's binding: its parameters in scope in its body *)
+  and binding (env : env) (b : binding) =
+    Option.iter ty b.bty;
+    expr (params env b.bparams @ env) b.bbody
+  and modexpr (m : modexpr) =
+    match m with
+    | Mident l -> path l Module
+    | Mstruct is -> List.iter item is
+    | Mfunctor (ps, m) -> List.iter (fun (n, t) -> mark n Module; Option.iter modtype t) ps; modexpr m
+    | Mapply (a, b) -> modexpr a; modexpr b
+    | Mconstraint (m, t) -> modexpr m; modtype t
+    | Munpack e -> expr [] e
+  and modtype (t : modtype) =
+    match t with
+    | MTident l -> path l Module
+    | MTsig is -> List.iter item is
+    | MTfunctor (ps, t) -> List.iter (fun (n, t) -> mark n Module; Option.iter modtype t) ps; modtype t
+    | MTwith (t, cs) -> modtype t; List.iter (fun (l, u) -> path l Type; ty u) cs
+    | MTtypeof m -> modexpr m
+  (* a top-level let: its name a definition, a function's or a value's *)
+  and top_binding (b : binding) =
+    (match b.bpat with
+    | Pvar n ->
+        let fn = b.bparams <> [] || (match b.bbody with Efun _ | Efunction _ -> true | _ -> false) in
+        mark n (if fn then Def_function else Def_value)
+    | p -> ignore (pat Def_value p));
+    binding [] b
+  and constr (c : constr) =
+    mark c.cname Constructor;
+    List.iter ty c.cargs;
+    List.iter field c.crecord;
+    Option.iter ty c.cres
+  and field (f : Ast_ml.field) = mark f.fname Field; ty f.fty
+  and item (it : item) =
+    match it with
+    | Ilet (recursive, bs) ->
+        ignore recursive;
+        List.iter top_binding bs
+    | Itype ds ->
+        List.iter
+          (fun d ->
+            mark d.tname Def_type;
+            List.iter (fun n -> mark n Type_var) d.tparams;
+            Option.iter ty d.tmanifest;
+            match d.tkind with
+            | Kabstract | Kopen -> ()
+            | Kvariant cs -> List.iter constr cs
+            | Krecord fs -> List.iter field fs)
+          ds
+    | Iexception c -> constr c; mark c.cname Def_type
+    | Iexternal (n, t) -> mark n Def_function; ty t
+    | Ival (n, t) -> mark n (match t with Tarrow _ -> Def_function | _ -> Def_value); ty t
+    | Imodule (n, m) -> mark n Def_module; modexpr m
+    | Imodsig (n, t) -> mark n Def_module; modtype t
+    | Imodtype (n, t) -> mark n Def_module; Option.iter modtype t
+    | Iopen m | Iinclude m -> modexpr m
+    | Ieval e -> expr [] e
+    | Iclass es -> List.iter (expr []) es
+  in
+  List.iter item file.items;
+  out
+
+(* the guess, and over it what the tree says: of a name only (a
+ * lowercase or an uppercase one), and not of a capability, which the
+ * repository's habits say better than the grammar (Cap.x, caps) *)
+let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list =
+  let tree = resolve (Parse_ml.parse toks) in
+  (* an array, not List.mapi: a recursion a token, which a browser's
+   * stack does not hold (the lines' comment below) *)
+  Array.to_list
+    (Array.mapi
+       (fun i ((t : Token_ml.t), c) ->
+         match Hashtbl.find_opt tree i with
+         | Some c' when (t.kind = Lident || t.kind = Uident) && c <> Capability -> (t, c')
+         | _ -> (t, c))
+       (Array.of_list (guess toks)))
 
 (* claude: rev_map and rev, not List.map: OCaml 4.14's map recurses once
  * a token, which natively's stack holds but a browser's does not -- on
