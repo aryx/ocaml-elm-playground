@@ -77,7 +77,7 @@
    kit_cards kit_crush kit_heightmap kit_isometric kit_lightcycles
    kit_maze kit_platformer kit_puzzle kit_racing kit_racing3d
    kit_rhythm kit_rts kit_sectors kit_segments kit_shmup kit_sports
-   media_player music_voices myst networking networking_mail photos
+   media_player music_voices music_parts myst networking networking_mail photos
    physics_2d physics_3d random scheme scratch sexpr smalltalk unix lang_html lang_css browser_layout
  ))
 

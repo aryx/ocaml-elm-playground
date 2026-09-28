@@ -23,6 +23,7 @@
     elm_core
     elm_playground
     music_voices
+    music_parts
     elm_playground_software ; implem of virtual elm_playground
   )
 )

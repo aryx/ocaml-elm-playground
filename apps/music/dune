@@ -32,6 +32,17 @@
  (modules_without_implementation Voice)
  (libraries audio audio_instruments audio_effects audio_mod))
 
+; the instruments' panels as parts (Component.mli, the office's idea),
+; hosted by the stand-alone apps, TinyReface and a rack
+; (plan_tiny_reason.md): Part_xxx over Voice_xxx, and what their hosts
+; share, Panel (a part's own widgets), Piano (the keyboard and the
+; letters), Meters (spectrum, scope)
+(library
+ (name music_parts)
+ (wrapped false)
+ (modules Panel Piano Meters Part_voice Part_hammond)
+ (libraries elm_core elm_playground gui appkit_embed audio audio_signal music_voices))
+
 (executables
   (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
   (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
@@ -40,6 +51,7 @@
     elm_core
     elm_playground
     music_voices
+    music_parts
     elm_playground_native ; implem of virtual elm_playground
   )
 )

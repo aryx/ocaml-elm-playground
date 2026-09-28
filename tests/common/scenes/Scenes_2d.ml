@@ -1287,6 +1287,10 @@ let scripted : Golden_scene.scripted list =
      * the Rhodes' knobs, the DX7's algorithm and outputs, the scope *)
     ("apps/music/software/TinyReface", "cp", 30, "at(-30;420):1-4,click:2,a:8-40,d:8-40,g:8-40");
     ("apps/music/software/TinyReface", "dx", 30, "at(40;420):1-4,click:2,a:8-40,d:8-40,g:8-40");
+    (* claude: the YC's panel, TinyHammond's own scaled into the case:
+     * its 4' drawbar dragged out, the mouse mapped back through the
+     * scaling *)
+    ("apps/music/software/TinyReface", "drawbar", 30, "at(-85;229):1-12,at(-85;170):13-30,click:5-30");
     (* claude: the lead (track 4) on M3, step 1 held with shift: its
      * cutoff lock (0.3) on the knob and its bar, the steps with locks
      * dotted *)
