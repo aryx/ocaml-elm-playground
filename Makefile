@@ -210,6 +210,21 @@ website:
 	printf '<html>\n  <head>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
 	  $(ASSETS_URL)/js/launcher/Tinybox_web.bc.js > docs/tinybox.html
 
+# claude: make website, then both repositories committed and pushed: the
+# assets first (the programs, the thumbnails), so that no page points at
+# a program not yet online, then this one -- only what make website
+# writes, not what else docs/ may hold (a screenshot not yet committed).
+# Nothing committed where nothing changed.
+WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html tinybox.html)
+publish:
+	make website
+	git -C $(ASSETS) add -A js pngs
+	git -C $(ASSETS) diff --cached --quiet || git -C $(ASSETS) commit -q -m "make publish: the programs of $$(git rev-parse --short HEAD)"
+	git -C $(ASSETS) push -q origin HEAD
+	git add -A $(WEBSITE_PATHS)
+	git diff --cached --quiet -- $(WEBSITE_PATHS) || git commit -q -m "website: make publish" -- $(WEBSITE_PATHS)
+	git push -q origin HEAD
+
 # Preview the site at http://localhost:8000
 serve:
 	python3 -m http.server --directory docs 8000
