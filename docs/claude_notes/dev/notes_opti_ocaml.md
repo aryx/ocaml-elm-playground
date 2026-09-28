@@ -48,6 +48,7 @@ Names to recognize in a profile, each a section below:
 | a small function's own name, called millions of times | not inlined | 5 |
 | one function's cost growing with the file, not the screen | work redone each frame | 7 |
 | the renderer's fills, the decoder fast | a picture drawn as shapes | 8 |
+| `mark_slice`, `sweep_slice` (the major GC) high, the program's own code not | a minor heap too small for the program's short-lived data | 16 |
 
 ## 1. Polymorphic comparison: `min`, `max`, `compare`, `=`
 
@@ -407,6 +408,51 @@ JavaScript, a loop over every byte is a loop of function calls; what
 the browser already does in native code (encoding a PNG, building a
 string, copying memory) should be left to it, and on the web the
 profile shows at once which of our loops is doing the browser's job.
+
+## 16. The collector's parameters: a minor heap too small
+
+**Symptom**: ix's mini-9pi (kernel/9pi, a Plan 9 kernel in OCaml,
+ocaml-light's runtime) boots to rc's prompt under mini-qemu in 13.5 s,
+30 to 50% of it in the major collector (`mark_slice`, `sweep_slice`,
+by mini-qemu's `-status`), none of it in one function of the kernel's.
+
+**Why**: the runtime's defaults (ocaml-light's config.h, 1997's
+machines): a minor heap of 32k words (128 KB on a 32-bit Pi1), a 42%
+space overhead, a heap grown by 62k words. A boot allocates ~13 MB of
+mostly short-lived data: the small minor heap fills 100 times, each
+time promoting what is still alive only because it is recent, and each
+promotion is major work: 43 major cycles, each marking and sweeping the
+whole (small) heap. Counted with the runtime's own trace
+(CAMLRUNPARAM's v, which a kernel had to be given: its getenv).
+
+**Fix**: no code, a parameter. Each tried alone, then together (a
+script, kernel/9pi/tests/perf/gc_boot.sh, the median of 3 boots):
+
+| CAMLRUNPARAM | boot | minor | major |
+|---|---|---|---|
+| (the defaults) | 13.5 s | 100 | 43 |
+| `s=256k` (the minor heap, 1 MB) | 9.4 s | 12 | 6 |
+| `o=200` (the space overhead) | 10.2 s | 100 | 48 |
+| `h=1M,i=1M` (the heap, its increment) | 12.4 s | 102 | 55 |
+| all four | 9.1 s | 13 | 7 |
+| `s=1M,o=200,h=4M,i=1M` | 8.6 s | 4 | 2 |
+
+The minor heap is nearly all of it: most of a boot's data dies young,
+and a nursery big enough lets it die there. The rest is noise
+against a floor near 8 s, the boot's own work. On the 64-bit Pi4,
+whose default minor heap is already twice as big in bytes, `s=256k`
+took the boot from 9.7 s to 8.1 (61 minor collections to 7, 42 major
+cycles to 4). The cost is memory: 1 MB of a kernel's 91 (2 on the
+Pi4). It is the kernels' default now, a switch (`make CAMLRUNPARAM=`
+for the runtime's own).
+
+**Where**: ix's kernel/lib (libc.c's getenv, kernel.mk's CAMLRUNPARAM),
+2026-09-28. The general lesson, for any OCaml program that allocates
+much and keeps little (a compiler's pass, a parser, a kernel's boot):
+try the minor heap's size before any code change
+(OCAMLRUNPARAM=s=256k, or Gc.set at start), and count the collections
+(OCAMLRUNPARAM=v=0x400 in today's OCaml prints them at exit) before
+profiling code that is not the cost.
 
 ## The .mpg decoder, step by step
 
