@@ -132,6 +132,27 @@ let occurrences (tokens : (int * int * string) array) (binds : (int, int) Hashtb
       { line = line - 1; col; len = String.length text; bound_at = (bline - 1, bcol) } :: acc)
     binds []
 
+type space = Value | Type | Constr | Tag
+type definition = { dname : string; dspace : space; dline : int; dcol : int; drank : int }
+type reference = { rline : int; rcol : int; rlen : int; rpath : string list; rname : string; rspace : space }
+
+type analysis = {
+  spans : span list array;
+  occurrences : occurrence list;
+  definitions : definition list;
+  references : reference list;
+  opens : string list;
+  includes : string list;
+}
+
+let definition (tokens : (int * int * string) array) (i : int) (space : space) (rank : int) : definition =
+  let line, col, text = tokens.(i) in
+  { dname = text; dspace = space; dline = line - 1; dcol = col; drank = rank }
+
+let reference (tokens : (int * int * string) array) (i : int) (path : string list) (space : space) : reference =
+  let line, col, text = tokens.(i) in
+  { rline = line - 1; rcol = col; rlen = String.length text; rpath = path; rname = text; rspace = space }
+
 let lines (src : string) (tokens : (int * int * string * category) list) : span list array =
   let nlines = List.length (String.split_on_char '\n' src) in
   let out = Array.make nlines [] in

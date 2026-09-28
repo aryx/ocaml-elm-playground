@@ -13,6 +13,13 @@ type t = {
   marks : int list; (* claude: the lines (from 0) saying [trick] *)
   names : Highlight_code.occurrence list array; (* claude: a line's names bound in the file (parameters, locals, top-level definitions) *)
   uses : (int * int, Highlight_code.occurrence list) Hashtbl.t; (* ... by their binding's place *)
+  (* claude: for the other files (plan_codemap_naming.md, level 3,
+     Highlight_code.analysis): its top-level definitions, a line's names
+     defined elsewhere, its opens (OCaml) and own headers (C) *)
+  definitions : Highlight_code.definition list;
+  refs : Highlight_code.reference list array;
+  opens : string list;
+  includes : string list;
 }
 
 (* claude: "the trick of this game", what a game faking 3D (and a few
@@ -39,6 +46,9 @@ val at : t -> int -> int -> Highlight_code.category option
    the binding itself and its uses *)
 val name_at : t -> int -> int -> Highlight_code.occurrence option
 val uses : t -> Highlight_code.occurrence -> Highlight_code.occurrence list
+
+(* claude: the name defined elsewhere at a line and a column, if any *)
+val ref_at : t -> int -> int -> Highlight_code.reference option
 
 (* the modules [src] names: M in M.x, open M, include M *)
 val modules_used : string -> string list

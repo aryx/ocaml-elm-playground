@@ -243,7 +243,10 @@ type env = (string * (category * int)) list
 
 (* claude: and [binds], a name's token to its binding's (a binding's to
  * its own): where a use is bound, its uses those bound to one token *)
-let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
+let resolve (file : file) :
+    (int, category) Hashtbl.t
+    * (int, int) Hashtbl.t
+    * ((int * Highlight_code.space) list * (int * string list * Highlight_code.space) list * string list) =
   let out = Hashtbl.create 1024 in
   let binds = Hashtbl.create 256 in
   let mark (n : name) (c : category) = if n.tok >= 0 then Hashtbl.replace out n.tok c in
@@ -258,20 +261,31 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
    * own namespace as in OCaml. A name no local binds is bound to the
    * latest of its kind; a module's struct keeps its own to itself *)
   let top_values : env ref = ref [] and top_types : env ref = ref [] and top_constrs : env ref = ref [] in
-  let define (r : env ref) (n : name) (c : category) =
+  (* claude: and for other files (level 3): the file's own top-level
+   * definitions (not a nested module's, [depth] > 0), its names defined
+   * elsewhere (M.x, or not defined here), its opens; tokens' indexes *)
+  let defs = ref [] and refs = ref [] and opens = ref [] and depth = ref 0 in
+  let define (r : env ref) (space : Highlight_code.space) (n : name) (c : category) =
     if n.tok >= 0 then begin
       Hashtbl.replace binds n.tok n.tok;
-      r := (n.text, (c, n.tok)) :: !r
+      r := (n.text, (c, n.tok)) :: !r;
+      if !depth = 0 then defs := (n.tok, space) :: !defs
     end
   in
-  let refer (r : env ref) (l : longid) =
-    match l with
-    | [ n ] -> ( match List.assoc_opt n.text !r with Some (_, b) when n.tok >= 0 && b >= 0 -> Hashtbl.replace binds n.tok b | _ -> ())
-    | _ -> ()
+  let refer (r : env ref) (space : Highlight_code.space) (l : longid) =
+    match List.rev l with
+    | [ n ] -> (
+        match List.assoc_opt n.text !r with
+        | Some (_, b) -> if n.tok >= 0 && b >= 0 then Hashtbl.replace binds n.tok b
+        | None -> if n.tok >= 0 then refs := (n.tok, [], space) :: !refs)
+    | n :: ms -> if n.tok >= 0 then refs := (n.tok, List.rev_map (fun (m : name) -> m.text) ms, space) :: !refs
+    | [] -> ()
   in
   let scoped (f : unit -> unit) =
     let v, t, c = (!top_values, !top_types, !top_constrs) in
+    incr depth;
     f ();
+    decr depth;
     top_values := v;
     top_types := t;
     top_constrs := c
@@ -286,7 +300,7 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
     | Tvar n -> mark n Type_var
     | Tarrow (a, b) -> ty a; ty b
     | Ttuple ts -> List.iter ty ts
-    | Tconstr (l, ts) -> path l Type; refer top_types l; List.iter ty ts
+    | Tconstr (l, ts) -> path l Type; refer top_types Type l; List.iter ty ts
     | Tobject ms -> List.iter (fun (m, t) -> mark m Field; ty t) ms
     | Tvariant (tags, others) -> List.iter (fun (n, ts) -> mark n Constructor; List.iter ty ts) tags; List.iter ty others
     | Tpoly (ns, t) -> List.iter (fun n -> mark n Type_var) ns; ty t
@@ -298,7 +312,7 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
     | Pany | Pconst -> []
     | Pvar n -> [ bind n c ]
     | Ptuple ps | Plist ps -> List.concat_map (pat c) ps
-    | Pconstr (l, arg) -> path l Constructor; refer top_constrs l; (match arg with Some p -> pat c p | None -> [])
+    | Pconstr (l, arg) -> path l Constructor; refer top_constrs Constr l; (match arg with Some p -> pat c p | None -> [])
     | Pvariant (n, arg) -> mark n Constructor; (match arg with Some p -> pat c p | None -> [])
     | Precord fields ->
         List.concat_map
@@ -334,9 +348,9 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
             if n.tok >= 0 && b >= 0 then Hashtbl.replace binds n.tok b
         | None ->
             mark n Normal;
-            refer top_values [ n ])
-    | Eident l -> path l Global
-    | Econstr (l, arg) -> path l Constructor; refer top_constrs l; Option.iter (expr env) arg
+            refer top_values Value [ n ])
+    | Eident l -> path l Global; refer top_values Value l
+    | Econstr (l, arg) -> path l Constructor; refer top_constrs Constr l; Option.iter (expr env) arg
     | Evariant (n, arg) -> mark n Constructor; Option.iter (expr env) arg
     | Etuple es | Elist es | Eseq es | Emisc es -> List.iter (expr env) es
     | Erecord (base, fields) ->
@@ -415,7 +429,13 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
         (* its names seen by its bodies if rec, after them if not *)
         let names () =
           List.iter
-            (fun b -> match b.bpat with Pvar n -> define top_values n Def_value | p -> top_values := pat Def_value p @ !top_values)
+            (fun b ->
+              match b.bpat with
+              | Pvar n -> define top_values Value n Def_value
+              | p ->
+                  let bound = pat Def_value p in
+                  top_values := bound @ !top_values;
+                  if !depth = 0 then List.iter (fun (_, (_, tok)) -> if tok >= 0 then defs := (tok, Highlight_code.Value) :: !defs) bound)
             bs
         in
         if recursive then (names (); List.iter top_binding bs) else (List.iter top_binding bs; names ())
@@ -423,8 +443,8 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
         (* recursive: all its types and constructors seen by all *)
         List.iter
           (fun d ->
-            define top_types d.tname Def_type;
-            match d.tkind with Kvariant cs -> List.iter (fun c -> define top_constrs c.cname Constructor) cs | _ -> ())
+            define top_types Type d.tname Def_type;
+            match d.tkind with Kvariant cs -> List.iter (fun c -> define top_constrs Constr c.cname Constructor) cs | _ -> ())
           ds;
         List.iter
           (fun d ->
@@ -436,24 +456,27 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
             | Kvariant cs -> List.iter constr cs
             | Krecord fs -> List.iter field fs)
           ds
-    | Iexception c -> constr c; mark c.cname Def_type; define top_constrs c.cname Def_type
-    | Iexternal (n, t) -> mark n Def_function; ty t; define top_values n Def_function
-    | Ival (n, t) -> mark n (match t with Tarrow _ -> Def_function | _ -> Def_value); ty t; define top_values n Def_value
+    | Iexception c -> constr c; mark c.cname Def_type; define top_constrs Constr c.cname Def_type
+    | Iexternal (n, t) -> mark n Def_function; ty t; define top_values Value n Def_function
+    | Ival (n, t) -> mark n (match t with Tarrow _ -> Def_function | _ -> Def_value); ty t; define top_values Value n Def_value
     | Imodule (n, m) -> mark n Def_module; modexpr m
     | Imodsig (n, t) -> mark n Def_module; modtype t
     | Imodtype (n, t) -> mark n Def_module; Option.iter modtype t
-    | Iopen m | Iinclude m -> modexpr m
+    | Iopen m ->
+        (match m with Mident l when !depth = 0 -> ( match List.rev l with n :: _ -> opens := n.text :: !opens | [] -> ()) | _ -> ());
+        modexpr m
+    | Iinclude m -> modexpr m
     | Ieval e -> expr [] e
     | Iclass es -> List.iter (expr []) es
   in
   List.iter item file.items;
-  (out, binds)
+  (out, binds, (List.rev !defs, List.rev !refs, List.rev !opens))
 
 (* the guess, and over it what the tree says: of a name only (a
  * lowercase or an uppercase one), and not of a capability, which the
  * repository's habits say better than the grammar (Cap.x, caps) *)
-let categorize_bound (toks : Token_ml.t list) : (Token_ml.t * category) list * (int, int) Hashtbl.t =
-  let tree, binds = resolve (Parse_ml.parse toks) in
+let categorize_bound (toks : Token_ml.t list) =
+  let tree, binds, others = resolve (Parse_ml.parse toks) in
   (* an array, not List.mapi: a recursion a token, which a browser's
    * stack does not hold (the lines' comment below) *)
   ( Array.to_list
@@ -463,9 +486,12 @@ let categorize_bound (toks : Token_ml.t list) : (Token_ml.t * category) list * (
            | Some c' when (t.kind = Lident || t.kind = Uident) && c <> Capability -> (t, c')
            | _ -> (t, c))
          (Array.of_list (guess toks))),
-    binds )
+    binds,
+    others )
 
-let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list = fst (categorize_bound toks)
+let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list =
+  let cats, _, _ = categorize_bound toks in
+  cats
 
 (* claude: rev_map and rev, not List.map: OCaml 4.14's map recurses once
  * a token, which natively's stack holds but a browser's does not -- on
@@ -474,10 +500,18 @@ let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list = fst (ca
  *
  *   old: List.map (fun ...) (categorize (Lexer_ml.tokens src))
  *)
-let analyze (src : string) : span list array * occurrence list =
+let analyze (src : string) : analysis =
   let toks = Lexer_ml.tokens src in
-  let cats, binds = categorize_bound toks in
-  ( Highlight_code.lines src (List.rev (List.rev_map (fun ((t : Token_ml.t), c) -> (t.line, t.col, t.text, c)) cats)),
-    Highlight_code.occurrences (Array.of_list (List.map (fun (t : Token_ml.t) -> (t.line, t.col, t.text)) toks)) binds )
+  let cats, binds, (defs, refs, opens) = categorize_bound toks in
+  (* claude: Array.map, not List.map (above) *)
+  let places = Array.map (fun (t : Token_ml.t) -> (t.line, t.col, t.text)) (Array.of_list toks) in
+  {
+    spans = Highlight_code.lines src (List.rev (List.rev_map (fun ((t : Token_ml.t), c) -> (t.line, t.col, t.text, c)) cats));
+    occurrences = Highlight_code.occurrences places binds;
+    definitions = List.rev (List.rev_map (fun (tok, space) -> Highlight_code.definition places tok space 3) defs);
+    references = List.rev (List.rev_map (fun (tok, path, space) -> Highlight_code.reference places tok path space) refs);
+    opens;
+    includes = [];
+  }
 
-let lines (src : string) : span list array = fst (analyze src)
+let lines (src : string) : span list array = (analyze src).spans

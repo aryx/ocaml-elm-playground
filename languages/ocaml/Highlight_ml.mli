@@ -27,5 +27,7 @@ val lines : string -> Highlight_code.span list array
 (* claude: the same, and where the names bound in the file are (the
    parameters and locals, and the top-level values, types and
    constructors, the latest before a use: Highlight_code.occurrence),
-   from one parse *)
-val analyze : string -> Highlight_code.span list array * Highlight_code.occurrence list
+   and for the other files what it defines at its top, the names it
+   uses that are defined elsewhere (M.x, or not here) and its opens --
+   from one parse (Highlight_code.analysis) *)
+val analyze : string -> Highlight_code.analysis

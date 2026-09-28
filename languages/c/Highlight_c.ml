@@ -56,7 +56,8 @@ type env = (string * (category * int)) list
 
 (* claude: and [binds], a name's token to its binding's (a binding's to
  * its own), as Highlight_ml's *)
-let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
+let resolve (file : file) :
+    (int, category) Hashtbl.t * (int, int) Hashtbl.t * ((int * Highlight_code.space * int) list * (int * Highlight_code.space) list) =
   let out = Hashtbl.create 1024 in
   let binds = Hashtbl.create 256 in
   let mark (n : name) (c : category) = if n.tok >= 0 then Hashtbl.replace out n.tok c in
@@ -73,10 +74,15 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
    * definition (a function's body, a global) over a prototype over a
    * macro, and every declaration of the name bound to it *)
   let values = Hashtbl.create 64 and types = Hashtbl.create 16 and tags = Hashtbl.create 16 in
+  let space_of tbl : Highlight_code.space = if tbl == types then Type else if tbl == tags then Tag else Value in
   let declared = ref [] in
+  (* claude: and for other files (level 3): the file's definitions, with
+   * their rank, and the names it uses that it does not define *)
+  let defs = ref [] and refs = ref [] in
   let declare tbl (n : name) (rank : int) =
     if n.tok >= 0 then begin
       declared := (tbl, n) :: !declared;
+      defs := (n.tok, space_of tbl, rank) :: !defs;
       match Hashtbl.find_opt tbl n.text with Some (r, _) when r >= rank -> () | _ -> Hashtbl.replace tbl n.text (rank, n.tok)
     end
   in
@@ -99,7 +105,12 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
       | Imacro _ -> ())
     file.items;
   List.iter (fun (tbl, (n : name)) -> match Hashtbl.find_opt tbl n.text with Some (_, b) -> Hashtbl.replace binds n.tok b | None -> ()) !declared;
-  let refer tbl (n : name) = match Hashtbl.find_opt tbl n.text with Some (_, b) when n.tok >= 0 -> Hashtbl.replace binds n.tok b | _ -> () in
+  let refer tbl (n : name) =
+    if n.tok >= 0 then
+      match Hashtbl.find_opt tbl n.text with
+      | Some (_, b) -> Hashtbl.replace binds n.tok b
+      | None -> refs := (n.tok, space_of tbl) :: !refs
+  in
   (* the file's constants: its enums', its #defines' without parameters *)
   let constants = Hashtbl.create 64 in
   List.iter (fun d -> if d.mparams = None then Hashtbl.replace constants d.mname.text ()) file.defines;
@@ -217,12 +228,12 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
         d.mbody)
     file.defines;
   List.iter item file.items;
-  (out, binds)
+  (out, binds, (List.rev !defs, List.rev !refs))
 
 (* the kinds' categories, and over them what the tree says of the names;
  * a banner, and the title between two, a section *)
-let categorize_bound (toks : Token_c.t list) : (Token_c.t * category) list * (int, int) Hashtbl.t =
-  let tree, binds = resolve (Parse_c.parse toks) in
+let categorize_bound (toks : Token_c.t list) =
+  let tree, binds, others = resolve (Parse_c.parse toks) in
   let all = Array.of_list toks in
   let n = Array.length all in
   ( Array.to_list
@@ -237,15 +248,39 @@ let categorize_bound (toks : Token_c.t list) : (Token_c.t * category) list * (in
            in
            (t, c))
          all),
-    binds )
+    binds,
+    others )
 
-let categorize (toks : Token_c.t list) : (Token_c.t * category) list = fst (categorize_bound toks)
+let categorize (toks : Token_c.t list) : (Token_c.t * category) list =
+  let cats, _, _ = categorize_bound toks in
+  cats
 
-(* claude: rev_map and rev, not List.map (Highlight_ml.lines says why) *)
-let analyze (src : string) : span list array * occurrence list =
+(* claude: the headers of its own a file includes, #include "x.h" (not
+ * <x.h>): their names *)
+let includes (all : Token_c.t array) : string list =
+  let out = ref [] in
+  Array.iteri
+    (fun i (t : Token_c.t) ->
+      if t.kind = Directive && String.trim (String.sub t.text 1 (String.length t.text - 1)) = "include" && i + 1 < Array.length all then
+        let s = all.(i + 1).text in
+        if all.(i + 1).kind = String && String.length s >= 2 && s.[0] = '"' then out := String.sub s 1 (String.length s - 2) :: !out)
+    all;
+  List.rev !out
+
+(* claude: rev_map and rev, and arrays, not List.map (Highlight_ml.lines
+ * says why) *)
+let analyze (src : string) : analysis =
   let toks = Lexer_c.tokens src in
-  let cats, binds = categorize_bound toks in
-  ( Highlight_code.lines src (List.rev (List.rev_map (fun ((t : Token_c.t), c) -> (t.line, t.col, t.text, c)) cats)),
-    Highlight_code.occurrences (Array.of_list (List.map (fun (t : Token_c.t) -> (t.line, t.col, t.text)) toks)) binds )
+  let cats, binds, (defs, refs) = categorize_bound toks in
+  let all = Array.of_list toks in
+  let places = Array.map (fun (t : Token_c.t) -> (t.line, t.col, t.text)) all in
+  {
+    spans = Highlight_code.lines src (List.rev (List.rev_map (fun ((t : Token_c.t), c) -> (t.line, t.col, t.text, c)) cats));
+    occurrences = Highlight_code.occurrences places binds;
+    definitions = List.rev (List.rev_map (fun (tok, space, rank) -> Highlight_code.definition places tok space rank) defs);
+    references = List.rev (List.rev_map (fun (tok, space) -> Highlight_code.reference places tok [] space) refs);
+    opens = [];
+    includes = includes all;
+  }
 
-let lines (src : string) : span list array = fst (analyze src)
+let lines (src : string) : span list array = (analyze src).spans

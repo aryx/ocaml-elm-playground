@@ -26,5 +26,8 @@ val lines : string -> Highlight_code.span list array
 (* claude: the same, and where the names bound in the file are (the
    parameters and locals, a #define's parameters, and the top-level
    functions, globals, typedefs, tags and macros, a definition before a
-   prototype: Highlight_code.occurrence), from one parse *)
-val analyze : string -> Highlight_code.span list array * Highlight_code.occurrence list
+   prototype: Highlight_code.occurrence), and for the other files what
+   it defines at its top (ranked), the names it uses without defining
+   them, and its own headers (#include "x.h") -- from one parse
+   (Highlight_code.analysis) *)
+val analyze : string -> Highlight_code.analysis

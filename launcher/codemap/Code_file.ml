@@ -19,6 +19,10 @@ type t = {
   marks : int list;
   names : Highlight_code.occurrence list array;
   uses : (int * int, Highlight_code.occurrence list) Hashtbl.t;
+  definitions : Highlight_code.definition list;
+  refs : Highlight_code.reference list array;
+  opens : string list;
+  includes : string list;
 }
 
 let cols = 80
@@ -32,11 +36,15 @@ let make (path : string) (src : string) : t =
    * OCaml's lexer gives up on it *)
   let ocaml = List.exists (Filename.check_suffix path) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
   let c = List.exists (Filename.check_suffix path) [ ".c"; ".h" ] in
-  let lines, occurrences =
-    if ocaml then (try Highlight_ml.analyze src with _ -> (plain src, []))
-    else if c then (try Highlight_c.analyze src with _ -> (plain src, []))
-    else (plain src, [])
+  let plainly () : Highlight_code.analysis =
+    { spans = plain src; occurrences = []; definitions = []; references = []; opens = []; includes = [] }
   in
+  let an =
+    if ocaml then (try Highlight_ml.analyze src with _ -> plainly ())
+    else if c then (try Highlight_c.analyze src with _ -> plainly ())
+    else plainly ()
+  in
+  let lines = an.spans and occurrences = an.occurrences in
   let n = Array.length lines in
   let grid = Bytes.make (n * cols) '\000' in
   let chars = Bytes.make (n * cols) '\000' in
@@ -90,7 +98,10 @@ let make (path : string) (src : string) : t =
       if o.line >= 0 && o.line < n then names.(o.line) <- o :: names.(o.line);
       Hashtbl.replace uses o.bound_at (o :: Option.value (Hashtbl.find_opt uses o.bound_at) ~default:[]))
     occurrences;
-  { path; lines; grid; chars; defs = List.rev !defs; marks; names; uses }
+  (* claude: the names defined elsewhere, by line (level 3) *)
+  let refs = Array.make n [] in
+  List.iter (fun (r : Highlight_code.reference) -> if r.rline >= 0 && r.rline < n then refs.(r.rline) <- r :: refs.(r.rline)) an.references;
+  { path; lines; grid; chars; defs = List.rev !defs; marks; names; uses; definitions = an.definitions; refs; opens = an.opens; includes = an.includes }
 
 let nlines (f : t) : int = Array.length f.lines
 
@@ -105,6 +116,10 @@ let modules_used = Code_deps.modules_used
 let name_at (f : t) (line : int) (col : int) : Highlight_code.occurrence option =
   if line < 0 || line >= nlines f then None
   else List.find_opt (fun (o : Highlight_code.occurrence) -> col >= o.col && col < o.col + o.len) f.names.(line)
+
+let ref_at (f : t) (line : int) (col : int) : Highlight_code.reference option =
+  if line < 0 || line >= nlines f then None
+  else List.find_opt (fun (r : Highlight_code.reference) -> col >= r.rcol && col < r.rcol + r.rlen) f.refs.(line)
 
 let uses (f : t) (o : Highlight_code.occurrence) : Highlight_code.occurrence list =
   Option.value (Hashtbl.find_opt f.uses o.bound_at) ~default:[]

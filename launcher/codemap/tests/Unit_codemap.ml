@@ -47,6 +47,45 @@ let tests =
             sizes rects;
           let a, b, c = match Treemap.ordered_layout [ 1.; 1.; 1. ] { x = 0.; y = 0.; w = 3.; h = 1. } with [ a; b; c ] -> (a, b, c) | _ -> assert false in
           Alcotest.(check bool) "three in a row, left to right" true (a.x < b.x && b.x < c.x));
+      (* claude: Code_names.mli's worked example, and OCaml's rules *)
+      Testo.create "names in other files" (fun () ->
+          let files srcs = List.map (fun (p, src) -> (p, lazy (Code_file.make p src))) srcs in
+          (* where [name], used in [from], goes; "!" if sure *)
+          let where fs from name =
+            let (f : Code_file.t) = Lazy.force (List.assoc from fs) in
+            let r =
+              List.find (fun (r : Highlight_code.reference) -> r.rname = name) (List.concat (Array.to_list f.refs))
+            in
+            let cs, sure = Code_names.find fs ~from f r in
+            String.concat " " (List.map (fun (c : Code_names.candidate) -> Printf.sprintf "%s:%d" c.path (c.line + 1)) cs)
+            ^ if sure then " !" else ""
+          in
+          let c =
+            files
+              [
+                ("rc/exec.c", "#include \"fns.h\"\nvoid f(void) { error(\"x\"); print(\"y\"); }\n");
+                ("rc/fns.h", "void error(char*);\n");
+                ("rc/subr.c", "void\nerror(char *s)\n{\n}\n");
+                ("sam/error.c", "void error(char *s) { }\n");
+                ("lib/error.c", "void error(char *s) { }\n");
+                ("lib/fmt.c", "int print(char *f) { return 0; }\n");
+              ]
+          in
+          Alcotest.(check string) "error: its own program's definition" "rc/subr.c:2 lib/error.c:1 sam/error.c:1 !" (where c "rc/exec.c" "error");
+          Alcotest.(check string) "print: the library's" "lib/fmt.c:1 !" (where c "rc/exec.c" "print");
+          let ml =
+            files
+              [
+                ("games/Main.ml", "open Road\nlet a = Road.curve 1\nlet b = straight 2\nlet c = Parser.parse 3\n");
+                ("games/Road.ml", "let curve x = x\nlet straight x = x\n");
+                ("games/Road.mli", "val curve : int -> int\nval straight : int -> int\n");
+                ("games/Parser.ml", "let parse x = x\n");
+                ("tools/Parser.ml", "let parse x = x\n");
+              ]
+          in
+          Alcotest.(check string) "M.x: the .ml, then the .mli" "games/Road.ml:1 games/Road.mli:1 !" (where ml "games/Main.ml" "curve");
+          Alcotest.(check string) "a bare name, from an open" "games/Road.ml:2 games/Road.mli:2 !" (where ml "games/Main.ml" "straight");
+          Alcotest.(check string) "two Parser.ml: the nearest" "games/Parser.ml:1 tools/Parser.ml:1 !" (where ml "games/Main.ml" "parse"));
       Testo.create "a file's grid and definitions" (fun () ->
           let f = Code_file.make "x.ml" "(*****)\n(* Model *)\n(*****)\nlet move p = p\ntype t = int\n" in
           Alcotest.(check (list (pair int string))) "the section, the function, the type"

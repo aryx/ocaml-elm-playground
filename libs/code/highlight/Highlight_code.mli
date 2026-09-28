@@ -76,6 +76,34 @@ type occurrence = { line : int; col : int; len : int; bound_at : int * int }
    to its binding's), the occurrences *)
 val occurrences : (int * int * string) array -> (int, int) Hashtbl.t -> occurrence list
 
+(* claude: across files (plan_codemap_naming.md, level 3). A name's
+   namespace: values (functions too), types, constructors (OCaml's),
+   struct and enum tags (C's) *)
+type space = Value | Type | Constr | Tag
+
+(* a file's top-level definition: its name, namespace, place (line from
+   0), and rank, how much of a definition it is: 3 a definition (a body,
+   a global), 2 a declaration (a C prototype), 1 a macro *)
+type definition = { dname : string; dspace : space; dline : int; dcol : int; drank : int }
+
+(* a name defined elsewhere, where it is used: M.x ([rpath] ["M"]), or a
+   bare name its file does not define ([rpath] []) *)
+type reference = { rline : int; rcol : int; rlen : int; rpath : string list; rname : string; rspace : space }
+
+(* all a highlighter knows of a file, from one parse *)
+type analysis = {
+  spans : span list array;
+  occurrences : occurrence list;
+  definitions : definition list;
+  references : reference list;
+  opens : string list; (* OCaml's top-level opens, in order *)
+  includes : string list; (* C's #include "x.h", their file names *)
+}
+
+(* from a token's index (as [occurrences]'s tokens) *)
+val definition : (int * int * string) array -> int -> space -> int -> definition
+val reference : (int * int * string) array -> int -> string list -> space -> reference
+
 (* [lines src tokens]: [src]'s lines, from its tokens, each given as its
    first line (from 1), its column (from 0), its text and its category;
    what lies between the tokens (spaces) is not in a span. *)

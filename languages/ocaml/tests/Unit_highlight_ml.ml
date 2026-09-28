@@ -22,7 +22,7 @@ let check (what : string) (src : string) (expected : string) : unit = Alcotest.(
 (* claude: a one-line source's bindings: each binding's column, then its
  * places' (itself and its uses), by column *)
 let bindings (src : string) : string =
-  let _, occs = Highlight_ml.analyze src in
+  let occs = (Highlight_ml.analyze src).occurrences in
   let groups = List.sort_uniq compare (List.map (fun (o : Highlight_code.occurrence) -> snd o.bound_at) occs) in
   List.map
     (fun b ->

@@ -63,6 +63,14 @@ type t = {
   order : (string, int) Hashtbl.t; (* claude: a file's place in the reading order, when numbered *)
   colours : (string * (int * int * int)) list; (* claude: a .codemapconfig's (archi) *)
   mutable jumped : (int * (int * int)) option; (* claude: the binding a click on a name went to: its file's index in [placed], its line and column *)
+  (* claude: across files (plan_codemap_naming.md, level 3): where the
+   * jumps came from (b goes back), the places to choose from when a name
+   * has several as near, a word for the status line, and the last
+   * search, kept while the mouse stays on its name *)
+  mutable back : (camera * (int * (int * int)) option) list;
+  mutable choices : Code_names.candidate list option;
+  mutable note : string;
+  mutable found : ((string * int * int) * (Code_names.candidate list * bool)) option;
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -106,7 +114,8 @@ let make ?(numbered = false) ?(colours = []) ~(area : float * float * int * int)
   let order = Hashtbl.create 64 in
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
-    before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None }
+    before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
+    back = []; choices = None; note = ""; found = None }
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries
@@ -463,6 +472,50 @@ let name_under (t : t) (u : float) (v : float) : (int * Highlight_code.occurrenc
       | _ -> None)
   | None -> None
 
+(* claude: the name defined elsewhere under a point of the layout
+ * (Code_file.ref_at, level 3): the file's index and its path, and the
+ * reference *)
+let ref_under (t : t) (u : float) (v : float) : (int * string * Highlight_code.reference) option =
+  match under t u v with
+  | Some i -> (
+      match (t.placed.(i).node, t.geometry.(i)) with
+      | File (_, _, e), Some g when Lazy.is_val e.file ->
+          let r = t.placed.(i).rect in
+          let k = int_of_float ((u -. r.x) /. g.colw) in
+          let col = int_of_float ((u -. r.x -. (float_of_int k *. g.colw)) /. g.cell_w) in
+          Option.map (fun x -> (i, e.path, x)) (Code_file.ref_at (Lazy.force e.file) (line_at g r u v) col)
+      | _ -> None)
+  | None -> None
+
+(* where it goes, among the map's files (Code_names), the last search kept *)
+let found (t : t) (i : int) (path : string) (r : Highlight_code.reference) : Code_names.candidate list * bool =
+  let key = (path, r.rline, r.rcol) in
+  match t.found with
+  | Some (k, res) when k = key -> res
+  | _ ->
+      let f = match t.placed.(i).node with File (_, _, e) -> Lazy.force e.file | Dir _ -> assert false in
+      let res = Code_names.find (List.map (fun (e : entry) -> (e.path, e.file)) t.entries) ~from:path f r in
+      t.found <- Some (key, res);
+      res
+
+(* claude: a candidate's place on the map, the camera moved there (b
+ * coming back), its name lit: its code a readable size, 10 units a line
+ * at least *)
+let go_to (t : t) (target : camera) (c : Code_names.candidate) : camera =
+  let at = ref None in
+  Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, e) when e.path = c.path -> at := Some i | _ -> ()) t.placed;
+  match !at with
+  | Some i -> (
+      match t.geometry.(i) with
+      | Some g ->
+          t.back <- (target, t.jumped) :: t.back;
+          t.jumped <- Some (i, (c.line, c.col));
+          t.choices <- None;
+          let x, y = name_pos t.placed.(i).rect g c.line c.col in
+          { target with cx = x; cy = y +. (g.cell_h /. 2.); z = Float.max target.z (10. /. g.cell_h) }
+      | None -> target)
+  | None -> target
+
 (* claude: the file under a point readable where the camera is: its code
  * read on the map itself, no glass needed *)
 let readable_at (t : t) (u : float) (v : float) : bool =
@@ -531,10 +584,24 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   (* a click: fly to what is under it. claude: a file stays in its
    * columns, on the map; there, a click on a name goes to its binding,
    * lit (plan_codemap_naming.md); Enter opens the file view *)
+  let choice = match t.choices with Some cs -> List.find_opt (fun k -> k <= List.length cs && pressed (string_of_int k)) [ 1; 2; 3; 4; 5; 6; 7; 8; 9 ] | None -> None in
   let target, action =
-    if pressed "Escape" then (target, Close)
+    if pressed "Escape" && t.choices <> None then (t.choices <- None; (target, Stay))
+    else if pressed "Escape" then (target, Close)
+    else if choice <> None then (go_to t target (List.nth (Option.get t.choices) (Option.get choice - 1)), Stay)
+    else if pressed "b" then
+      match t.back with
+      | (c, j) :: rest ->
+          t.back <- rest;
+          t.jumped <- j;
+          (c, Stay)
+      | [] -> (target, Stay)
     else if clicked || pressed "Enter" then begin
-      if clicked then t.jumped <- None;
+      if clicked then begin
+        t.jumped <- None;
+        t.choices <- None;
+        t.note <- ""
+      end;
       let u = to_u t.cam mpx and v = to_v t.cam mpy in
       match under t u v with
       | None -> (target, Stay)
@@ -555,7 +622,20 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
                     t.jumped <- Some (i, o.bound_at);
                     (* the camera moved only if the binding is off the map *)
                     if on a (to_px t.cam x) (to_py t.cam y) then (target, Stay) else ({ target with cx = x; cy = y +. (g.cell_h /. 2.) }, Stay)
-                | None -> (target, Stay)
+                | None -> (
+                    (* claude: defined elsewhere: there if sure, else the
+                     * places to choose from *)
+                    match ref_under t u v with
+                    | Some (_, path, r) -> (
+                        match found t i path r with
+                        | [], _ ->
+                            t.note <- r.rname ^ ": not in this map";
+                            (target, Stay)
+                        | c :: _, true -> (go_to t target c, Stay)
+                        | cs, false ->
+                            t.choices <- Some cs;
+                            (target, Stay))
+                    | None -> (target, Stay))
               else (there, Stay)
           | Dir _, _ -> (fit a p.rect, Stay)
           | _ -> (target, Stay))
@@ -747,7 +827,51 @@ let names_lit (computer : computer) (t : t) : shape list =
         | None -> [])
     | None -> []
   in
-  jumped @ hovered
+  (* claude: a name defined elsewhere, framed magenta (level 3) *)
+  let elsewhere =
+    if hovered <> [] || t.moving || not (on a mpx mpy && readable_at t u v) then []
+    else match ref_under t u v with Some (i, _, r) -> place i (r.rline, r.rcol) r.rlen (rgb 230 90 230) 0.3 | None -> []
+  in
+  (* the places to choose from, numbered *)
+  let choices =
+    match t.choices with
+    | Some cs ->
+        let cs = List.filteri (fun k _ -> k < 9) cs in
+        let n = List.length cs in
+        let row_h = 22. and w = 700. in
+        let top = computer.screen.bottom +. 90. +. (float_of_int n *. row_h) in
+        [ rectangle (rgb 20 18 40) w ((float_of_int n *. row_h) +. 40.) |> move 0. (top -. ((float_of_int n *. row_h) /. 2.) +. 8.) |> fade 0.92 ]
+        @ [ words yellow "several places: 1 to 9 to choose, esc to close" |> scale (13. /. words_font_size) |> move 0. (top +. 14.) ]
+        @ List.mapi
+            (fun k (c : Code_names.candidate) ->
+              words ink (Printf.sprintf "%d   %s:%d" (k + 1) c.path (c.line + 1))
+              |> scale (14. /. words_font_size)
+              |> move 0. (top -. (float_of_int (k + 1) *. row_h) +. 6.))
+            cs
+    | None -> []
+  in
+  jumped @ hovered @ elsewhere @ choices
+
+(* claude: for the status line: where the name under the mouse, defined
+ * elsewhere, goes; or what the last click found (Code_map.note) *)
+let where_to (computer : computer) (t : t) : string option =
+  let c = t.cam in
+  let a = c.a in
+  let mpx = px_of a computer.mouse.mx and mpy = py_of a computer.mouse.my in
+  let u = to_u c mpx and v = to_v c mpy in
+  let hover =
+    if t.moving || not (on a mpx mpy && readable_at t u v) then None
+    else
+      match ref_under t u v with
+      | Some (i, path, r) -> (
+          let name = String.concat "." (r.rpath @ [ r.rname ]) in
+          match found t i path r with
+          | [], _ -> Some (name ^ ": not in this map")
+          | c :: _, true -> Some (Printf.sprintf "%s -> %s:%d   (click to go, b back)" name c.path (c.line + 1))
+          | cs, false -> Some (Printf.sprintf "%s -> %d places as near (click to choose)" name (List.length cs)))
+      | None -> None
+  in
+  match hover with Some s -> Some s | None -> if t.note <> "" then Some t.note else None
 
 let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let c = t.cam in
@@ -811,9 +935,9 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
     hover @ names_lit computer t
     @ [
         words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
-        words ink status |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
+        words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
-          (Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition   enter the file view   right click up   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" algo (glass_name ()))
+          (Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" algo (glass_name ()))
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]

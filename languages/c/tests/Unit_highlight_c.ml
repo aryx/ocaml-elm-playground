@@ -30,7 +30,7 @@ let check f what src expected = Alcotest.(check string) what expected (f src)
 (* claude: a one-line source's bindings: each binding's column, then its
  * places' (itself and its uses), by column *)
 let bindings (src : string) : string =
-  let _, occs = Highlight_c.analyze src in
+  let occs = (Highlight_c.analyze src).occurrences in
   let groups = List.sort_uniq compare (List.map (fun (o : Highlight_code.occurrence) -> snd o.bound_at) occs) in
   List.map
     (fun b ->
