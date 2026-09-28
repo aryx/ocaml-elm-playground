@@ -123,6 +123,14 @@ let emphasis = function
 (*****************************************************************************)
 
 type span = { col : int; text : string; category : category }
+type occurrence = { line : int; col : int; len : int; bound_at : int * int }
+
+let occurrences (tokens : (int * int * string) array) (binds : (int, int) Hashtbl.t) : occurrence list =
+  Hashtbl.fold
+    (fun i b acc ->
+      let line, col, text = tokens.(i) and bline, bcol, _ = tokens.(b) in
+      { line = line - 1; col; len = String.length text; bound_at = (bline - 1, bcol) } :: acc)
+    binds []
 
 let lines (src : string) (tokens : (int * int * string * category) list) : span list array =
   let nlines = List.length (String.split_on_char '\n' src) in

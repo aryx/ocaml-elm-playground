@@ -19,6 +19,18 @@ let show (src : string) : string =
 
 let check (what : string) (src : string) (expected : string) : unit = Alcotest.(check string) what expected (show src)
 
+(* claude: a one-line source's bindings: each binding's column, then its
+ * places' (itself and its uses), by column *)
+let bindings (src : string) : string =
+  let _, occs = Highlight_ml.analyze src in
+  let groups = List.sort_uniq compare (List.map (fun (o : Highlight_code.occurrence) -> snd o.bound_at) occs) in
+  List.map
+    (fun b ->
+      let cols = List.sort compare (List.filter_map (fun (o : Highlight_code.occurrence) -> if snd o.bound_at = b then Some o.col else None) occs) in
+      Printf.sprintf "%d: %s" b (String.concat " " (List.map string_of_int cols)))
+    groups
+  |> String.concat ", "
+
 let tests =
   Testo.categorize "Highlight_ml"
     [
@@ -54,6 +66,11 @@ let tests =
             "let:Keyword f:Def_function let:Keyword y:Local 1:Number in:Keyword y:Local y:Normal";
           check "fun inside, and a label" "let f l = List.map (fun v ~k -> v + k) l"
             "let:Keyword f:Def_function l:Parameter List:Module map:Global fun:Keyword_control v:Parameter ~k:Label v:Parameter k:Parameter l:Parameter");
+      Testo.create "bindings" (fun () ->
+          Alcotest.(check string) "a parameter, a case's name" "6: 6 16 45, 28: 28 33"
+            (bindings "let f x = match x with Some y -> y | None -> x");
+          Alcotest.(check string) "a punned label and field; a let's name in its body only" "6: 6 47, 12: 12 62, 25: 25 43 58, 39: 39 53"
+            (bindings "let f ~dx { z; _ } = let x = 1 in (let x = x + dx in x) + x + z"));
       Testo.create "capabilities" (fun () ->
           check "Cap and caps" "let f (caps : < Cap.stdout ; .. >) = Cap.x caps"
             "let:Keyword f:Def_function caps:Capability Cap:Capability stdout:Capability Cap:Capability x:Capability caps:Capability");

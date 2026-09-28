@@ -47,6 +47,28 @@ let code_left = -360.
 let code_right = code_left +. float_of_int page_w
 let bottom_y = top_y -. float_of_int page_h
 
+(* a character's size in the window's pixels, at pixel ratio [q] (the
+ * page's, page_of below) *)
+let cell_px (q : float) : int * int =
+  (max 1 (int_of_float (Float.round (float_of_int Vga_font.width *. q))), max 1 (int_of_float (Float.round (float_of_int Vga_font.height *. q))))
+
+(* the window's pixels a unit, as the page is painted *)
+let ratio () : float = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ()))
+
+(* claude: a character's cell on the screen, in units: a whole number of
+ * the window's pixels, so a little more or less than 8 by 16 *)
+let cell_units () : float * float =
+  let q = ratio () in
+  let cw, ch = cell_px q in
+  (float_of_int cw /. q, float_of_int ch /. q)
+
+(* the line (from 0, the file's) and column under a point of the page,
+ * if on the code *)
+let code_at (top : int) (x : number) (y : number) : (int * int) option =
+  let cw, ch = cell_units () in
+  let r = int_of_float (Float.floor ((top_y -. y) /. ch)) and c = int_of_float (Float.floor ((x -. code_left) /. cw)) - (gutter + 1) in
+  if r >= 0 && r < visible && c >= 0 && c < cols then Some (top + r, c) else None
+
 (*****************************************************************************)
 (* Model *)
 (*****************************************************************************)
@@ -114,7 +136,15 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   then
     let line = int_of_float ((top_y -. mouse.my) /. h *. float_of_int (Array.length v.lines)) in
     clamp v (line - (visible / 2))
-  else v
+  else
+    (* claude: a click on a parameter or a local: to its binding, lit
+     * (plan_codemap_naming.md, level 1), where it is if on the page, else
+     * near the top *)
+    match if mouse.mclick then Option.bind (code_at v.top mouse.mx mouse.my) (fun (l, c) -> Code_file.name_at v.file l c) else None with
+    | Some o ->
+        let line, _ = o.bound_at in
+        if line >= v.top && line < v.top + visible then { v with lit = Some line } else { (clamp v (line - 2)) with lit = Some line }
+    | None -> v
 
 (*****************************************************************************)
 (* View *)
@@ -151,10 +181,6 @@ let text ?(size = 16.) (color : color) (x : number) (y : number) (s : string) : 
  * is ink (glyph_masks: 2 by 2 samples, a box filter -- a font cache, as a
  * font rasterizer keeps one). A page is then only masks copied in their
  * colours: a few milliseconds. *)
-
-(* a character's size in the window's pixels, at pixel ratio [q] *)
-let cell_px (q : float) : int * int =
-  (max 1 (int_of_float (Float.round (float_of_int Vga_font.width *. q))), max 1 (int_of_float (Float.round (float_of_int Vga_font.height *. q))))
 
 (* the 256 glyphs' masks at a cell size, each pixel's ink from 0 to 4
  * samples, made once per size *)
@@ -238,8 +264,27 @@ let page_of (v : t) (q : float) : Rgba_image.t =
   done;
   img
 
+(* claude: the name under the mouse, a parameter or a local: its binding
+ * framed brighter, its uses on the page lit *)
+let name_lit (computer : computer) (v : t) : shape list =
+  let mouse = computer.mouse in
+  match Option.bind (code_at v.top mouse.mx mouse.my) (fun (l, c) -> Code_file.name_at v.file l c) with
+  | None -> []
+  | Some o ->
+      let cw, ch = cell_units () in
+      List.filter_map
+        (fun (u : Highlight_code.occurrence) ->
+          if u.line < v.top || u.line >= v.top + visible || u.col >= cols then None
+          else
+            let w = float_of_int (min u.len (cols - u.col)) *. cw in
+            let x = code_left +. (float_of_int (gutter + 1 + u.col) *. cw) +. (w /. 2.) in
+            let y = top_y -. ((float_of_int (u.line - v.top) +. 0.5) *. ch) in
+            let binding = (u.line, u.col) = o.bound_at in
+            Some (rectangle (if binding then cyan else yellow) w ch |> move x y |> fade (if binding then 0.38 else 0.25)))
+        (Code_file.uses v.file o)
+
 let code_lines (computer : computer) (v : t) : shape list =
-  let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
+  let q = ratio () in
   let img =
     match v.page with
     | Some (top, pq, img) when top = v.top && pq = q -> img
@@ -288,10 +333,10 @@ let view (computer : computer) (v : t) : shape list =
     text ~size:22. yellow map_left 452. v.file.path;
     text ~size:14. dim 330. 452. (Printf.sprintf "%d lines" (Array.length v.lines));
   ]
-  @ overview v @ code_lines computer v
+  @ overview v @ code_lines computer v @ name_lit computer v
   @ [
       text ~size:13. dim map_left (-470.)
-        "arrows wheel pgup pgdn home end scroll   click the overview to go there   esc back to the map";
+        "arrows wheel pgup pgdn home end scroll   click the overview to go there, a local to its binding   esc back to the map";
       text ~size:11. cyan (map_left +. map_w +. 10.) (bottom_y -. 14.)
         (Printf.sprintf "%d-%d" (v.top + 1) (min (Array.length v.lines) (v.top + visible)));
     ]

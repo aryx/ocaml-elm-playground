@@ -27,6 +27,18 @@ let whole (what : string) (src : string) : unit =
 
 let check f what src expected = Alcotest.(check string) what expected (f src)
 
+(* claude: a one-line source's bindings: each binding's column, then its
+ * places' (itself and its uses), by column *)
+let bindings (src : string) : string =
+  let _, occs = Highlight_c.analyze src in
+  let groups = List.sort_uniq compare (List.map (fun (o : Highlight_code.occurrence) -> snd o.bound_at) occs) in
+  List.map
+    (fun b ->
+      let cols = List.sort compare (List.filter_map (fun (o : Highlight_code.occurrence) -> if snd o.bound_at = b then Some o.col else None) occs) in
+      Printf.sprintf "%d: %s" b (String.concat " " (List.map string_of_int cols)))
+    groups
+  |> String.concat ", "
+
 let tests =
   Testo.categorize "Highlight_c"
     [
@@ -53,6 +65,10 @@ let tests =
             "void:Type f:Def_function int:Type a:Parameter int:Type b:Local a:Parameter b:Normal";
           check names "for's own, a label" "void f(void) { for (int i = 0; i < 9; i++) goto out; out: ; }"
             "void:Type f:Def_function void:Type for:Keyword_control int:Type i:Local i:Local i:Local goto:Keyword_control out:Label out:Label");
+      Testo.create "bindings" (fun () ->
+          check bindings "a parameter, a local, a block's own a" "int f(int a) { int b = a; { int a = b; return a; } return a; }"
+            "10: 10 23 58, 19: 19 36, 32: 32 46";
+          check bindings "a #define's parameters" "#define MAX(a, b) ((a) > (b) ? (a) : c)" "12: 12 20 32, 15: 15 26");
       Testo.create "fields" (fun () ->
           check names "read, written, designated" "void f(S *s) { s->a.b = 1; S t = { .c = 2 }; }"
             "void:Type f:Def_function S:Type s:Parameter s:Parameter a:Field b:Field S:Type t:Local c:Field");

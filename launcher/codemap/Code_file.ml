@@ -17,6 +17,8 @@ type t = {
   chars : Bytes.t;
   defs : (int * string * Highlight_code.category) list;
   marks : int list;
+  names : Highlight_code.occurrence list array;
+  uses : (int * int, Highlight_code.occurrence list) Hashtbl.t;
 }
 
 let cols = 80
@@ -30,10 +32,10 @@ let make (path : string) (src : string) : t =
    * OCaml's lexer gives up on it *)
   let ocaml = List.exists (Filename.check_suffix path) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
   let c = List.exists (Filename.check_suffix path) [ ".c"; ".h" ] in
-  let lines =
-    if ocaml then (try Highlight_ml.lines src with _ -> plain src)
-    else if c then (try Highlight_c.lines src with _ -> plain src)
-    else plain src
+  let lines, occurrences =
+    if ocaml then (try Highlight_ml.analyze src with _ -> (plain src, []))
+    else if c then (try Highlight_c.analyze src with _ -> (plain src, []))
+    else (plain src, [])
   in
   let n = Array.length lines in
   let grid = Bytes.make (n * cols) '\000' in
@@ -81,7 +83,14 @@ let make (path : string) (src : string) : t =
         else None)
       (List.init n Fun.id)
   in
-  { path; lines; grid; chars; defs = List.rev !defs; marks }
+  (* claude: the names bound in a function, by line and by binding *)
+  let names = Array.make n [] and uses = Hashtbl.create 64 in
+  List.iter
+    (fun (o : Highlight_code.occurrence) ->
+      if o.line >= 0 && o.line < n then names.(o.line) <- o :: names.(o.line);
+      Hashtbl.replace uses o.bound_at (o :: Option.value (Hashtbl.find_opt uses o.bound_at) ~default:[]))
+    occurrences;
+  { path; lines; grid; chars; defs = List.rev !defs; marks; names; uses }
 
 let nlines (f : t) : int = Array.length f.lines
 
@@ -92,3 +101,10 @@ let at (f : t) (line : int) (col : int) : Highlight_code.category option =
     if c = 0 then None else Some Highlight_code.all.(c - 1)
 
 let modules_used = Code_deps.modules_used
+
+let name_at (f : t) (line : int) (col : int) : Highlight_code.occurrence option =
+  if line < 0 || line >= nlines f then None
+  else List.find_opt (fun (o : Highlight_code.occurrence) -> col >= o.col && col < o.col + o.len) f.names.(line)
+
+let uses (f : t) (o : Highlight_code.occurrence) : Highlight_code.occurrence list =
+  Option.value (Hashtbl.find_opt f.uses o.bound_at) ~default:[]

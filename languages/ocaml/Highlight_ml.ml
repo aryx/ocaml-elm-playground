@@ -238,12 +238,21 @@ let guess (toks : Token_ml.t list) : (Token_ml.t * category) list =
  * A token index to its category; what is not in it keeps the guess. *)
 open Ast_ml
 
-(* the names in scope: a parameter or a local *)
-type env = (string * category) list
+(* the names in scope: a parameter or a local, and its binding's token *)
+type env = (string * (category * int)) list
 
-let resolve (file : file) : (int, category) Hashtbl.t =
+(* claude: and [binds], a name's token to its binding's (a binding's to
+ * its own): where a use is bound, its uses those bound to one token *)
+let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
   let out = Hashtbl.create 1024 in
+  let binds = Hashtbl.create 256 in
   let mark (n : name) (c : category) = if n.tok >= 0 then Hashtbl.replace out n.tok c in
+  (* a name bound as [c]: in scope after *)
+  let bind (n : name) (c : category) : string * (category * int) =
+    mark n c;
+    if n.tok >= 0 then Hashtbl.replace binds n.tok n.tok;
+    (n.text, (c, n.tok))
+  in
   (* M.N.x: the modules, then the last as [last] *)
   let path (l : longid) (last : category) =
     List.iteri (fun i (n : name) -> mark n (if i = List.length l - 1 then last else Module)) l
@@ -264,7 +273,7 @@ let resolve (file : file) : (int, category) Hashtbl.t =
   let rec pat (c : category) (p : pat) : env =
     match p with
     | Pany | Pconst -> []
-    | Pvar n -> mark n c; [ (n.text, c) ]
+    | Pvar n -> [ bind n c ]
     | Ptuple ps | Plist ps -> List.concat_map (pat c) ps
     | Pconstr (l, arg) -> path l Constructor; (match arg with Some p -> pat c p | None -> [])
     | Pvariant (n, arg) -> mark n Constructor; (match arg with Some p -> pat c p | None -> [])
@@ -272,11 +281,18 @@ let resolve (file : file) : (int, category) Hashtbl.t =
         List.concat_map
           (fun (l, p) ->
             path l Field;
-            (* { x } binds x *)
-            match p with Some p -> pat c p | None -> ( match List.rev l with n :: _ -> [ ({ n with tok = -1 }).text, c ] | [] -> []))
+            (* { x } binds x, at the field's token (a field it stays) *)
+            match p with
+            | Some p -> pat c p
+            | None -> (
+                match List.rev l with
+                | n :: _ ->
+                    if n.tok >= 0 then Hashtbl.replace binds n.tok n.tok;
+                    [ (n.text, (c, n.tok)) ]
+                | [] -> []))
           fields
     | Por (a, b) -> pat c a @ pat c b
-    | Palias (p, n) -> mark n c; (n.text, c) :: pat c p
+    | Palias (p, n) -> bind n c :: pat c p
     | Pconstraint (p, t) -> ty t; pat c p
     | Pmodule n -> mark n Module; []
     | Popen (l, p) -> path l Module; pat c p
@@ -288,7 +304,12 @@ let resolve (file : file) : (int, category) Hashtbl.t =
     (* in scope, or not a parameter nor a local at all: the guess, which
      * knows a definition's locals but not where their scopes end, is
      * overruled *)
-    | Eident [ n ] -> mark n (match List.assoc_opt n.text env with Some c -> c | None -> Normal)
+    | Eident [ n ] -> (
+        match List.assoc_opt n.text env with
+        | Some (c, b) ->
+            mark n c;
+            if n.tok >= 0 && b >= 0 then Hashtbl.replace binds n.tok b
+        | None -> mark n Normal)
     | Eident l -> path l Global
     | Econstr (l, arg) -> path l Constructor; Option.iter (expr env) arg
     | Evariant (n, arg) -> mark n Constructor; Option.iter (expr env) arg
@@ -312,7 +333,9 @@ let resolve (file : file) : (int, category) Hashtbl.t =
     | Ematch (e, cs) -> expr env e; cases env cs
     | Eif (c, a, b) -> expr env c; expr env a; Option.iter (expr env) b
     | Ewhile (c, b) -> expr env c; expr env b
-    | Efor (i, a, b, body) -> mark i Local; expr env a; expr env b; expr ((i.text, Local) :: env) body
+    | Efor (i, a, b, body) ->
+        let bound = bind i Local in
+        expr env a; expr env b; expr (bound :: env) body
     | Econstraint (e, t) -> expr env e; ty t
     | Eletmodule (n, m, body) -> mark n Module; modexpr m; expr env body
     | Eopen (m, e) -> modexpr m; expr env e
@@ -388,22 +411,25 @@ let resolve (file : file) : (int, category) Hashtbl.t =
     | Iclass es -> List.iter (expr []) es
   in
   List.iter item file.items;
-  out
+  (out, binds)
 
 (* the guess, and over it what the tree says: of a name only (a
  * lowercase or an uppercase one), and not of a capability, which the
  * repository's habits say better than the grammar (Cap.x, caps) *)
-let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list =
-  let tree = resolve (Parse_ml.parse toks) in
+let categorize_bound (toks : Token_ml.t list) : (Token_ml.t * category) list * (int, int) Hashtbl.t =
+  let tree, binds = resolve (Parse_ml.parse toks) in
   (* an array, not List.mapi: a recursion a token, which a browser's
    * stack does not hold (the lines' comment below) *)
-  Array.to_list
-    (Array.mapi
-       (fun i ((t : Token_ml.t), c) ->
-         match Hashtbl.find_opt tree i with
-         | Some c' when (t.kind = Lident || t.kind = Uident) && c <> Capability -> (t, c')
-         | _ -> (t, c))
-       (Array.of_list (guess toks)))
+  ( Array.to_list
+      (Array.mapi
+         (fun i ((t : Token_ml.t), c) ->
+           match Hashtbl.find_opt tree i with
+           | Some c' when (t.kind = Lident || t.kind = Uident) && c <> Capability -> (t, c')
+           | _ -> (t, c))
+         (Array.of_list (guess toks))),
+    binds )
+
+let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list = fst (categorize_bound toks)
 
 (* claude: rev_map and rev, not List.map: OCaml 4.14's map recurses once
  * a token, which natively's stack holds but a browser's does not -- on
@@ -412,6 +438,10 @@ let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list =
  *
  *   old: List.map (fun ...) (categorize (Lexer_ml.tokens src))
  *)
-let lines (src : string) : span list array =
-  Highlight_code.lines src
-    (List.rev (List.rev_map (fun ((t : Token_ml.t), c) -> (t.line, t.col, t.text, c)) (categorize (Lexer_ml.tokens src))))
+let analyze (src : string) : span list array * occurrence list =
+  let toks = Lexer_ml.tokens src in
+  let cats, binds = categorize_bound toks in
+  ( Highlight_code.lines src (List.rev (List.rev_map (fun ((t : Token_ml.t), c) -> (t.line, t.col, t.text, c)) cats)),
+    Highlight_code.occurrences (Array.of_list (List.map (fun (t : Token_ml.t) -> (t.line, t.col, t.text)) toks)) binds )
+
+let lines (src : string) : span list array = fst (analyze src)

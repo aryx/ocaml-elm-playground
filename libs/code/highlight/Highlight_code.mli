@@ -63,6 +63,18 @@ val emphasis : category -> float
    spans), its column where it starts, in bytes. *)
 type span = { col : int; text : string; category : category }
 
+(* claude: a name bound in a function (a parameter, a local), where it
+   is: its line (from 0), column and length, and where its binding is
+   (line, column), its own place at the binding. The uses of a name are
+   the occurrences of one binding (plan_codemap_naming.md, level 1: the
+   language's scopes, exact) *)
+type occurrence = { line : int; col : int; len : int; bound_at : int * int }
+
+(* [occurrences tokens binds]: from a language's tokens (their line from
+   1, column and text) and its resolver's [binds] (a name's token index
+   to its binding's), the occurrences *)
+val occurrences : (int * int * string) array -> (int, int) Hashtbl.t -> occurrence list
+
 (* [lines src tokens]: [src]'s lines, from its tokens, each given as its
    first line (from 1), its column (from 0), its text and its category;
    what lies between the tokens (spaces) is not in a span. *)

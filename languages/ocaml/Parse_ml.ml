@@ -594,7 +594,10 @@ and param st : param =
       let x = label_name text in
       if has_colon text then
         if text.[0] = '?' && is st "(" then optional st else (simple_pattern st, None)
-      else (Pvar (unseen x), None)
+      else
+        (* ~x punned: x's token is the label's, where its uses point to
+         * (Highlight_ml colours only names, the label stays a label) *)
+        (Pvar { text = x; tok = st.idx.(st.pos - 1) }, None)
   | Some { kind = Operator; text = "~"; _ } ->
       advance st;
       expect st "(";

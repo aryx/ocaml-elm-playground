@@ -51,12 +51,21 @@ let of_kind (t : Token_c.t) : category =
  * its category; what is not in it keeps the first guess. *)
 open Ast_c
 
-(* the names in scope: parameters and locals *)
-type env = (string * category) list
+(* the names in scope: parameters and locals, and their binding's token *)
+type env = (string * (category * int)) list
 
-let resolve (file : file) : (int, category) Hashtbl.t =
+(* claude: and [binds], a name's token to its binding's (a binding's to
+ * its own), as Highlight_ml's *)
+let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
   let out = Hashtbl.create 1024 in
+  let binds = Hashtbl.create 256 in
   let mark (n : name) (c : category) = if n.tok >= 0 then Hashtbl.replace out n.tok c in
+  (* [n] bound as [c], in scope in [env] from now on *)
+  let bound (n : name) (c : category) (env : env) : env =
+    if n.tok >= 0 then Hashtbl.replace binds n.tok n.tok;
+    (n.text, (c, n.tok)) :: env
+  in
+  let use (n : name) (b : int) = if n.tok >= 0 && b >= 0 then Hashtbl.replace binds n.tok b in
   (* the file's constants: its enums', its #defines' without parameters *)
   let constants = Hashtbl.create 64 in
   List.iter (fun d -> if d.mparams = None then Hashtbl.replace constants d.mname.text ()) file.defines;
@@ -96,11 +105,12 @@ let resolve (file : file) : (int, category) Hashtbl.t =
   and expr (env : env) (e : expr) =
     match e with
     | Econst -> ()
-    | Eident n ->
-        mark n
-          (match List.assoc_opt n.text env with
-          | Some c -> c
-          | None -> if Hashtbl.mem constants n.text || Token_c.is_constant n.text then Constructor else Normal)
+    | Eident n -> (
+        match List.assoc_opt n.text env with
+        | Some (c, b) ->
+            mark n c;
+            use n b
+        | None -> mark n (if Hashtbl.mem constants n.text || Token_c.is_constant n.text then Constructor else Normal))
     | Efield (e, n) -> expr env e; mark n Field
     | Ecall (f, args) -> expr env f; List.iter (expr env) args
     | Ecast (t, e) -> ty env t; expr env e
@@ -119,7 +129,7 @@ let resolve (file : file) : (int, category) Hashtbl.t =
           (fun env d ->
             let c = if sp.typedef then Def_type else Local in
             (* its initializer sees it: int n = sizeof n *)
-            let env = match d.dname with Some n when not sp.typedef -> (n.text, c) :: env | _ -> env in
+            let env = match d.dname with Some n when not sp.typedef -> bound n c env | _ -> env in
             decl env c d;
             env)
           env ds
@@ -138,7 +148,7 @@ let resolve (file : file) : (int, category) Hashtbl.t =
   in
   (* a function's parameters: its declarator's outermost Tfunc's *)
   let params_of (t : ty) : decl list = match t with Tfunc (_, ps) -> ps | _ -> [] in
-  let names (ds : decl list) : env = List.filter_map (fun d -> Option.map (fun (n : name) -> (n.text, Parameter)) d.dname) ds in
+  let names (ds : decl list) : env = List.fold_right (fun d env -> match d.dname with Some n -> bound n Parameter env | None -> env) ds [] in
   let item (it : item) =
     match it with
     | Ifunc (sp, d, kr, body) ->
@@ -159,32 +169,46 @@ let resolve (file : file) : (int, category) Hashtbl.t =
     (fun d ->
       mark d.mname (if d.mparams = None then Def_value else Def_function);
       let ps = Option.value d.mparams ~default:[] in
-      List.iter (fun p -> mark p Parameter) ps;
-      List.iter (fun (n : name) -> if List.exists (fun (p : name) -> p.text = n.text) ps then mark n Parameter) d.mbody)
+      let env = List.fold_left (fun env p -> mark p Parameter; bound p Parameter env) [] ps in
+      List.iter
+        (fun (n : name) ->
+          match List.assoc_opt n.text env with
+          | Some (_, b) ->
+              mark n Parameter;
+              use n b
+          | None -> ())
+        d.mbody)
     file.defines;
   List.iter item file.items;
-  out
+  (out, binds)
 
 (* the kinds' categories, and over them what the tree says of the names;
  * a banner, and the title between two, a section *)
-let categorize (toks : Token_c.t list) : (Token_c.t * category) list =
-  let tree = resolve (Parse_c.parse toks) in
+let categorize_bound (toks : Token_c.t list) : (Token_c.t * category) list * (int, int) Hashtbl.t =
+  let tree, binds = resolve (Parse_c.parse toks) in
   let all = Array.of_list toks in
   let n = Array.length all in
-  Array.to_list
-    (Array.mapi
-       (fun i (t : Token_c.t) ->
-         let c =
-           match Hashtbl.find_opt tree i with
-           | Some c when t.kind = Ident -> c
-           | _ ->
-               if is_banner t || (t.kind = Comment && i > 0 && is_banner all.(i - 1) && i + 1 < n && is_banner all.(i + 1)) then Comment_section
-               else of_kind t
-         in
-         (t, c))
-       all)
+  ( Array.to_list
+      (Array.mapi
+         (fun i (t : Token_c.t) ->
+           let c =
+             match Hashtbl.find_opt tree i with
+             | Some c when t.kind = Ident -> c
+             | _ ->
+                 if is_banner t || (t.kind = Comment && i > 0 && is_banner all.(i - 1) && i + 1 < n && is_banner all.(i + 1)) then Comment_section
+                 else of_kind t
+           in
+           (t, c))
+         all),
+    binds )
+
+let categorize (toks : Token_c.t list) : (Token_c.t * category) list = fst (categorize_bound toks)
 
 (* claude: rev_map and rev, not List.map (Highlight_ml.lines says why) *)
-let lines (src : string) : span list array =
-  Highlight_code.lines src
-    (List.rev (List.rev_map (fun ((t : Token_c.t), c) -> (t.line, t.col, t.text, c)) (categorize (Lexer_c.tokens src))))
+let analyze (src : string) : span list array * occurrence list =
+  let toks = Lexer_c.tokens src in
+  let cats, binds = categorize_bound toks in
+  ( Highlight_code.lines src (List.rev (List.rev_map (fun ((t : Token_c.t), c) -> (t.line, t.col, t.text, c)) cats)),
+    Highlight_code.occurrences (Array.of_list (List.map (fun (t : Token_c.t) -> (t.line, t.col, t.text)) toks)) binds )
+
+let lines (src : string) : span list array = fst (analyze src)
