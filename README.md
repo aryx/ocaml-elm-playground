@@ -16,16 +16,25 @@ goes further: besides the library, it holds **145 games and 53
 applications** written with it, most of them a small but working
 version of a famous original, from Pong, Breakout and Pac-Man to Doom
 and Quake, from VisiCalc and MacPaint to Turbo Pascal and Smalltalk-80.
-Each one runs natively on your desktop and in your browser, from the
-same source file:
+And each one is small, a few hundred lines to a few thousand, so that
+you can read the whole of it; it runs natively on your desktop and in
+your browser, from the same source file:
 
 | [TinyBreakout](games/arcade/TinyBreakout.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html)) | [TinyTurboPascal](apps/devtools/TinyTurboPascal.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html)) |
 | :---: | :---: |
 | <a href="https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html"><img src="tests/2d/golden/TinyBreakout.png" width="400" alt="TinyBreakout"></a> | <a href="https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html"><img src="tests/2d/golden/TinyTurboPascal.png" width="400" alt="TinyTurboPascal"></a> |
-| Breakout (Atari, 1976): the wall, the paddle, the ball | Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger |
+| Breakout (Atari, 1976): the wall, the paddle, the ball -- **525 lines**, in one file | Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger -- **3,213 lines** in 15 files: the IDE, and the Pascal compiler and P-machine under it |
 
 They are all in [CATALOG.md](CATALOG.md), and all in one menu,
-[tinybox](https://aryx.github.io/ocaml-elm-playground/tinybox.html).
+[tinybox](https://aryx.github.io/ocaml-elm-playground/tinybox.html)
+(and [by size](https://aryx.github.io/ocaml-elm-playground/by-size/),
+the smallest first).
+
+Almost all of this code, the library as much as the programs, was
+written by an AI, Claude Code, under the author's direction (see the
+[AI disclaimer](#ai-disclaimer)). It was written to be read, though,
+and checked by tests, so it still makes good material for learning:
+judge each module by what it explains, as you would a textbook's.
 
 A place to learn, by reading
 ----------------------------
@@ -42,21 +51,25 @@ pixels, how a PNG is decompressed, how a Moog filter gets its sound, or
 how a chess program picks its move, the answer is a few hundred lines
 you can open and read.
 
-All of it fits in **about 50,000 lines of OCaml**. That counts only the
-library, `.mli` files and their explanations included, and leaves out
+The library (`libs/` and `playground/`) is **about 73,000 lines of
+OCaml**, `.mli` files and their explanations included; with the kits
+and the languages the programs share, about 119,000. That leaves out
 the tests, the games and the applications (an area's name leads to its
 modules in the API documentation, each with its explanation):
 
 | area | lines | what you can read there |
 | ---- | ----: | ----------------------- |
-| [**the playground**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#playground) (`playground/`, `libs/core/`) | 16,500 | the 2D and 3D APIs and their seven backends (Cairo/SDL, vdom/SVG, OpenGL, WebGL, software), cameras, sprites, tilemaps, 3D characters, ragdolls and portals, and other ways to program: Logo's turtle, HtDP's big-bang, PuzzleScript |
-| [**graphics**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#graphics) (`libs/graphics/`) | 7,100 | a 2D rasterizer (lines, circles, polygon fill, strokes), a 3D one (projection, clipping, culling, z-buffer and painter's algorithm, flat/Gouraud/Phong shading, texture mapping), Hershey fonts, and image decoders: PNG with its own inflate, Huffman and CRC, GIF (LZW), baseline JPEG (DCT), and XPM |
-| [**physics**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#physics) (`libs/physics/`) | 5,200 | 2D and 3D rigid bodies: integrators, broadphase, collision detection, contact resolution, an iterative solver, joints, springs, quaternions, continuous collision, particles, and gravity (Kepler's orbits) |
-| [**audio**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#audio) (`libs/audio/`) | 4,700 | oscillators, noise, envelopes, LFOs, filters (state-variable and Moog ladder), FM synthesis, Karplus-Strong strings, a Fourier spectrum, stereo space, effects, a mixer, sound effects and music, and WAV, MIDI and ABC files |
-| [**AI**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#ai) (`libs/ai/`) | 3,500 | pathfinding, state machines, behavior trees, utility AI, steering and flocking, minimax with iterative deepening and Zobrist hashing, Monte Carlo tree search, Q-learning, and neural networks trained by backpropagation and by our own automatic differentiation |
-| [**GUI**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#gui) (`libs/gui/`) | 3,400 | a toolkit: widgets, layout, focus, text editing, grids and themes, wired four ways (callbacks, MVC, MVU, immediate mode) |
-| [**application engines**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#appkits) (`appkits/`) | 4,800 | a spreadsheet (formula language, dependency graph, recalculation), rich text poured into pages with Knuth-Plass line breaking, bitmap painting (seed fill, PackBits), structured drawing, compound documents, slides, HyperTalk, undo and the clipboard |
-| [**game kits**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#gamekits) (`gamekits/`) | 5,700 | how each genre works: Doom's sectors, heightmap terrains, Descent's mines, isometric projection, racing roads and 3D tracks, platformer slopes and ladders, hitboxes and frame data for fighting games, animated skeletons, rhythm charts, a Sokoban solver, playing cards, ... |
+| [**the playground**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#playground) (`playground/`, `libs/core/`, `libs/random/`) | 22,100 | the 2D and 3D APIs and their seven backends (Cairo/SDL, vdom/SVG, OpenGL, WebGL, software), cameras, sprites, tilemaps, 3D characters, ragdolls and portals, and other ways to program: Logo's turtle, HtDP's big-bang and universe, PuzzleScript, Karel, POV-Ray, the teletype and text mode |
+| [**graphics**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#graphics) (`libs/graphics/`) | 13,700 | a 2D rasterizer (lines, circles, polygon fill, strokes), a 3D one (projection, clipping, culling, z-buffer and painter's algorithm, flat/Gouraud/Phong shading, texture mapping), a ray tracer (CSG, bounding volumes), Hershey and VGA fonts, image processing (histograms, convolutions, Sobel, blending); image formats: PNG with its own inflate, Huffman and CRC, GIF (LZW), baseline JPEG (DCT) read and written, XPM, the Amiga's ILBM; and video: Y4M, FLI/FLC, AVI with Motion JPEG, MPEG-1 decoded and encoded |
+| [**physics**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#physics) (`libs/physics/`) | 5,300 | 2D and 3D rigid bodies: integrators, broadphase, collision detection, contact resolution, an iterative solver, joints, springs, quaternions, continuous collision, particles, and gravity (Kepler's orbits) |
+| [**audio**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#audio) (`libs/audio/`) | 11,200 | oscillators, noise, envelopes, LFOs, filters (state-variable, Moog and diode ladders), FM synthesis with the DX7's algorithms, Karplus-Strong strings, modal synthesis, a sampler, a step sequencer, a Fourier spectrum, stereo space, a rack of effects (drive, EQ, chorus, phaser, delay, reverb, compressor, a Leslie), a mixer, sound effects and music, and WAV, MIDI, ABC and MOD files, and MP2 and MP3 decoded |
+| [**AI**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#ai) (`libs/ai/`) | 3,600 | pathfinding, state machines, behavior trees, utility AI, steering and flocking, minimax with iterative deepening and Zobrist hashing, Monte Carlo tree search, Q-learning, and neural networks trained by backpropagation and by our own automatic differentiation |
+| [**GUI**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#gui) (`libs/gui/`, `libs/juice/`) | 4,200 | a toolkit: widgets, layout, focus, text editing, grids and themes, wired four ways (callbacks, MVC, MVU, immediate mode); and game juice: easing, tweens, screen shake, squash and stretch, particles |
+| [**networking**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#networking) (`libs/networking/`, `libs/crypto/`, `libs/compression/`) | 11,000 | the protocols as bytes in, bytes out: URLs, HTTP/1.1, WebSocket, IRC, mail (SMTP, POP3, MIME); netcode (lockstep, rollback, prediction and interpolation); TLS 1.3 with X.509 certificates, over SHA-2, HMAC, HKDF, ChaCha20-Poly1305, AES-GCM, X25519, ECDSA and RSA; Huffman codes, inflate and deflate, LZW |
+| [**the terminal**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#terminal) (`libs/terminal/`) | 1,500 | a VT100's screen, the tty's line discipline, programs that ask and wait as values, curses, full-screen text programs |
+| [**application engines**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#appkits) (`appkits/`) | 19,700 | a spreadsheet (dependency graph, recalculation), rich text poured into pages with Knuth-Plass line breaking, bitmap painting (seed fill, PackBits), structured drawing, compound documents, slides, undo and the clipboard; a web browser's engine (box, flex and table layout, the DOM for scripts); vi and Emacs, and Turbo Pascal's IDE and debugger; Scratch's blocks; CAD (Sketchpad's constraints, AutoCAD's commands and DXF, SketchUp's push/pull); a 3D modeler; a planetarium's astronomy; calendars and address books |
+| [**game kits**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#gamekits) (`gamekits/`) | 6,200 | how each genre works: Doom's sectors, heightmap terrains, Descent's mines, isometric projection, racing roads and 3D tracks, platformer slopes and ladders, maze chases, hitboxes and frame data for fighting games, animated skeletons, RTS orders, team formations, rhythm charts, a Sokoban solver, playing cards, ... |
+| [**languages**](https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html#languages) (`languages/`) | 19,800 | languages as text, parsed and run: a spreadsheet's formulas, BASIC, Emacs Lisp, Pascal compiled to P-code, HyperTalk, Smalltalk-80 and its bytecode interpreter, Scratch and Snap!, JavaScript, HTML and CSS |
 
 With the library doing the heavy lifting, a program built on it stays
 short enough to read in one sitting. It is not a toy sketch either, but
@@ -444,14 +457,14 @@ for the numbers), each subject written from scratch, one idea per
 module, with the idea explained in its `.mli` and checked by tests and
 golden frames:
 
-- **pictures**: `graphics/`, the 2D and 3D software rasterizers behind
+- **pictures**: `libs/graphics/`, the 2D and 3D software rasterizers behind
   the `software` backends, and `Playground3d` for 3D programs;
 - **games**: `games/`, a directory per genre (see
   [CATALOG.md](CATALOG.md)), 2D, 2.5D (each pseudo-3D trick written out
   in its game) and 3D side by side, over the genre kits of `gamekits/`;
-- **motion, sound, decisions, networks**: `physics/`, `audio/`, `ai/`,
-  `networking/`;
-- **applications**: `gui/`, a small toolkit with the same widgets
+- **motion, sound, decisions, networks**: `libs/physics/`,
+  `libs/audio/`, `libs/ai/`, `libs/networking/`;
+- **applications**: `libs/gui/`, a small toolkit with the same widgets
   wired four ways (callbacks, MVC, MVU, immediate mode), the engines of
   `appkits/`, and the Tiny applications of `apps/` -- TinyVisiCalc and
   TinyExcel over one spreadsheet engine, TinyBravo and TinyWord over
@@ -479,13 +492,16 @@ functions, called from the same `view` and `update`), are Claude Code's: `Physic
 `playground/`. The exception is `Playground3d`, which is adapted from
 Luca Mugnaini's elm-playground-3d (see the credits above).
 The playground itself is still very small: the 2D API with its Cairo
-and vdom backends is about 5,000 lines, and the 3D one about 1,300 over
-a 900-line rasterizer.
+and vdom backends is about 5,000 lines, and the 3D one about 1,000 over
+a 1,200-line rasterizer.
 
 I recently (Sep 2026) used Claude Code to fix many small bugs, and then
 to grow everything around that library: the repository is now about
-150,000 lines of OCaml, and most of it is Claude Code's. And yet it
-stays small for what it holds -- 126 games and 14 applications, the 2D
-and 3D rasterizers, a physics engine, a synthesizer, game AI, a GUI
-toolkit, all written from scratch, with no engine, no asset pipeline
-and no dependency doing the work underneath.
+280,000 lines of OCaml, tests included, and almost all of it was
+written by Claude Code -- I chose what to build, directed it and
+reviewed it, but I wrote very little of the code myself. And yet it
+stays small for what it holds -- 145 games and 53 applications, the
+2D and 3D rasterizers, a ray tracer, a physics engine, synthesizers,
+game AI, a GUI toolkit, a TLS 1.3 stack, a web browser's engine and a
+dozen languages, all written from scratch, with no engine, no asset
+pipeline and no dependency doing the work underneath.
