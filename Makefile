@@ -214,9 +214,16 @@ website:
 # assets first (the programs, the thumbnails), so that no page points at
 # a program not yet online, then this one -- only what make website
 # writes, not what else docs/ may hold (a screenshot not yet committed).
-# Nothing committed where nothing changed.
+# Nothing committed where nothing changed. And nothing published but what
+# is committed: make website builds from the working copy, so a program
+# being written there (another session's, its row already in CATALOG.md)
+# would go out with its page and its code map, its source not on GitHub.
 WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html tinybox.html)
 publish:
+	@if [ -n "$$(git status --porcelain -- . ':!docs')" ]; then \
+	  echo "make publish: changes not committed outside docs/ (git status): commit them, or stash them, first"; \
+	  exit 1; \
+	fi
 	make website
 	git -C $(ASSETS) add -A js pngs
 	git -C $(ASSETS) diff --cached --quiet || git -C $(ASSETS) commit -q -m "make publish: the programs of $$(git rev-parse --short HEAD)"
