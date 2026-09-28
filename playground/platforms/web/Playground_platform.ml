@@ -1004,6 +1004,10 @@ let listen_to_fingers ~(svg : unit -> Element.t option) ~(process : E.event -> u
            [| Ojs.string_to_js kind; Ojs.fun_to_js 1 (fun e -> on_pointer (Event.t_of_js e)); Ojs.bool_to_js true |]))
     [ "pointerdown"; "pointermove"; "pointerup" ]
 
+(*****************************************************************************)
+(* run_app (the simple DOM) *)
+(*****************************************************************************)
+
 (* when using the simple DOM *)
 (* claude: [network] unused: the browser downloads the images, by its
  * own rules (the page's site, or CORS) *)
