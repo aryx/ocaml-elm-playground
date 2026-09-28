@@ -2730,12 +2730,12 @@ a=fA;if(a)k(a[1]);if(b2(b)===str_mousemove)k([2,[0,b.movementX,-b.movementY]]);i
 z=b[2];b4(as,b[1],y,1);b=z}b4(as,28,dl,1);return b4(as,76,function(d){var
 c=ba(d),a=c===str_Tab?1:0;if(a);else{a=2<=caml_ml_string_length(c)?1:0;if(a){a=70===caml_string_get(c,0)?1:0;if(a){a=B(c,1,caml_ml_string_length(c)-1|0);try{var
 b=[0,caml_int_of_string(a)]}catch(a){b=caml_wrap_exception(a);if(b[1]!==Failure)throw caml_maybe_attach_backtrace(b,0);b=0}if(b){a=b[1];b=1<=a?1:0;a=b?a<=10?1:0:b}else
-a=0}}}return a?dl(d):a},1)})}(0,0,0,0,[0,function(a){return fG},function(d,c){var
-a=d[4][1],f=c[4],f=f?a-f[1]:0.,b=[0,c[1],c[2]+f,c[3]+1|0,[0,a],d[2],c[5]],a=b[1],d=a[1],d=caml_check_bound(aw,d)[d+1];function
-e(a){var
+a=0}}}return a?dl(d):a},1)})}(0,0,0,0,[0,function(a){return fG},function(e,c){var
+a=e[4][1],f=c[4],f=f?a-f[1]:0.,b=[0,c[1],c[2]+f,c[3]+1|0,[0,a],e[2],c[5]],a=b[1],c=a[1],c=caml_check_bound(aw,c)[c+1];function
+d(a){var
 c=caml_call1(a,b[5]),a=c?1-caml_call1(a,b[6]):c;return a}var
-c=aw.length-1;function
-g(a){return bd(bn(a,caml_check_bound(aw,a)[a+1][3]),b)}if(e(function(a){return a[4]}))return g(caml_mod(a[1]+1|0,c));if(e(function(a){return a[3]}))return g(caml_mod((a[1]+c|0)-1|0,c));if(e(function(a){return a[1]})&&a[2]<d[5])return bd(bn(a[1],a[2]+1|0),b);if(e(function(a){return a[2]})&&d[4]<a[2])return bd(bn(a[1],a[2]-1|0),b);return e(function(a){return a[9]})?bd([0,a[1],a[2],a[3],a[4],a[5],a[6],a[7],0],b):e(function(a){a=a[13];for(;;){if(!a)return 0;var
+e=aw.length-1;function
+g(a){return bd(bn(a,caml_check_bound(aw,a)[a+1][3]),b)}if(d(function(a){return a[4]}))return g(caml_mod(a[1]+1|0,e));if(d(function(a){return a[3]}))return g(caml_mod((a[1]+e|0)-1|0,e));if(d(function(a){return a[1]})&&a[2]<c[5])return bd(bn(a[1],a[2]+1|0),b);if(d(function(a){return a[2]})&&c[4]<a[2])return bd(bn(a[1],a[2]-1|0),b);return d(function(a){return a[9]})?bd([0,a[1],a[2],a[3],a[4],a[5],a[6],a[7],0],b):d(function(a){a=a[13];for(;;){if(!a)return 0;var
 c=a[3],d=a[1],a=caml_compare(str_a,a[2]),b=0===a?1:0;if(b)return b;a=0<=a?c:d}})?[0,[0,a[1],a[2],a[3],a[4],a[5],a[6],a[7],1],b[2],b[3],b[4],b[5],b[6]]:b},function(g,c){var
 b=c[1],e=g[3];function
 f(d,c,b,a){return[0,1.,be,[3,[0,0.,b+0.,0.,1.*d,1.,[7,c,a]]]]}var

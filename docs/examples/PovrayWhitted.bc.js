@@ -2870,8 +2870,8 @@ b=[0,a,aP[2],aP[3],aP[4],aP[5],l[3],aP[7]];return[0,[0,a,f5([0,b],gu([0,l[1],w[2
 b=a[2],a=cW(a[1],z),b=a?1-bx(b):a;return b})(c);i=b;for(;;){if(!i)break;a=i[2];i=i[1][2];f6(i,caml_div(g,an(b)));i=a}i=o[4][1];g=l[7];a:{if(g){g=g[1];if(0!==b&&0.<=i-g&&i-g<1.){b=l[6]+(i-g);break a}}b=l[6]}a:{if(m&&r(str_s)){m=c;g=l[2];for(;;){if(!m)throw caml_maybe_attach_backtrace(Not_found,1);a=m[1];u=a[2];m=m[2];if(0===caml_compare(a[1],g))break}var
 D=dH(0,0,cv(u)),m=cA.createElement(str_a),t=caml_ml_string_length(D),g=ae(((t+2|0)/3|0)*4|0),v=function(a){return a<t?caml_string_get(D,a):0},a=0;for(;;){if(a>=t){cy(m,str_href,"data:application/octet-stream;base64,"+ap(g));cy(m,"download",x);m.click();g="saved ";if(bx(u)){g+=x;break a}g=g+x+", unfinished";break a}n=v(a+2|0);h=v(a+1|0)<<8;d=0;n|=v(a)<<16|h;for(;;){b:{if(((a+d|0)-1|0)>=t&&2<=d){R(g,61);break b}R(g,caml_string_get(str_ABCDEFGHIJKLMNOP_abr,(n>>>(18-(6*d|0)|0)|0)&63))}h=d+1|0;if(3===d){a=a+3|0;break}d=h}}}g=l[8]}m=o[1][3]?[0,[0,o[1][1],o[1][2]]]:0;return[0,l[1],l[2],l[3],c,y,b,[0,i],g,m]}var
 G=" x ",num_45=45.,gE=[0,[4,0,0,0,[11,". ",[2,0,0]]],"%d. %s"],gF=[0,"drag: turn, wheel: nearer",0],gG=[0,"s: save",0],gH=[0,"space: again",[0,"1-4: rays a pixel",0]],gI=[0,"left/right: the algorithm",0],gy=[0,[12,44,[4,0,[0,2,3],0,0]],",%03d"],gC=[0,[11," (",[4,0,0,0,[11,G,[4,0,0,0,[11," a pixel)",0]]]]]," (%d x %d a pixel)"],gB=[0,[11," + ",[2,0,[11," reflected or refracted (",[2,0,[11," saved by the cutoff)",0]]]]]," + %s reflected or refracted (%s saved by the cutoff)"],gA=[0,[11,"pass ",[4,0,0,0,[11,G,[4,0,0,0,0]]]],"pass %d x %d"],gz=[0,[2,0,[11,str$0,[2,0,[11," rays",[2,0,[2,0,[11,str$0,[8,[0,0,0],0,[0,1],[11," s",[2,0,0]]]]]]]]]],"%s, %s rays%s%s, %.1f s%s"];function
-gD(a,f,i,d){var
-j=i[3];function
+gD(a,b,h,e){var
+i=h[3];function
 n(d){switch(d){case
 0:var
 a="ray casting";break;case
@@ -2882,19 +2882,19 @@ a="ray casting";break;case
 c=1,b=_;for(;;){if(b){var
 e=b[2];if(b[1]!==d){c=c+1|0;b=e;continue}}else
 c=0;return caml_call2(o(gE),c,a)}}var
-e="   ";if(cJ(i))var
-c=an(_),k=3<c?Math.ceil(Math.sqrt(c))|0:c,c=caml_div((c+k|0)-1|0,k),p=j[1]/k,q=(j[2]-num_60)/c,c=bJ(cU(0,function(a,c){var
-b=cX(c,d[4]);if(!b)return 0;b=b[1];var
-e=p*(caml_mod(a,k)+num_0_5),e=j[4]+e,a=q*(caml_div(a,k)+num_0_5),a=j[3]-a,c=n(c);return ew(e,a,p,q,cv(b),c)},_));else{c=cX(d[2],d[4]);if(c){c=c[1];var
-b=d[2]===5?str:" ->",b=n(d[2])+b,g=a_(_),g=d[2]===g?e:"<- ",c=cv(c),c=ew(0.,num_30,j[1],j[2]-num_60,c,g+b)}else
-c=0}a=a?gF:0;f=f?gG:0;f=J(gH,J(f,a));i=cJ(i)?0:gI;f=c2(e,J(i,f));f=cB(as(num_120,num_120,num_120),f);f=[0,a6(0.,j[6]+20.,f),0];e=d[4];i=0;for(;;){if(!e)break;i=i+e[1][2][5]|0;e=e[2]}a:{e=d[4];for(;;){if(!e)break;a=e[2];e=bx(e[1][2]);if(!e)break a;e=a}e=1}a=d[4];g=1;for(;;){if(!a)break;b=a[1][2][3];a=a[2];b=b?b[1]:1;g=a$(g,b)}function
+j="   ";if(cJ(h))var
+d=an(_),k=3<d?Math.ceil(Math.sqrt(d))|0:d,d=caml_div((d+k|0)-1|0,k),p=i[1]/k,q=(i[2]-num_60)/d,d=bJ(cU(0,function(a,c){var
+b=cX(c,e[4]);if(!b)return 0;b=b[1];var
+d=p*(caml_mod(a,k)+num_0_5),d=i[4]+d,a=q*(caml_div(a,k)+num_0_5),a=i[3]-a,c=n(c);return ew(d,a,p,q,cv(b),c)},_));else{d=cX(e[2],e[4]);if(d){d=d[1];var
+c=e[2]===5?str:" ->",c=n(e[2])+c,f=a_(_),f=e[2]===f?j:"<- ",d=cv(d),d=ew(0.,num_30,i[1],i[2]-num_60,d,f+c)}else
+d=0}a=a?gF:0;b=b?gG:0;b=J(gH,J(b,a));h=cJ(h)?0:gI;j=c2(j,J(h,b));j=cB(as(num_120,num_120,num_120),j);j=[0,a6(0.,i[6]+20.,j),0];b=e[4];h=0;for(;;){if(!b)break;h=h+b[1][2][5]|0;b=b[2]}a:{b=e[4];for(;;){if(!b)break;a=b[2];b=bx(b[1][2]);if(!b)break a;b=a}b=1}a=e[4];f=1;for(;;){if(!a)break;c=a[1][2][3];a=a[2];c=c?c[1]:1;f=a$(f,c)}function
 l(a){if(num_1000>a)return str+a;var
 b=caml_call1(o(gy),a%num_1000|0);return l(a/num_1000|0)+b}var
-a=d[4],b=0;for(;;){if(!a)break;b=b+a[1][2][1][5]|0;a=a[2]}a=d[4];var
-h=0;for(;;){if(!a)break;h=h+a[1][2][1][6]|0;a=a[2]}a=d[8]===str?str:" -- "+d[8];var
-r=d[6];if(1===d[3])var
-m=str;else{m=d[3];var
-s=d[3],m=caml_call2(o(gC),s,m)}if(0===(b+h|0))b=str;else{h=l(h);b=l(b);b=caml_call2(o(gB),b,h)}h=l(i);g=e?"done":caml_call2(o(gA),g,g);h=cB(dM,caml_call6(o(gz),g,h,b,m,r,a));return J(c,[0,a6(0.,j[6]+num_45,h),f])}var
+a=e[4],c=0;for(;;){if(!a)break;c=c+a[1][2][1][5]|0;a=a[2]}a=e[4];var
+g=0;for(;;){if(!a)break;g=g+a[1][2][1][6]|0;a=a[2]}a=e[8]===str?str:" -- "+e[8];var
+r=e[6];if(1===e[3])var
+m=str;else{m=e[3];var
+s=e[3],m=caml_call2(o(gC),s,m)}if(0===(c+g|0))c=str;else{g=l(g);c=l(c);c=caml_call2(o(gB),c,g)}g=l(h);f=b?"done":caml_call2(o(gA),f,f);g=cB(dM,caml_call6(o(gz),f,g,c,m,r,a));return J(d,[0,a6(0.,i[6]+num_45,g),j])}var
 aB=1===u[0]?[1,u[1],u[2],aB]:u,u=[0,[0,0.,1.8,4.],[0,0.,num_0_9,num_2],[0,0.,1.,0.],[0,num_45][1],0.,0.,z],q=as(num_110,num_160,q),G=[0,num_0_3][1],eu=[0,u,[0,aB,0],G,bB(q),y],gJ=[0,"whitted.png"][1],q=caml_js_to_string($.location.search),y=0,gv=[0,eu[1],c,1,0,y,0.,0,str,0],gM=[0,[0,400,300]],ey=[0,d],ex=1;function
 gK(a,b){return gw(ex,ey,gJ,20000,gM,eu,a,b)}var
 gL=0!==ey?1:0,gi=[5,1],gh=[5,0],gg=[6,1],gf=[6,0];function
