@@ -108,6 +108,12 @@ val set_patch : t -> patch -> unit
 val run : t -> bool -> unit
 val running : t -> bool
 
+(* the song the sequencer plays (Song.mli), its notes to its tracks'
+ * devices, started from its beginning with the rack; where it is, in
+ * sixteenths *)
+val set_song : t -> Song.t -> unit
+val position : t -> float
+
 (* the loudest sample of an output's last chunk *)
 val peak : t -> port -> float
 

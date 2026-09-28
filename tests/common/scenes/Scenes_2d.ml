@@ -1262,17 +1262,21 @@ let scripted : Golden_scene.scripted list =
     (* claude: ReBirth started (space): the four machines' step 6 lit
      * together -- the one clock -- and the PCF's *)
     ("apps/music/software/TinyReBirth", "running", 40, "space:3");
-    (* claude: the rack turned round (Tab): the jacks, the cables hanging
+    (* claude: the sequencer hidden, the rack turned round (Tab): the jacks, the cables hanging
      * from them; then a cable pulled out of the Juno's Filter CV, in the
      * hand, the jack it may go into ringed green; let go on the
      * Matrix's Curve CV, plugged and still swinging; the rack played *)
-    ("apps/music/software/TinyReason", "back", 20, "Tab:2");
-    ("apps/music/software/TinyReason", "drag", 30, "Tab:2,at(88;-5):16-20,at(300;-200):21-40,click:18-40");
-    ("apps/music/software/TinyReason", "plugged", 50, "Tab:2,at(88;-5):16-20,at(300;-200):21-30,at(57;-285):31-50,click:18-34");
+    ("apps/music/software/TinyReason", "back", 20, "at(90;475):1-3,click:2,Tab:4");
+    ("apps/music/software/TinyReason", "drag", 30, "at(90;475):1-3,click:2,Tab:4,at(88;-5):16-20,at(300;-200):21-40,click:18-40");
+    ("apps/music/software/TinyReason", "plugged", 50, "at(90;475):1-3,click:2,Tab:4,at(88;-5):16-20,at(300;-200):21-30,at(57;-285):31-50,click:18-34");
     ("apps/music/software/TinyReason", "running", 40, "space:3");
     (* claude: the rack scrolled a page down (the page key): the 808, the
      * Hammond and the delay under the Matrix *)
     ("apps/music/software/TinyReason", "scrolled", 10, "PageDown:3");
+    (* claude: the sequencer under the rack, playing: the Hammond's
+     * chords, a note drawn by a click and a drag, a key held and heard,
+     * the playhead *)
+    ("apps/music/software/TinyReason", "sequencer", 36, "space:3,at(0;-200):20-30,click:22-26,at(80;-200):27-30,at(-360;-250):32-40,click:34-38");
     (* claude: steps edited by clicks: a note high on 303 #1's step 5,
      * the 808's instrument clicked from BD to LT, two LT hits added *)
     ( "apps/music/software/TinyReBirth",

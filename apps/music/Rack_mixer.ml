@@ -16,6 +16,10 @@ let master_out = 16
 let create () : Rack_device.t =
   let level = Array.make channels 0.7 and pan = Array.make channels 0. and aux = Array.make channels 0. in
   let mute = Array.make channels false and master = ref 0.8 in
+  (* the loudest sample of each channel's input and the master's out, the
+   * last chunk: the meters *)
+  let peak = Array.make (channels + 1) 0. in
+  let loudest (x : Signal.t) = Array.fold_left (fun m v -> Float.max m (Float.abs v)) 0. x in
   (* the channels' sum, kept from the first stage for the second *)
   let sum = ref { Signal.left = [||]; right = [||] } in
   let jacks =
@@ -37,8 +41,9 @@ let create () : Rack_device.t =
     Array.fill send.left 0 n 0.;
     Array.fill send.right 0 n 0.;
     for k = 0 to channels - 1 do
+      let x = io.audio_in k in
+      peak.(k) <- loudest x.left;
       if not mute.(k) then begin
-        let x = io.audio_in k in
         (* a balance: the side turned away from goes down *)
         let gl = level.(k) *. Float.min 1. (1. -. pan.(k)) and gr = level.(k) *. Float.min 1. (1. +. pan.(k)) in
         for i = 0 to n - 1 do
@@ -57,7 +62,8 @@ let create () : Rack_device.t =
     for i = 0 to Array.length out.left - 1 do
       out.left.(i) <- !master *. (s.left.(i) +. ret.left.(i));
       out.right.(i) <- !master *. (s.right.(i) +. ret.right.(i))
-    done
+    done;
+    peak.(channels) <- loudest out.left
   in
   (* "ch3.level": the array and the channel *)
   let find name =
@@ -80,12 +86,14 @@ let create () : Rack_device.t =
   in
   let get name =
     if name = "master" then !master
+    else if name = "master.peak" then peak.(channels)
     else
       match find name with
       | Some ("level", k) -> level.(k)
       | Some ("pan", k) -> pan.(k)
       | Some ("aux", k) -> aux.(k)
       | Some ("mute", k) -> if mute.(k) then 1. else 0.
+      | Some ("peak", k) -> peak.(k)
       | _ -> 0.
   in
   {

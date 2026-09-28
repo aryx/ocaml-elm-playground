@@ -30,6 +30,13 @@
  * position Verlet: pinned at their jacks, under gravity, they sag,
  * trail behind a dragged end, bounce when plugged, swing and settle.
  *
+ * Under the rack, as in Reason, the sequencer: a track per instrument,
+ * the selected one's notes on a piano roll -- the keys down its left,
+ * a row per key, a column per sixteenth, two bars looping, the playhead
+ * running -- a note drawn by a click (a drag makes it longer), taken
+ * out by another; the song (Song.mli) played by the rack on its clock.
+ * The top bar's button hides it, the rack taking the whole screen.
+ *
  * On the front: the panels, each played with the mouse in place; a
  * click selects a device, the letters play it (a s d f g h j k, w e t
  * y u, z x an octave), its presets in the top bar. On the back: a jack
@@ -42,12 +49,13 @@
  * joined), the wheel, the arrows, the page keys and the scrollbar
  * scroll.
  *
- * Uses: Studio_reason (the rack, its graph and its sound), Rack_module,
+ * Uses: Studio_reason (the rack, its graph and its sound), Song (the
+ * sequencer's), Rack_module,
  * Rack_device, Rack_mixer, Rack_matrix, Rack_cable (over Particles),
  * Part_juno, Part_hammond, Part_tr808, Part_mixer, Part_matrix,
  * Part_effect (the fronts), Voice_juno, Voice_hammond, Voice_tr808,
  * Delay, Reverb, Drive, Dynamics, Eq, Modulation (the effects),
- * Component, Piano (the letters), Gui (the menus, the transport). Not:
+ * Component, Gui (the menus, the transport). Not:
  * Scene2d, Sprite, File_menu.
  *
  * Ours, and said so: the SubTractor's place taken by the Juno-106 (a
@@ -95,20 +103,10 @@ let effect kind name color fx () = Rack_module.of_effect ~kind ~name ~color (fx 
 
 (* the rack, the studio: made when first asked for (tinybox) *)
 let studio = lazy (Studio_reason.create Studio_reason.empty)
-let ids : (int * Rack_device.t) list ref = ref []
-
-(* the level coming into a mixer's channel, or out of its master *)
-let mixer_peak (d : Rack_device.t) (k : int) : number =
-  let s = Lazy.force studio in
-  match List.find_opt (fun (_, d') -> d' == d) !ids with
-  | None -> 0.
-  | Some (id, _) -> (
-      if k = Rack_mixer.channels then Studio_reason.peak s { device = id; jack = Rack_mixer.master_out }
-      else match Studio_reason.cable_at (Studio_reason.patch s) { device = id; jack = k } with Some c -> Studio_reason.peak s c.out | None -> 0.)
 
 let catalogue : Rack_module.catalogue =
   [
-    ("Mixer 14:2", fun () -> Rack_module.mixer ~peak:mixer_peak);
+    ("Mixer 14:2", Rack_module.mixer);
     ("Juno-106", juno);
     ("Hammond B-3", hammond);
     ("TR-808 (Redrum)", redrum);
@@ -164,10 +162,15 @@ type model = {
   drag : drag option;
   falling : (Rack_cable.t * int) list; (* cables pulled off, frames left *)
   active : int option; (* the front holding the mouse *)
-  piano : Piano.t;
+  octave : int; (* the letter a's C *)
   message : (string * int) option;
   was_down : bool;
   keys : string list; (* held at the last frame *)
+  seq : bool; (* the sequencer shown, under the rack *)
+  song : Song.t;
+  low : int; (* the sequencer's lowest key *)
+  drawing : Song.note option; (* a note being drawn, longer as dragged *)
+  preview : int option; (* a key of the sequencer's held *)
 }
 
 (* a module made, put in the rack under [below], cabled by itself *)
@@ -176,9 +179,16 @@ let add_module (patch : Studio_reason.patch) (modules : (int * Rack_module.t) li
   let m = (List.assoc name catalogue) () in
   let patch, id = Studio_reason.add patch ~kind:m.device.kind ~below in
   Studio_reason.attach s id m.device;
-  ids := (id, m.device) :: !ids;
   let patch = Studio_reason.route (Studio_reason.lookup s) patch id ~selected in
   (patch, modules @ [ (id, m) ], id)
+
+(* the sequencer's song at first: the Hammond's chords, C, A minor, F,
+ * G, half a bar each *)
+let demo_chords () : Song.note list =
+  List.concat
+    (List.mapi
+       (fun k chord -> List.map (fun pitch -> { Song.start = float_of_int (8 *.. k); length = 8.; pitch; velocity = 0.8 }) chord)
+       [ [ 48; 52; 55 ]; [ 45; 48; 52 ]; [ 41; 45; 48 ]; [ 43; 47; 50 ] ])
 
 (* the default rack: a mixer, the Juno played by the Matrix, the 808,
  * the Hammond, a delay on the mixer's send *)
@@ -192,12 +202,13 @@ let initial_model : model =
   let r = add r "Matrix" ~selected:(Some juno) in
   let r = add r "TR-808 (Redrum)" ~selected:None in
   let r = add r "Hammond B-3" ~selected:None in
+  let _, _, hammond = r in
   let patch, modules, _ = add r "DDL-1 Delay" ~selected:(Some mixer) in
   Studio_reason.set_patch (Lazy.force studio) patch;
   {
     patch;
     modules;
-    selected = Some juno;
+    selected = Some hammond;
     side = Front;
     flip = 0;
     scroll = 0.;
@@ -205,10 +216,15 @@ let initial_model : model =
     drag = None;
     falling = [];
     active = None;
-    piano = Piano.initial ~octave:3;
+    octave = 4;
     message = None;
     was_down = false;
     keys = [];
+    seq = true;
+    song = Song.set_notes Song.empty hammond (demo_chords ());
+    low = 40;
+    drawing = None;
+    preview = None;
   }
 
 (*****************************************************************************)
@@ -218,7 +234,9 @@ let initial_model : model =
 let width = 880.
 let unit = 40.
 let rack_top = 430.
-let rack_bottom = -430.
+(* the rack's bottom: over the sequencer when it shows *)
+let seq_top = -70.
+let rack_bottom (m : model) : number = if m.seq then seq_top else -430.
 let scrollbar_x = 485.
 
 (* a front as wide as the rack, unless that makes it taller than
@@ -253,7 +271,7 @@ let boxes (m : model) : (int * Widget.box) list =
     m.patch.devices
 
 let total_height (m : model) : number = List.fold_left (fun t (_, md) -> t + height md) 0. m.modules
-let visible (b : Widget.box) : bool = b.y - (b.h / 2.) < rack_top && b.y + (b.h / 2.) > rack_bottom
+let visible (m : model) (b : Widget.box) : bool = b.y - (b.h / 2.) < rack_top && b.y + (b.h / 2.) > rack_bottom m
 
 (* a jack's place on a device's back: in rows of 14, centred *)
 let jack_pos (b : Widget.box) (count : int) (j : int) : number * number =
@@ -303,12 +321,19 @@ let ropes_of (m : model) : (Studio_reason.cable * Rack_cable.t) list =
 (* update *)
 (*****************************************************************************)
 
-(* the letters play the selected device, the keyboard itself not drawn *)
-let letters : Piano.look =
-  {
-    keys = 0; left = -1e6; top = -1e6; white_width = 1.; white_height = 1.; black_height = 1.; letters_from = 0; velocity = 0.9; octaves = (1, 6); by_depth = false;
-    white_key = white; black_key = black; letter_on_white = black; letter_scale = 1.; letter_lift = 0.;
-  }
+(* the letters: each the semitone above the octave's C; they play the
+ * selected device, several at once, z and x an octave down and up *)
+let letters =
+  [ ("a", 0); ("w", 1); ("s", 2); ("e", 3); ("d", 4); ("f", 5); ("t", 6); ("g", 7); ("y", 8); ("h", 9); ("u", 10); ("j", 11); ("k", 12) ]
+
+let play_letters (d : Rack_device.t) (octave : int) ~(now : string list) ~(was : string list) : int =
+  let pressed k = List.mem k now && not (List.mem k was) and released k = List.mem k was && not (List.mem k now) in
+  List.iter
+    (fun (k, semitone) ->
+      if pressed k then d.note_on ((12 *.. octave) +.. semitone) 0.9;
+      if released k then d.note_off ((12 *.. octave) +.. semitone))
+    letters;
+  if pressed "z" then max 1 (octave -.. 1) else if pressed "x" then min 7 (octave +.. 1) else octave
 
 let transport_y = -470.
 
@@ -348,7 +373,7 @@ let back_input (computer : computer) (m : model) : model =
       match port_pos m d.fixed with
       | Some a ->
           (* near an edge, the rack scrolls under the cable *)
-          let scroll = if mouse.my > rack_top - 40. then m.scroll - 8. else if mouse.my < rack_bottom + 40. then m.scroll + 8. else m.scroll in
+          let scroll = if mouse.my > rack_top - 40. then m.scroll - 8. else if mouse.my < rack_bottom m + 40. then m.scroll + 8. else m.scroll in
           { m with scroll; drag = Some { d with rope = Rack_cable.step d.rope a hand } }
       | None -> m)
   | _ -> m
@@ -358,7 +383,7 @@ let front_input (computer : computer) (m : model) : model =
   let mouse = computer.mouse in
   let press = mouse.mdown && not m.was_down in
   let bs = boxes m in
-  let under = List.find_map (fun (id, (b : Widget.box)) -> if visible b && Widget.contains b mouse.mx mouse.my then Some id else None) bs in
+  let under = List.find_map (fun (id, (b : Widget.box)) -> if visible m b && Widget.contains b mouse.mx mouse.my then Some id else None) bs in
   let active = if press then under else if mouse.mdown then m.active else under in
   let selected = if press && under <> None && under <> Some Studio_reason.hardware then under else m.selected in
   let modules =
@@ -370,6 +395,119 @@ let front_input (computer : computer) (m : model) : model =
       m.modules
   in
   { m with modules; active; selected }
+
+(*****************************************************************************)
+(* The sequencer *)
+(*****************************************************************************)
+
+(* Reason's sequencer under the rack: the tracks down the left, one per
+ * instrument, the selected one's notes on a grid -- a piano's keys
+ * along its left edge, a row per key, a column per sixteenth -- the
+ * playhead running over it. A click on the grid puts a note there (a
+ * drag makes it longer), a click on a note takes it out; a key clicked
+ * plays its note; the wheel moves the keys up and down. *)
+
+let seq_bottom = -430.
+let rows = 24
+let row_h = (seq_top - 36. - seq_bottom) / float_of_int rows
+let grid_left = -325.
+let grid_right = 470.
+let step_w (song : Song.t) : number = (grid_right - grid_left) / Song.length song
+let row_y (m : model) (pitch : int) : number = seq_bottom + ((float_of_int (pitch -.. m.low) + 0.5) * row_h)
+let is_black (pitch : int) : bool = List.mem (pitch mod 12) [ 1; 3; 6; 8; 10 ]
+
+(* the instruments, in the rack's order: the tracks *)
+let tracks (m : model) : (int * Rack_module.t) list =
+  List.filter_map
+    (fun (id, _) -> match List.assoc_opt id m.modules with Some md when md.device.role = Instrument -> Some (id, md) | _ -> None)
+    m.patch.devices
+
+let track_y (k : int) : number = seq_top - 50. - (float_of_int k * 28.)
+
+let seq_input (computer : computer) (m : model) : model =
+  let mouse = computer.mouse in
+  let press = mouse.mdown && not m.was_down and release = (not mouse.mdown) && m.was_down in
+  let track = Option.bind m.selected (fun id -> Option.map (fun md -> (id, md)) (List.assoc_opt id m.modules)) in
+  let pitch = m.low +.. int_of_float (Float.of_int (truncate ((mouse.my - seq_bottom) / row_h))) in
+  let time = Float.of_int (truncate ((mouse.mx - grid_left) / step_w m.song)) in
+  let on_rows = mouse.my >= seq_bottom && mouse.my < seq_bottom + (float_of_int rows * row_h) in
+  match (m.drawing, m.preview, track) with
+  (* a note being drawn, longer as the mouse goes right; let go, it is in *)
+  | Some n, _, Some (id, _) ->
+      let n = { n with length = Float.max 1. (Float.min (Song.length m.song - n.start) (time - n.start + 1.)) } in
+      if release || not mouse.mdown then { m with drawing = None; song = Song.add m.song id n } else { m with drawing = Some n }
+  (* a key held: its note sounding until let go *)
+  | _, Some p, Some (_, md) ->
+      if mouse.mdown then m
+      else begin
+        md.device.note_off p;
+        { m with preview = None }
+      end
+  | _ when not press -> m
+  | _ when mouse.mx < grid_left - 70. ->
+      (* a track clicked: its instrument selected *)
+      let k = List.length (tracks m) in
+      let hit = List.find_opt (fun (i, _) -> Float.abs (mouse.my - track_y i) <= 12.) (List.init k (fun i -> (i, ()))) in
+      (match hit with Some (i, _) -> { m with selected = Some (fst (List.nth (tracks m) i)) } | None -> m)
+  | _, _, Some (_, md) when mouse.mx < grid_left && on_rows ->
+      md.device.note_on pitch 0.8;
+      { m with preview = Some pitch }
+  | _, _, Some (id, _) when on_rows && time >= 0. && time < Song.length m.song -> (
+      match Song.note_at m.song id time pitch with
+      | Some n -> { m with song = Song.remove m.song id n }
+      | None -> { m with drawing = Some { start = time; length = 1.; pitch; velocity = 0.8 } })
+  | _ -> m
+
+let seq_view (m : model) : shape list =
+  let sw = step_w m.song and len = Song.length m.song in
+  let track = Option.bind m.selected (fun id -> Option.map (fun md -> (id, md)) (List.assoc_opt id m.modules)) in
+  let color = match track with Some (_, md) -> md.color | None -> rgb 200 200 200 in
+  let pane_h = seq_top - seq_bottom + 30. in
+  let grid_w = grid_right - grid_left in
+  let x_of t = grid_left + (t * sw) in
+  (* the keys: a white column, the black keys over it *)
+  let keys =
+    (rectangle (rgb 235 235 230) 60. (float_of_int rows * row_h) |> move (grid_left - 35.) (seq_bottom + (float_of_int rows * row_h / 2.)))
+    :: List.concat
+      (List.init rows (fun r ->
+           let p = m.low +.. r and y = row_y m (m.low +.. r) in
+           [
+             rectangle (if is_black p then rgb 36 36 40 else rgb 46 46 52) grid_w (row_h - 1.) |> move (grid_left + (grid_w / 2.)) y;
+             rectangle (if m.preview = Some p then color else if is_black p then rgb 25 25 25 else rgb 235 235 230) (if is_black p then 38. else 60.) (if is_black p then row_h - 1. else row_h - 2.)
+             |> move (if is_black p then grid_left - 46. else grid_left - 35.) y;
+           ]
+           @ if p mod 12 = 0 then [ words (rgb 80 80 80) (Printf.sprintf "C%d" ((p /.. 12) -.. 1)) |> scale 0.7 |> move (grid_left - 16.) y ] else []))
+  in
+  let lines =
+    List.init (int_of_float len +.. 1) (fun k ->
+        let bar = k mod 16 = 0 in
+        rectangle (if bar then rgb 120 120 130 else if k mod 4 = 0 then rgb 75 75 82 else rgb 55 55 60) (if bar then 2. else 1.) (float_of_int rows * row_h)
+        |> move (x_of (float_of_int k)) (seq_bottom + (float_of_int rows * row_h / 2.)))
+  in
+  let ruler = List.init (Song.(m.song.bars)) (fun b -> words (rgb 220 220 220) (string_of_int (b +.. 1)) |> scale 0.9 |> move (x_of (float_of_int (16 *.. b)) + 8.) (seq_top - 20.)) in
+  let note_view (n : Song.note) =
+    if n.pitch < m.low || n.pitch >= m.low +.. rows then []
+    else [ rectangle color ((n.length * sw) - 2.) (row_h - 3.) |> move (x_of n.start + (n.length * sw / 2.)) (row_y m n.pitch); rectangle (rgb 20 20 20) 2. (row_h - 3.) |> move (x_of n.start + 1.) (row_y m n.pitch) ]
+  in
+  let notes = match track with Some (id, _) -> List.concat_map note_view (Song.notes m.song id) | None -> [] in
+  let drawing = match m.drawing with Some n -> note_view n | None -> [] in
+  let playhead =
+    let s = Lazy.force studio in
+    if Studio_reason.running s then [ rectangle (rgb 250 220 80) 2. (float_of_int rows * row_h + 20.) |> move (x_of (Studio_reason.position s)) (seq_bottom + (float_of_int rows * row_h / 2.) + 10.) ] else []
+  in
+  let track_list =
+    List.concat
+      (List.mapi
+         (fun k (id, (md : Rack_module.t)) ->
+           let chosen = m.selected = Some id in
+           [ rectangle (if chosen then md.color else rgb 60 60 66) 104. 24. |> move (-440.) (track_y k); words (if chosen then black else rgb 220 220 220) md.name |> scale 0.8 |> move (-440.) (track_y k) ])
+         (tracks m))
+  in
+  [ rectangle (rgb 30 30 34) 1000. pane_h |> move 0. (seq_bottom - 30. + (pane_h / 2.)); rectangle (rgb 70 70 76) 1000. 2. |> move 0. seq_top ]
+  @ [ words (rgb 220 220 220) "SEQUENCER" |> scale 1.1 |> move (-420.) (seq_top - 20.) ]
+  @ List.mapi (fun k line -> words (rgb 160 160 160) line |> scale 0.75 |> move (-440.) (seq_bottom + 60. - (float_of_int k * 16.)))
+      [ "click: a note"; "drag: longer"; "again: out"; "a key: heard"; "wheel: octaves" ]
+  @ track_list @ keys @ lines @ ruler @ notes @ drawing @ playhead
 
 let update (computer : computer) (m : model) : model =
   let s = Lazy.force studio in
@@ -397,6 +535,7 @@ let update (computer : computer) (m : model) : model =
         | _ -> m)
     | None -> m
   in
+  let m = if Gui.button computer ~at:(90., 475.) (if m.seq then "Hide seq" else "Sequencer") then { m with seq = not m.seq; drawing = None } else m in
   (* the transport *)
   let running = Studio_reason.running s in
   if Gui.button computer ~at:(-400., transport_y) (if running then "STOP" else "PLAY") || pressed "space" then
@@ -414,25 +553,30 @@ let update (computer : computer) (m : model) : model =
   in
   (* the wheel scrolls (60 pixels a notch), the arrows and the page keys
    * too, and the scrollbar pressed puts that part of the rack in view *)
+  let rack_bottom = rack_bottom m in
   let room = Float.max 0. (total_height m - (rack_top - rack_bottom)) in
   let mouse = computer.mouse in
   let keys = (if List.mem "ArrowDown" now then 20. else 0.) - (if List.mem "ArrowUp" now then 20. else 0.) + (if pressed "PageDown" then 400. else 0.) - if pressed "PageUp" then 400. else 0. in
   let on_bar = mouse.mdown && Float.abs (mouse.mx - scrollbar_x) <= 12. && mouse.my <= rack_top && mouse.my >= rack_bottom in
-  let scroll = if on_bar then ((rack_top - mouse.my) / (rack_top - rack_bottom) * total_height m) - ((rack_top - rack_bottom) / 2.) else m.scroll - (mouse.mwheel * 60.) + keys in
+  let scroll = if on_bar then ((rack_top - mouse.my) / (rack_top - rack_bottom) * total_height m) - ((rack_top - rack_bottom) / 2.) else m.scroll - (if m.seq && mouse.my < seq_top then 0. else mouse.mwheel * 60.) + keys in
   let m = { m with scroll = Float.max 0. (Float.min room scroll) } in
   (* the mouse, unless a menu has it or the rack is turning *)
-  let m = if Gui.modal () || m.flip > 0 then m else if m.side = Back then back_input computer m else front_input computer m in
-  (* the letters play the selected device *)
-  let piano =
-    match Option.bind m.selected (fun id -> List.assoc_opt id m.modules) with
-    | Some md -> Piano.update letters computer m.piano { note_on = md.device.note_on; note_off = md.device.note_off; set = md.device.set; fill = (fun _ -> ()) }
-    | None -> m.piano
+  let in_seq = m.seq && (mouse.my < seq_top || m.drawing <> None || m.preview <> None) && m.drag = None in
+  let m =
+    if Gui.modal () || m.flip > 0 then m
+    else if in_seq then seq_input computer m
+    else if m.side = Back then back_input computer m
+    else front_input computer m
   in
+  let m = if m.seq && mouse.my < seq_top then { m with low = max 12 (min 96 (m.low +.. int_of_float (Float.round mouse.mwheel *. 2.))) } else m in
+  (* the letters play the selected device *)
+  let octave = match Option.bind m.selected (fun id -> List.assoc_opt id m.modules) with Some md -> play_letters md.device m.octave ~now ~was:m.keys | None -> m.octave in
   if m.patch != Studio_reason.patch s then Studio_reason.set_patch s m.patch;
+  Studio_reason.set_song s m.song;
   let ropes = if m.side = Back then ropes_of m else m.ropes in
   let falling = List.filter_map (fun (r, n) -> if n <= 0 then None else Some (Rack_cable.step r (0., 0.) (0., 0.), n -.. 1)) m.falling in
   let message = match m.message with Some (w, n) when n > 0 -> Some (w, n -.. 1) | _ -> None in
-  { m with ropes; falling; piano; message; was_down = computer.mouse.mdown; keys = now }
+  { m with ropes; falling; octave; message; was_down = computer.mouse.mdown; keys = now }
 
 (*****************************************************************************)
 (* view *)
@@ -527,22 +671,23 @@ let flip_view (m : model) : shape list =
   List.concat_map
     (fun (_, (b : Widget.box)) ->
       [ rectangle (if showing = Front then rgb 90 90 96 else rgb 48 48 54) w b.h |> move b.x b.y; rectangle (rgb 20 20 20) w 2. |> move b.x (b.y + (b.h / 2.)) ])
-    (List.filter (fun (_, b) -> visible b) (boxes m))
+    (List.filter (fun (_, b) -> visible m b) (boxes m))
 
 let view (computer : computer) (m : model) : shape list =
-  let bs = List.filter (fun (_, b) -> visible b) (boxes m) in
+  let bs = List.filter (fun (_, b) -> visible m b) (boxes m) in
   let running = Studio_reason.running (Lazy.force studio) in
   [ rectangle (rgb 30 30 34) computer.screen.width computer.screen.height ]
   @ [ rectangle rail 18. 1000. |> move (-.((width / 2.) + 15.)) 0.; rectangle rail 18. 1000. |> move ((width / 2.) + 15.) 0. ]
   @ (if m.flip > 0 then flip_view m
      else if m.side = Front then List.concat_map (fun (id, b) -> front_view m id b) bs
      else List.concat_map (fun (id, b) -> back_view m id b) bs @ cables_view m)
+  @ (if m.seq then seq_view m else [])
   (* the scrollbar *)
-  @ (let total = total_height m and room = rack_top - rack_bottom in
+  @ (let total = total_height m and room = rack_top - rack_bottom m in
      if total <= room then []
      else
        let h = room * room / total in
-       [ rectangle (rgb 60 60 66) 12. room |> move scrollbar_x 0.; rectangle (rgb 160 160 170) 12. h |> move scrollbar_x (rack_top - (h / 2.) - (m.scroll * room / total)) ])
+       [ rectangle (rgb 60 60 66) 12. room |> move scrollbar_x (rack_top - (room / 2.)); rectangle (rgb 160 160 170) 12. h |> move scrollbar_x (rack_top - (h / 2.) - (m.scroll * room / total)) ])
   (* the bars *)
   @ [ rectangle (rgb 50 50 56) computer.screen.width 60. |> move 0. 470.; rectangle (rgb 50 50 56) computer.screen.width 60. |> move 0. transport_y ]
   @ [

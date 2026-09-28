@@ -22,7 +22,6 @@ let name (k : int) (field : string) : string = Printf.sprintf "ch%d.%s" (k +.. 1
 
 type state = {
   mixer : Rack_device.t;
-  peak : int -> float;
   ui : Immediate.t;
   sliding : int option; (* the fader held *)
   was_down : bool;
@@ -63,7 +62,7 @@ let draw (st : state) (b : Widget.box) ~active:_ : shape list =
   let w, h = natural in
   let strip k =
     let x = strip_x k and level = d.get (level_name k) in
-    let y = fader_bottom + (level * fader_track) and meter = Float.min 1. (st.peak k) * fader_track in
+    let y = fader_bottom + (level * fader_track) and meter = Float.min 1. (d.get (if k = master then "master.peak" else name k "peak")) * fader_track in
     let muted = k < master && d.get (name k "mute") >= 0.5 in
     [
       words (rgb 220 220 220) (if k = master then "MASTER" else string_of_int (k +.. 1)) |> scale 1. |> move x 100.;
@@ -98,6 +97,6 @@ let rec part (st : state) : Component.part =
           @ [ Printf.sprintf "master = %g" (st.mixer.get "master") ]));
   }
 
-let make (mixer : Rack_device.t) ~(peak : int -> float) : Component.part =
+let make (mixer : Rack_device.t) : Component.part =
   let theme = { Theme.default with dial = 18.; dial_face = rgb 25 25 28; pointer = rgb 240 240 240; face = rgb 70 70 75 } in
-  part (step_ui Panel.neutral { mixer; peak; ui = Immediate.set_theme theme Immediate.empty; sliding = None; was_down = false })
+  part (step_ui Panel.neutral { mixer; ui = Immediate.set_theme theme Immediate.empty; sliding = None; was_down = false })

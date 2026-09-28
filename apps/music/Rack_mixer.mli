@@ -12,9 +12,10 @@
  *
  * Its knobs, by name: "ch1.level" .. "ch14.level" (0 to 1, 0.7 at
  * first), "chN.pan" (-1 left to 1 right), "chN.aux" (0 to 1), "chN.mute"
- * (0 or 1), "master" (0 to 1). Ours, and said so: one aux (Reason has
- * four), no EQ, no solo; the pan a balance (a side turned down, the
- * other left). *)
+ * (0 or 1), "master" (0 to 1); and its meters, read only, "chN.peak"
+ * (the loudest sample coming in the last chunk) and "master.peak".
+ * Ours, and said so: one aux (Reason has four), no EQ, no solo; the pan
+ * a balance (a side turned down, the other left). *)
 
 val channels : int (* 14 *)
 val create : unit -> Rack_device.t

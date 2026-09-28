@@ -6,6 +6,5 @@
 (* 880 x 240 *)
 val natural : float * float
 
-(* [make mixer ~peak]: the part over the mixer device; [peak k] the
- * channel k's level now (0 to 13, 14 the master), for the meters *)
-val make : Rack_device.t -> peak:(int -> float) -> Component.part
+(* the part over the mixer device, its meters its "chN.peak" *)
+val make : Rack_device.t -> Component.part

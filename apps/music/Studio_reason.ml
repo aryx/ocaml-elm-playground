@@ -184,6 +184,9 @@ type t = {
   out : Signal.stereo; (* the chunk being played *)
   mutable played : int; (* how much of it *)
   mutable running : bool;
+  mutable song : Song.t;
+  mutable position : float; (* in sixteenths *)
+  mutable sounding : (id * int) list; (* the song's notes on *)
   ring : Signal.t;
   mutable at : int;
 }
@@ -215,6 +218,9 @@ let create (p : patch) : t =
       out = stereo ();
       played = chunk;
       running = false;
+      song = Song.empty;
+      position = 0.;
+      sounding = [];
       ring = Array.make 2048 0.;
       at = 0;
     }
@@ -230,7 +236,30 @@ let attach (t : t) (id : id) (d : Rack_device.t) : unit =
 
 let run (t : t) (on : bool) : unit =
   t.running <- on;
+  t.position <- 0.;
+  List.iter (fun (id, n) -> Option.iter (fun (d : Rack_device.t) -> d.note_off n) (Hashtbl.find_opt t.devices id)) t.sounding;
+  t.sounding <- [];
   Hashtbl.iter (fun _ (d : Rack_device.t) -> d.run on) t.devices
+
+let set_song (t : t) (s : Song.t) : unit = t.song <- s
+let position (t : t) : float = t.position
+
+(* the song's notes of the next chunk, played on their devices *)
+let play_song (t : t) : unit =
+  let per_step = float_of_int Signal.rate *. 60. /. t.patch.tempo /. 4. in
+  let until = t.position +. (float_of_int chunk /. per_step) in
+  List.iter
+    (fun (id, ev) ->
+      match (Hashtbl.find_opt t.devices id, ev) with
+      | Some (d : Rack_device.t), Song.On (n, v) ->
+          d.note_on n v;
+          t.sounding <- (id, n) :: t.sounding
+      | Some d, Song.Off n ->
+          d.note_off n;
+          t.sounding <- List.filter (fun s -> s <> (id, n)) t.sounding
+      | None, _ -> ())
+    (Song.events t.song ~from:t.position ~until);
+  t.position <- Float.rem until (Song.length t.song)
 
 let running (t : t) : bool = t.running
 
@@ -251,6 +280,7 @@ let recent (t : t) : Signal.t = Array.init 2048 (fun i -> t.ring.((t.at + i) mod
 
 (* one chunk: every stage in order, then what reaches the hardware *)
 let compute (t : t) : unit =
+  if t.running then play_song t;
   List.iter
     (fun (id, k) ->
       match Hashtbl.find_opt t.devices id with

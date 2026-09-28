@@ -153,7 +153,7 @@ let panel_view (p : Voice_juno.patch) : shape list =
       (fun (title, controls) ->
         let xs = List.map (fun (name, _) -> x_of name) controls in
         let lo = List.fold_left Float.min 1e9 xs and hi = List.fold_left Float.max (-1e9) xs in
-        group [ Meters.segment orange 2. (lo - 16., 400.) (hi + 16., 400.); words orange title |> scale 1.2 |> move ((lo + hi) / 2.) 414. ])
+        group [ rectangle orange (hi - lo + 32.) 2. |> move ((lo + hi) / 2.) 400.; words orange title |> scale 1.2 |> move ((lo + hi) / 2.) 414. ])
       sections
   in
   [ rectangle (rgb 30 30 32) 960. 420. |> move 0. 250.; rectangle (rgb 150 150 155) 960. 16. |> move 0. 452. ]

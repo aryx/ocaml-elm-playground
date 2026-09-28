@@ -20,6 +20,6 @@ let matrix () : t =
   let d = Rack_matrix.create () in
   { name = "Matrix"; color = rgb 250 200 60; front = Part_matrix.make d; device = d }
 
-let mixer ~(peak : Rack_device.t -> int -> float) : t =
+let mixer () : t =
   let d = Rack_mixer.create () in
-  { name = "Mixer 14:2"; color = rgb 200 200 210; front = Part_mixer.make d ~peak:(peak d); device = d }
+  { name = "Mixer 14:2"; color = rgb 200 200 210; front = Part_mixer.make d; device = d }

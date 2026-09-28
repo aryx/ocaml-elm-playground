@@ -32,6 +32,16 @@ the same text.
   `Studio_rebirth`'s hub as a device, a jack per machine, its transport
   the rack's.
 
+## 2b. The sequencer
+
+The piano roll under the rack is one loop of two bars (`Song.mli`).
+Reason's has more: a song of any length and its loop inside it, the
+arrange view (a track's patterns as blocks along the song), a velocity
+lane under the notes, quantize, notes moved and resized by dragging,
+several selected, the 808's track shown as drum rows instead of keys,
+recording from the letters as they are played, and the notes on the
+exact sample (now up to a chunk early).
+
 ## 3. The Spider, and one output into several inputs
 
 Reason 2.0's audio and CV splitters: a device with one input and four

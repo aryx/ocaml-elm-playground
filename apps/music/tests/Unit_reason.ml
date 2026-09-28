@@ -182,6 +182,33 @@ let test_matrix () =
       Alcotest.(check (pair int int)) "the second, C3, at chunk 87" (48, 87) (n1, c1)
   | _ -> Alcotest.fail "fewer than two notes"
 
+(*****************************************************************************)
+(* The song *)
+(*****************************************************************************)
+
+(* a note from the loop's start: on as the loop comes round, off 2
+ * sixteenths later; one to its end: off at the end, not after *)
+let test_song_events () =
+  let n = { Song.start = 0.; length = 2.; pitch = 60; velocity = 0.8 } in
+  let s = Song.set_notes Song.empty 1 [ n; { n with start = 30.; length = 8.; pitch = 64 } ] in
+  let show = List.map (fun (t, e) -> match e with Song.On (p, _) -> Printf.sprintf "%d on %d" t p | Song.Off p -> Printf.sprintf "%d off %d" t p) in
+  Alcotest.(check (list string)) "round the loop" [ "1 off 64"; "1 on 60" ] (show (Song.events s ~from:31.5 ~until:32.5));
+  Alcotest.(check (list string)) "2 sixteenths later" [ "1 off 60" ] (show (Song.events s ~from:1.5 ~until:2.5));
+  Alcotest.(check (list string)) "the next one" [ "1 on 64" ] (show (Song.events s ~from:29.9 ~until:30.1))
+
+(* the rack playing a song: its first note at once, on its track's
+ * device *)
+let test_song_played () =
+  let notes = ref [] and chunks = ref 0 in
+  let r, ids = rack [ ("rec", Rack_device.of_instrument ~kind:"rec" (recorder notes chunks)) ] in
+  let id = List.hd ids in
+  Studio_reason.set_song r (Song.set_notes Song.empty id [ { start = 0.; length = 4.; pitch = 67; velocity = 0.8 }; { start = 4.; length = 4.; pitch = 69; velocity = 0.8 } ]);
+  Studio_reason.run r true;
+  ignore (pull r (Rack_device.chunk * 400));
+  (* at 120 BPM, 4 sixteenths are 22050 samples, in chunk 344 (from
+   * 22016): played at its start, 34 samples early *)
+  Alcotest.(check (list (pair int int))) "G at once, A a beat later" [ (67, 0); (69, 344) ] (List.rev !notes)
+
 let tests =
   Testo.categorize "Studio_reason"
     [
@@ -191,4 +218,6 @@ let tests =
       t "levels, mutes, unplugged" test_levels;
       t "the same samples whatever the blocks" test_blocks;
       t "the Matrix's timing" test_matrix;
+      t "the song's events, round the loop" test_song_events;
+      t "a song played on its devices" test_song_played;
     ]

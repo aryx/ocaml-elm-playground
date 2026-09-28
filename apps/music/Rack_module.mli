@@ -27,7 +27,6 @@ type catalogue = (string * (unit -> t)) list
 (* an effect of libs/audio/effects: its panel its knobs and a bypass *)
 val of_effect : kind:string -> name:string -> color:Playground.color -> Effect.t -> t
 
-(* the Matrix, and the Mixer 14:2 ([peak k] channel k's level, 14 the
- * master's, for its meters) *)
+(* the Matrix, and the Mixer 14:2 *)
 val matrix : unit -> t
-val mixer : peak:(Rack_device.t -> int -> float) -> t
+val mixer : unit -> t
