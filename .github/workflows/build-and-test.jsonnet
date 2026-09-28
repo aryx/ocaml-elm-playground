@@ -26,7 +26,7 @@ local job = {
         '5.2.0',
       ],
     },
-    //'fail-fast': false,
+    'fail-fast': false,
   },
   'runs-on': '${{ matrix.os }}',
   steps: [
@@ -55,7 +55,7 @@ local job = {
     {
       name: 'Install dependencies',
       run: |||
-        opam install --deps-only .
+        opam install --deps-only --with-test .
       |||,
     },
     {

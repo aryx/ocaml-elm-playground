@@ -12,7 +12,7 @@ jobs:
         run: sudo apt-get update
       - name: Install dependencies
         run: |
-          opam install --deps-only .
+          opam install --deps-only --with-test .
       - name: Build
         run: |
           eval $(opam env)
@@ -22,6 +22,7 @@ jobs:
           eval $(opam env)
           make test
     strategy:
+      fail-fast: false
       matrix:
         ocaml-compiler:
           - 4.14.1
