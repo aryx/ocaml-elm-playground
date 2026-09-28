@@ -62,6 +62,7 @@ type t = {
   mutable lens : (camera * Rgba_image.t) option; (* the magnifying glass's last picture, and its camera *)
   order : (string, int) Hashtbl.t; (* claude: a file's place in the reading order, when numbered *)
   colours : (string * (int * int * int)) list; (* claude: a .codemapconfig's (archi) *)
+  mutable jumped : (int * (int * int)) option; (* claude: the binding a click on a name went to: its file's index in [placed], its line and column *)
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -105,7 +106,7 @@ let make ?(numbered = false) ?(colours = []) ~(area : float * float * int * int)
   let order = Hashtbl.create 64 in
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
-    before_right = false; painted = None; last = None; moving = false; lens = None; order; colours }
+    before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None }
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries
@@ -442,6 +443,33 @@ let number (t : t) (path : string) : int option = Hashtbl.find_opt t.order path
 let line_pos (r : Treemap.rect) (g : geometry) (line : int) : float * float =
   (r.x +. (float_of_int (line / g.lpc) *. g.colw), r.y +. (float_of_int (line mod g.lpc) *. g.cell_h))
 
+(* claude: where a name is in the layout, its top left corner *)
+let name_pos (r : Treemap.rect) (g : geometry) (line : int) (col : int) : float * float =
+  let x, y = line_pos r g line in
+  (x +. (float_of_int col *. g.cell_w), y)
+
+(* claude: the name under a point of the layout, bound in its file
+ * (Code_file.name_at, plan_codemap_naming.md levels 1 and 2), if the file
+ * is lexed: the file's index in [placed], and the occurrence *)
+let name_under (t : t) (u : float) (v : float) : (int * Highlight_code.occurrence) option =
+  match under t u v with
+  | Some i -> (
+      match (t.placed.(i).node, t.geometry.(i)) with
+      | File (_, _, e), Some g when Lazy.is_val e.file ->
+          let r = t.placed.(i).rect in
+          let k = int_of_float ((u -. r.x) /. g.colw) in
+          let col = int_of_float ((u -. r.x -. (float_of_int k *. g.colw)) /. g.cell_w) in
+          Option.map (fun o -> (i, o)) (Code_file.name_at (Lazy.force e.file) (line_at g r u v) col)
+      | _ -> None)
+  | None -> None
+
+(* claude: the file under a point readable where the camera is: its code
+ * read on the map itself, no glass needed *)
+let readable_at (t : t) (u : float) (v : float) : bool =
+  match under t u v with
+  | Some i -> ( match t.geometry.(i) with Some g -> readable (at_ratio t.cam (Playground_platform.pixel_ratio ())) g | None -> false)
+  | None -> false
+
 (* claude: the magnifying glass (below): round, a reading glass (80
  * columns), or none, o going from one to the next, one setting for every
  * map (tinybox's panel and its explorer) *)
@@ -500,10 +528,13 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   in
   let clicked = (mouse.mclick || mouse.mdouble) && on_map && not t.dragged in
   let t = if not mouse.mdown then { t with drag = None; dragged = (if mouse.mclick then false else t.dragged) } else t in
-  (* a click: fly to what is under it, or open the file already there *)
+  (* a click: fly to what is under it. claude: a file stays in its
+   * columns, on the map; there, a click on a name goes to its binding,
+   * lit (plan_codemap_naming.md); Enter opens the file view *)
   let target, action =
     if pressed "Escape" then (target, Close)
-    else if clicked || pressed "Enter" then
+    else if clicked || pressed "Enter" then begin
+      if clicked then t.jumped <- None;
       let u = to_u t.cam mpx and v = to_v t.cam mpy in
       match under t u v with
       | None -> (target, Stay)
@@ -515,9 +546,20 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
               let close_enough =
                 readable (at_ratio t.cam (Playground_platform.pixel_ratio ())) g || Float.abs (Float.log (t.cam.z /. there.z)) < 0.1
               in
-              if close_enough || mouse.mdouble || pressed "Enter" then (target, Open (Lazy.force e.file, line_at g p.rect u v)) else (there, Stay)
+              if pressed "Enter" then (target, Open (Lazy.force e.file, line_at g p.rect u v))
+              else if close_enough then
+                match name_under t u v with
+                | Some (_, o) ->
+                    let bl, bc = o.bound_at in
+                    let x, y = name_pos p.rect g bl bc in
+                    t.jumped <- Some (i, o.bound_at);
+                    (* the camera moved only if the binding is off the map *)
+                    if on a (to_px t.cam x) (to_py t.cam y) then (target, Stay) else ({ target with cx = x; cy = y +. (g.cell_h /. 2.) }, Stay)
+                | None -> (target, Stay)
+              else (there, Stay)
           | Dir _, _ -> (fit a p.rect, Stay)
           | _ -> (target, Stay))
+    end
     else (target, Stay)
   in
   let target = clamp_cam target in
@@ -662,6 +704,51 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   (* the directories' names faint under the rest, placed among themselves *)
   place a !dirs @ place a (!files @ !defs)
 
+(* claude: on the map read up close, as in the file view (Code_view): the
+ * name under the mouse, its binding framed cyan and its uses lit yellow,
+ * in its file; and the binding a click went to, lit green *)
+let names_lit (computer : computer) (t : t) : shape list =
+  let c = t.cam in
+  let a = c.a in
+  let place (i : int) ((line, col) : int * int) (len : int) (color : color) (alpha : float) : shape list =
+    match t.geometry.(i) with
+    | Some g ->
+        let x, y = name_pos t.placed.(i).rect g line col in
+        let w = float_of_int len *. g.cell_w *. c.z and h = g.cell_h *. c.z in
+        let px = to_px c x +. (w /. 2.) and py = to_py c y +. (h /. 2.) in
+        if on a px py then [ rectangle color w h |> move (sx a px) (sy a py) |> fade alpha ] else []
+    | None -> []
+  in
+  let file (i : int) = match t.placed.(i).node with File (_, _, e) when Lazy.is_val e.file -> Some (Lazy.force e.file) | _ -> None in
+  let mouse = computer.mouse in
+  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
+  let u = to_u c mpx and v = to_v c mpy in
+  let hovered =
+    if t.moving || not (on a mpx mpy && readable_at t u v) then []
+    else
+      match name_under t u v with
+      | Some (i, o) -> (
+          match file i with
+          | Some f ->
+              List.concat_map
+                (fun (w : Highlight_code.occurrence) ->
+                  let binding = (w.line, w.col) = o.bound_at in
+                  place i (w.line, w.col) w.len (if binding then rgb 0 225 255 else yellow) (if binding then 0.38 else 0.25))
+                (Code_file.uses f o)
+          | None -> [])
+      | None -> []
+  in
+  let jumped =
+    match t.jumped with
+    | Some (i, at) -> (
+        match file i with
+        | Some f -> (
+            match Code_file.name_at f (fst at) (snd at) with Some o -> place i at o.len (rgb 90 210 120) 0.45 | None -> [])
+        | None -> [])
+    | None -> []
+  in
+  jumped @ hovered
+
 let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let c = t.cam in
   let a = c.a in
@@ -721,12 +808,12 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   @
   if not chrome then []
   else
-    hover
+    hover @ names_lit computer t
     @ [
         words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
         words ink status |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
-          (Printf.sprintf "wheel zoom   drag pan   click fly in, again open   right click up   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" algo (glass_name ()))
+          (Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition   enter the file view   right click up   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" algo (glass_name ()))
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]
@@ -902,5 +989,9 @@ let reading_glass (computer : computer) (t : t) : shape list =
  * again as the map's own (on the web, half of a zoom's frame); it comes
  * back the frame the camera stops, as the map's sharp picture does *)
 let glass (computer : computer) (t : t) : shape list =
-  if t.moving then []
+  (* claude: none over code read on the map itself, where the names under
+   * the mouse are lit (names_lit) *)
+  let a = t.cam.a in
+  let mpx = px_of a computer.mouse.mx and mpy = py_of a computer.mouse.my in
+  if t.moving || readable_at t (to_u t.cam mpx) (to_v t.cam mpy) then []
   else match !glass_shape with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []

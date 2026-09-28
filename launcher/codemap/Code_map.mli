@@ -13,6 +13,11 @@
    large (a function's, a type's, a section's), and close enough, its
    code turns into text that can be read on the map itself.
 
+   claude: read there, in its columns, not in another view: the name
+   under the mouse has its binding and uses lit, and a click on it goes
+   to its binding (Code_file.name_at, plan_codemap_naming.md); Enter opens
+   the file view (Code_view, [Open]).
+
    The picture is painted into one image per camera, the code's letters
    included (the VGA's font, Vga_font: a file is thousands of characters,
    not shapes), the names and labels over it as shapes. *)
