@@ -42,6 +42,12 @@
  * keys from C, w e t y u the black ones, z and x an octave down and up);
  * space plays and stops the tape, r records.
  *
+ * The look is the OP-1's: a flat aluminium slab, the round speaker and
+ * the little volume knob at its left, the black screen, and the keys
+ * all the same square dark caps on one grid -- the function keys, and
+ * the keyboard's two rows, its black keys dark caps above the pale
+ * ones, half a key over, flush with the rest, not a piano's.
+ *
  * Uses: Studio_op1 (the sound, the effects, the LFOs, the tape),
  * Op1_engine (the engines' names and encoders), Tape (the reels drawn),
  * Audio's instruments, Gui (the encoders as knobs, the buttons). Not:
@@ -91,10 +97,10 @@ let pale = rgb 235 235 235
 let orange = rgb 240 115 40
 let encoder_colors = [| blue; green; pale; orange |]
 let encoder_x (k : int) : number = 130. + (float_of_int k * 85.)
-let encoder_y = 250.
+let encoder_y = 180.
 
 let knob_theme (c : color) : Theme.t =
-  { Theme.default with dial = 30.; dial_face = c; pointer = (if c = pale then rgb 30 30 30 else white); edge = rgb 60 60 60 }
+  { Theme.default with dial = 40.; dial_face = c; pointer = (if c = pale then rgb 30 30 30 else white); edge = rgb 60 60 60 }
 
 (* the four encoders over [values] (0 to 1), and their values after
  * this frame *)
@@ -141,51 +147,61 @@ let next_kind (s : Studio_op1.sound) (page : int) : Studio_op1.sound =
 (* The keyboard *)
 (*****************************************************************************)
 
+(* every key a square cap on one grid, [pitch] apart: the function
+ * keys' two rows, then the keyboard's; column 0 is the keyboard's
+ * first white key, the columns left of it the OP-1's left block *)
+let pitch = 50.
+let cap = 44.
+let keyboard_left = -290.
+let col (c : float) : number = keyboard_left + ((c + 0.5) * pitch)
+let row_y = 45.
+let sounds_y = -7.
+let black_y = -70.
+let white_y = -122.
 let keys_count = 25 (* two octaves and a C *)
 let is_black (s : int) : bool = List.mem (s mod 12) [ 1; 3; 6; 8; 10 ]
-let white_width = 56.
-let keyboard_left = -420.
-let keyboard_top = -10.
-let white_height = 290.
-let black_height = 175.
 let whites_before (s : int) : int = List.length (List.filter (fun i -> not (is_black i)) (List.init s (fun i -> i)))
 
+(* a black key half a key over, between its two white ones *)
 let key_x (s : int) : number =
   let w = float_of_int (whites_before s) in
-  if is_black s then keyboard_left + (w * white_width) else keyboard_left + ((w + 0.5) * white_width)
+  if is_black s then col (w - 0.5) else col w
 
-(* the key under the mouse, a black key first (it's on top) *)
+let key_y (s : int) : number = if is_black s then black_y else white_y
+
+(* the key under the mouse: the caps don't overlap *)
 let key_at (x : number) (y : number) : int option =
-  let keys = List.init keys_count (fun s -> s) in
-  let height s = if is_black s then black_height else white_height in
-  let hit s =
-    let w = if is_black s then white_width * 0.6 else white_width in
-    Float.abs (x - key_x s) <= w / 2. && y <= keyboard_top && y >= keyboard_top - height s
-  in
-  match List.find_opt (fun s -> is_black s && hit s) keys with Some s -> Some s | None -> List.find_opt hit keys
+  List.find_opt (fun s -> Float.abs (x - key_x s) <= cap / 2. && Float.abs (y - key_y s) <= cap / 2.) (List.init keys_count (fun s -> s))
 
 (*****************************************************************************)
 (* update *)
 (*****************************************************************************)
 
-let t_x (k : int) : number = -250. + (float_of_int k * 62.)
-let sound_x (k : int) : number = -250. + (float_of_int k * 62.)
-let row_y = 110.
-let sounds_y = 50.
+(* the function keys: dark caps, white labels *)
+let keys_theme : Theme.t =
+  { Theme.default with face = rgb 72 74 78; face_hot = rgb 92 94 98; face_down = rgb 45 46 50; edge = rgb 40 40 44; text = rgb 235 235 235; text_size = 11. }
+
+let key_in (computer : computer) ?(w = cap) (c : float) (y : number) (label : string) : bool =
+  Gui.button_in computer { x = col c; y; w; h = cap } label
+
+let t_x (k : int) : number = col (float_of_int k)
+let sound_x (k : int) : number = col (float_of_int k)
+let transport_col (k : int) : float = 5. + float_of_int k
+let volume_at = (-445., 255.)
 
 let update (computer : computer) (m : model) : model =
   ignore (Audio.instrument "op1" (fun () -> inst));
-  Gui.set_theme { Theme.default with face = rgb 225 225 225; face_hot = rgb 240 240 240; face_down = rgb 200 200 200; text = rgb 30 30 30 };
+  Gui.set_theme keys_theme;
   let tape = Studio_op1.tape op1 in
   (* the modes *)
-  let mode = if Gui.button computer ~at:(-430., row_y) "SYNTH" then Synth else m.mode in
-  let mode = if Gui.button computer ~at:(-350., row_y) "TAPE" then Tape_mode else mode in
+  let mode = if key_in computer (-3.) sounds_y "SYNTH" then Synth else m.mode in
+  let mode = if key_in computer (-2.) sounds_y "TAPE" then Tape_mode else mode in
   (* T1 to T4: the module, or the track *)
-  let pressed_t = List.find_opt (fun k -> Gui.button computer ~at:(t_x k, row_y) (Printf.sprintf "T%d" (k +.. 1))) [ 0; 1; 2; 3 ] in
+  let pressed_t = List.find_opt (fun k -> key_in computer (float_of_int k) row_y (Printf.sprintf "T%d" (k +.. 1))) [ 0; 1; 2; 3 ] in
   (* the sounds *)
   let patch = m.patch in
   let current =
-    List.fold_left (fun c k -> if Gui.button computer ~at:(sound_x k, sounds_y) (string_of_int (k +.. 1)) then k else c) patch.current
+    List.fold_left (fun c k -> if key_in computer (float_of_int k) sounds_y (string_of_int (k +.. 1)) then k else c) patch.current
       (List.init 8 (fun k -> k))
   in
   let s = patch.sounds.(current) in
@@ -200,22 +216,25 @@ let update (computer : computer) (m : model) : model =
   let space = computer.keyboard.kspace in
   let now = Set_.elements computer.keyboard.keys in
   let pressed k = List.mem k now && not (List.mem k m.held) and released k = List.mem k m.held && not (List.mem k now) in
-  if Gui.button computer ~at:(80., row_y) "REC" || pressed "r" then Studio_op1.record op1 track;
-  if Gui.button computer ~at:(150., row_y) "PLAY" then Studio_op1.play op1;
-  if Gui.button computer ~at:(220., row_y) "STOP" then Studio_op1.stop op1;
-  if Gui.button computer ~at:(280., row_y) "<<" then Tape.set_head tape 0.;
+  if key_in computer (transport_col 0) row_y "REC" || pressed "r" then Studio_op1.record op1 track;
+  if key_in computer (transport_col 1) row_y "PLAY" then Studio_op1.play op1;
+  if key_in computer (transport_col 2) row_y "STOP" then Studio_op1.stop op1;
+  if key_in computer (transport_col 3) row_y "<<" then Tape.set_head tape 0.;
   (* the sampler engine on T1: its recording taken from the armed track *)
   if m.mode = Synth && m.page = 0 && (List.nth Op1_engine.all patch.sounds.(patch.current).engine).name = "sampler" then
-    if Gui.button computer ~at:(380., row_y) (Printf.sprintf "SAMPLE T%d" (m.track +.. 1)) then ignore (Studio_op1.sample_track op1 m.track);
+    if key_in computer ~w:((2. * pitch) - (pitch - cap)) 10.5 row_y (Printf.sprintf "SAMPLE T%d" (m.track +.. 1)) then ignore (Studio_op1.sample_track op1 m.track);
   if space && not (List.mem "space" m.held) then if Tape.moving tape then Studio_op1.stop op1 else Studio_op1.play op1;
+  (* the volume knob, by the speaker, as the OP-1's *)
+  Gui.set_theme { Theme.default with dial = 26.; dial_face = rgb 150 152 156; edge = rgb 90 90 94 };
+  let volume = Gui.knob computer ~at:volume_at ~from:0. ~to_:1. patch.volume in
   (* the encoders: the module's four, or the tape's *)
   let s, speed, levels, volume =
     match mode with
-    | Synth -> (with_values s page (encoders computer (page_values s page)), m.speed, patch.levels, patch.volume)
+    | Synth -> (with_values s page (encoders computer (page_values s page)), m.speed, patch.levels, volume)
     | Tape_mode ->
         let length = float_of_int (Tape.length tape) in
         let head = Tape.head tape / length in
-        let v = encoders computer [| patch.levels.(track); (m.speed + 2.) / 4.; patch.volume; head |] in
+        let v = encoders computer [| patch.levels.(track); (m.speed + 2.) / 4.; volume; head |] in
         let levels = Array.copy patch.levels in
         levels.(track) <- v.(0);
         (* the speed in quarter steps, 1 easy to find again *)
@@ -253,7 +272,7 @@ let update (computer : computer) (m : model) : model =
 
 let ink = rgb 30 30 30
 let screen_x = -110.
-let screen_y = 250.
+let screen_y = 180.
 let screen_w = 300.
 let screen_h = 170.
 
@@ -390,44 +409,58 @@ let keyboard_view (computer : computer) (m : model) : shape list =
   in
   let key s =
     let black = is_black s in
-    let w = if black then white_width * 0.6 else white_width - 3. in
-    let h = if black then black_height else white_height in
-    (* the OP-1's keys: pale and dark grey, flat *)
-    let color = if down s then encoder_colors.(m.page) else if black then rgb 70 70 72 else rgb 238 238 236 in
-    let label = match letter_of s with Some k -> [ words (if black then white else rgb 130 130 130) k |> scale 1.4 |> move_y ((-.h / 2.) + 16.) ] | None -> [] in
-    group (rectangle color w h :: label) |> move (key_x s) (keyboard_top - (h / 2.))
+    (* the OP-1's keys: square caps, dark and pale, flat, the pressed
+     * one in the colour of the module on the screen *)
+    let color = if down s then encoder_colors.(m.page) else if black then rgb 72 74 78 else rgb 236 236 234 in
+    let label = match letter_of s with Some k -> [ words (if black then rgb 210 210 210 else rgb 140 140 140) k |> scale 1.1 |> move_y (-12.) ] | None -> [] in
+    group (rectangle (rgb 40 40 44) (cap + 2.) (cap + 2.) :: rectangle color cap cap :: label) |> move (key_x s) (key_y s)
   in
-  let keys = List.init keys_count (fun s -> s) in
-  List.map key (List.filter (fun s -> not (is_black s)) keys)
-  @ List.map key (List.filter is_black keys)
-  @ [ words ink (Printf.sprintf "C%d" m.octave) |> scale 1.3 |> move (keyboard_left - 32.) (keyboard_top - 20.) ]
+  List.init keys_count key
+  @ [ words ink (Printf.sprintf "C%d" m.octave) |> scale 1.3 |> move (col (-2.)) white_y ]
 
-(* the speaker's grille, the OP-1's left *)
+(* the speaker, the OP-1's left: holes in a disc *)
 let speaker_view : shape list =
-  List.concat (List.init 6 (fun i -> List.init 6 (fun j -> circle (rgb 150 150 152) 5. |> move (-420. + (float_of_int i * 18.)) (295. - (float_of_int j * 18.)))))
+  let cx = -360. and cy = 185. and r = 62. and step = 13. in
+  let n = Float.to_int (r / step) in
+  List.concat
+    (List.init ((2 *.. n) +.. 1) (fun i ->
+         List.filter_map
+           (fun j ->
+             let x = float_of_int (i -.. n) * step and y = float_of_int (j -.. n) * step in
+             if (x * x) + (y * y) <= r * r then Some (circle (rgb 60 62 66) 3.5 |> move (cx + x) (cy + y)) else None)
+           (List.init ((2 *.. n) +.. 1) (fun j -> j))))
 
 let view (computer : computer) (m : model) : shape list =
-  let lit on = if on then rgb 240 115 40 else rgb 150 150 150 in
+  let body_top = 300. and body_bottom = -165. in
+  (* a key's light, in its cap's corner *)
+  let light c on x y = circle (if on then c else rgb 110 112 116) 3. |> move (x + 14.) (y + 14.) in
   [ rectangle (rgb 70 72 76) computer.screen.width computer.screen.height ]
   @ [ words white "TinyOp1" |> scale 2.4 |> move (-380.) 482.; words (rgb 200 200 200) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-150.) 482. ]
-  @ [ rectangle (rgb 205 206 208) 960. 700. |> move 0. 20.; rectangle (rgb 185 186 188) 960. 6. |> move 0. 367. ]
+  (* the aluminium slab: its bevelled edge, the face brushed in bands *)
+  @ [ rectangle (rgb 150 152 156) 968. (body_top - body_bottom + 8.) |> move 0. ((body_top + body_bottom) / 2.) ]
+  @ List.init 31 (fun i ->
+        let h = (body_top - body_bottom) / 31. in
+        let g = 206 +.. (if i mod 2 = 0 then 0 else 2) -.. (i /.. 6) in
+        rectangle (rgb g g (g +.. 3)) 960. (h + 0.5) |> move 0. (body_top - ((float_of_int i + 0.5) * h)))
   @ speaker_view
-  @ [ rectangle (rgb 15 15 15) (screen_w + 16.) (screen_h + 16.) |> move screen_x screen_y; rectangle black screen_w screen_h |> move screen_x screen_y ]
+  @ [ rectangle (rgb 25 25 28) (screen_w + 16.) (screen_h + 16.) |> move screen_x screen_y; rectangle black screen_w screen_h |> move screen_x screen_y ]
   @ (match m.mode with Synth -> synth_screen m | Tape_mode -> tape_screen m)
-  @ [
-      words ink "OP-1" |> scale 1.6 |> move (encoder_x 0 - 15.) 320.;
-      (* the lights over the mode keys, T keys and sound keys *)
-      circle (lit (m.mode = Synth)) 4. |> move (-430.) (row_y + 22.);
-      circle (lit (m.mode = Tape_mode)) 4. |> move (-350.) (row_y + 22.);
-      circle (if Tape.recording (Studio_op1.tape op1) <> None then rgb 230 50 40 else rgb 150 150 150) 4. |> move 80. (row_y + 22.);
-      circle (lit (Tape.moving (Studio_op1.tape op1))) 4. |> move 150. (row_y + 22.);
-    ]
-  @ List.init 4 (fun k -> circle (lit ((m.mode = Synth && m.page = k) || (m.mode = Tape_mode && m.track = k))) 4. |> move (t_x k) (row_y + 22.))
-  @ List.init 8 (fun k -> circle (lit (m.patch.current = k)) 4. |> move (sound_x k) (sounds_y + 22.))
-  @ [ words ink (Printf.sprintf "sound %d   voices %d" (m.patch.current +.. 1) (Studio_op1.voices op1)) |> scale 1.1 |> move 390. sounds_y;
+  @ [ words ink "OP-1" |> scale 1.5 |> move 410. 270.; words (rgb 90 90 94) "VOL" |> scale 0.8 |> move (fst volume_at) (snd volume_at - 26.) ]
+  @ [ words ink (Printf.sprintf "sound %d   voices %d" (m.patch.current +.. 1) (Studio_op1.voices op1)) |> scale 1.1 |> move 360. sounds_y;
       words (rgb 220 220 220) "T1-T4: the module (again: the next of its kind)   1-8: the sounds   space: play/stop   r: record   z x: octave"
-      |> scale 1.1 |> move 0. (-375.) ]
+      |> scale 1.1 |> move 0. (-230.) ]
   @ keyboard_view computer m @ Gui.draw ()
+  (* over the caps Gui drew: the T keys' colours, the encoders' *)
+  @ List.init 4 (fun k -> rectangle encoder_colors.(k) 22. 3. |> move (t_x k) (row_y - 14.))
+  (* the lights: the mode, the module or armed track, the sound, the tape *)
+  @ [
+      light orange (m.mode = Synth) (col (-3.)) sounds_y;
+      light orange (m.mode = Tape_mode) (col (-2.)) sounds_y;
+      light (rgb 230 50 40) (Tape.recording (Studio_op1.tape op1) <> None) (col (transport_col 0)) row_y;
+      light green (Tape.moving (Studio_op1.tape op1)) (col (transport_col 1)) row_y;
+    ]
+  @ List.init 4 (fun k -> light encoder_colors.(k) ((m.mode = Synth && m.page = k) || (m.mode = Tape_mode && m.track = k)) (t_x k) row_y)
+  @ List.init 8 (fun k -> light orange (m.patch.current = k) (sound_x k) sounds_y)
 
 let app = game view update initial_model
 let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)

@@ -17,7 +17,9 @@
  * The OP-XY's panel, and ours: a screen, four knobs in four greys (dark,
  * mid, light, white: the OP-1's colours gone to aluminium), the modules
  * M1 to M4 choosing what the screen and the knobs show, the eight track
- * buttons, and the keys, which are also the sequencer's 16 steps:
+ * buttons, and the keys, which are also the sequencer's 16 steps (ours
+ * a row of their own, each key cap with its light); the body brushed
+ * aluminium, the keys flat square caps in two rows:
  *
  *     M1 engine    the track's sound: an engine's four values, the
  *                  OP-1's ten or the OP-XY's own four (wavetable,
@@ -184,23 +186,21 @@ let keys_count = 25
 let is_black (s : int) : bool = List.mem (s mod 12) [ 1; 3; 6; 8; 10 ]
 let white_width = 56.
 let keyboard_left = -420.
-let keyboard_top = -30.
-let white_height = 240.
-let black_height = 145.
+let keyboard_top = -70.
+
+(* the OP-XY's keys are flat square caps in two rows, the black keys
+ * the upper row, between the white ones as on a piano *)
+let cap = 52.
 let whites_before (s : int) : int = List.length (List.filter (fun i -> not (is_black i)) (List.init s (fun i -> i)))
 
 let key_x (s : int) : number =
   let w = float_of_int (whites_before s) in
   if is_black s then keyboard_left + (w * white_width) else keyboard_left + ((w + 0.5) * white_width)
 
+let key_y (s : int) : number = if is_black s then keyboard_top - 35. else keyboard_top - 100.
+
 let key_at (x : number) (y : number) : int option =
-  let keys = List.init keys_count (fun s -> s) in
-  let height s = if is_black s then black_height else white_height in
-  let hit s =
-    let w = if is_black s then white_width * 0.6 else white_width in
-    Float.abs (x - key_x s) <= w / 2. && y <= keyboard_top && y >= keyboard_top - height s
-  in
-  match List.find_opt (fun s -> is_black s && hit s) keys with Some s -> Some s | None -> List.find_opt hit keys
+  List.find_opt (fun s -> Float.abs (x - key_x s) <= cap / 2. && Float.abs (y - key_y s) <= cap / 2.) (List.init keys_count (fun s -> s))
 
 (*****************************************************************************)
 (* update *)
@@ -216,7 +216,7 @@ let scene_x (k : int) : number = 260. + (float_of_int k * 55.)
 
 let update (computer : computer) (m : model) : model =
   ignore (Audio.instrument "opxy" (fun () -> inst));
-  Gui.set_theme { Theme.default with face = rgb 215 215 215; face_hot = rgb 235 235 235; face_down = rgb 190 190 190; text = rgb 30 30 30 };
+  Gui.set_theme { Theme.default with face = rgb 222 223 225; face_hot = rgb 238 238 240; face_down = rgb 190 192 196; text = rgb 30 30 30; edge = rgb 110 112 116 };
   let p = m.patch in
   let space = computer.keyboard.kspace in
   if Gui.button computer ~at:(-430., row_y) (if Studio_opxy.running opxy then "STOP" else "PLAY") || (space && not (List.mem "space" m.held)) then
@@ -377,22 +377,22 @@ let screen_view (m : model) : shape list =
   [ words pale title |> scale 1. |> move screen_x (screen_y + 70.); words (rgb 150 150 150) brain |> scale 0.8 |> move screen_x (screen_y + 54.) ]
   @ grid @ bars
 
+(* a key cap: a dark edge, a face, a light top edge as the light
+ * catches it *)
+let key_cap (face : color) (w : number) : shape =
+  group [ rectangle (rgb 110 112 116) (w + 2.) (w + 2.); rectangle face w w; rectangle white (w - 4.) 2. |> fade 0.4 |> move_y ((w / 2.) - 3.) ]
+
 let keyboard_view (computer : computer) (m : model) : shape list =
   let o = octave_of m in
   let letter_of s = List.find_map (fun (k, s') -> if s' = s then Some k else None) letters in
   let down s = match letter_of s with Some k -> Set_.mem k computer.keyboard.keys | None -> false in
   let key s =
     let black = is_black s in
-    let w = if black then white_width * 0.6 else white_width - 3. in
-    let h = if black then black_height else white_height in
-    let color = if down s then accent else if black then rgb 40 40 42 else rgb 225 225 222 in
-    let label = match letter_of s with Some k -> [ words (if black then white else rgb 130 130 130) k |> scale 1.3 |> move_y ((-.h / 2.) + 16.) ] | None -> [] in
-    group (rectangle color w h :: label) |> move (key_x s) (keyboard_top - (h / 2.))
+    let color = if down s then accent else if black then rgb 70 72 76 else rgb 222 223 225 in
+    let label = match letter_of s with Some k -> [ words (if black then rgb 220 220 220 else rgb 120 120 124) k |> scale 1.1 |> move (-14.) (-14.) ] | None -> [] in
+    group (key_cap color cap :: label) |> move (key_x s) (key_y s)
   in
-  let keys = List.init keys_count (fun s -> s) in
-  List.map key (List.filter (fun s -> not (is_black s)) keys)
-  @ List.map key (List.filter is_black keys)
-  @ [ words ink (Printf.sprintf "C%d" o) |> scale 1.2 |> move (keyboard_left - 32.) (keyboard_top - 20.) ]
+  List.init keys_count key @ [ words ink (Printf.sprintf "C%d" o) |> scale 1.2 |> move (keyboard_left - 32.) (keyboard_top - 100.) ]
 
 let view (computer : computer) (m : model) : shape list =
   let p = m.patch in
@@ -402,7 +402,9 @@ let view (computer : computer) (m : model) : shape list =
   let playing = if Studio_opxy.running opxy then Some (Studio_opxy.position opxy m.track) else None in
   [ rectangle (rgb 50 52 56) computer.screen.width computer.screen.height ]
   @ [ words white "TinyOpxy" |> scale 2.4 |> move (-380.) 482.; words (rgb 200 200 200) (Printf.sprintf "latency %.0f ms" (Audio.latency () * 1000.)) |> scale 1.3 |> move (-150.) 482. ]
-  @ [ rectangle (rgb 200 202 205) 960. 730. |> move 0. 45. ]
+  (* the body: aluminium, brushed, its edge a darker bevel *)
+  @ [ rectangle (rgb 150 152 156) 966. 736. |> move 0. 45.; rectangle (rgb 200 202 205) 956. 726. |> move 0. 45. ]
+  @ List.init 60 (fun i -> rectangle (if i mod 2 = 0 then rgb 206 208 211 else rgb 196 198 201) 950. 2. |> move 0. (400. - (float_of_int i * 12.)))
   @ [ rectangle (rgb 15 15 15) (screen_w + 16.) (screen_h + 16.) |> move screen_x screen_y; rectangle black screen_w screen_h |> move screen_x screen_y ]
   @ screen_view m
   @ [ words ink "OP-XY" |> scale 1.5 |> move (knob_x 0 - 10.) 360. ]
@@ -421,14 +423,16 @@ let view (computer : computer) (m : model) : shape list =
         |> move (track_x k) row_y)
   @ List.init 4 (fun k -> circle (lit (p.scene = k)) 4. |> move (scene_x k) (row_y + 22.))
   @ [ words ink (Printf.sprintf "pattern %d" (p.scenes.(p.scene).chosen.(m.track) +.. 1)) |> scale 0.8 |> move (scene_x 0 - 60.) (row_y - 28.) ]
-  (* the steps: set ones dark, the playing one lit, a held one ringed,
-   * a dot for locks *)
+  (* the steps: key caps, each with its light above, orange when set,
+   * white when playing; a held one ringed, a dot for locks *)
   @ List.concat
       (List.init 16 (fun s ->
            let st = pattern.(s) in
-           let face = if playing = Some s then accent else if st.notes <> [] then rgb 60 60 62 else rgb 235 235 232 in
-           (if m.held_step = Some s then [ rectangle accent 52. 52. |> move (step_x s) steps_y ] else [])
-           @ [ rectangle face 46. 46. |> move (step_x s) steps_y; words (if st.notes <> [] then white else ink) (string_of_int (s +.. 1)) |> scale 0.9 |> move (step_x s) steps_y ]
+           let led = if playing = Some s then white else if st.notes <> [] then accent else rgb 120 122 126 in
+           (if m.held_step = Some s then [ rectangle accent 54. 54. |> move (step_x s) steps_y ] else [])
+           @ [ key_cap (if (s /.. 4) mod 2 = 0 then rgb 222 223 225 else rgb 205 207 210) 46. |> move (step_x s) steps_y;
+               words ink (string_of_int (s +.. 1)) |> scale 0.9 |> move (step_x s) (steps_y - 6.);
+               rectangle led 16. 4. |> move (step_x s) (steps_y + 13.) ]
            @ (if st.locks <> [] then [ circle (rgb 90 140 230) 4. |> move (step_x s + 16.) (steps_y + 16.) ] else [])
            (* a component: a small orange triangle in the corner *)
            @ if st.components <> [] then [ triangle accent 6. |> move (step_x s - 15.) (steps_y + 15.) ] else []))

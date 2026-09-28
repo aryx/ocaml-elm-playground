@@ -16,8 +16,11 @@
  *
  * The panel: a strip per machine, in the mixer's order -- its name,
  * < and > to change its pattern (each machine's own patterns), its
- * level and its mute, its 16 steps drawn (the 303's notes, the drums'
- * hits), the step playing lit: the four lit together, the one clock.
+ * level and its mute, its 16 steps drawn as the original draws them
+ * (the 303's notes a piano roll, accents orange, slides reaching the
+ * next step; the 808's buttons in its colours by fours, the 909's light,
+ * an LED over each lit for a hit), the step playing lit: the four lit
+ * together, the one clock. Each strip is a rack unit, ears and screws.
  * Over them start/stop (and space), the tempo, the volume; under them
  * the effects: the distortion on the 303s, the delay, the compressor,
  * and the PCF, the pattern controlled filter, its 16 cutoffs bars to
@@ -166,10 +169,49 @@ let update (computer : computer) (m : model) : model =
 let ink = rgb 30 30 30
 let green = rgb 120 220 160
 
-(* each machine's colours: the 303's silver, the 808's dark, the 909's
- * grey *)
+(* each machine's colours, the originals': the 303's silver, the 808's
+ * black and orange, the 909's light grey *)
 let colors (k : int) : color * color =
-  match k with 0 | 1 -> (rgb 205 205 210, ink) | 2 -> (rgb 50 50 50, rgb 235 230 215) | _ -> (rgb 150 150 152, rgb 30 30 30)
+  match k with 0 | 1 -> (rgb 205 205 210, ink) | 2 -> (rgb 38 38 40, rgb 240 140 50) | _ -> (rgb 190 190 188, ink)
+
+let led_on = rgb 255 60 40
+let led_off = rgb 90 30 28
+let playing = rgb 255 225 60
+
+(* a rack unit's ears, a screw above and below at each end *)
+let ears (y : number) (h : number) : shape list =
+  List.concat_map
+    (fun x ->
+      [ rectangle (rgb 40 40 44) 22. h |> move x y ]
+      @ List.map (fun dy -> circle (rgb 150 150 155) 4. |> move x (y + dy)) [ (h / 2.) - 12.; 12. - (h / 2.) ])
+    [ -464.; 464. ]
+
+(* the 303's steps as ReBirth's piano roll: each note a bar at its pitch
+ * in the pattern's range, orange if accented, reaching into the next
+ * step if it slides *)
+let step_303 (pattern : Sequencer.step array) (y : number) (s : int) (lit : bool) : shape list =
+  let notes = Array.to_list pattern |> List.filter_map (fun (st : Sequencer.step) -> st.note) in
+  let lo = List.fold_left min 127 notes and hi = List.fold_left max 0 notes in
+  let st = pattern.(s mod Array.length pattern) in
+  let x = cell_x s in
+  [ rectangle (if lit then rgb 110 100 40 else rgb 45 45 48) 26. 40. |> move x y ]
+  @
+  match st.note with
+  | None -> []
+  | Some n ->
+      let h = if hi > lo then float_of_int (n -.. lo) / float_of_int (hi -.. lo) else 0.5 in
+      let w = if st.slide then 30. else 20. in
+      [ rectangle (if st.accent then rgb 240 140 50 else rgb 235 232 222) w 4. |> move (x + ((w - 20.) / 2.)) (y - 16. + (h * 32.)) ]
+
+(* a drum machine's step: a button and its LED; the 808's buttons in
+ * the colours of its groups of four, red, orange, yellow, cream; the
+ * 909's all light, its LEDs above them *)
+let step_drum (k : int) (y : number) (s : int) (hit : bool) (lit : bool) : shape list =
+  let button = if k = 2 then [| rgb 205 55 45; rgb 235 120 40; rgb 235 200 60; rgb 235 230 215 |].(s /.. 4) else rgb 235 235 230 in
+  [
+    rectangle button 26. 28. |> move (cell_x s) (y - 6.);
+    circle (if lit then playing else if hit then led_on else led_off) 4. |> move (cell_x s) (y + 16.);
+  ]
 
 let strips_view (m : model) : shape list =
   let steps = Studio_rebirth.steps rebirth and running = Studio_rebirth.running rebirth in
@@ -178,23 +220,30 @@ let strips_view (m : model) : shape list =
          let y = strip_y k in
          let face, text = colors k in
          let machine = List.nth Studio_rebirth.machines k in
+         let model = match k with 0 | 1 -> "Bass Line" | _ -> "Rhythm Composer" in
          [
            rectangle face 950. 80. |> move 0. y;
-           words text (Studio_rebirth.name machine) |> scale 1.5 |> move (-420.) y;
+           words text (Studio_rebirth.name machine) |> scale 1.5 |> move (-410.) (y + 8.);
+           words text model |> scale 0.8 |> move (-410.) (y - 20.);
            words text (List.nth (pattern_names k) m.patterns.(k)) |> scale 1.1 |> move (-260.) y;
            words text "LEVEL" |> scale 0.9 |> move (-130.) (y - 30.);
            words text "MUTE" |> scale 0.9 |> move (-80.) (y - 30.);
          ]
-         @ List.init 16 (fun s ->
-               let lit = running && steps.(k) = s in
-               (* a hit in the machine's colour, the step playing yellow *)
-               let on = match k with 0 | 1 -> rgb 60 60 60 | 2 -> rgb 205 55 45 | _ -> rgb 235 120 40 in
-               let c = if lit then rgb 255 225 60 else if step_on m.patch k s then on else rgb 235 232 222 in
-               rectangle c 26. 40. |> move (cell_x s) y)))
+         (* the 909's orange line under its steps *)
+         @ (if k = 3 then [ rectangle (rgb 235 120 40) 480. 3. |> move (cell_x 0 + 225.) (y - 30.) ] else [])
+         @ ears y 80.
+         @ List.concat
+             (List.init 16 (fun s ->
+                  let lit = running && steps.(k) = s in
+                  match k with
+                  | 0 -> step_303 m.patch.bass1.pattern y s lit
+                  | 1 -> step_303 m.patch.bass2.pattern y s lit
+                  | _ -> step_drum k y s (step_on m.patch k s) lit))))
 
 let effects_view (m : model) : shape list =
   let label word x = words ink word |> scale 0.9 |> move x (-62.) in
   [ rectangle (rgb 205 205 210) 950. 150. |> move 0. (-40.) ]
+  @ ears (-40.) 150.
   @ [ label "DIST" (-400.); label "DELAY" (-320.); label "COMP" (-240.); label "PCF" (-160.) ]
   @ [ words ink "PCF: the drums' filter, a cutoff a step" |> scale 1. |> move 180. 18. ]
   @ List.init 16 (fun s ->
