@@ -4,10 +4,12 @@
 ; Zaxxon invented in 1982 and Q*bert, Knight Lore, Populous and Diablo
 ; all use. Used by TinyZaxxon (a fortress flown over),
 ; TinyDiablo (a dungeon walked through) and TinySuperOffRoad (a
-; stadium seen from the stands). A private library,
-; not installed: only the games use it.
+; stadium seen from the stands). A private library
+; (only the games use it), installed with elm_playground for its API
+; documentation.
 (library
  (name kit_isometric)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_playground)
 )

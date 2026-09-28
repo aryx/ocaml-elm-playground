@@ -3,9 +3,11 @@
 ; the tile map as a search problem, the three kinds of order (a path, a
 ; search for the nearest anything, a flow field for a crowd) and the
 ; walking (Orders). Used by TinyDune2 and TinyWarcraft2. A
-; private library, not installed: only the games use it.
+; private library (only the games use it), installed with elm_playground
+; for its API documentation.
 (library
  (name kit_rts)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_core elm_playground ai)
 )

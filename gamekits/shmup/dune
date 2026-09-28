@@ -2,10 +2,11 @@
 ; section 3 and "kits"): what shooters share, on top of the playground
 ; -- shots as values that move (Shots), and the curves enemies fly
 ; along (Path). Used by TinyInvaders, TinyGalaga and
-; TinyRobotron. A private library, not installed: only the games
-; use it.
+; TinyRobotron. A private library (only the games use it), installed
+; with elm_playground for its API documentation.
 (library
  (name kit_shmup)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_core elm_playground graphics_2d_geometry) ; Curve, for Path
 )

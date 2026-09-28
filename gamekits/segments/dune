@@ -2,9 +2,11 @@
 ; section 3): a Descent mine, a level as boxes with the openings where
 ; they touch, and Sixdof, a ship that can point anywhere. Used by
 ; TinyDescent (drawn through the openings, as portals) and
-; TinyDescent3d (with a z-buffer). A private library, not
-; installed: only the games use it.
+; TinyDescent3d (with a z-buffer). A private library (only
+; the games use it), installed with elm_playground for its API
+; documentation.
 (library
  (name kit_segments)
+ (package elm_playground)
  (wrapped false)
 )

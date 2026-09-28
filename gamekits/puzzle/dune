@@ -3,10 +3,11 @@
 ; moving and pushing on a grid (Push), and going back (Puzzle_undo); and
 ; Sokoban, the rules, level format and solver that TinySokoban shares
 ; with its level editor, TinySokobanEd. Used by TinySokoban,
-; TinySokobanEd and TinyBabaIsYou. A private library, not installed:
-; only the games use it.
+; TinySokobanEd and TinyBabaIsYou. A private library (only the
+; games use it), installed with elm_playground for its API documentation.
 (library
  (name kit_puzzle)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_core elm_playground)
 )

@@ -1,9 +1,11 @@
 ; claude: the cards kit: what the card games share, on top of the
 ; playground -- the 52 cards, Microsoft's numbered deals, a card drawn
-; (Cards). Used by TinySolitaire and TinyFreeCell. A private library,
-; not installed: only the games use it.
+; (Cards). Used by TinySolitaire and TinyFreeCell. A private library
+; (only the games use it), installed with elm_playground for its API
+; documentation.
 (library
  (name kit_cards)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_playground)
 )

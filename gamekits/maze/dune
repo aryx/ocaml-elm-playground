@@ -1,10 +1,12 @@
 ; claude: the maze kit (see docs/claude_notes/plan_games.md, "kits"):
 ; moving along a grid's corridors (Grid_move), and choosing a way at
 ; each tile, towards a target or at random (Chase). Used by
-; TinyPacman and TinyBomberman. A private library, not
-; installed: only the games use it.
+; TinyPacman and TinyBomberman. A private library (only
+; the games use it), installed with elm_playground for its API
+; documentation.
 (library
  (name kit_maze)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_playground)
 )

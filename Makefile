@@ -165,7 +165,7 @@ ASSETS ?= $(HOME)/github/assets
 ASSETS_URL=https://aryx.github.io/assets
 ODOC_DIRS=odoc.support \
   elm_playground elm_playground_native elm_playground_web\
-  elm_playground_software
+  elm_playground_software elm_playground_3d elm_playground_3d_software
 
 website:
 	make doc

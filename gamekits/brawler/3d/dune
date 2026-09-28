@@ -10,9 +10,11 @@
 ; linking the brawler kit (TinyStreetFighter, TinyFinalFight)
 ; would have to link a 3D backend too. The rules of a fight -- a move's
 ; frames, the boxes it hits with -- are the same in 2D and 3D and stay
-; next door. A private library, not installed.
+; next door. A private library, installed with
+; elm_playground_3d for its API documentation.
 (library
  (name kit_brawler3d)
+ (package elm_playground_3d)
  (wrapped false)
  (libraries elm_playground elm_playground_3d)
 )

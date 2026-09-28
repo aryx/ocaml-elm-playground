@@ -7,9 +7,11 @@
 ; 7), and by the ones from above -- TinyGranTrak10, TinySuperSprint,
 ; TinySupercars and TinySuperOffRoad (its walls, bounces and bumps); and
 ; that car on ground with a height (Offroad), used by TinyIgnition. A
-; private library, not installed: only the games use it.
+; private library (only the games use it), installed with elm_playground
+; for its API documentation.
 (library
  (name kit_racing)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_playground)
 )

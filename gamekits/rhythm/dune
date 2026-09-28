@@ -3,9 +3,11 @@
 ; was, a chart played through, and charts made from a tune's notes.
 ; Used by TinyDDR (arrows), TinyGuitarHero (a guitar) and TinyRockBand
 ; (a band). A
-; private library, not installed: only the games use it.
+; private library (only the games use it), installed with elm_playground
+; for its API documentation.
 (library
  (name kit_rhythm)
+ (package elm_playground)
  (wrapped false)
  (libraries audio)
 )

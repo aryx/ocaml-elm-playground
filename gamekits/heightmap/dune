@@ -5,8 +5,10 @@
 ; and TinyComanche3d (as triangles, with a z-buffer), and by
 ; TinyZeldaOcarina for Hyrule Field (its own heights, a valley in
 ; hills, the generator giving only the bumps). A private
-; library, not installed: only the games use it.
+; library (only the games use it), installed with elm_playground for
+; its API documentation.
 (library
  (name kit_heightmap)
+ (package elm_playground)
  (wrapped false)
 )

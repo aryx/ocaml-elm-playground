@@ -2,9 +2,11 @@
 ; arena, the cycles, the crashes, the rounds, the computer player, the
 ; scenes), without their picture. TinyTron.ml (2D) and
 ; TinyTron3d.ml (3D) are its two views: the same model and
-; update, the Elm architecture's point. A private library.
+; update, the Elm architecture's point. A private library,
+; installed with elm_playground for its API documentation.
 (library
  (name kit_lightcycles)
+ (package elm_playground)
  (wrapped false)
  (libraries elm_playground ai) ; ai: the search's Minimax
 )
