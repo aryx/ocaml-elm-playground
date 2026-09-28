@@ -2,4 +2,4 @@
 ; CATALOG.md (see make_website.ml), run by the Makefile's website target
 (executable
  (name make_website)
- (libraries catalogue))
+ (libraries catalogue tinybox_codedeps))
