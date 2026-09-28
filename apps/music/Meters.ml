@@ -34,8 +34,9 @@ let spectrum ~at:(cx, cy) ~size:(w, h) ~(color : color) ~(back : color) (samples
   in
   (rectangle back w h |> move cx cy) :: List.init bars bar
 
-let scope ~at:(cx, cy) ~size:(w, h) ~points ~(color : color) ~(back : color) ?gain (samples : Signal.t) : shape list =
-  let at i = samples.(Array.length samples -.. 1024 +.. (i *.. 1024 /.. points)) in
+let scope ~at:(cx, cy) ~size:(w, h) ~points ~(color : color) ~(back : color) ?(window = 1024) ?gain (samples : Signal.t) :
+    shape list =
+  let at i = samples.(Array.length samples -.. window +.. (i *.. window /.. points)) in
   let x i = cx - (w / 2.) + (float_of_int i / float_of_int points * w) in
   let y =
     match gain with

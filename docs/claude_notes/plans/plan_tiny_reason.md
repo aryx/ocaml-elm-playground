@@ -2,7 +2,9 @@
 
 Status: step A done (2026-09-28): Panel, Piano, Meters, Part_hammond,
 Part_voice in music_parts; TinyHammond over them (golden frames
-identical), TinyReface's YC face TinyHammond's panel scaled. Next: B.
+identical), TinyReface's YC face TinyHammond's panel scaled. Step B.4
+done: Part_juno, Part_tr808, TinyJuno and TinyTR808 over them (golden
+frames identical). Next: B.5 or C.
 
 ## The goal: a module added in one file
 

@@ -40,7 +40,7 @@
 (library
  (name music_parts)
  (wrapped false)
- (modules Panel Piano Meters Part_voice Part_hammond)
+ (modules Panel Piano Meters Part_voice Part_hammond Part_juno Part_tr808)
  (libraries elm_core elm_playground gui appkit_embed audio audio_signal music_voices))
 
 (executables

@@ -19,6 +19,7 @@ type look = {
   black_height : number;
   letters_from : int;
   velocity : number;
+  octaves : int * int;
   white_key : color;
   black_key : color;
   letter_on_white : color;
@@ -61,7 +62,8 @@ let key_at (look : look) (x : number) (y : number) : int option =
 let update (look : look) (computer : computer) (t : t) (inst : Instrument.t) : t =
   let now = Set_.elements computer.keyboard.keys in
   let pressed k = List.mem k now && not (List.mem k t.held) and released k = List.mem k t.held && not (List.mem k now) in
-  let octave = if pressed "z" then max 2 (t.octave -.. 1) else if pressed "x" then min 6 (t.octave +.. 1) else t.octave in
+  let lowest, highest = look.octaves in
+  let octave = if pressed "z" then max lowest (t.octave -.. 1) else if pressed "x" then min highest (t.octave +.. 1) else t.octave in
   List.iter
     (fun (k, semitone) ->
       let n = (12 *.. (t.octave +.. 1)) +.. semitone in

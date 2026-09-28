@@ -184,6 +184,7 @@ let look : Piano.look =
     black_height = 120.;
     letters_from = 12;
     velocity = 0.8;
+    octaves = (2, 6);
     white_key = rgb 245 245 242;
     black_key = rgb 30 30 32;
     letter_on_white = rgb 140 140 140;

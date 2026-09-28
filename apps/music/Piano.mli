@@ -20,6 +20,7 @@ type look = {
   black_height : float;
   letters_from : int; (* the key the letter a plays: 0, or 12 when the keys start an octave under it *)
   velocity : float;
+  octaves : int * int; (* the lowest and the highest z and x reach *)
   white_key : Playground.color;
   black_key : Playground.color;
   letter_on_white : Playground.color; (* on a black key, white *)

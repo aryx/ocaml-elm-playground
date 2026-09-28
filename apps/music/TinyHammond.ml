@@ -86,6 +86,7 @@ let look : Piano.look =
     black_height = 165.;
     letters_from = 0;
     velocity = 1.;
+    octaves = (2, 6);
     white_key = rgb 250 250 245;
     black_key = rgb 20 20 20;
     letter_on_white = rgb 120 120 120;

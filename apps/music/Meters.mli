@@ -8,15 +8,16 @@ val segment : Playground.color -> float -> float * float -> float * float -> Pla
 val spectrum :
   at:float * float -> size:float * float -> color:Playground.color -> back:Playground.color -> Signal.t -> Playground.shape list
 
-(* [scope ~at ~size ~points ~color ~back ?gain samples]: the last 1024
-   samples' wave in [points] points, scaled to its peak, or by [gain]
-   and clipped *)
+(* [scope ~at ~size ~points ~color ~back ?window ?gain samples]: the
+   last [window] samples' wave (1024) in [points] points, scaled to its
+   peak, or by [gain] and clipped *)
 val scope :
   at:float * float ->
   size:float * float ->
   points:int ->
   color:Playground.color ->
   back:Playground.color ->
+  ?window:int ->
   ?gain:float ->
   Signal.t ->
   Playground.shape list
