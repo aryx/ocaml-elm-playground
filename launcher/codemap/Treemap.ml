@@ -13,7 +13,7 @@
 
 type rect = { x : float; y : float; w : float; h : float }
 type 'a tree = Dir of string * 'a tree list | File of string * float * 'a
-type algo = Squarified | Slice_and_dice
+type algo = Ordered | Squarified | Slice_and_dice
 
 let rec size = function File (_, s, _) -> s | Dir (_, kids) -> List.fold_left (fun acc k -> acc +. size k) 0. kids
 
@@ -100,6 +100,68 @@ let squarify (sizes : float list) (r : rect) : rect list =
     Array.to_list placed
 
 (*****************************************************************************)
+(* Ordered *)
+(*****************************************************************************)
+
+(* a rectangle's long side over its short one: 1 a square *)
+let aspect (r : rect) : float = if r.w <= 0. || r.h <= 0. then Float.infinity else Float.max (r.w /. r.h) (r.h /. r.w)
+
+(* claude: codemap's orderify_children, pivot by middle. Along the
+ * longer side, three strips: the children before the middle one, the
+ * middle one (the pivot) with some of those after it beside it
+ * across, and the rest. How many go beside the pivot: whichever makes
+ * the pivot's rectangle squarest, each count tried. Each part is laid
+ * out the same way, in its rectangle. [items]: an index and a size,
+ * in their order; [out] their rectangles, by index. *)
+let rec ordered (items : (int * float) list) (r : rect) (out : rect array) : unit =
+  match items with
+  | [] -> ()
+  | [ (i, _) ] -> out.(i) <- r
+  | _ ->
+      let sum l = List.fold_left (fun acc (_, s) -> acc +. s) 0. l in
+      let before = List.filteri (fun k _ -> k < List.length items / 2) items in
+      let pivot, after = match List.filteri (fun k _ -> k >= List.length items / 2) items with p :: a -> (p, a) | [] -> assert false in
+      let total = sum items in
+      let across = r.w >= r.h in
+      (* the four rectangles, [beside] of [after] next to the pivot *)
+      let rects beside rest =
+        let sb = sum before and sr = sum rest and sp = snd pivot and ss = sum beside in
+        let cut = sp /. (sp +. ss) in
+        if across then
+          let wb = r.w *. sb /. total and wr = r.w *. sr /. total in
+          let mid = { r with x = r.x +. wb; w = r.w -. wb -. wr } in
+          ( { r with w = wb },
+            { mid with h = mid.h *. cut },
+            { mid with y = mid.y +. (mid.h *. cut); h = mid.h *. (1. -. cut) },
+            { r with x = r.x +. r.w -. wr; w = wr } )
+        else
+          let hb = r.h *. sb /. total and hr = r.h *. sr /. total in
+          let mid = { r with y = r.y +. hb; h = r.h -. hb -. hr } in
+          ( { r with h = hb },
+            { mid with w = mid.w *. cut },
+            { mid with x = mid.x +. (mid.w *. cut); w = mid.w *. (1. -. cut) },
+            { r with y = r.y +. r.h -. hr; h = hr } )
+      in
+      let best = ref None in
+      for k = 0 to List.length after do
+        let beside = List.filteri (fun j _ -> j < k) after and rest = List.filteri (fun j _ -> j >= k) after in
+        let ((_, p, _, _) as rs) = rects beside rest in
+        match !best with
+        | Some (score, _, _, _) when score <= aspect p -> ()
+        | _ -> best := Some (aspect p, beside, rest, rs)
+      done;
+      let _, beside, rest, (rb, rp, rs, rr) = Option.get !best in
+      ordered before rb out;
+      ordered [ pivot ] rp out;
+      ordered beside rs out;
+      ordered rest rr out
+
+let ordered_layout (sizes : float list) (r : rect) : rect list =
+  let out = Array.make (List.length sizes) r in
+  ordered (List.mapi (fun i s -> (i, s)) sizes) r out;
+  Array.to_list out
+
+(*****************************************************************************)
 (* Nesting *)
 (*****************************************************************************)
 
@@ -127,10 +189,20 @@ let layout (algo : algo) (r : rect) (tree : 'a tree) : 'a placed list =
     | File _ -> acc
     | Dir (_, kids) ->
         let kids = List.filter (fun k -> size k > 0.) kids in
+        (* claude: ordered, by name, directories and files together, case
+         * aside, as codemap sorts them: a/ left of or above b/ *)
+        let kids =
+          match algo with
+          | Ordered -> List.stable_sort (fun a b -> compare (String.lowercase_ascii (name_of a)) (String.lowercase_ascii (name_of b))) kids
+          | Squarified | Slice_and_dice -> kids
+        in
         let inner = if depth = 0 then rect else inset depth rect in
         let sizes = List.map size kids in
         let rects =
-          match algo with Squarified -> squarify sizes inner | Slice_and_dice -> slice ~horizontal:(depth mod 2 = 0) sizes inner
+          match algo with
+          | Ordered -> ordered_layout sizes inner
+          | Squarified -> squarify sizes inner
+          | Slice_and_dice -> slice ~horizontal:(depth mod 2 = 0) sizes inner
         in
         List.fold_left2 (fun acc k rc -> go (depth + 1) path rc k acc) acc kids rects
   in

@@ -33,6 +33,20 @@ let tests =
           let placed = Treemap.layout Squarified { x = 0.; y = 0.; w = 10.; h = 10. } t in
           Alcotest.(check (list string)) "paths, the directory first" [ "a/b"; "a/b/x.ml"; "a/b/y.ml" ]
             (List.map (fun (p : unit Treemap.placed) -> p.path) placed));
+      (* claude: the ordered layout on the paper's 20 sizes (Shneiderman and
+       * Wattenberg 2001, codemap's children_ex_ordered_2001) *)
+      Testo.create "ordered: each its share, inside, in order" (fun () ->
+          let sizes = List.map float_of_int [ 1; 5; 3; 4; 5; 1; 10; 1; 1; 2; 7; 3; 5; 2; 10; 1; 2; 1; 1; 2 ] in
+          let r : Treemap.rect = { x = 0.; y = 0.; w = 6.; h = 4. } in
+          let rects = Treemap.ordered_layout sizes r in
+          let total = List.fold_left ( +. ) 0. sizes in
+          List.iter2
+            (fun s (q : Treemap.rect) ->
+              Alcotest.(check (float 1e-6)) "its share of the area" (s /. total *. 24.) (q.w *. q.h);
+              Alcotest.(check bool) "inside" true (q.x >= -1e-9 && q.y >= -1e-9 && q.x +. q.w <= 6. +. 1e-9 && q.y +. q.h <= 4. +. 1e-9))
+            sizes rects;
+          let a, b, c = match Treemap.ordered_layout [ 1.; 1.; 1. ] { x = 0.; y = 0.; w = 3.; h = 1. } with [ a; b; c ] -> (a, b, c) | _ -> assert false in
+          Alcotest.(check bool) "three in a row, left to right" true (a.x < b.x && b.x < c.x));
       Testo.create "a file's grid and definitions" (fun () ->
           let f = Code_file.make "x.ml" "(*****)\n(* Model *)\n(*****)\nlet move p = p\ntype t = int\n" in
           Alcotest.(check (list (pair int string))) "the section, the function, the type"

@@ -101,10 +101,10 @@ let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 let make ?(numbered = false) ?(colours = []) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
-  let placed, geometry = relayout a Squarified entries in
+  let placed, geometry = relayout a Ordered entries in
   let order = Hashtbl.create 64 in
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
-  { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
+  { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours }
 
 (* claude: the lines of the files shown, for a title *)
@@ -471,7 +471,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   if pressed "o" then cycle_glass ();
   let t =
     if pressed "t" then
-      let algo : Treemap.algo = match t.algo with Squarified -> Slice_and_dice | Slice_and_dice -> Squarified in
+      let algo : Treemap.algo = match t.algo with Ordered -> Squarified | Squarified -> Slice_and_dice | Slice_and_dice -> Ordered in
       let placed, geometry = relayout a algo t.entries in
       { t with algo; placed; geometry; painted = None }
     else t
@@ -713,7 +713,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         | _ -> (frame, p.path))
     | None -> ([], "")
   in
-  let algo = match t.algo with Squarified -> "squarified" | Slice_and_dice -> "slice and dice" in
+  let algo = match t.algo with Ordered -> "ordered" | Squarified -> "squarified" | Slice_and_dice -> "slice and dice" in
   let screen = computer.screen in
   (if chrome then [ rectangle (rgb 12 10 28) screen.width screen.height ] else [])
   @ [ bitmap (float_of_int a.pw) (float_of_int a.ph) img |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph /. 2.)) ]

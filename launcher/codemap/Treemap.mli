@@ -1,7 +1,22 @@
 (* Treemap: a tree of sizes as nested rectangles, each the area of its
    size (Shneiderman, 1992), the layout of codemap's map.
 
-   Two algorithms, side by side:
+   Three algorithms, side by side:
+
+   - Ordered (Shneiderman and Wattenberg, "Ordered treemap layouts",
+     2001, pivot by middle), codemap's default and ours: the children
+     sorted by name keep their order, read left to right and top to
+     bottom, so that a directory is found where the alphabet puts it.
+     The middle child is the pivot; those before it make a strip along
+     the longer side, some of those after it go beside the pivot
+     (however many make its rectangle squarest), the rest a last strip;
+     each part is laid out the same way. Nearly as square as squarified:
+
+       +------+------+-----+
+       |      |  c   |     |
+       |  a   +------+  e  |
+       |  b   |  d   |  f  |
+       +------+------+-----+   a b before the pivot c, d beside it, e f after
 
    - Slice and dice (Shneiderman, "Tree visualization with tree-maps",
      1992): a directory's children cut its rectangle in strips, across
@@ -9,7 +24,7 @@
      rectangles are long and thin, hard to see and to point at.
 
    - Squarified (Bruls, Huizing and van Wijk, "Squarified treemaps",
-     2000), codemap's default: the children, biggest first, put in rows
+     2000): the children, biggest first, put in rows
      along the shorter side, a row closed when adding the next child
      would make its worst aspect ratio (a rectangle's long side over its
      short one) grow. Near squares, each a file's code can fill.
@@ -39,7 +54,7 @@ type rect = { x : float; y : float; w : float; h : float } (* y downwards *)
 
 type 'a tree = Dir of string * 'a tree list | File of string * float * 'a
 
-type algo = Squarified | Slice_and_dice
+type algo = Ordered | Squarified | Slice_and_dice
 
 val size : 'a tree -> float
 
@@ -54,6 +69,7 @@ val fold_singletons : 'a tree -> 'a tree
 (* [squarify sizes r]: the rectangles of [sizes] in [r], in their order *)
 val squarify : float list -> rect -> rect list
 val slice : horizontal:bool -> float list -> rect -> rect list
+val ordered_layout : float list -> rect -> rect list
 
 (* a node placed: a directory's before its children's (so drawn first) *)
 type 'a placed = { rect : rect; depth : int; path : string; node : 'a tree }
