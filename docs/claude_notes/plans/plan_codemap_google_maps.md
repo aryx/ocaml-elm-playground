@@ -69,7 +69,9 @@ An interactive mock-up of this plan on an imaginary codebase (`harbor`,
 https://claude.ai/artifact/C3cAvjjJXEwQPVy51wtBZZ (the source is in
 this session's scratchpad; the page computes the ordered treemap, the
 levels, the column hints, the labels' minzoom placement and van Wijk's
-smooth flights live). That is what a
+smooth flights live; its second version the countries first, the roads
+on hover (r), the fan-in heat (h) and the headers taller than the bodies
+(t)). That is what a
 street map is good at, and this plan borrows its methods.
 
 ## How a street map decides what to draw
@@ -431,6 +433,199 @@ in one file.
 The golden frames: each style's Z0 to Z4 frames, side by side, so a
 change to one style is seen not to touch the other.
 
+## Readings: what a map shows first, and why
+
+The author (2026-09-28, during step 4): "each time we must think what is
+the most important thing to see and understand at a certain level; in
+google maps the countries are displayed first! without clutter around
+and clear". And the readings he pointed to:
+
+- **Justin O'Beirne, "Google Maps: label readability"** and **core77,
+  "Google Maps: designing the modern atlas"**: a street map's labels come
+  in a few size classes, each smaller one lighter (the eye reads the
+  hierarchy by weight before reading any word); a big label keeps room
+  round it (a "donut": nothing small crowds a capital); every label on a
+  halo; and at the first zoom only the countries, alone.
+- **Tufte** (*The Visual Display of Quantitative Information*,
+  *Envisioning Information*): the most data for the least ink (no frame,
+  no fill that says nothing); layering and separation (one reading at a
+  time: the heat's colours replace the roles', not over them); the
+  smallest effective difference (a lighter shade, not a new colour);
+  micro and macro readings on the same picture (the whole map's shape,
+  and a line of it up close); small multiples; sparklines.
+
+What that made of the street map (in `Map_streets`, `Code_labels`):
+
+- **Countries first.** The directories' names are labels of their own,
+  placed before anything else, in three classes (a country 42 pixels, a
+  region 22, a district 16, each lighter), on a halo. They follow the
+  zoom from the whole map (`dir_level`, a level each 3 times closer:
+  countries at the whole map, regions from 3 times closer), not a line's
+  height: the organisation is read by how far you are from the whole,
+  the code by how big it is. The code's names (definitions, sections)
+  wait until the regions have been seen.
+- **Every country named**: a small one's name as big as fits its
+  rectangle, down to 11 pixels; a tall and narrow one's upwards, as a
+  river's name follows the river (not diagonal: harder to read, for
+  nothing). A directory's name keeps only a thin margin: a big country's
+  donut hid its small neighbour's name.
+- **Lighter the less used**: a definition's label mixed towards grey by
+  its population.
+
+## The atlas: a codebase is a graph
+
+The author: "remember that like in ~/codegraph/ a codebase is a graph
+really, many projects, and in each project lots of edges and
+dependencies ... the most important is maybe the high-level orga,
+graphs, deps at different levels"; "let's try to leverage as much as
+possible the semantic info and program analysis we can run on the
+code"; and, asked whether the map helps someone understand a codebase:
+"right now I would say it's not super useful. We must find a way to give
+more useful info that helps the viewer grasp the codebase more quickly".
+
+A newcomer's questions are not "where, how big" but: what is this and
+what is each part for; what depends on what; where do I start; what are
+the few key ideas. The atlas (`Map_atlas`, a third style, `m`,
+`style=atlas`) answers the second with what the code map already
+computes: every reference resolved (`Code_names`), counted
+(`Code_rank`), and now kept as the files' links (`Code_rank.links`: file
+a uses b's definitions n times).
+
+- **The heat**: from afar, a file's colour is how many other files use
+  it, dark to yellow to red on a log scale, fading out as the code's
+  colours come in. On this repository: games, apps and examples dark
+  (nothing uses a program), libs and playground hot, `Playground.mli`
+  red. The foundations, at a glance.
+- **The roads**: the links between the parts seen at this zoom (the
+  countries from the whole map, the regions from 3 times closer, then
+  the files), bundled along the directory tree -- Danny Holten,
+  "Hierarchical Edge Bundles: Visualization of Adjacency Relations in
+  Hierarchical Data" (IEEE TVCG, 2006), shown by him over a squarified
+  treemap, a system's call graph: a link from a to b is a B-spline
+  through the centres of the directories on the tree's path from a to b
+  (their common ancestor left out), straightened by a bundling strength
+  (0.85); links between the same two regions travel together. The
+  direction without arrows: a gradient, green at the user to red at the
+  used, and a taper, wide at the user (Holten and van Wijk, "A User
+  Study on Visualizing Directed Edges in Graphs", CHI 2009); the long
+  links faintest, under the short. With the mouse on no part, the
+  busiest 160; on a part, its own, framed. They fade as the code becomes
+  readable, and stay inside the map.
+- **The layered layout** (`Code_layers`): in each directory, its
+  children layered by the links between them, the users above the used
+  (the longest path from the unused, Sugiyama's layering; two children
+  using each other, the heavier way), at most 4 bands; cut as horizontal
+  bands always at the top, below only in a rectangle high enough (else
+  they nest into slivers), elsewhere the children in their bands' order.
+  On this repository the map reads top to bottom: the programs and their
+  kits (appkits, apps, examples, gamekits, games, launcher), then
+  playground, then languages, then libs -- the README's layering, found
+  by the code, and the roads run downhill: a road going up stands out.
+
+The first frame already tells something no other style did: hover LIBS
+and every road arrives red; libs uses no other part.
+
+The edge-bundling family, for later (the author's list): force-directed
+edge bundling (Holten and van Wijk, 2009), divided edge bundling
+(Selassie, Heller and Heer, 2011: the two directions of a pair on their
+own lanes, so that two parts using each other show it -- a cycle, worth
+a look), KDE-based (Hurter, Telea and Ersoy, 2012), attribute-driven
+(Telea et al., 2015); a survey, "State of the Art in Edge and Trail
+Bundling Techniques" (Lhuillier, Hurter and Telea, 2017). The
+hierarchical one fits a treemap best: its bundles are the tree, so
+zooming splits a country's roads into its regions'; the others are for
+graphs with no tree.
+
+### Next, in the atlas
+
+- **Captions**: under a country's and a region's name, the first
+  sentence of its README (every folder here has one), else the header
+  comment of its main module: the author's own explanation at each
+  level. Needs the READMEs embedded beside the sources
+  (`launcher/codegen`, `Code_deps.repository_sources`) and read by
+  `tinybox codemap <dir>`.
+- **Programs as cities**: each executable (`Program.main`) a pin; a
+  click on one lights everything it uses, transitively (`Code_deps.closure`),
+  the rest dimmed: its real footprint, the budget made visible.
+- **The data model as the capitals**: the most used types with their
+  one-line definition (`Playground.shape`, `computer`, `app`).
+- **Roads**: a key for all / hovered / none; divided lanes for the two
+  directions; the upward roads (against the layers) drawn apart.
+- **A reading order**: "start here", a flight from the entry point to
+  the main types to the main loop to one example program -- the
+  learner's map.
+
+## Near the ground: the headers taller than the bodies
+
+The author: "at the almost 'Ground level', when we have the code
+readable almost on multiple columns, we should again give more height
+pixel to the function header and types and important comments in the
+file, than the body of those statements, unless a statement is really
+important because it calls an important function or is called from
+main; we could apply similar heat map ideas at this almost ground level
+too, highlighting main and the important toplevel functions in the
+file! and the types! ... and that's where the glass is useful to hover
+those compacted body statements and make them readable in the glass".
+
+A fisheye by importance, not by the mouse's place (Furnas's degree of
+interest, 1986: interest = a priori importance - distance). Sketched in
+the mock-up (its "Tall headers", t):
+
+```
+  far (Z2)          almost the ground (Z3)             the ground (Z4)
+  ░░░░░░░░░         let update_scene x t dt =          every line its
+  ░░░░░░░░░           ▒▒░▒▓▒▒░ ▒▓░ ▒▒▒░                height, the
+  ░░░░░░░░░           ▒▒▓▒░░▒ ▒▒░▒▓                     headers a
+  ░░░░░░░░░         type state = {                      little bigger
+  ░░░░░░░░░           quads : quad list;
+  ░░░░░░░░░         let merge_event x =
+                      ▒▒░▒▓▒ ▒▒░▒▓▒▒░ ▒▓
+```
+
+- A line's weight: a top-level definition's first line, a type's lines,
+  a section's title, an important comment (below) weigh 1 + E; a body's
+  line 1, unless it calls a hot definition (its population) or is on
+  main's path; each column rescaled so the file keeps its rectangle. E
+  grows from the streets' level, peaks where the code is almost read,
+  and eases off (to half) when the whole code is readable.
+- The headers are then read in place, before their bodies: they become
+  the labels there (the floating labels of those definitions give way).
+- The file's heat at that zoom: main and the most used top-level
+  definitions and types lit (Code_rank's scores, the same ramp).
+- The glass reads a squeezed body: hovering it shows its lines at full
+  height (today's round and wide glasses, over the new geometry).
+- The delicate part: a line's height is no longer the file's constant
+  (`geometry`'s `cell_h`): `line_pos`, `line_at`, the painting of the
+  letters and SeeSoft's pixels, the glass and the names lit all go
+  through a line's (top, height) instead. Its own step.
+
+## Comments: which say something
+
+The author: "how to analyze the usefulness of a comment? some heuristics
+and basic NLP? we can't rely on LLM for those ... would be good to know
+if a comment is boilerplate copyright, or highlevel view that is
+useful". Lexical heuristics, over the comments the highlighters already
+find:
+
+- **Boilerplate**: a comment block whose normalised text (spaces, the
+  year and the author's name aside) is found in many files is noise --
+  counted across the map, whatever the licence; "Copyright", "License",
+  "GNU" confirm it.
+- **The role, by the place**: the first comment after the licence is
+  the file's header (the most valuable); a comment just above a
+  top-level definition documents it; a `(****)` banner is a section; an
+  `.mli`'s comments before the `.ml`'s.
+- **Explanation**: sentences (words against code symbols, a verb, a
+  full stop); a reference (a paper, an author and a year, "See X.mli");
+  an ASCII diagram (lines of box characters); a worked example; the
+  repository's own marks ("the trick of this game").
+- **Noise**: commented-out code (it lexes as code), a very short
+  remark; TODO and FIXME a category of their own (a layer: the map's
+  unfinished places).
+
+A comment's score then drives the same things as a definition's
+population: its height near the ground, its label, a caption.
+
 ## The code
 
 - `Code_rank` (new, pure): the populations -- a definition's uses (the
@@ -456,19 +651,36 @@ change to one style is seen not to touch the other.
 
 0. **Styles**: today's drawing moved, unchanged, into `Map_classic`
    behind the style record, `m` and `style=` switching (one style for
-   now); its golden frames, before and after, the same.
+   now); its golden frames, before and after, the same. *Done*
+   (0a150c9a).
 1. **Column hints** from afar, SeeSoft's pixels from Z3, in the new
    `Map_streets`: the least cluttered far view, and the fastest (no parse
    needed to draw it). Golden frames of the repository's map at Z0 to Z4
    (tinybox's `code=` and `-dump-frame`) in both styles, looked at
-   together before anything else.
+   together before anything else. *Done* (f38d6251).
 2. **Populations** (`Code_rank`), and the definitions' labels sized and
-   chosen by them rather than by their kind alone.
+   chosen by them rather than by their kind alone. *Done* (b732ad48).
 3. **The placement by level** (`Code_labels`): minzoom, the budget, the
-   fading; its tests (no overlap, stability, the budget).
-4. **The card** and **search**.
+   fading; its tests (no overlap, stability, the budget). *Done*
+   (1a8606ca); then the countries first (the readings above).
+4. **The card** and **search**. *Begun*: `Code_rank.users` (a card's
+   "most from"), the map's `search` and `flight` fields, a style's
+   `pick` (the definition a label names); to do: the card drawn (kind,
+   where, the `.mli`'s signature, the doc comment, uses and users), `/`
+   and the typed query, the van Wijk flight (the mock-up's
+   `interpolateZoom`), the map's keys quiet while searching.
 5. **Background parsing**: Principia's map at once, its labels arriving.
-6. Later: layers, roads, the URL of a view, the scale bar and minimap.
+6. **The atlas** (above). *Done*: the heat, the bundled roads, the
+   layered layout, every country named (35f2a455, 55a8e9e6, 587ee895).
+   Next: captions, programs as cities, the data model's capitals, the
+   roads' key and lanes.
+7. **Near the ground** (above): the headers taller, the file's heat,
+   the glass over the squeezed bodies; its own step, a line's height
+   made variable.
+8. **Comments scored** (above): boilerplate, headers, explanations;
+   feeding the captions and step 7.
+9. Later: layers (git churn, TODOs), the URL of a view, the scale bar
+   and minimap; streets or the atlas as the default style.
 
 Each step's frames are compared with the sketches above, and the
 sketches changed when the frames teach something the sketches did not.
