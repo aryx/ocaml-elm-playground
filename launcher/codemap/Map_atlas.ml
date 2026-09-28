@@ -208,9 +208,15 @@ let resample (k : int) (pts : (float * float) list) : (float * float) array =
         (x0 +. (s *. (x1 -. x0)), y0 +. (s *. (y1 -. y0))))
 
 let road (a : area) (pts : (float * float) list) (w : float) (alpha : float) : shape list =
-  let pts = resample 28 pts in
+  (* pieces of at most 16 pixels (up to 400): the gradient smooth, and
+   * the pieces off the map left out close to its edge *)
+  let len = fst (List.fold_left (fun (l, (px, py)) (x, y) -> (l +. Float.sqrt (((x -. px) ** 2.) +. ((y -. py) ** 2.)), (x, y))) (0., List.hd pts) pts) in
+  let pts = resample (min 400 (max 28 (int_of_float (len /. 16.)))) pts in
   let n = Array.length pts in
-  List.init (max 0 (n - 1)) (fun i ->
+  (* only on the map: a piece whose middle is off it is left out *)
+  List.init (max 0 (n - 1)) Fun.id
+  |> List.filter (fun i -> let (x0, y0), (x1, y1) = (pts.(i), pts.(i + 1)) in on a ((x0 +. x1) /. 2.) ((y0 +. y1) /. 2.))
+  |> List.map (fun i ->
       let (x0, y0), (x1, y1) = (pts.(i), pts.(i + 1)) in
       let s0 = float_of_int i /. float_of_int (n - 1) and s1 = float_of_int (i + 1) /. float_of_int (n - 1) in
       let dx = x1 -. x0 and dy = y1 -. y0 in
@@ -237,8 +243,16 @@ let depth_at (z : float) : int =
 (* at most this many roads, the busiest, when none is hovered *)
 let most = 160
 
+(* claude: fading out as the code's colours come in, a line of the
+ * median file [lh] pixels high: the roads are for the organisation, the
+ * code is read without them *)
 let roads (t : t) (c : camera) : shape list =
   let r = roads_of t in
+  let lh =
+    let chs = Array.to_list t.geometry |> List.filter_map (Option.map (fun g -> g.cell_h)) |> List.sort compare in
+    match chs with [] -> 1. | _ -> List.nth chs (List.length chs / 2) *. c.z
+  in
+  let dim = 1. -. (0.8 *. Map_streets.smooth Map_streets.t_colours (2. *. Map_streets.t_colours) lh) in
   let d = depth_at c.z in
   let all = roads_at t r d in
   let hovered =
@@ -279,7 +293,7 @@ let roads (t : t) (c : camera) : shape list =
       (fun (len, pts, n) ->
         let w = 3. +. (9. *. Float.sqrt (float_of_int n /. float_of_int max_n)) in
         let alpha = if highlight then 0.9 else 0.2 +. (0.5 *. (1. -. Float.min 1. (len /. diag))) in
-        road c.a pts w alpha)
+        road c.a pts w (alpha *. dim))
       drawn
 
 let labels (t : t) (c : camera) (q : float) : shape list = roads t c @ Map_streets.labels t c q
