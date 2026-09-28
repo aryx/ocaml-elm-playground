@@ -14,9 +14,13 @@
    archi_code did: a program's main (Tiny*.ml, main.c), a test, a lexer
    or a parser; else their part's colour (Code_map_base.archi).
 
-   The names over the map: Map_classic's, a definition's sized and chosen
-   by its uses (Code_rank, the plan's step 2); placed once, level by
-   level, next (step 3). *)
+   The names over the map (the plan's steps 2 and 3): the directories',
+   big and faint while they fill a good part of the screen (codemap's);
+   and labels placed once, zoom by zoom (Code_labels), by their uses
+   (Code_rank): the program's own file's tab always; the tricks of this
+   game from Z1, landmarks; the files' tabs from Z1; the map's 3 most used
+   definitions at Z0 and Z1, and each directory's 2; every definition and
+   section at Z2 and Z3; at Z4, the code itself. *)
 
 (* the level for a line this high on the screen (window pixels): 0 to 4 *)
 val level : float -> int

@@ -10,6 +10,7 @@
 
 (* See Map_streets.mli *)
 
+open Playground
 open Code_map_base
 
 (*****************************************************************************)
@@ -176,8 +177,148 @@ let emphasis (t : t) (path : string) (line : int) (name : string) (cat : Highlig
   | Def_module | Def_type | Def_function | Def_value -> Code_rank.score (rank_of t) path line name cat /. 2.1
   | _ -> Highlight_code.emphasis cat
 
-(* the names: Map_classic's, sized and chosen by their uses; placed once,
- * level by level, next (the plan's step 3) *)
-let labels (t : t) = Map_classic.labels_by ~emphasis:(emphasis t) t
+(* the level, continuous: level i from i to i + 1, by a line's height *)
+let level_f (lh : float) : float =
+  let within a b = Float.log (lh /. a) /. Float.log (b /. a) in
+  if lh < t_apart then lh /. t_apart
+  else if lh < 1. then 1. +. within t_apart 1.
+  else if lh < t_colours then 2. +. within 1. t_colours
+  else if lh < text_px then 3. +. within t_colours text_px
+  else 4.
+
+(* claude: the labels of a map, built from its files (all lexed: the
+ * populations need them anyway) and placed once (Code_labels):
+ *
+ *   the program's own file's tab   always, first
+ *   a trick of this game           from Z1, a landmark
+ *   a file's name on its tab       from Z1, when it fits
+ *   the map's 3 capitals           Z0 and Z1: its most used definitions
+ *   a directory's 2 cities         Z1: its most used
+ *   a definition, a section        Z2 and Z3, by their uses; at Z4 the
+ *                                  code is read instead *)
+let build (t : t) : Code_labels.label array =
+  let rank = rank_of t in
+  let out = ref [] and defs = ref [] in
+  let add l = out := l :: !out in
+  Array.iteri
+    (fun i (p : entry Treemap.placed) ->
+      match (p.node, t.geometry.(i)) with
+      | File (_, _, e), Some g ->
+          let f = Lazy.force e.file and r = p.rect in
+          let fw = r.w and fh = r.h in
+          let main = List.mem e.path t.marked in
+          add
+            (Code_labels.label Tab (basename e.path) ~x:r.x ~y:r.y ~px:13. ~rank:(if main then 1e6 else 800. +. (float_of_int e.nlines /. 20.))
+               ~from_level:(if main then 0. else 1.) ~to_level:9. ~fw ~fh
+               (if main then (255, 215, 70) else let rr, gg, bb = file_colour t e.path in (min 255 (rr + 60), min 255 (gg + 60), min 255 (bb + 60))));
+          let at line = let x, y = line_pos r g line in (x, y +. (g.cell_h /. 2.)) in
+          List.iter
+            (fun line ->
+              let x, y = line_pos r g line in
+              add (Code_labels.label Landmark ("* " ^ Code_file.trick) ~x ~y:(y -. (19. /. 1.)) ~px:13. ~rank:5000. ~from_level:1. ~to_level:3.95 ~fw ~fh (230, 80, 200)))
+            f.marks;
+          List.iter
+            (fun (line, name, cat) ->
+              if line < Code_file.nlines f then begin
+                let x, y = at line in
+                match cat with
+                | Highlight_code.Comment_section ->
+                    add (Code_labels.label Section name ~x ~y ~px:13. ~rank:(600. +. (float_of_int e.nlines /. 40.)) ~from_level:2. ~to_level:3.95 ~fw ~fh (178, 182, 255))
+                | _ ->
+                    let s = Code_rank.score rank e.path line name cat in
+                    defs := (e.path, s, name, cat, x, y, fw, fh) :: !defs;
+                    add
+                      (Code_labels.label Def name ~x ~y ~px:(Float.min 20. (9. +. (0.7 *. s))) ~rank:(1000. +. (40. *. s)) ~from_level:2. ~to_level:3.95 ~fw ~fh
+                         (Highlight_code.rgb cat))
+              end)
+            f.defs
+      | _ -> ())
+    t.placed;
+  (* the capitals, the map's; the cities, each directory's; seen from
+   * afar, named with their module (TinyMario.model, Playground.number:
+   * many a directory's most used is its model, or its t) *)
+  let by_score = List.stable_sort (fun (_, a, _, _, _, _, _, _) (_, b, _, _, _, _, _, _) -> compare b a) !defs in
+  let qualified path name = String.capitalize_ascii (Filename.remove_extension (Filename.basename path)) ^ "." ^ name in
+  List.iteri
+    (fun k (path, s, name, _, x, y, fw, fh) ->
+      if k < 3 then
+        add (Code_labels.label Capital (qualified path name) ~x ~y ~px:18. ~rank:(20000. +. s) ~from_level:0. ~to_level:1.95 ~fw ~fh (255, 215, 70)))
+    by_score;
+  let per_dir = Hashtbl.create 64 in
+  List.iter
+    (fun (path, s, name, cat, x, y, fw, fh) ->
+      let d = Filename.dirname path in
+      let n = Option.value (Hashtbl.find_opt per_dir d) ~default:0 in
+      if n < 2 then begin
+        Hashtbl.replace per_dir d (n + 1);
+        add (Code_labels.label City (qualified path name) ~x ~y ~px:15. ~rank:(10000. +. s) ~from_level:1. ~to_level:1.95 ~fw ~fh (Highlight_code.rgb cat))
+      end)
+    by_score;
+  Array.of_list !out
+
+(* the labels placed, kept for the last few maps (a map and the menu's
+ * panel's), by their layout (physically: a new layout, t, a new
+ * placement) and the window's pixels a unit *)
+let placed_cache : (entry Treemap.placed array * float * Code_labels.label array) list ref = ref []
+
+let placed_labels (t : t) (q : float) : Code_labels.label array =
+  match List.find_opt (fun (p, q', _) -> p == t.placed && q' = q) !placed_cache with
+  | Some (_, _, ls) -> ls
+  | None ->
+      let ls = build t in
+      let chs = Array.to_list t.geometry |> List.filter_map (Option.map (fun g -> g.cell_h)) |> List.sort compare in
+      let median = match chs with [] -> 1. | _ -> List.nth chs (List.length chs / 2) in
+      Code_labels.place ~level:(fun z -> level_f (median *. z *. q)) ~zmin:0.5 ~zmax:400. ls;
+      placed_cache := (t.placed, q, ls) :: List.filteri (fun i _ -> i < 3) !placed_cache;
+      ls
+
+(* codemap's: a directory's name big and faint over it, under the labels,
+ * outside their budget; while it takes a good part of the screen, fading
+ * as it is entered *)
+let dir_names (t : t) (c : camera) : shape list =
+  let aw = float_of_int c.a.pw in
+  Array.to_list t.placed
+  |> List.filter_map (fun (p : entry Treemap.placed) ->
+         match (p.node, clip c p.rect) with
+         | Dir (name, _), Some (x0, y0, x1, y1) when p.depth > 0 ->
+             let w = p.rect.w *. c.z in
+             let a = smooth (0.1 *. aw) (0.2 *. aw) w *. (1. -. smooth (0.55 *. aw) (0.95 *. aw) w) in
+             let name = Filename.basename name in
+             let size = Float.min 90. (Float.min (float_of_int (x1 - x0) /. (0.5 *. float_of_int (String.length name))) (float_of_int (y1 - y0) /. 3.)) in
+             if a > 0.02 && size >= 14. then
+               Some (label c.a ~alpha:(0.3 *. a) ink size (float_of_int (x0 + x1) /. 2.) (float_of_int (y0 + y1) /. 2.) name)
+             else None
+         | _ -> None)
+
+(* the names: the directories', then the labels shown at this zoom *)
+let labels (t : t) (c : camera) (q : float) : shape list =
+  let a = c.a in
+  let shown =
+    Array.to_list (placed_labels t q)
+    |> List.filter_map (fun (l : Code_labels.label) ->
+           let al = Code_labels.alpha l c.z in
+           if al <= 0.02 then None
+           else
+             let w, h = Code_labels.size l in
+             let px = to_px c l.x and py = to_py c l.y in
+             let x0 = if l.left then px else px -. (w /. 2.) in
+             (* only whole, on the map: never over its edges *)
+             let y0 = match l.kind with Tab | Landmark -> py | _ -> py -. (h /. 2.) in
+             if x0 < 0. || x0 +. w > float_of_int a.pw || y0 < 0. || y0 +. h > float_of_int a.ph then None
+             else
+               let r, g, b = l.color in
+               let color = rgb r g b in
+               match l.kind with
+               | Tab | Landmark -> Some (snd (tab a ~alpha:(0.85 *. al) color l.px px py l.text) |> fade al)
+               | _ ->
+                   Some
+                     (group
+                        [
+                          (* a halo: a dark box behind, the words readable over the code *)
+                          rectangle (Playground.rgb 12 10 28) (w +. 6.) (h +. 2.) |> move (sx a (x0 +. (w /. 2.))) (sy a py) |> fade (0.55 *. al);
+                          label a ~alpha:al color l.px (x0 +. (w /. 2.)) py l.text;
+                        ]))
+  in
+  dir_names t c @ shown
 
 let style : style = { sname = "streets"; paint; labels }

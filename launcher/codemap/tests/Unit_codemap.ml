@@ -124,6 +124,17 @@ let tests =
           Alcotest.(check string) "straight" "others 1 in 1 files, own 1" (show (Code_rank.uses r "games/Road.ml" 0 "straight"));
           Alcotest.(check bool) "curve scores above straight" true
             (Code_rank.score r "games/Road.ml" 1 "curve" Def_function > Code_rank.score r "games/Road.ml" 0 "straight" Def_function));
+      (* claude: Code_labels.mli's worked example *)
+      Testo.create "labels placed once, zoom by zoom" (fun () ->
+          let mk text x rank = Code_labels.label Def text ~x ~y:10. ~px:12. ~rank ~from_level:0. ~to_level:9. ~fw:1000. ~fh:1000. (255, 255, 255) in
+          let a = mk "important" 10. 10. and b = mk "shadowed" 10. 5. and c = mk "far" 900. 1. in
+          Code_labels.place ~level:(fun _ -> 2.) ~zmin:0.5 ~zmax:400. [| a; b; c |];
+          Alcotest.(check (float 1e-9)) "the more important from the start" 0.5 a.minz;
+          Alcotest.(check bool) "the other at the same point never" true (b.minz = Float.infinity);
+          Alcotest.(check (float 1e-9)) "one far away from the start too" 0.5 c.minz;
+          Alcotest.(check (float 1e-6)) "placed, it stays placed to the closest zoom" 400. a.maxz;
+          Alcotest.(check (float 1e-9)) "shown inside its zooms" 1. (Code_labels.alpha a 10.);
+          Alcotest.(check (float 1e-9)) "and not the one never placed" 0. (Code_labels.alpha b 10.));
       Testo.create "a file's grid and definitions" (fun () ->
           let f = Code_file.make "x.ml" "(*****)\n(* Model *)\n(*****)\nlet move p = p\ntype t = int\n" in
           Alcotest.(check (list (pair int string))) "the section, the function, the type"
