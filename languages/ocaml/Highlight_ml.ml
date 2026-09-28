@@ -221,6 +221,13 @@ let categorize (toks : Token_ml.t list) : (Token_ml.t * category) list =
   done;
   List.rev !out
 
+(* claude: rev_map and rev, not List.map: OCaml 4.14's map recurses once
+ * a token, which natively's stack holds but a browser's does not -- on
+ * the web the biggest files (Tui_turbo.ml, 9,600 tokens) overflowed it,
+ * and the code map, given up on them, showed them plain
+ *
+ *   old: List.map (fun ...) (categorize (Lexer_ml.tokens src))
+ *)
 let lines (src : string) : span list array =
   Highlight_code.lines src
-    (List.map (fun ((t : Token_ml.t), c) -> (t.line, t.col, t.text, c)) (categorize (Lexer_ml.tokens src)))
+    (List.rev (List.rev_map (fun ((t : Token_ml.t), c) -> (t.line, t.col, t.text, c)) (categorize (Lexer_ml.tokens src))))
