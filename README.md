@@ -188,6 +188,15 @@ and/or `opam install elm_playground_web`. The 3D packages
 `elm_playground_3d_web`) live in this repository and are released the
 same way.
 
+To play the games and use the applications rather than write your own,
+install `tinybox` with `opam install tinybox`: after BusyBox, every one
+of them linked into one binary (2D on Cairo, 3D on OpenGL). `tinybox`
+alone opens a menu to choose one, with its screenshot and its code map,
+`tinybox list` names them all, and `tinybox TinyMario` runs one
+directly, with the same flags as its own executable. From a clone of
+this repository, `make` builds it as `./bin/tinybox`; the same menu
+runs [in your browser](https://aryx.github.io/ocaml-elm-playground/tinybox.html).
+
 Simple native application
 --------------------------
 
@@ -439,13 +448,12 @@ Look at the code under [examples/](examples/) and [games/](games/), a
 directory per genre; every game and application is listed, with the
 original it is a toy version of, in [CATALOG.md](CATALOG.md).
 
-Here is a screenshot of the [Tetris](games/puzzle/Tetris.ml) Playground game running:
-<img src="docs/screenshots/game-tetris.png" alt="Toy app screenshot"
- width="50%">
-
-You can even try it online [here](https://aryx.github.io/ocaml-elm-playground/games/puzzle/Tetris.html)
-
-You can see a few more screenshots [here](docs/screenshots/).
+To see them all running, open the
+[web tinybox](https://aryx.github.io/ocaml-elm-playground/tinybox.html),
+or the galleries of the
+[games](https://aryx.github.io/ocaml-elm-playground/games/) and the
+[applications](https://aryx.github.io/ocaml-elm-playground/apps/), each
+with its screenshot, played in your browser with a click.
 
 What the project has become
 ---------------------------
