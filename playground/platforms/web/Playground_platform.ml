@@ -1053,9 +1053,28 @@ let phone_keyboard ~(process : E.event -> unit) : Ojs.t =
               reset ()) |]);
   button
 
+(* The drawing on a phone: at the top of the screen, not in its middle
+ * (an upright phone's square game had a band above it, and the keyboard
+ * came up over its bottom half), and as high as the part of the screen
+ * the keyboard leaves -- the visual viewport's, which an iPhone shrinks
+ * while its page keeps its height (Android shrinks the page itself). *)
+let phone_drawing (svg : Element.t) : unit =
+  let svg = Element.t_to_js svg in
+  ignore (Ojs.call svg "setAttribute" [| Ojs.string_to_js "preserveAspectRatio"; Ojs.string_to_js "xMidYMin meet" |]);
+  let vv = Ojs.get_prop_ascii Ojs.global "visualViewport" in
+  if not (Ojs.is_null vv) then begin
+    let fit () =
+      let h = Ojs.float_of_js (Ojs.get_prop_ascii vv "height") in
+      Ojs.set_prop_ascii (Ojs.get_prop_ascii svg "style") "height" (Ojs.string_to_js (Printf.sprintf "%.0fpx" h))
+    in
+    fit ();
+    ignore (Ojs.call vv "addEventListener" [| Ojs.string_to_js "resize"; Ojs.fun_to_js 1 (fun _ -> fit ()) |])
+  end
+
 (* The keyboard's button, made and shown the first time it is asked for
- * -- at the first touch, so never with a mouse alone *)
-let keyboard_button ~(process : E.event -> unit) : unit -> Ojs.t =
+ * -- at the first touch, so never with a mouse alone; and then the
+ * drawing laid out for a phone *)
+let keyboard_button ~(process : E.event -> unit) ~(svg : unit -> Element.t option) : unit -> Ojs.t =
   let button = ref None in
   fun () ->
     match !button with
@@ -1063,6 +1082,7 @@ let keyboard_button ~(process : E.event -> unit) : unit -> Ojs.t =
     | None ->
         let b = phone_keyboard ~process in
         Ojs.set_prop_ascii (Ojs.get_prop_ascii b "style") "display" (Ojs.string_to_js "block");
+        Option.iter phone_drawing (svg ());
         button := Some b;
         b
 
@@ -1371,5 +1391,5 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
     (* claude: and a phone's: its width, its fingers (Phones, above) *)
     phone_page ();
     listen_to_fingers ~svg:(fun () -> Option.map snd !current) ~process:process_playground_event
-      ~keyboard:(keyboard_button ~process:process_playground_event);
+      ~keyboard:(keyboard_button ~process:process_playground_event ~svg:(fun () -> Option.map snd !current));
   )
