@@ -1,0 +1,9 @@
+; claude: WAV files, read and written (Wav.mli): RIFF chunks, 16-bit
+; PCM (see plan_audio_formats.md). A private library, installed as part
+; of elm_playground.
+(library
+ (name audio_wav)
+ (package elm_playground)
+ (wrapped false)
+ (libraries audio_signal)
+)

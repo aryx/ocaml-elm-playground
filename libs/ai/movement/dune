@@ -1,0 +1,8 @@
+; claude: moving: finding a way (Pathfind), and moving along it
+; as forces (Steering, Flock); notes_ai.md sections 2 to 5. A private library,
+; installed as part of elm_playground; see ai/README.md.
+(library
+ (name ai_movement)
+ (package elm_playground)
+ (wrapped false)
+)

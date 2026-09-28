@@ -1,0 +1,6 @@
+; claude: unit tests for Svg, run by 'make test' (dune runtest): the
+; .mli's worked example, the path grammar, arcs, the fill rules
+(test
+ (name Test)
+ (libraries alcotest testo graphics_svg graphics_rgba)
+)

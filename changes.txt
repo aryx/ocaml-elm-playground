@@ -1,5 +1,446 @@
 # -*- org -*-
 
+* 0.3 (Q4 2026) (3D playground, from-scratch software rasterizers, OpenGL/WebGL, physics/ai/audio/juice/gui libs, games and apps)
+# unless mentioned otherwise, everything below was done by Claude Code
+# (with direction from me)
+
+** playground3d (new)
+- new elm_playground_3d library (Playground3d.mli), same Model-View-Update
+  API as the 2D one: shape3d (cube, box, sphere, textured_quad,
+  textured_cube, group3d), camera, lighting, flat/Gouraud/Phong shading,
+  a HUD overlay (Playground3d.hud), portable rendering hints
+  (Playground3d.rendering: shading, culling, textures), and cached3d
+  (like Elm's Html.lazy, lets GPU backends keep a mesh in GPU memory)
+- four backends: software (from-scratch rasterizer on SDL), web (reuses
+  the 2D SVG renderer with a painter's algorithm), OpenGL (tgls) and
+  WebGL, the last two sharing Gpu_scene and graphics/gpu/Mesh_cache;
+  TinyMinecraft went from ~6.5s to ~1ms per frame on OpenGL with cached3d
+- textures from local files or http(s) urls, preload_texture, a magenta
+  placeholder when a texture fails to load
+- examples3d/ (Cube3d, Cubes3d, TexturedCube3d, InteractiveCube3d,
+  Spheres3d, FloatingCity3d, PaintersAlgorithmFail3d, Corridor3d,
+  CachedGrid3d) and games3d/ (StarCollector3d, TinyMinecraft, a port of
+  tiny-minecraft), each also built for web/opengl/webgl via copy_files
+- fixes: spheres missing their top cap (Newell's method for face
+  normals, the pole made the cross product 0 then NaN), 1-pixel cracks
+  along shared triangle edges, a GC-timing bug in tgls'
+  glShaderSource binding (Gc.full_major before compiling shaders)
+
+** graphics/ (new, from-scratch rendering algorithms for teaching)
+- private libraries independent of the Playground, one idea per module
+  with its .mli explaining it (ASCII diagrams, paper references):
+  core/ (Framebuffer, Blit, Opti), 2d/ (Fill scanline polygons, Line
+  Bresenham, Circle midpoint, Stroke, Magnifier, geometry/Vec2), 3d/
+  (Project, Cull, Clip, Zbuffer, Interpolate, Shading, Texture,
+  Triangle with top-left fill rule and incremental edges, Painter,
+  Render, geometry/ Vec3, Mat4, Camera, Lighting), font/ (Hershey vector
+  fonts), images/ (Image_decode, Texture_decode, Rgba, Download), gpu/
+  (Mesh_cache)
+- unit tests in graphics/tests/ checking the worked examples of the .mli
+
+** playground (2D)
+- new software backend (elm_playground_software): a from-scratch 2D
+  rasterizer on SDL (filled polygons, lines, circles, images by inverse
+  mapping with bilinear/nearest filtering, Hershey text, antialiasing)
+- portable rendering hints Playground.rendering (antialiasing,
+  smooth_images) for run_app, honored by the Cairo, software and web
+  backends; Mario uses it for sharp pixel-art sprites
+- native_common/ (Native_loop_2d) shared by the Cairo and software
+  backends
+- fix: stb_image with ~channels:4 truncated RGB images (read past the
+  end by Cairo); now load with the file's channels and expand to RGBA
+
+** debugging and testing
+- runtime-toggleable debug keys in the software backends (wireframe,
+  bounding boxes, transparency, pixel magnifier, z-buffer vs painter,
+  backface culling, perspective-correct vs linear, antialiasing,
+  filtering, optimizations on/off, mesh cache), "h" for a help panel,
+  only enabled with -debug-keys
+- "r" in the software backends: a half, a third or a quarter of the
+  resolution, each pixel a 2x2 to 4x4 block (graphics/core/Pixelate),
+  the look of 320x200 games and about k^2 less per-pixel work
+  (TinyDoom3d 125ms -> 15ms a frame at a third); "u" in the OpenGL one:
+  the HUD off, to tell if it's what's slow
+- native flags -uncapped, -fixed-time t, -keys k, -dump-frame n file
+  for deterministic frames; -v/-debug now also work in 3D
+- golden frame tests (tests/2d/, tests/3d/) in make test, every software
+  example rendered offscreen and compared pixel by pixel;
+  make approve-golden2d/3d
+- scripts: xdrive.py (drive a running app's mouse/keys via XTEST),
+  ref_frames_3d.sh, bench_playground.sh, screenshot_playground3d.sh,
+  smoke_test_playground3d.sh
+
+** playground layers (2D, on top of Playground)
+- Camera2d (window/lock/lerp following, zoom, clamp, an angle and
+  turn_toward), Tilemap (levels typed as strings), Sprite (pixel art
+  from strings, animated), Scene2d (title/playing/over scenes, keys
+  pressed), Physics (see below), Audio (see below)
+- Playground.flags: a program's parameters, name=value natively,
+  ?name=value on the web (Playground_platform.flags); a seed=n flag
+  for the games' randomness
+- relative mouse motion (mdx/mdy), run_app3d ?capture_mouse (FPS look)
+- Puzzlescript (new): a game as things on layers, a map and a few
+  rewrite rules, after PuzzleScript (Stephen Lavelle, 2013) -- the
+  third way of programming borrowed into playground/, beside Logo's
+  turtle and Bigbang's world programs, and the one that takes the game
+  over: no update function and no view, only data. The whole of
+  Sokoban is
+    rule "> @ | $  ->  > @ | > $"   and   win = all_on '$' '.'
+  Things live on layers, which is what keeps a crate on a target from
+  being a thing of its own and the rules from doubling; a turn is:
+  mark what the player moved, run the rules until the board settles,
+  move what is still marked (it goes if its layer has room there),
+  then the late rules. examples/PuzzleScriptSokoban.ml (one rule) and
+  examples/PuzzleScriptBoulders.ml (four: digging, pushing, gravity,
+  taking a diamond) are two games out of that one engine. Its .mli
+  carries the lineage: Papert's Logo, KidSim/Stagecast Creator,
+  Repenning's AgentSheets, TileCode
+
+** games (the Tiny* toys) and kits
+- kits/: racing (Road, Car, Topdown), maze (Grid_move, Chase), lightcycles
+  (TinyTron's rules without a view)
+- games/: TinyMario (was Platformer; pixel-art hero, sounds and
+  music), TinyInvaders, TinySokoban (undo), TinyPacman, TinyWolfenstein (a
+  raycaster), TinyOutRun (pseudo-3D), TinyWorms, TinySpacewar, TinyPong,
+  TinyCameltry, TinySlingshot, TinySoldat, TinyBomberman, TinyTron,
+  TinyMicroMachines, TinyXpilot (the ball game on a rope, 1 or 2
+  players), TinyGalaga (Catmull-Rom paths, by arc length),
+  TinyDonkeyKong (state machines, slanted girders), TinyLodeRunner
+  (digging), TinyRick (traps as tiles, flip-screen rooms), TinyGradius
+  (the power-up bar, a timeline of waves), TinyZelda (rooms sliding
+  in, an inventory), TinyRogue (a generated dungeon, turns),
+  TinyStreetFighter (frame data, blocking, the quarter circle),
+  TinyFinalFight (the belt, combos), TinyBabaIsYou (the rules as words
+  on the board), TinyKart (Mode 7, row by
+  row), TinyDoom (Doom's renderer: a node builder, the BSP walked
+  front to back, per-column clip arrays, no z-buffer),
+  TinyMissileCommand (aiming at a point, chain reactions), TinyLemmings
+  (the terrain a bitmap the jobs dig and build), TinyComanche
+  (Comanche's Voxel Space: a height map drawn column by column, front to
+  back, a y-buffer), TinyPuzzleBobble (a hexagonal grid, flood fills:
+  a color's group pops, what no longer hangs falls), TinyTowerDefense
+  (the towers are the maze: ai/Pathfind's A* run again at every tower,
+  and used as the referee that refuses one closing the way), TinyDune2
+  (the first RTS: orders as A* paths, harvesters searching for "the
+  nearest spice" with a predicate as the goal, spice -> credits ->
+  units), TinyWarcraft2 (a crowd sent with one flow field
+  (ai/Pathfind.field) instead of an A* per unit, the fog of war, gold
+  and wood);
+  kits/shmup (Shots,
+  Path), kits/platformer (Tile_move, Ladder), kits/brawler (Hitbox,
+  Frame_data, Stickman), kits/puzzle (Push, Undo) and
+  TinySonic (curved ground: tiles with a shape and an angle, sensors
+  instead of a box, the speed along the surface, a loop that is just
+  tiles and the path layers that let him out of it; hills, slides and
+  platforms, drawn with grass and checkered earth); kits/platformer's Slope (the above, beside Tile_move's
+  blocks),
+  kits/sectors (Sectors: a Doom level as sectors, its lines found),
+  kits/heightmap (Heightmap: an island made up by diamond-square, the
+  ground under a point, a line of sight, colors by height and slope),
+  kits/segments (Segments: a Descent mine of boxes and the openings
+  where they touch; Sixdof: a ship that can point anywhere)
+- games2.5d/ (new): the pseudo-3D games moved together, with a README
+  comparing their tricks and their sizes -- TinyWolfenstein, TinyOutRun,
+  TinyKart, TinyDoom, TinyComanche -- and TinyDescent, which is full 3D
+  on the 2D playground: its own projection and clipping, the mine
+  walked through its portals, cells painted farthest first, no z-buffer;
+  each game's trick now marked in its source (grep "the trick of this
+  game" games2.5d/*.ml) with how many lines it takes
+- games2.5d/TinyDungeonMaster: the oldest and simplest of those tricks,
+  and the first one to read -- from a cell's center, looking along an
+  axis, every cell in view has one fixed place on the screen, so the
+  view is nested frames filled in farthest first: 24 lines, and no
+  arithmetic per frame (FTL's artists painted those pictures by hand).
+  Around it is what Dungeon Master (1987) actually invented, which was
+  not the pixels but the game: real time, and a world you act on -- the
+  iron key and its door, the lever and the portcullis, monsters on
+  their own clock (a monster that has just moved cannot strike yet:
+  the "dance"), a torch burning down, a panel telling you about it all.
+  ai/Pathfind's A* walks the monsters; tests/games checks the dungeon
+  is winnable in that order, and the dance rule
+- games3d/TinyTombRaider: Tomb Raider (1996), in a tomb. The one
+  character here with no velocity: a vocabulary of moves, each a fixed
+  number of frames over a fixed distance, committed once started, so
+  the outcome is settled at take-off and there is no collision
+  detection in the file at all. That is what makes the level countable
+  -- a running jump is always two squares, so a chasm one square wide
+  is a question with an answer -- and tests/games writes the whole
+  route down as the level's answer. Textures by the era's technique: one
+  texture page (games3d/tomb.png, drawn by
+  scripts/build/make_tomb_atlas.py with fractal noise), a sub-rectangle
+  per face, one textured square per square of wall, and the page
+  crushed into one 16-colour dithered palette. kits/puzzle's Push, from
+  TinySokoban, moves the block: the first 3D game on a 2D kit
+- games3d/texture.png is now games3d/minecraft.png, beside tomb.png
+- games3d/TinyBlockout: BlockOut (1989), Tetris down a well. The rules
+  are Tetris with one more index (a layer is full when its cols x rows
+  cells are), and a quarter turn is the piece's bounding box turned --
+  integers, no trigonometry, four turns the identity. The rest, and
+  most of the file, is depth cues, because from straight above you
+  cannot tell how deep anything is: cubes darker the deeper they lie,
+  and the well's ring lit at the level the piece will land on, since a
+  view from straight above cannot have a drop shadow (the shadow is
+  always exactly behind the thing casting it)
+- physics/3d/ (new, the 3D physics engine's first phases, beside
+  physics/2d/ and for the same teaching: one idea per module, each .mli
+  with its diagram, worked example and references; see
+  plan_physics3d_teaching.md and notes_3d_physics.md). Metres and
+  seconds, not pixels. Quat (orientation: why not three angles, the
+  half-angle, q' = 1/2 w q), Mat3 (the inertia tensor, and R I R^T),
+  Body3d (position, velocity, orientation, spin, the tensor and its
+  inverse; the tensors of a box and a sphere and the 3D parallel-axis
+  theorem), Integrate3d (the four 2D methods with a z, plus the
+  rotational half) and Energy3d (energy, momentum, angular momentum:
+  the referee). The step follows L, not w: dL/dt = torque has no
+  gyroscopic term, and w read back as I_world^-1 L wobbles anyway
+  because the tensor has turned -- measured, |L| drifts 1e-11 that way
+  against 2e-2 stepping w with the gyroscopic term. All three laws are
+  switchable, because the third one (no gyroscopic term) is the trap:
+  it never flips and conserves everything to the last bit
+- physics/3d/Force3d: the 2D forces with a Vec3 (uniform, gravitation,
+  spring, drag, sum), and Archimedes, which is new: a body settles with
+  exactly its relative density under the surface (0.6 for wood), the
+  push at its centre for now, so nothing rights itself yet
+- physics/3d/Hitbox3d, Contact3d, Collide3d: what a body *is* to a
+  collision (sphere, turned box, capsule, plane, with their volumes and
+  inertia tensors) and whether two of them overlap -- the closest
+  points (segment/segment, box, triangle), every pair, and the rays
+  (sphere, box, capsule, Moller-Trumbore for a triangle) that picking,
+  aiming and a ground check are made of. The lesson is the box/box
+  case: two boxes at an angle need their 6 face normals *and* the 9
+  crosses of an edge of each, and Collide3d.boxes takes ~edge_axes:false
+  so the classic bug can be watched. Its test went looking for a pair
+  the 6-axis version gets wrong (20,000 random rods, 3 found) and keeps
+  the first with a certificate computed straight off the corners.
+  Not there, and said in the .mli rather than stubbed: GJK/EPA, convex
+  hulls (which need their faces), triangle meshes, and contact
+  manifolds (phase 8)
+- physics/3d/Resolve3d: what happens after two hitboxes touch -- the
+  impulse, with the inertia tensor inside its denominator
+  (n . ((I^-1 (r x n)) x r) where 2D had (r x n)^2 / I), friction along
+  two tangents (the pyramid every engine ships, 41% too strong on the
+  diagonals, with the picture in the .mli), and the positional
+  correction. The 2D engine's worked examples come out identical, which
+  is the point: a ball into the end of a rod still gives it 0.4 of the
+  speed and 1.2 rad/s. Momentum and angular momentum are conserved by
+  construction and measured so over a thousand random collisions;
+  energy is never created, and never lost with e = 1
+- playground3d/Physics3d: bounce, bounce_off and bounce_all over it
+- physics/3d/Solver3d and Collide3d.manifold: stacking. A contact
+  manifold is a whole face, found by clipping the incident face against
+  the reference face's four sides, so a crate resting on a crate
+  touches at four corners and not one; and every contact of a step is
+  then solved together, again and again (sequential impulses, warm
+  starting, Baumgarte, a bounce threshold), which is what lets things
+  be stacked rather than merely bounced. Measured, a crate dropped on
+  the floor: solved, it rests 5 mm in and stops dead and goes to sleep;
+  answered one pair at a time, it shivers at 5 cm/s for ever
+- playground3d/Physics3d.world and simulate, with sleeping by islands:
+  bodies that touch sleep as a group, because a crate sent to sleep
+  alone under a tower that is still settling is woken a moment later
+  with a jolt (measured: every 61 steps, the threshold plus one). A
+  tower of five settles within 2 cm, creeps 3 mm sideways, and then
+  costs nothing
+- examples3d/PhysicsStack3d: a brick wall and a row of dominoes, "s" to
+  turn the solver off and watch the wall come apart, "i" for the
+  iterations, "w" for warm starting, space to throw a ball through it,
+  and a marker over every body still awake -- they go out one by one,
+  and at seven seconds the scene solves no contacts at all
+- physics/3d rolling: the engine arrives at 5/7 g sin a on its own --
+  1.805 m/s^2 measured on a 15 degree slope against the textbook's
+  1.812, 3.488 on 30 degrees against 3.500, with v = w r at the contact
+  to 2% -- having been told only about a tensor, a contact point and a
+  friction impulse. games3d/TinyMarbleMadness derives that same 5/7 by
+  hand in its header, so the two halves of the repository now check
+  each other. With no friction the same sphere slides at exactly
+  g sin a with no spin. Physics3d.spin_slow adds rolling friction,
+  which is the other kind: rough is the grip that makes a ball roll,
+  spin_slow the loss that stops it
+- examples3d/PhysicsRoll3d: a race down a ramp between a frictionless
+  ball (which wins), a solid sphere and a capsule lying across the
+  slope, each labelled with the acceleration its own tensor predicts
+  (a = g sin a / (1 + I/m r^2)) and the one the run measured: 3.03
+  against 3.03, 2.16 against 2.16, 2.06 against 2.05
+- physics/3d/Broadphase3d: which pairs are worth testing exactly -- all
+  pairs, a hashed uniform grid, sweep and prune -- and what the third
+  dimension changes about them. A dense 3D grid at 100 a side is a
+  million cells, so the cells are hashed and only the occupied ones
+  exist; and the sweep has to *choose* an axis, where 2D just took x:
+  on a pile wide in x and z and thin in y, sweeping y costs 84,750 box
+  tests against 6,644 for x, so the axis is picked by the variance of
+  the centres. Measured on 500 marbles: 124,750 box tests for all
+  pairs (0.75 ms), 1,340 for the grid (0.76), 7,472 for sweep and
+  prune (0.22), all three finding the same 174 pairs
+- examples3d/PhysicsMarbles3d: 200 marbles in a wireframe cage, space
+  switching the method and the count of compared boxes on screen --
+  nothing else changes, which is the point -- and "g" drawing the
+  cells the grid actually keeps
+- examples3d/PhysicsBounce3d: five balls of different bounciness
+  dropped together, each with a bar drawn at e^2 of its fall from its
+  bounciness alone -- the simulation comes back and touches it, ~2%
+  under, which is the discrete step's cost and is on screen. And a
+  crate dropped on its corner, where the impulse lands far from the
+  centre and most of what it gets is spin
+- examples3d/PhysicsHitbox3d: four shapes wearing their hitboxes as
+  green wireframes, one you push through them with the arrows, and the
+  contact drawn as an arrow along the way out, as long as the overlap
+  is deep; 1/2/3 change what the one you push *is* without changing
+  what it looks like, and "r" casts a ray
+- playground3d/Physics3d: the Evan-style API over physics/3d, the same
+  verbs as the 2D playground/Physics (body, at, moving, heavy, fall,
+  push, thrust, slow, attracted_by, step, draw, debug) in metres rather
+  than pixels, plus what 3D adds: pointing/turning an orientation
+  instead of an angle, floating, spin_by, and a tensor taken from every
+  body's own bounding box so that a body wobbles like the solid it
+  looks like (upright takes it away, for a player or a flipper).
+  Collisions are not in it yet, and the .mli names the gap
+- games3d/StarCollector3d: ported behind physics=engine, as Asteroid
+  was in 2D: the arrows push a body against drag, balancing at the same
+  4.8 m/s the hand-written version moved at, the cube tumbling about a
+  tilted axis (a quaternion drawn through rotate3d, which is where that
+  conversion gets measured on something that moves), and "d" for what
+  the engine sees, and its pickups are exact (Physics3d.touching, the
+  player's turning box against each star's sphere) where by hand they
+  are a distance between two centres. The default path is unchanged,
+  golden frames byte-identical
+- examples3d/PhysicsFloat3d: five blocks of different densities dropped
+  into water, each settling at its own waterline, each wearing a stripe
+  painted at that density -- nothing lines the stripes up with the
+  surface but Archimedes. The arrows raise and lower the water and
+  everything rises with it
+- examples3d/PhysicsSpin3d: a T-handle thrown spinning, with nothing
+  acting on it, that turns itself over and over -- the
+  intermediate-axis (tennis racket, Dzhanibekov) theorem, the one piece
+  of rigid-body behaviour with no 2D version. The angular momentum
+  drawn as an arrow that never moves and the angular velocity as one
+  that wanders; keys for the three axes and for how the spin is
+  stepped, and both drifts printed honestly (|L| exact, the energy not:
+  the flip multiplies any error by e^(4.6 t))
+- games3d/TinyBoomerangFu3d: Boomerang Fu (2020), four foods in one
+  arena, one boomerang each, one hit kills. The whole game follows from
+  the weapon leaving your hand: while it is away you have only the
+  dash, and while you hold it the dash is a slash that kills at arm's
+  length. Three rules do the rest -- the way out cuts everyone, the way
+  back is its owner's catch, and it comes back to where the owner *is*,
+  steering at a moving target every frame -- plus one for the fence: a
+  throw turns on the one who threw it once it has got away and caromed
+  off something. The camera is fixed, high and nearly isometric,
+  because a party game on one screen cannot follow anybody, and
+  everything off the ground drags a shadow, which is the only depth cue
+  that angle allows. The computer's three players use the same intent a
+  human sends (a direction, a throw, a dash) and differ in four
+  numbers; their hesitation before throwing is what makes the game
+  playable at all, and their [clear_way] keeps last frame's direction
+  while it stays clear, without which one wedged between a pit and a
+  pillar shivers in a two-frame loop for a whole round. tests/games
+  checks the return leg finds a thrower who kept running, who a flight
+  cuts, the slash, and that the computer keeps out of the pits
+- games3d/: TinyBattlezone (vector 3D), TinyWolfenstein3d, TinyVirtuaRacing,
+  TinyTron3d, TinyMario64, TinyMarbleMadness (Marble Madness), TinyDoom3d
+  (TinyDoom's level with a z-buffer, no BSP), TinyQuake (Quake's three
+  tools at startup: qbsp's CSG and BSP of solid boxes, vis's visibility
+  set per leaf, light's baked lightmaps with shadows; "v" to compare),
+  TinyComanche3d
+  (TinyComanche's island as triangles), TinyDescent3d (TinyDescent's
+  mine, all of it, with a z-buffer); TinyMinecraft is a game (walk, jump,
+  fly, remove and place blocks, the targeted block's outline), its world,
+  player, chunks and controls in one file like the other games;
+  Playground3d.camera takes an ?up (a ship that rolls: TinyDescent3d),
+  honored by the four 3D backends;
+  Playground3d.embedded_texture: a texture carried inside the program
+  (a dune rule turns the .png into base64, as graphics/font/dune does
+  for the Hershey font), so TinyMinecraft runs from any directory and
+  its texture reaches the browser as a data: URL, with no file to copy;
+  graphics/images/Base64;
+  playground3d's Camera3d (the 3D Camera2d: behind, chase, cockpit,
+  orbit, sky); the OpenGL HUD redraws only what changed, box by box
+- Mario, TinyMario, Asteroid: physics=engine, the Physics layer instead
+  of their hand-written "dumb engine"
+- the games' headers say which components they use; keys printed at
+  launch
+
+** physics/ (new, a 2D physics engine for teaching)
+- physics/2d/: Body, Integrate (explicit/semi-implicit Euler, Verlet,
+  RK4), Energy, Force, Shape, Collide (SAT, manifolds, swept tests),
+  Contact, Broadphase (all pairs, grid, sort and sweep), Resolve
+  (impulses, friction, rotation), Solver (sequential impulses, warm
+  starting), Springs, Particles (Jakobsen's ropes and ragdolls),
+  Kepler and Planets (orbits in closed form, JPL's elements)
+- playground/Physics.mli, Evan-style: body, fall, push, thrust,
+  attracted_by, step, touching, bounce, upright, world/simulate,
+  went_through, pulled_to
+- examples/: Orbit, Bounce, Marbles, Boxes, Pyramid, Elastic (each
+  phase switchable off: solver=off, rotation=off), SolarSystem, and
+  examples3d/PhysicsSolarSystem3d
+- physics/tests/: the .mli's worked examples and the laws
+  (conservation, convergence orders, stability limits)
+
+** audio/ (new, a software synthesizer for teaching)
+- audio/: Signal, Oscillator, Noise (the NES's LFSR), Envelope (ADSR),
+  Mix, Synth (sounds as values, Euterpea's together/after), Mixer,
+  Music, Abc (ABC notation), Doremi (solfège), Midi (Standard MIDI
+  Files, read and written), Spectrum (DFT and FFT), Wav
+- playground/Audio.mli, Evan-style and stateful: tone, square, noise,
+  note; lasting, fading, sliding, together, after; blip, jump, coin...;
+  play, keep_playing, loop, loop_from (a file or a URL: .mid, .abc,
+  solfège); abc, doremi, midi
+- sound natively (SDL's audio queue) and on the web (Web Audio, our own
+  samples); -dump-audio file writes a run's sound as a WAV
+- examples/AudioTheremin, examples/AudioPiano; TinyMario's sounds and an
+  original looping tune (music=file-or-URL for one's own)
+- the "v" debug key: an oscilloscope and a spectrum over the frame
+- audio/tests/: worked examples and golden WAVs compared sample by
+  sample (make approve-golden-audio)
+
+** ai/ (new, game AI for teaching)
+- ai/Minimax: minimax and alpha-beta side by side, each counting the
+  positions it visits, so the cuts can be seen (tic-tac-toe searched to
+  the end: 549,946 positions, 18,297 with alpha-beta)
+- examples/AiTictactoe: searched to the end, so the computer can't
+  lose, and each of your moves says WIN, DRAW or LOSS
+- games/AiOthello: Othello against the computer, thinking 4 moves
+  ahead, with its evaluation table of what each square is worth, and
+  "v" to see what it thinks of each of your moves
+- ai/Pathfind: breadth-first, Dijkstra and A* as the same search with a
+  different queue, each counting the cells it looks at (an open 13x9
+  grid: 80, 80, 11)
+- examples/AiPathfinding: the frontier drawn as it spreads, walls and
+  mud to paint, the three counts side by side
+- ai/tests/: the .mli's tree, random trees where alpha-beta must agree
+  with minimax, tic-tac-toe; the pathfinding worked example, A*
+  agreeing with Dijkstra on random grids
+
+** testing
+- -script: game keys held over frames, for golden frames of gameplay
+- the golden frames deep into a game (more than 100 to render) run only
+  with make test-golden-all: make test keeps the cheap ones (26s instead
+  of 3 minutes)
+- tests/games/: scenario tests of the games' rules, played without
+  drawing
+- scripts/ organized in subfolders, with the tools used for the games
+
+** build infra and packaging
+- examples_js/ and games_js/ symlinks replaced by examples/js/ and
+  games/js/ with dune copy_files (one real source file per example)
+- new opam packages for the new backends (elm_playground_software,
+  elm_playground_native_common, elm_playground_3d{,_web,_software,
+  _opengl,_webgl,_native_common}); elm_core/elm_system become
+  sub-libraries elm_playground.core/.system
+- website: publish the 3D examples (web and WebGL) under docs/, make
+  serve-build
+
+** docs
+- README-3d.md, and many tutorials in docs/claude_notes/: notes_2d.md,
+  notes_3d.md, notes_3d_shading.md, notes_3d_opti.md, notes_opti.md,
+  notes_font.md, notes_opengl.md, notes_opengl_shaders.md,
+  notes_vs_doom_quake.md, related work surveys (2D, 3D, physics, audio)
+- plans for what's next: physics, audio, networking, remaining 2D/3D/
+  WebGL work (plan_*.md, finished ones archived in done/)
+- plan_games.md and plan_games3d.md (the classic games genre by genre,
+  their kits), notes_2d_physics.md, notes_audio.md,
+  notes_audio_midi.md (MIDI, and the trackers' MOD/S3M/XM/IT); the
+  physics plan done (plan_physics_remaining.md)
+
 * 0.2 (Q3 2026) (bugfixes, Dockerfile, CI hardening, cleanup)
 # started to use Claude code
 
@@ -189,4 +630,8 @@
   implemented separately by playground/native/ (tsdl/SDL2 + cairo2) and
   playground/web/ (js_of_ocaml)
 
-- first commits and first prototype
+- first commits and first prototype, during a "procrastination week" while at R2C
+  (now Semgrep) post-launch when I fell in love with Elm, its creator Evan,
+  and later Evan's gem that is the elm playground (video games making nostalgia!
+  part of the reason I started computer programming). I even did a weekly-demo
+  about it at R2C :)

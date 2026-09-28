@@ -1,0 +1,6 @@
+; claude: unit tests for random/, run by 'make test': the .mli's worked
+; example, Park and Miller's own check value
+(test
+ (name Test)
+ (libraries alcotest testo random)
+)

@@ -1,0 +1,12 @@
+; claude: the editors in a real terminal, native only: the same Tui
+; programs ../TinyVi.ml, ../TinyEmacs.ml and ../TinyTurboPascal.ml run on the playground, run
+; by Tty_unix (as examples/tty/ does Snake). Try:
+; dune exec apps/devtools/tty/TinyEmacs.exe
+(executables
+  (names TinyVi TinyEmacs TinyTurboPascal)
+  (libraries
+    caps ; Cap.main, the only way to the terminal's stdin and stdout
+    terminal_unix ; Tty_unix
+    appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
+  )
+)

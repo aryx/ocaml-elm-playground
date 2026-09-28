@@ -1,0 +1,15 @@
+; claude: text drawn from Hershey's own strokes, in a look (see
+; Stroke_text.mli): bold, italic, underline and strike out of one
+; stroke font, with the widths the layout measured. First the office
+; apps' (TinyBravo, TinyWord, ...), then TinyMosaic's pages
+; (apps/internet/, plan_browser_teaching.md).
+(library
+ (name appkit_stroke_text)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   elm_playground ; the shapes it draws
+   appkit_richtext ; Style (a look), Page.metrics
+   graphics_font ; Hershey
+ )
+)

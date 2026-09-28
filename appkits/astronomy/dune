@@ -1,0 +1,17 @@
+; claude: what a planetarium computes (apps/education/): where a star
+; is in a place's sky at an instant (Celestial: sidereal time,
+; precession, altitude and azimuth), where the Sun, the Moon and the
+; planets are (Ephemeris: Kepler's ellipses, the Moon's disturbances),
+; the bright stars and the constellations' figures (Bright_stars), and
+; the sphere drawn flat (Stereographic). Used by TinyStellarium; the
+; seasons, the phases and the tides of the education apps to come
+; would share it.
+;
+; Pure OCaml, no gui, no playground: a private library, installed as
+; part of elm_playground, so every backend, the web one included, can
+; use it.
+(library
+ (name appkit_astronomy)
+ (package elm_playground)
+ (wrapped false)
+)

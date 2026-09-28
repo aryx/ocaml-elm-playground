@@ -1,0 +1,5 @@
+; claude: CATALOG.md read (Catalogue.mli), for tinybox's menu: pure
+; OCaml, no Playground
+(library
+ (name catalogue)
+ (wrapped false))

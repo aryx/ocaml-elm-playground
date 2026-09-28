@@ -1,4 +1,14 @@
 # -*- sh -*-
 # gitignore-like file for Codemap (see https://github.com/aryx/codemap)
 
+/_build
 /docs/odoc.support
+
+#if want to count only the library
+#/games
+#/apps
+#/examples
+#/appkits
+#/gamekits
+
+tests/

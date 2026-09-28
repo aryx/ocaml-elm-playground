@@ -1,0 +1,34 @@
+<html>
+<head>
+<title>A stopwatch</title>
+<style>
+#time { font-size: 48px; text-align: center; font-family: monospace; color: #1F3F7F }
+p     { text-align: center }
+</style>
+</head>
+<body>
+<h1>A stopwatch</h1>
+<p id=time>0.0</p>
+<p><input type=button id=go value="Start"> <input type=button id=zero value="Reset">
+<p>setInterval(f, 100) asks the browser to run f every tenth of a
+second: between two runs the page is idle, and the browser draws.
+<script>
+let tenths = 0, running = null;
+function show() {
+  document.getElementById("time").textContent = Math.floor(tenths / 10) + "." + (tenths % 10);
+}
+document.getElementById("go").addEventListener("click", e => {
+  if (running === null) {
+    running = setInterval(() => { tenths++; show() }, 100);
+    e.target.value = "Stop";
+  } else {
+    clearInterval(running);
+    running = null;
+    e.target.value = "Start";
+  }
+});
+document.getElementById("zero").onclick = () => { tenths = 0; show() };
+show();
+</script>
+</body>
+</html>

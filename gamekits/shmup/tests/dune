@@ -1,0 +1,12 @@
+; claude: the shoot 'em up kit's worked examples (Shots.mli, Path.mli),
+; run by 'make test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   kit_shmup
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)

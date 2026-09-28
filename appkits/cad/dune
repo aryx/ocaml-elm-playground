@@ -1,0 +1,12 @@
+; claude: AutoCAD's drawing and command line (AutoCAD, Autodesk, 1982;
+; see docs/claude_notes/plans/plan_cad.md): the geometry of crossings
+; (Cad_geom), entities on layers and blocks (Cad_drawing), OFFSET, TRIM,
+; EXTEND, FILLET (Cad_edit), object snaps (Cad_snap), the DXF file
+; (Dxf), and the session, the command line as a machine that asks and
+; is answered (Cad_session). Used by TinyAutoCAD. A private library,
+; installed as part of elm_playground: pure OCaml.
+(library
+ (name appkit_cad)
+ (package elm_playground)
+ (wrapped false)
+)

@@ -1,0 +1,9 @@
+; claude: MPEG-1 system streams (.mpg), demultiplexed (Mpeg_system.mli):
+; the video and audio streams they interleave, and their start times.
+; Pure OCaml. A private library (see graphics/core/dune), installed as
+; part of elm_playground.
+(library
+ (name graphics_mpeg_system)
+ (package elm_playground)
+ (wrapped false)
+)

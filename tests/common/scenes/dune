@@ -1,0 +1,6 @@
+; claude: the golden scenes as data (Golden_scene.mli): read by the
+; golden tests (tests/2d, tests/3d, through Testutil_golden) and by
+; tinybox's menu (launcher/). No dependency: plain lists.
+(library
+ (name golden_scenes)
+ (wrapped false))

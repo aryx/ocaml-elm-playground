@@ -6,14 +6,20 @@
 # Main targets
 ###############################################################################
 
+# coupling: one per (package ...) stanza of dune-project, which they
+# are generated from; ./configure installs the dependencies of all of
+# them, so a package missing here would keep a stale .opam around.
 OPAMS=\
-  elm_core.opam elm_system.opam\
-  elm_playground.opam elm_playground_native.opam elm_playground_web.opam
+  elm_playground.opam elm_playground_native.opam elm_playground_web.opam\
+  elm_playground_software.opam\
+  elm_playground_3d.opam\
+  elm_playground_3d_software.opam elm_playground_3d_web.opam\
+  elm_playground_3d_opengl.opam elm_playground_3d_webgl.opam
 
 default: all
 
 # claude: @default (recursive) rather than plain 'dune build' so the
-# 'default' alias in examples_js/ and games_js/ is used and their .html
+# 'default' alias in examples/web/ and games/*/web/ is used and their .html
 # files are copied into _build/ next to the generated .bc.js
 all: $(OPAMS)
 	dune build @default
@@ -23,12 +29,82 @@ install:
 	dune install
 
 # to test the native programs, run make and then go to
-# _build/default/examples/ (or games/) and run the .exe there
+# _build/default/examples/ (or games/<genre>/) and run the .exe there
 # to test the web programs, run also make and then go to
-# _build/default/examples_js/ (or games_js/) under chrome for instance
-# with open -a "Google Chrome" _build/default/examples_js
+# _build/default/examples/web/ (or games/<genre>/web/) under chrome for instance
+# with open -a "Google Chrome" _build/default/examples/web
+# claude: or use 'make serve-build' below, required for the WebGL
+# pages with textures.
+
+# claude: build, then serve _build/default/ over HTTP, for the web
+# programs, e.g.
+#   http://localhost:8001/examples/web/TexturedCube3d.html
+#   http://localhost:8001/examples/web/Mario.html
+# Opening their .html directly (file://) works for most of them, but
+# not for a WebGL page with textures: WebGL refuses to read the pixels
+# of an image it considers from another site (it would let the page
+# spy on images it shouldn't see), and Chrome considers every file://
+# page a site of its own, even for an image in the same directory. The
+# texture then stays magenta, with a SecurityError in the browser's
+# console (see the WebGL backend's Playground3d_platform.ml, Textures).
+# Served over HTTP, the page and its images are one site.
+# Port 8001, so it can run alongside 'make serve' (docs/, on 8000);
+# 127.0.0.1, so only this machine can connect. Ctrl-C to stop.
+serve-build: all
+	@echo "serving _build/default/ at http://localhost:8001/"
+	python3 -m http.server --directory _build/default --bind 127.0.0.1 8001
+
 test:
 	dune runtest -f
+
+# claude: the quick check for a change that only moves or renames
+# things: the whole tree built (what a move breaks: a module in the
+# wrong stanza, a missing copy_files, a library dep), and every test
+# but the golden frames (a frame rendered on the CPU each, all at
+# once) and the ones tagged heavy (seconds of search each, see
+# tests/common/Testutil_heavy.mli). 'make test' before a change that
+# can alter a pixel or a game.
+test-lite:
+	dune build
+	GOLDEN=none HEAVY=skip dune runtest -f
+
+# 'make test' skips the golden frames deep into a game (more than 100
+# frames to render: seconds of CPU each, all at once), keeping every
+# example's and the first frame of each game. This runs those too;
+# worth it before a release, or after touching a renderer. See
+# tests/common/Testutil_golden.mli
+test-golden-all:
+	GOLDEN=all dune runtest -f tests/2d tests/3d
+
+# after 'make test' reported 2D or 3D golden frames that differ on
+# purpose (look at them first), make the new frames the golden ones;
+# see tests/common/Testutil_golden.mli
+approve-golden2d:
+	cp _build/default/tests/2d/actual/*.png tests/2d/golden/
+	chmod 644 tests/2d/golden/*.png
+approve-golden3d:
+	cp _build/default/tests/3d/actual/*.png tests/3d/golden/
+	chmod 644 tests/3d/golden/*.png
+# the same for audio/'s golden WAVs (listen to them first)
+approve-golden-audio:
+	cp _build/default/libs/audio/tests/actual/*.wav libs/audio/tests/golden/
+	chmod 644 libs/audio/tests/golden/*.wav
+# and the music applications' voices' (apps/music/tests)
+approve-golden-music:
+	cp _build/default/apps/music/tests/actual/*.wav apps/music/tests/golden/
+	chmod 644 apps/music/tests/golden/*.wav
+# and the formats' players' (audio/formats/tests)
+approve-golden-formats:
+	cp _build/default/libs/audio/formats/tests/actual/*.wav libs/audio/formats/tests/golden/
+	chmod 644 libs/audio/formats/tests/golden/*.wav
+
+# claude: tests/data/'s toy media, one file per format we read, remade
+# from Our_media.playlist; to try a reader by hand, e.g.
+#   dune exec apps/media/TinyMediaPlayer.exe -- tests/data/bell.wav
+test-data:
+	dune build ./apps/media/tests/Dump_media.exe
+	mkdir -p tests/data
+	./_build/default/apps/media/tests/Dump_media.exe tests/data
 
 # This will fail if the .opam isn't up-to-date (in git),
 # and dune isn't installed yet. You can always install dune
@@ -64,12 +140,19 @@ doc:
 # which is hand-edited, nor the toy-game/toy-web-game docs that odoc also
 # generates from docs/toy-*-example/), and copy each freshly built web
 # example/game (.bc.js + its .html page) to docs/examples/ and docs/games/.
+# claude: a genre's games go to docs/games/<genre>/ (3D ones on WebGL
+# too); examples/web/ has the 3D examples on WebGL too; the SVG ones
+# (examples/svg/) go to docs/examples/svg/, a subdirectory since they
+# have the same names. Plus the texture, at the path the pages look for
+# it (relative to the page, see examples/web/examples/dune); the games'
+# textures travel inside their programs.
 # 'install -m 644' rather than 'cp' because dune's outputs are read-only.
 # claude: since docs/index.html is not regenerated, its package version
 # numbers are refreshed from dune-project instead.
 VERSION=$(shell sed -n 's/^(version "\(.*\)")/\1/p' dune-project)
 ODOC_DIRS=odoc.support \
-  elm_core elm_system elm_playground elm_playground_native elm_playground_web
+  elm_playground elm_playground_native elm_playground_web\
+  elm_playground_software
 
 website:
 	make doc
@@ -80,20 +163,39 @@ website:
 	done
 	perl -pi -e 's|<span class="version">[^<]*</span>|<span class="version">$(VERSION)</span>|' docs/index.html
 	make js
-	for d in examples games; do \
-	  for js in _build/default/$${d}_js/*.bc.js; do \
+	for d in examples $(GENRES); do \
+	  mkdir -p docs/$$d; \
+	  for js in _build/default/$$d/web/*.bc.js; do \
 	    b=`basename $$js .bc.js`; \
-	    install -m 644 $$js $${d}_js/$$b.html docs/$$d/; \
+	    install -m 644 $$js $$d/web/$$b.html docs/$$d/; \
 	  done; \
 	done
+	mkdir -p docs/examples/svg
+	for js in _build/default/examples/svg/*.bc.js; do \
+	  b=`basename $$js .bc.js`; \
+	  install -m 644 $$js examples/svg/$$b.html docs/examples/svg/; \
+	done
+	mkdir -p docs/examples/examples
+	install -m 644 examples/checker.png docs/examples/examples/
 
 # Preview the site at http://localhost:8000
 serve:
 	python3 -m http.server --directory docs 8000
 
+# claude: the games' genres' directories (games/<genre>/, each with its
+# own web/), in CATALOG.md's order
+GENRES=$(addprefix games/,shmup fighting platform arcade puzzle cards \
+  adventure rpg fps flight racing sports strategy rhythm programming)
+
 js:
-	dune build games_js --profile=release-js
-	dune build examples_js --profile=release-js
+	dune build $(GENRES:%=%/web) --profile=release-js
+	dune build examples/web --profile=release-js
+	dune build examples/svg --profile=release-js
+	dune build apps/office/web --profile=release-js
+	dune build apps/graphics/web --profile=release-js
+	dune build apps/gamedev/web --profile=release-js
+	dune build apps/cad/web --profile=release-js
+	dune build apps/education/web --profile=release-js
 
 ###############################################################################
 # Developer targets
@@ -101,6 +203,13 @@ js:
 
 check:
 	osemgrep --config semgrep.jsonnet .
+
+# lines of OCaml: library, games, apps, launcher, examples, tests (loc-v: per
+# subdirectory)
+loc:
+	scripts/stats/loc.py
+loc-v:
+	scripts/stats/loc.py -v
 
 build-docker:
 	docker build -t "elm_playground" .

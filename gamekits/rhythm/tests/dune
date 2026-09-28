@@ -1,0 +1,11 @@
+; claude: the rhythm kit's worked examples (Rhythm.mli), run by 'make
+; test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   audio
+   kit_rhythm
+ )
+)

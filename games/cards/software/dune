@@ -1,0 +1,13 @@
+; claude: the same games as ../dune, on the software rasterizer (see
+; examples/software/dune for how copy_files works)
+(copy_files ../*.ml)
+
+(executables
+  (names TinyFreeCell TinySolitaire)
+  (modules TinyFreeCell TinySolitaire)
+  (libraries
+    elm_playground
+    kit_cards
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

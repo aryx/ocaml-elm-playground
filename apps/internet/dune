@@ -1,0 +1,187 @@
+; claude: the internet applications (CATALOG.md's section): TinyIRC,
+; TinyMosaic and TinyNetscape (plan_browser_teaching.md), TinyFirefox
+; (plan_tiny_firefox.md), TinyChrome (plan_tiny_chrome.md), TinyEudora
+; (plan_tiny_eudora.md). Laid out like office/: the
+; programs here, software/ for the golden frames, web/ for the browser.
+;
+; What it might contain besides, each Tiny and after a famous original:
+;  - a news reader (Usenet's rn/trn): threads of articles.
+; Built on networking/ and gui/, the servers they talk to small enough
+; to run beside them (TinyIRC's: networking/ircd/).
+(executables
+  (names TinyIRC)
+  (modules TinyIRC)
+  (libraries
+    caps ; the authority to reach the network
+    networking ; Irc, Transport
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; claude: the browsers' built-in site, the about: pages (Site.mli), a
+; library TinyMosaic and TinyNetscape share, its files embedded as
+; strings: site/home.html becomes Site_pages.home at build time, and so
+; on, so a browser has something to show with no network (and the
+; golden frames something deterministic)
+(library
+ (name internet_site)
+ (wrapped false)
+ (modules Site Site_pages Site_pictures)
+)
+
+(rule
+ (targets Site_pages.ml)
+ (deps site/home.html site/history.html site/form.html site/netscape.html site/css.html
+       site/firefox.html site/counter.html site/todo.html site/timer.html site/tictactoe.html
+       site/chrome.html site/chrome.css site/chrome-colours.css site/threads.html site/threads.js)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from site/*.html by apps/internet/dune *)\n")
+    (echo "let home = {|")
+    (cat site/home.html)
+    (echo "|}\n")
+    (echo "let history = {|")
+    (cat site/history.html)
+    (echo "|}\n")
+    (echo "let form = {|")
+    (cat site/form.html)
+    (echo "|}\n")
+    (echo "let netscape = {|")
+    (cat site/netscape.html)
+    (echo "|}\n")
+    (echo "let css = {|")
+    (cat site/css.html)
+    (echo "|}\n")
+    (echo "let firefox = {|")
+    (cat site/firefox.html)
+    (echo "|}\n")
+    (echo "let counter = {|")
+    (cat site/counter.html)
+    (echo "|}\n")
+    (echo "let todo = {|")
+    (cat site/todo.html)
+    (echo "|}\n")
+    (echo "let timer = {|")
+    (cat site/timer.html)
+    (echo "|}\n")
+    (echo "let tictactoe = {|")
+    (cat site/tictactoe.html)
+    (echo "|}\n")
+    (echo "let chrome = {|")
+    (cat site/chrome.html)
+    (echo "|}\n")
+    (echo "let chrome_css = {|")
+    (cat site/chrome.css)
+    (echo "|}\n")
+    (echo "let chrome_colours_css = {|")
+    (cat site/chrome-colours.css)
+    (echo "|}\n")
+    (echo "let threads = {|")
+    (cat site/threads.html)
+    (echo "|}\n")
+    (echo "let threads_js = {|")
+    (cat site/threads.js)
+    (echo "|}\n")))))
+
+; claude: its pictures, bytes that are not text, embedded escaped
+; (scripts/build/files_to_string_ml.ml): site/picture.gif becomes
+; Site_pictures.picture_gif, and so on -- the same picture in the three
+; formats the browser decodes
+(rule
+ (targets Site_pictures.ml)
+ (deps site/picture.gif site/picture.png site/picture.jpg %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml site/picture.gif site/picture.png site/picture.jpg))))
+
+(executables
+  (names TinyMosaic TinyNetscape TinyFirefox)
+  (modules TinyMosaic TinyNetscape TinyFirefox)
+  (libraries
+    caps ; the authority to reach the network
+    lang_html lang_css browser_layout ; the engine: Hit, Dom, Html_lexer (the views)
+    appkit_browser ; a page read, laid out, drawn; the history; forms
+    internet_site ; the about: pages
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; claude: TinyChrome's players and its video site (Browser_media, Tube:
+; plan_tiny_chrome.md C9), over TinyMediaPlayer's library (media_player:
+; Media, Our_media) -- apart from the teaching browsers, which play
+; nothing
+(library
+ (name internet_media)
+ (wrapped false)
+ (modules Browser_media Tube)
+ (libraries elm_playground lang_html lang_css browser_layout appkit_browser media_player)
+)
+
+(executables
+  (names TinyChrome)
+  (modules TinyChrome)
+  (libraries
+    caps
+    lang_html lang_css browser_layout
+    appkit_browser
+    internet_site
+    internet_media ; <video>, <audio>, about:tube
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; claude: TinyEudora's built-in mailboxes and nicknames (Our_mail.mli),
+; their mbox and vCard files embedded as strings: mail/in.mbox becomes
+; Our_mail_files.in_, and so on
+(library
+ (name internet_mail)
+ (wrapped false)
+ (modules Our_mail Our_mail_files)
+)
+
+(rule
+ (targets Our_mail_files.ml)
+ (deps mail/in.mbox mail/out.mbox mail/trash.mbox mail/projects.mbox mail/nicknames.vcf)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from mail/*.mbox by apps/internet/dune *)\n")
+    (echo "let in_ = {|")
+    (cat mail/in.mbox)
+    (echo "|}\n")
+    (echo "let out = {|")
+    (cat mail/out.mbox)
+    (echo "|}\n")
+    (echo "let trash = {|")
+    (cat mail/trash.mbox)
+    (echo "|}\n")
+    (echo "let projects = {|")
+    (cat mail/projects.mbox)
+    (echo "|}\n")
+    (echo "let nicknames = {|")
+    (cat mail/nicknames.vcf)
+    (echo "|}\n")))))
+
+(executables
+  (names TinyEudora)
+  (modules TinyEudora)
+  (libraries
+    caps ; the authority to save an attachment
+    networking_mail ; Mail, Mime, Mbox
+    appkit_pim ; Vcard, the nicknames
+    internet_mail ; the built-in mailboxes
+    appkit_richtext ; Style, a text's look
+    appkit_stroke_text ; Hershey's strokes, from the left
+    graphics_rgba graphics_png graphics_gif graphics_jpeg ; the pictures attached
+    gui ; Widget
+    elm_playground
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

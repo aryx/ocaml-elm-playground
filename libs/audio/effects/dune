@@ -1,0 +1,12 @@
+; claude: the live effects (plan_synth_teaching.md, notes_synth.md
+; section 8): each a streaming processor with its own typed settings,
+; and an Effect.t (Effect.mli) to be chained in a Rack, its knobs named.
+; The effects of a sound rendered ahead (Synth's echo and reverb) are
+; audio/'s. A private library, installed as part of elm_playground:
+; pure OCaml, so the web backend has it too.
+(library
+ (name audio_effects)
+ (package elm_playground)
+ (wrapped false)
+ (libraries audio_signal audio_synthesis audio)
+)

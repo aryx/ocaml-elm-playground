@@ -1,0 +1,11 @@
+; claude: IFF ILBM, the Amiga's pictures (Electronic Arts, 1985),
+; read and written by our own code (Ilbm.mli): IFF's chunks, the
+; bitplanes, ByteRun1 (libs/compression's Packbits), the palette and
+; Deluxe Paint's colour-cycling ranges. Pure OCaml; a private library,
+; installed as part of elm_playground, TinyDeluxePaint's file format.
+(library
+ (name graphics_ilbm)
+ (package elm_playground)
+ (wrapped false)
+ (libraries compression graphics_rgba) ; Packbits, and Rgba_image
+)

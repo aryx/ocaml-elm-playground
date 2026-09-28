@@ -1,0 +1,12 @@
+; claude: the crush kit's rules, played through its levels (Crush.mli),
+; run by 'make test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   kit_crush
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)

@@ -146,6 +146,9 @@ and form =
   | Polygon of color * (number (* x *) * number (* y *)) list
 
   | Image of number (* width *) * number (* height *) * string (* url *)
+  (* claude: an image already in memory, its pixels given (a video's
+   * frame, a picture decoded by the program) *)
+  | Bitmap of number (* width *) * number (* height *) * Rgba_image.t
   | Words of color * string
 
   | Group of shape list
@@ -206,6 +209,9 @@ let words_font_family = "sans-serif"
 
 let (image: number -> number -> string -> shape) = fun w h src ->
   shape 0. 0. 0. 1. 1. (Image (w, h, src))
+
+let (bitmap: number -> number -> Rgba_image.t -> shape) = fun w h img ->
+  shape 0. 0. 0. 1. 1. (Bitmap (w, h, img))
 
 let (group: shape list -> shape) = fun xs ->
   shape 0. 0. 0. 1. 1. (Group xs)
@@ -295,14 +301,43 @@ type mouse = {
 
   mdown: bool;
   mclick: bool;
+  (* pad: not in original Playground.elm: the right button, e.g. to
+   * place a block in TinyMinecraft (the left one removes) *)
+  mrdown: bool;
+  (* pad: not in original Playground.elm either: how far the mouse
+   * moved since the last frame (y up, like my), even when it can't be
+   * seen or can't move, e.g. captured by a first-person 3D game (see
+   * Playground3d_platform.run_app3d's capture_mouse) *)
+  mdx: number;
+  mdy: number;
+  (* claude: not in original Playground.elm either, and the two things
+   * no game here has ever needed but every application does (see
+   * docs/claude_notes/plans/plan_gui_teaching.md, phase 0): the wheel,
+   * in notches since the last frame (positive away from you: scrolling
+   * up), and whether this frame carried a double click. Both are
+   * transients, like mdx and mdy: set by an event, consumed by the
+   * update that sees them, then cleared. *)
+  mwheel: number;
+  mdouble: bool;
 }
 
-let mouse_move mx my mouse = 
+let mouse_move mx my mouse =
   { mouse with mx; my }
 let mouse_click mclick mouse =
   { mouse with mclick }
 let mouse_down mdown mouse =
   { mouse with mdown }
+let mouse_right_down mrdown mouse =
+  { mouse with mrdown }
+(* accumulated until the next frame's update, then reset *)
+let mouse_move_by dx dy mouse =
+  { mouse with mdx = mouse.mdx +. dx; mdy = mouse.mdy +. dy }
+let mouse_wheel_by notches mouse =
+  { mouse with mwheel = mouse.mwheel +. notches }
+let mouse_double mouse =
+  { mouse with mdouble = true }
+let mouse_moves_reset mouse =
+  { mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false; mclick = false }
 
 (*-------------------------------------------------------------------*)
 (* Keyboard *)
@@ -326,13 +361,23 @@ type keyboard = {
   kbackspace: bool;
   
   keys: string Set.t;  
+
+  (* claude: not in original Playground.elm: the characters typed this
+   * frame, in order ("" most frames, "a" for a key, and more than one
+   * character when a key repeats or a dead key resolves). A key name
+   * is not a character -- shift, layouts and dead keys are the
+   * platform's business, and [keys] cannot tell "a" from "A" -- so a
+   * text field reads this and nothing else. A transient, like the
+   * mouse's mdx: the update that sees it consumes it. *)
+  typed: string;
 }
 
 let empty_keyboard = {
   kup = false; kdown = false; kleft = false; kright = false;
   kw = false; ks = false; ka = false; kd = false;
   kspace = false; kenter = false; kshift = false; kbackspace = false;
-  keys = Set.empty
+  keys = Set.empty;
+  typed = "";
 }
 
 let to_x keyboard =
@@ -357,8 +402,43 @@ let to_xy keyboard =
   then (x / square_root_two, y / square_root_two)
   else (x, y)
 
+let keyboard_typed str keyboard =
+  { keyboard with typed = keyboard.typed ^ str }
+let keyboard_typed_reset keyboard =
+  { keyboard with typed = "" }
+
+(* claude: the two backends name the same key differently -- SDL says
+ * "Backspace", "Return", "Left Shift" (lowercased by Native_loop_2d),
+ * a browser says "Backspace", "Enter", "Shift" -- and only the arrows
+ * were ever made to agree. So one name is chosen here, the browser's
+ * (which is what the arrows and Playground.mli's key list already
+ * follow), and both spellings map onto it. Letters keep their own
+ * name, and "space" stays "space": every game reads that one. *)
+let canonical_key key =
+  match key with
+  | "backspace" -> "Backspace"
+  | "return" | "Enter" -> "Enter"
+  | "tab" -> "Tab"
+  | "escape" -> "Escape"
+  | "delete" -> "Delete"
+  | "home" -> "Home"
+  | "end" -> "End"
+  (* claude: and the rest of the browser's names, which SDL's
+   * lowercased ones missed: a terminal program reading F9 or PageDown
+   * (TinyTurboPascal's Make, TinyVi's page) got "f9" and "pagedown" *)
+  | "pageup" -> "PageUp"
+  | "pagedown" -> "PageDown"
+  | "insert" -> "Insert"
+  | _ when String.length key >= 2 && key.[0] = 'f' && String.for_all (fun c -> c >= '0' && c <= '9') (String.sub key 1 (Stdlib.( - ) (String.length key) 1)) ->
+      "F" ^ String.sub key 1 (Stdlib.( - ) (String.length key) 1)
+  | "left shift" | "right shift" -> "Shift"
+  | "left ctrl" | "right ctrl" -> "Control"
+  | "left alt" | "right alt" -> "Alt"
+  | key -> key
+
 let update_keyboard is_down key keyboard =
-  let keys = 
+  let key = canonical_key key in
+  let keys =
     if is_down
     then Set.insert key keyboard.keys
     else Set.remove key keyboard.keys
@@ -373,6 +453,13 @@ let update_keyboard is_down key keyboard =
   | "a"          -> { keyboard with keys; ka = is_down }
   | "d"          -> { keyboard with keys; kd = is_down }
   | "space"          -> { keyboard with keys; kspace = is_down }
+  (* claude: the three that the record has always had and nothing ever
+   * set: an application needs them (backspace in a field, enter to
+   * accept, shift to extend a selection) and so did the games that
+   * read them (TinySokoban's undo, TinyGauntlet2's potion) *)
+  | "Backspace"  -> { keyboard with keys; kbackspace = is_down }
+  | "Enter"      -> { keyboard with keys; kenter = is_down }
+  | "Shift"      -> { keyboard with keys; kshift = is_down }
   | _ -> { keyboard with keys }
 
 
@@ -389,23 +476,63 @@ type computer = {
   keyboard: keyboard;
   screen: screen;
   time: time;
+  flags: flags;
 }
+(* claude: see Playground.mli *)
+and flags = (string * string) list
 
 let initial_computer = {
-  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false };
+  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; mdx = 0.; mdy = 0.;
+            mwheel = 0.; mdouble = false };
   keyboard = empty_keyboard;
   screen = to_screen default_width default_height;
   time = Time (Time.millis_to_posix 1);
+  flags = [];
 }
+
+let flags_of_strings (xs : string list) : flags =
+  xs
+  |> List.filter (fun s -> s <> "")
+  |> List.map (fun s ->
+         match String.index_opt s '=' with
+         (* Stdlib's int arithmetic, Basics' is float *)
+         | Some i -> Stdlib.(String.sub s 0 i, String.sub s (i + 1) (String.length s - i - 1))
+         | None -> (s, ""))
 
 (*****************************************************************************)
 (* App *)
 (*****************************************************************************)
 (* was in Platform.elm but makes its harder to have cross-platform playground*)
 
-type ('model, 'msg) app = 
+(*****************************************************************************)
+(* Randomness *)
+(*****************************************************************************)
+(* claude: see Playground.mli *)
+
+type seed = Lehmer.t
+
+let initial_seed (n : int) : seed = Lehmer.scramble n
+
+let random (lo : number) (hi : number) (seed : seed) : number * seed =
+  let seed = Lehmer.next seed in
+  (lo +. ((hi -. lo) *. Lehmer.to_unit seed), seed)
+
+let random_int (lo : int) (hi : int) (seed : seed) : int * seed =
+  let seed = Lehmer.next seed in
+  (lo +.. int_of_float (float_of_int (hi -.. lo +.. 1) *. Lehmer.to_unit seed), seed)
+
+let pick (xs : 'a list) (seed : seed) : 'a * seed =
+  let i, seed = random_int 0 (List.length xs -.. 1) seed in
+  (List.nth xs i, seed)
+
+(* claude: see Playground.mli *)
+type rendering = { antialiasing : bool; smooth_images : bool }
+
+let default_rendering = { antialiasing = true; smooth_images = true }
+
+type ('model, 'msg) app =
   {
-    init: (unit -> ('model * 'msg Cmd.t));
+    init: (flags -> ('model * 'msg Cmd.t));
     update: ('msg -> 'model -> ('model * 'msg Cmd.t));
     (* old: removed dependency to vdom, harder to port to native
      * view: ('model -> 'msg Html.vdom);
@@ -413,6 +540,47 @@ type ('model, 'msg) app =
     view: ('model -> shape list);
     subscriptions: ('model -> 'msg Sub.t);
   }
+
+(* claude: see Playground.mli *)
+type any_app = Any_app : ('model, 'msg) app -> any_app
+let capture : (any_app -> unit) option ref = ref None
+
+(* claude: see Playground.mli *)
+module Http = struct
+  type error = Cmd.http_error =
+    | Bad_url of string
+    | Timeout
+    | Network_error of string
+    | Bad_status of int
+    | Bad_body of string
+
+  type response = Cmd.http_response = { url : string; status : int; headers : (string * string) list; body : string }
+  type 'msg expect = (response, error) result -> 'msg
+
+  (* claude: Elm's reading: a 2xx is the body, another status an error *)
+  let expect_string (f : (string, error) result -> 'msg) : 'msg expect =
+   fun result ->
+    match result with
+    | Ok response when response.status /.. 100 = 2 -> f (Ok response.body)
+    | Ok response -> f (Error (Bad_status response.status))
+    | Error e -> f (Error e)
+
+  let expect_response (f : (response, error) result -> 'msg) : 'msg expect = f
+  let get (caps : < Cap.network ; .. >) ~(url : string) ~(expect : 'msg expect) : 'msg Cmd.t =
+    Cmd.Http_get ((caps :> Cap.network), url, expect)
+
+  let post (caps : < Cap.network ; .. >) ~(url : string) ~(content_type : string) ~(body : string)
+      ~(expect : 'msg expect) : 'msg Cmd.t =
+    Cmd.Http_post ((caps :> Cap.network), url, (content_type, body), expect)
+
+  let error_to_string (e : error) : string =
+    match e with
+    | Bad_url url -> "bad URL: " ^ url
+    | Timeout -> "timeout"
+    | Network_error why -> "network error: " ^ why
+    | Bad_status status -> Printf.sprintf "status %d" status
+    | Bad_body why -> "bad body: " ^ why
+end
 
 (*****************************************************************************)
 (* Playground: picture *)
@@ -422,7 +590,7 @@ type msg1 =
 
 let (picture: shape list -> (screen, msg1) app) = 
  fun shapes ->
-  let init () = 
+  let init _flags =
       to_screen default_width default_height, Cmd.none
   in
   let view _screen = shapes in
@@ -449,8 +617,15 @@ type msg =
   | KeyChanged of bool * string
 
   | MouseMove of (float * float)
+  | MouseMoveBy of (float * float) (* relative: dx, dy, y up *)
   | MouseClick (* reset after a Tick *)
   | MouseButton of bool (* true = down, false = up *)
+  | RightMouseButton of bool (* the same, for the right button *)
+  (* claude: phase 0 of plan_gui_teaching.md; all three are consumed by
+   * the Tick that follows them *)
+  | Typed of string
+  | MouseWheel of float
+  | MouseDouble
 
 
 type animation = Animation of (*Event.visibility * *) screen * time
@@ -462,15 +637,20 @@ let animation_update msg (Animation (s, t) as state) =
   | Resized (w, h) -> 
     Animation (to_screen (float w) (float h), t)
 
-  | MouseMove _ 
-  | MouseClick 
+  | MouseMove _
+  | MouseMoveBy _
+  | MouseClick
   | MouseButton _
+  | RightMouseButton _
   | KeyChanged _
+  | Typed _
+  | MouseWheel _
+  | MouseDouble
     -> state
 
 let (animation: (time -> shape list) -> (animation, msg) app) =
  fun view_frame ->
-   let init () = 
+   let init _flags =
      Animation ((* Event.Visible, *)
                 to_screen default_width default_height, 
                 (* bugfix: use 1, not 0, otherwise get div_by_zero exn in
@@ -506,9 +686,15 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
          * to kinda ack the click
          *)
         Game (update_memory computer memory,
-          { computer with time = Time time })
-    | Resized (_w, _h) ->
-        failwith "Todo"
+          (* claude: the moves, wheel notches, double click and typed
+           * characters update_memory just saw are consumed *)
+          { computer with time = Time time;
+            mouse = mouse_moves_reset computer.mouse;
+            keyboard = keyboard_typed_reset computer.keyboard })
+    | Resized (w, h) ->
+        (* claude: the screen the platform gives the program, when not
+         * the default (Playground_platform.run_app's ?screen) *)
+        Game (memory, { computer with screen = to_screen (float w) (float h) })
     (* we assume the x, y is in playground coordinate system (0,0) at the
      * center of the screen.
      *)
@@ -517,8 +703,11 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
          * let x = computer.screen.left + page_x in
          * let y = computer.screen.top - page_y in
          *)
-        Game (memory, 
+        Game (memory,
              { computer with mouse = mouse_move x y computer.mouse })
+    | MouseMoveBy (dx, dy) ->
+        Game (memory,
+             { computer with mouse = mouse_move_by dx dy computer.mouse })
     | MouseClick ->
         Game (memory, 
              { computer with mouse = 
@@ -526,12 +715,34 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
                  * mouse_down false *)
                   (mouse_click true computer.mouse) })
     | MouseButton is_down ->
-        Game (memory, 
-             { computer with mouse = mouse_down is_down computer.mouse })
+        Game (memory,
+             { computer with mouse =
+                 (* claude: a click is the release of the button, so the
+                  * button up is both: mdown goes false, mclick is true
+                  * for the one update that follows (the Tick then
+                  * clears it, as it clears mdx and the wheel). Without
+                  * this, nothing ever set mclick: no backend emits the
+                  * MouseClick message above, which the web's vdom used
+                  * to send before the backends were factorized. *)
+                 (if is_down
+                  then mouse_down true computer.mouse
+                  else mouse_click true (mouse_down false computer.mouse)) })
+    | RightMouseButton is_down ->
+        Game (memory,
+             { computer with mouse = mouse_right_down is_down computer.mouse })
     | KeyChanged (is_down, key) ->
         Game (memory,
              { computer with keyboard = update_keyboard is_down key 
                  computer.keyboard })
+    | Typed str ->
+        Game (memory,
+             { computer with keyboard = keyboard_typed str computer.keyboard })
+    | MouseWheel notches ->
+        Game (memory,
+             { computer with mouse = mouse_wheel_by notches computer.mouse })
+    | MouseDouble ->
+        Game (memory,
+             { computer with mouse = mouse_double computer.mouse })
 
 let (game: 
   (computer -> 'memory -> shape list) ->
@@ -540,8 +751,8 @@ let (game:
   ('memory game, msg) app) = 
  fun view_memory update_memory initial_memory ->
 
-  let init () =
-      Game (initial_memory, initial_computer),
+  let init flags =
+      Game (initial_memory, { initial_computer with flags }),
       Cmd.none (* TODO: Task.perform GotViewport Dom.getViewport *)
   in
   let view (Game (memory, computer)) =
@@ -552,13 +763,19 @@ let (game:
       Cmd.none
   in
   let subscriptions _ = Sub.batch [
-      (* TODO: on_resize *)
+      Sub.on_resize (fun w h -> Resized (w, h));
       Sub.on_animation_frame (fun x -> Tick x);
       Sub.on_mouse_move (fun x -> MouseMove x);
+      Sub.on_mouse_move_by (fun d -> MouseMoveBy d);
       Sub.on_mouse_down (fun () -> MouseButton true);
       Sub.on_mouse_up   (fun () -> MouseButton false);
+      Sub.on_right_mouse_down (fun () -> RightMouseButton true);
+      Sub.on_right_mouse_up   (fun () -> RightMouseButton false);
       Sub.on_key_down (fun key -> KeyChanged (true, key));
       Sub.on_key_up   (fun key -> KeyChanged (false, key));
+      Sub.on_typed (fun str -> Typed str);
+      Sub.on_mouse_wheel (fun notches -> MouseWheel notches);
+      Sub.on_mouse_double (fun () -> MouseDouble);
   ]
   in
   { init; view; update; subscriptions }

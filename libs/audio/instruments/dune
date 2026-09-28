@@ -1,0 +1,16 @@
+; claude: the live blocks of a playable voice (plan_synth_teaching.md,
+; notes_synth.md): the oscillator run block after block (Vco), the
+; modulators (Lfo, Drift), the keys to a voice (Voicing), the filters a
+; synthesizer moves all the time (Moog_ladder, Svf). What a voice is
+; made of, not a voice: the instruments themselves are the apps' (a
+; Minimoog is apps/music's), and the interface they play through,
+; Instrument.mli, is audio/'s, since its Mixer holds them. On signal/
+; and synthesis/ only. A private
+; library, installed as part of elm_playground: pure OCaml, so the web
+; backend has it too.
+(library
+ (name audio_instruments)
+ (package elm_playground)
+ (wrapped false)
+ (libraries audio_signal audio_synthesis)
+)

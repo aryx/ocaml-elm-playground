@@ -1,0 +1,12 @@
+; claude: text with looks -- bold, italic, underline, strike, sizes --
+; and the page it is laid out on (see plan_gui_teaching.md, phases 9b
+; to 9d): the engine TinyBravo (1974) and TinyWord (1985) share, as
+; TinyVisiCalc and TinyExcel share appkits/sheet. It never sees a
+; font: the widths of the glyphs are the caller's, as Linebreak's
+; word widths are.
+(library
+ (name appkit_richtext)
+ (package elm_playground)
+ (wrapped false)
+ (libraries gui) ; Text, Text_edit: the characters, the caret, the piece table
+)

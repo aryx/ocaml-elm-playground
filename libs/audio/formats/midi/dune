@@ -1,0 +1,10 @@
+; claude: Standard MIDI Files, read and written (Midi.mli); tunes
+; turned into MIDI from their ABC form (see plan_audio_formats.md and
+; notes_audio_midi.md). A private library, installed as part of
+; elm_playground.
+(library
+ (name audio_midi)
+ (package elm_playground)
+ (wrapped false)
+ (libraries audio_abc)
+)

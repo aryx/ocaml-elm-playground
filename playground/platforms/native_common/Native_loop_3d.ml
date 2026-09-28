@@ -1,0 +1,456 @@
+(* Claude Code
+ *
+ * Copyright (C) 2026 Yoann Padioleau
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License
+ * (LGPL) as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *)
+open Tsdl
+
+let ( let* ) o f =
+  match o with
+  | Error (`Msg msg) -> failwith (Printf.sprintf "TSDL error: %s" msg)
+  | Ok x -> f x
+
+(* claude: deterministic frames, to check that a refactoring of a
+ * renderer doesn't change a single pixel (see
+ * docs/claude_notes/done/plan_code_reorg_teaching_3d.md, phase 0): the
+ * clock the app sees can be frozen, debug keys pressed before the
+ * first frame, and a given frame dumped to a file *)
+let fixed_time : float option ref = ref None
+let startup_keys : string ref = ref ""
+let dump_frame_number : int option ref = ref None
+let dump_frame_file : string ref = ref ""
+(* claude: -script, game keys held over given frames (see Input_script) *)
+let script : Input_script.t option ref = ref None
+
+let set_script (s : string) : unit =
+  match Input_script.parse s with
+  | Ok sc -> script := Some sc
+  | Error msg -> raise (Arg.Bad msg)
+
+(* claude: -uncapped, no 60 fps cap (no sleep between frames), to
+ * measure how fast a renderer really is: with -fixed-time and
+ * -dump-frame n, the time to render n frames of the same scene *)
+let uncapped : bool ref = ref false
+
+(* claude: -debug-keys, like Native_loop_2d's: the backend's debug keys
+ * are off by default, so every key goes to the app only *)
+let debug_keys : bool ref = ref false
+let debug_keys_enabled () = !debug_keys
+
+(* claude: -dump-audio, with -dump-frame: the sound of those frames,
+ * as Native_loop_2d's *)
+let dump_audio_file : string ref = ref ""
+
+(* claude: -raytrace, the software backend's frames made by the ray
+ * tracer rather than the rasterizer, from the first one (its "y" key
+ * switches between them); the other backends have no ray tracer and
+ * ignore it (plan_raytracing_teaching.md) *)
+let raytrace : bool ref = ref false
+let raytrace_at_start () = !raytrace
+
+(* claude: -rt-brute, the ray tracer without its BVH: every solid tested
+ * by every ray, the slow and readable way, the same picture *)
+let rt_brute : bool ref = ref false
+let raytrace_brute_force () = !rt_brute
+
+(* claude: -rt-samples n (n x n rays a pixel, antialiasing) and
+ * -rt-bounces n (Whitted's depth), for the ray tracer's stills *)
+let rt_samples : int ref = ref 1
+let rt_bounces : int ref = ref 3
+let raytrace_samples () = !rt_samples
+let raytrace_bounces () = !rt_bounces
+
+(* claude: -dump-size w h, -dump-frame's picture made offscreen at that
+ * size, whatever the window's (a 1600 x 1200 still from a 1000 x 1000
+ * window); -no-hud, without the HUD pass (the art shot) *)
+let dump_size_ref : (int * int) option ref = ref None
+let no_hud : bool ref = ref false
+let dump_size () = !dump_size_ref
+let dump_hud () = not !no_hud
+
+(* claude: the clock frozen: what must be the same on every run (the
+ * golden frames) cannot show a time measured *)
+let deterministic () = !fixed_time <> None
+
+let parse_cli_and_setup_logging () =
+  let level = ref (Some Logs.Warning) in
+  let cli_flags =
+    [ ("-v", Arg.Unit (fun () -> level := Some Logs.Info), " verbose mode");
+      ("-verbose", Arg.Unit (fun () -> level := Some Logs.Info), " verbose mode");
+      ("-debug", Arg.Unit (fun () -> level := Some Logs.Debug), " debug mode");
+      ("-quiet", Arg.Unit (fun () -> level := None), " quiet mode");
+      ("-fixed-time", Arg.Float (fun t -> fixed_time := Some t),
+       "<seconds> the app's clock stays at this time (frozen animations)");
+      ("-keys", Arg.Set_string startup_keys,
+       "<keys> debug keys to press before the first frame, e.g. \"fz\"");
+      ("-dump-frame", Arg.Tuple [ Arg.Int (fun n -> dump_frame_number := Some n); Arg.Set_string dump_frame_file ],
+       "<n> <file> write frame n (from 1) to file (a PNG if it ends in .png, else a PPM), then exit");
+      ("-script", Arg.String set_script,
+       "<script> game keys held over frames, e.g. \"up:1-60,space:30\"");
+      ("-uncapped", Arg.Set uncapped, " no 60 fps cap, to measure speed");
+      ("-dump-audio", Arg.Set_string dump_audio_file, "<file> with -dump-frame, the sound of those frames, as a WAV");
+      ("-debug-keys", Arg.Set debug_keys, " the backend's debug keys (e.g. h for help), off by default");
+      ("-raytrace", Arg.Set raytrace, " (software backend) ray trace instead of rasterizing, as the \"y\" key");
+      ("-rt-brute", Arg.Set rt_brute, " (software backend) the ray tracer without its BVH, every solid tested");
+      ("-rt-samples", Arg.Set_int rt_samples, "<n> (software backend) the ray tracer's n x n rays a pixel");
+      ("-rt-bounces", Arg.Set_int rt_bounces, "<n> (software backend) the ray tracer's reflections and refractions, deep");
+      ("-dump-size", Arg.Tuple [ Arg.Int (fun w -> dump_size_ref := Some (w, 0)); Arg.Int (fun h -> dump_size_ref := Option.map (fun (w, _) -> (w, h)) !dump_size_ref) ],
+       "<w> <h> with -dump-frame, the frame made offscreen at that size");
+      ("-no-hud", Arg.Set no_hud, " with -dump-frame, the frame without its HUD");
+      (* claude: Native_loop_2d's, the same command line *)
+      ("-size", Arg.String Native_loop_2d.set_window_size, "<w>x<h> the window's size at the start (the picture scaled to fit)");
+      ("-fullscreen", Arg.Unit Native_loop_2d.set_fullscreen, " start in full screen (Alt+Enter toggles it)")
+    ]
+  in
+  (* claude: the program's command line (Program.argv), as Native_loop_2d *)
+  let argv = Program.argv () in
+  let usage =
+    Printf.sprintf
+      "usage: %s [-v|-verbose|-debug|-quiet] [-fixed-time t] [-keys k] [-dump-frame n file] [-script s] [-uncapped] [-dump-audio file] [-debug-keys] [-raytrace] [-rt-brute] [-rt-samples n] [-rt-bounces n] [-dump-size w h] [-no-hud] [-size wxh] [-fullscreen] [name=value|name]..."
+      argv.(0)
+  in
+  (* claude: the arguments without a dash are the app's flags (see
+   * Playground.flags), read by the program's main through
+   * Playground_platform.flags, i.e. by the 2D backend's own parse of
+   * the same command line (Native_loop_2d, which must therefore know
+   * the same dashed options as here, with the same arities), and given
+   * back to run_app3d ~flags: nothing to do with them here. Parsed with
+   * our own [current] rather than Arg.parse's global one, which that
+   * earlier parse may have left at the end of argv. *)
+  (try Arg.parse_argv ~current:(ref 0) argv cli_flags (fun _app_flag -> ()) usage with
+  | Arg.Bad msg ->
+      prerr_string msg;
+      exit 2
+  | Arg.Help msg ->
+      print_string msg;
+      exit 0);
+  Logs.set_reporter (Logs.format_reporter ());
+  Logs.set_level !level
+
+let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse with mx; my }
+(* claude: a release is also a *click*: Playground.mli's [mclick], the
+ * transient that means "do it", which exactly one update sees. The 2D
+ * loop gets it out of its event queue; this one keeps the computer
+ * itself, so it has to say so. Without it a 3D game can only be told
+ * that a button is held, and one driven by clicking
+ * (TinyMonumentValley) cannot be played at all. *)
+let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse =
+  { mouse with mdown; mclick = ((not mdown) || mouse.mclick) }
+
+(* claude: a press/release of the right button sets mrdown, of any
+ * other mdown (the left, main one) *)
+let mouse_button (sdl_event : Sdl.event) (is_down : bool) (mouse : Playground.mouse) : Playground.mouse =
+  if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.right then { mouse with mrdown = is_down }
+  else mouse_down is_down mouse
+
+(* claude: one name for a key whatever names it, as the 2D loop does
+ * through the playground's own [canonical_key]: SDL says "left shift"
+ * (lowercased by [scancode_to_keystring] below), a browser says
+ * "Shift", and a game should read one of them, not three. *)
+let canonical_key (key : string) : string =
+  match key with
+  | "left shift" | "right shift" -> "Shift"
+  | "left ctrl" | "right ctrl" -> "Control"
+  | "left alt" | "right alt" -> "Alt"
+  | "return" | "Enter" -> "Enter"
+  | "backspace" -> "Backspace"
+  (* claude: the rest of the 2D loop's names, which this copy lacked: a
+   * 3D game reading "Tab" (TinyCrush3d's turn) got SDL's "tab" *)
+  | "tab" -> "Tab"
+  | "escape" -> "Escape"
+  | "delete" -> "Delete"
+  | "home" -> "Home"
+  | "end" -> "End"
+  (* claude: and the rest of the browser's names, which SDL's
+   * lowercased ones missed: a terminal program reading F9 or PageDown
+   * (TinyTurboPascal's Make, TinyVi's page) got "f9" and "pagedown" *)
+  | "pageup" -> "PageUp"
+  | "pagedown" -> "PageDown"
+  | "insert" -> "Insert"
+  | _ when String.length key >= 2 && key.[0] = 'f' && String.for_all (fun c -> c >= '0' && c <= '9') (String.sub key 1 (String.length key - 1)) ->
+      "F" ^ String.sub key 1 (String.length key - 1)
+  | key -> key
+
+let update_keyboard (is_down : bool) (key : string) (keyboard : Playground.keyboard) :
+    Playground.keyboard =
+  let key = canonical_key key in
+  let keys = if is_down then Set_.add key keyboard.keys else Set_.remove key keyboard.keys in
+  match key with
+  | "ArrowUp" -> { keyboard with keys; kup = is_down }
+  | "ArrowDown" -> { keyboard with keys; kdown = is_down }
+  | "ArrowLeft" -> { keyboard with keys; kleft = is_down }
+  | "ArrowRight" -> { keyboard with keys; kright = is_down }
+  | "w" -> { keyboard with keys; kw = is_down }
+  | "s" -> { keyboard with keys; ks = is_down }
+  | "a" -> { keyboard with keys; ka = is_down }
+  | "d" -> { keyboard with keys; kd = is_down }
+  | "space" -> { keyboard with keys; kspace = is_down }
+  (* claude: the same three the 2D loop sets (see the playground's
+   * [update_keyboard]): this loop is a copy that never gained them, so
+   * on this backend a 3D game reading [kshift] -- as
+   * TinyMarioKart64.ml does, to hop into a slide -- was reading
+   * a field nothing ever set *)
+  | "Backspace" -> { keyboard with keys; kbackspace = is_down }
+  | "Enter" -> { keyboard with keys; kenter = is_down }
+  | "Shift" -> { keyboard with keys; kshift = is_down }
+  | _ -> { keyboard with keys }
+
+let scancode_to_keystring = function
+  | "Left" -> "ArrowLeft"
+  | "Right" -> "ArrowRight"
+  | "Up" -> "ArrowUp"
+  | "Down" -> "ArrowDown"
+  | "Q" -> exit 0
+  | s -> String.lowercase_ascii s
+
+let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : string)
+    ~(on_key_press : string -> unit) ~(init : unit -> 'model)
+    ~(update : Playground.computer -> 'model -> 'model) ~(view : Playground.computer -> 'model -> 'view)
+    ~(draw : Playground.computer -> 'view -> unit) ~(present : unit -> unit) ?(dump_frame : (string -> unit) option)
+    ?(title_keys : (unit -> string) option) ?(capture_mouse = false) ?(flags = [])
+    ?(on_resize : (int -> int -> unit) option) () : unit =
+  (* claude: without this, SDL sends no text_input events at all (it is
+   * off until a program says it wants text); with it, every key press
+   * that produces a character also produces one, which is what
+   * computer.keyboard.typed is (see plan_gui_teaching.md, phase 0) *)
+  Sdl.start_text_input ();
+  let sdl_event = Sdl.Event.create () in
+  (* claude: sound, which the 3D loop never had (plan_audio_teaching.md,
+   * phase 4: "the 3D backends' sound, their loops don't pull yet"): the
+   * 2D loop's device and queue, kept ~3 frames ahead; with -dump-frame
+   * no device, exactly a frame's samples each frame instead, so that a
+   * golden run's music -- and Audio.position, its clock -- are the same
+   * every time. A 3D rhythm game (TinyRockBand) is what needed
+   * it: without a pull, the music never starts and its clock never
+   * moves. *)
+  let audio_device = if !dump_frame_number <> None then None else Native_loop_2d.open_audio () in
+  let dumped_audio = ref [] in
+  (* claude: capture_mouse: SDL's relative mouse mode, the cursor hidden
+   * and held in the window, only mouse_motion's xrel/yrel (mdx/mdy)
+   * changing; the way first-person games turn the camera with no limit.
+   * Not with -dump-frame (no mouse then, see drain_sdl_events). *)
+  let captured = ref false in
+  let set_captured (b : bool) : unit =
+    match Sdl.set_relative_mouse_mode b with
+    | Ok () -> captured := b
+    | Error (`Msg msg) -> Logs.warn (fun m -> m "can't capture the mouse: %s" msg)
+  in
+  if capture_mouse && !dump_frame_number = None then set_captured true;
+  (* claude: -keys, as if pressed before the first frame *)
+  String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
+  let frame_number = ref 0 in
+
+  let model = ref (init ()) in
+  let computer = ref { Playground.initial_computer with flags } in
+
+  let target_fps = 60. in
+  let target_frame_time = 1. /. target_fps in
+
+  (* claude: a window that can change size (on_resize), as in
+   * Native_loop_2d: its size, checked each frame, the picture scaled *)
+  let window = ref (sx, sy) in
+  let check_size () =
+    match on_resize with
+    | None -> ()
+    | Some resized ->
+        let size = Sdl.get_window_size sdl_window in
+        if size <> !window then (
+          window := size;
+          resized (fst size) (snd size))
+  in
+  check_size ();
+
+  while true do
+    let frame_start = Unix.gettimeofday () in
+
+    let rec drain_sdl_events () =
+      if Sdl.poll_event (Some sdl_event) then begin
+        let event_type = Sdl.Event.get sdl_event Sdl.Event.typ in
+        (match event_type with
+        (* claude: with -dump-frame, no mouse or keyboard at all: wherever
+         * the pointer happens to be when the window opens would otherwise
+         * change the frame (e.g. InteractiveCube3d's mouse-driven
+         * turntable); -keys is the way to give input then *)
+        | x when !dump_frame_number <> None && x <> Sdl.Event.quit -> ()
+        | x when x = Sdl.Event.mouse_motion ->
+            let mx = Sdl.Event.(get sdl_event mouse_motion_x) in
+            let my = Sdl.Event.(get sdl_event mouse_motion_y) in
+            (* claude: the window's scale undone (1 for sx by sy) *)
+            let w, h = !window in
+            let k = Native_loop_2d.scale ~sx ~sy !window in
+            let px = (float_of_int mx -. (float_of_int w /. 2.)) /. k in
+            let py = ((float_of_int h /. 2.) -. float_of_int my) /. k in
+            (* claude: and the relative move (mdx/mdy, y up), summed
+             * until the next update: the only one that keeps counting
+             * when the mouse is captured *)
+            let dx = float_of_int Sdl.Event.(get sdl_event mouse_motion_xrel) /. k in
+            let dy = -.float_of_int Sdl.Event.(get sdl_event mouse_motion_yrel) /. k in
+            let m = (!computer).mouse in
+            computer := { !computer with mouse = { (mouse_move px py m) with mdx = m.mdx +. dx; mdy = m.mdy +. dy } }
+        (* claude: capture_mouse, released (Escape): a click captures the
+         * mouse again, and is only that, not a click in the game (like
+         * the original Minecraft's on_mouse_press) *)
+        | x when x = Sdl.Event.mouse_button_down && capture_mouse && not !captured -> set_captured true
+        | x when x = Sdl.Event.mouse_button_down ->
+            computer := { !computer with mouse = mouse_button sdl_event true (!computer).mouse };
+            (* claude: SDL counts a burst's clicks for us; the second one
+             * is an ordinary click plus this flag (plan_gui_teaching.md,
+             * phase 0) *)
+            if Sdl.Event.(get sdl_event mouse_button_button) <> Sdl.Button.right
+               && Sdl.Event.(get sdl_event mouse_button_clicks) >= 2
+            then computer := { !computer with mouse = { (!computer).mouse with mdouble = true } }
+
+        | x when x = Sdl.Event.mouse_wheel ->
+            (* claude: notches, positive scrolling up; SDL flips the sign
+             * itself with "natural" scrolling, so undo that *)
+            let y = float_of_int Sdl.Event.(get sdl_event mouse_wheel_y) in
+            let y =
+              if Sdl.Event.(get sdl_event mouse_wheel_direction) = Sdl.Event.mouse_wheel_flipped
+              then -.y else y
+            in
+            let m = (!computer).mouse in
+            computer := { !computer with mouse = { m with mwheel = m.mwheel +. y } }
+
+        (* claude: the characters a key press produced, which key_down
+         * cannot give (shift, dead keys, a non-US layout) *)
+        | x when x = Sdl.Event.text_input ->
+            let str = Sdl.Event.(get sdl_event text_input_text) in
+            let k = (!computer).keyboard in
+            computer := { !computer with keyboard = { k with typed = k.typed ^ str } }
+        | x when x = Sdl.Event.mouse_button_up ->
+            computer := { !computer with mouse = mouse_button sdl_event false (!computer).mouse }
+        | x when x = Sdl.Event.key_down ->
+            let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
+            let str = scancode_to_keystring key in
+            (* claude: bugfix -- SDL does NOT send exactly one key_down
+             * per physical press: while a key stays held, the OS/SDL
+             * keeps re-sending key_down for it at the keyboard's repeat
+             * rate (the same mechanism that makes a held letter key
+             * spam "aaaaaa" into a text field), and Sdl.Event.get
+             * ...keyboard_repeat is 0 for the original press but > 0
+             * for each of those repeats. [on_key_press] is meant for
+             * one-shot toggles (a single press = a single cycle), so
+             * it's only called when keyboard_repeat = 0 -- reacting to
+             * every key_down instead makes holding a key even slightly
+             * past the repeat delay (typically ~500ms) flip a toggle 2,
+             * 3, or more times in a row, which looked like "the key
+             * does nothing" before this guard existed. (Held-key
+             * actions like the arrow keys don't have this problem:
+             * they don't use key_down events at all, only
+             * computer.keyboard's continuously-updated held/not-held
+             * state below, which a game's update3d re-reads every Tick
+             * regardless of any of this.) *)
+            let first = Sdl.Event.(get sdl_event keyboard_repeat) = 0 in
+            (* claude: Ctrl + a key is the debug key alone, not given to
+             * the app: the way to reach a debug key the game uses
+             * itself *)
+            let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
+            (* claude: Alt+Enter, the platform's (a resizable window's) *)
+            let alt = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.alt <> 0 in
+            if on_resize <> None && alt && Sdl.Event.(get sdl_event keyboard_keycode) = Sdl.K.return then (
+              if first then Native_loop_2d.toggle_fullscreen sdl_window)
+            else if !debug_keys && ctrl then (if first then on_key_press str)
+            else begin
+              if !debug_keys && first then on_key_press str;
+              (* claude: capture_mouse: Escape gives the mouse back *)
+              if capture_mouse && str = "escape" then set_captured false;
+              computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
+            end
+        | x when x = Sdl.Event.key_up ->
+            let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in
+            let str = scancode_to_keystring key in
+            computer := { !computer with keyboard = update_keyboard false str (!computer).keyboard }
+        | x when x = Sdl.Event.quit -> exit 0
+        | _ -> ());
+        drain_sdl_events ()
+      end
+    in
+    drain_sdl_events ();
+    check_size ();
+    (* claude: -script, the keys going down or up at this frame *)
+    (match !script with
+    | Some sc ->
+        let frame = !frame_number + 1 in
+        Input_script.changes sc frame
+        |> List.iter (fun (key, is_down) ->
+               computer := { !computer with keyboard = update_keyboard is_down key (!computer).keyboard });
+        (* claude: and where the pointer is and what its buttons do,
+         * the same as Native_loop_2d does it -- already in playground
+         * coordinates. A 3D game can be played with a mouse, so its
+         * golden frames have to be able to press things too. *)
+        (match Input_script.mouse sc frame with
+        | Some (x, y) -> computer := { !computer with mouse = mouse_move x y (!computer).mouse }
+        | None -> ());
+        Input_script.button_changes sc frame
+        |> List.iter (fun (right, is_down) ->
+               let m = (!computer).mouse in
+               computer :=
+                 { !computer with
+                   mouse = (if right then { m with mrdown = is_down } else mouse_down is_down m) })
+    | None -> ());
+
+    let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in
+    computer := { !computer with time = Playground.Time now };
+    model := update !computer !model;
+    (* claude: the sounds this frame's update played, to the card *)
+    (match audio_device with
+    | Some device ->
+        (* claude: 4 bytes a sample frame: two channels of 16 bits *)
+        let queued = Sdl.get_queued_audio_size device / 4 in
+        Audio.set_latency (Native_loop_2d.latency queued);
+        if queued < Native_loop_2d.queue_ahead then (
+          let s = Audio.pull (Native_loop_2d.queue_ahead - queued) in
+          Native_loop_2d.queue_samples device (s.left, s.right))
+    | None ->
+        let samples = Audio.pull Native_loop_2d.frame_samples in
+        if !dump_audio_file <> "" then dumped_audio := samples :: !dumped_audio);
+    (* claude: the moves [update] just saw are consumed *)
+    computer :=
+      { !computer with
+        mouse = { (!computer).mouse with mdx = 0.; mdy = 0.; mwheel = 0.; mdouble = false; mclick = false };
+        keyboard = { (!computer).keyboard with typed = "" } };
+
+    let t0 = Unix.gettimeofday () in
+    let v = view !computer !model in
+    let t1 = Unix.gettimeofday () in
+    draw !computer v;
+    let t2 = Unix.gettimeofday () in
+
+    (* claude: -dump-frame *)
+    incr frame_number;
+    (match !dump_frame_number with
+    | Some n when n = !frame_number ->
+        (match dump_frame with
+        | Some dump ->
+            dump !dump_frame_file;
+            if !dump_audio_file <> "" then (
+              let frames = List.rev !dumped_audio in
+              Wav.write_stereo !dump_audio_file
+                { left = Array.concat (List.map (fun (s : Signal.stereo) -> s.left) frames);
+                  right = Array.concat (List.map (fun (s : Signal.stereo) -> s.right) frames) })
+        | None -> Logs.err (fun m -> m "-dump-frame: this backend can't dump its frames"));
+        exit 0
+    | _ -> ());
+
+    let elapsed = Unix.gettimeofday () -. frame_start in
+    (* claude: -debug shows this every frame, so a scene that suddenly
+     * gets slow (e.g. TinyMinecraft.ml's ~50k-block world, see
+     * plan_tiny_minecraft.md's Phase 2) can be diagnosed without
+     * adding a throwaway Printf.eprintf each time -- is [view] itself
+     * slow (building the shape3d list), or [draw] (turning it into
+     * pixels)? *)
+    Logs.debug (fun m ->
+        m "frame: %.3fs total (view: %.3fs, draw: %.3fs) -- %.0f fps" elapsed (t1 -. t0) (t2 -. t1)
+          (1. /. Stdlib.max 0.001 elapsed));
+    Sdl.set_window_title sdl_window
+      (Printf.sprintf "%s -- %dx%d -- %.0f fps%s" title_prefix sx sy
+         (1. /. Stdlib.max 0.001 elapsed)
+         (match title_keys with Some keys -> " -- " ^ keys () | None -> ""));
+    present ();
+
+    if (not !uncapped) && elapsed < target_frame_time then Unix.sleepf (target_frame_time -. elapsed)
+  done

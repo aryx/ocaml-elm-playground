@@ -1,0 +1,26 @@
+BEGIN:VCARD
+VERSION:3.0
+FN:Alice
+N:;Alice;;;
+EMAIL:alice@tiny
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Carol
+N:;Carol;;;
+EMAIL:carol@tiny
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:Dave
+N:;Dave;;;
+EMAIL:dave@tiny
+END:VCARD
+BEGIN:VCARD
+VERSION:3.0
+FN:team
+EMAIL:alice@tiny
+EMAIL:carol@tiny
+EMAIL:dave@tiny
+NOTE:a list: every address of the card
+END:VCARD

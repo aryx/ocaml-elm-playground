@@ -1,0 +1,10 @@
+; claude: a video as a player sees it (Movie.mli), what every video
+; reader of graphics/videos/ gives, as Rgba_image is every image
+; reader's. Pure OCaml. A private library (see graphics/core/dune),
+; installed as part of elm_playground.
+(library
+ (name graphics_movie)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_rgba)
+)

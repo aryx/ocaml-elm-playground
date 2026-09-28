@@ -1,0 +1,6 @@
+; claude: the four ways of each 7GUIs task in ../, checked against
+; each other frame by frame, run by 'make test' (dune runtest).
+(test
+ (name Test)
+ (libraries alcotest testo elm_core gui gui4)
+)

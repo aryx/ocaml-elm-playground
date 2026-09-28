@@ -32,5 +32,7 @@ let update _msg model =
 let app = 
   game view update initial_model
 
-let main = 
-  Playground_platform.run_app app
+(* claude: run at once in its own .exe, recorded under its name in
+ * tinybox, the launcher of every game (Program.mli) *)
+let main = Program.main __MODULE__ (fun () ->
+  Playground_platform.run_app app)

@@ -1,0 +1,11 @@
+; claude: the samples, and what's computed on them: Signal (samples, the
+; rate, time), Resample (read between samples: at other pitches and
+; rates), Mix (adding, gains, decibels, clipping), Spectrum (the Fourier
+; transform). Below the rest of audio/ and its formats, and used by the
+; video formats for their sound. A private library, installed as part
+; of elm_playground.
+(library
+ (name audio_signal)
+ (package elm_playground)
+ (wrapped false)
+)

@@ -1,0 +1,181 @@
+; claude: reuse ../*.ml as-is (a build-time copy, not a committed
+; symlink/duplicate) so the same backend-agnostic source runs against
+; elm_playground_web here and elm_playground_native in ../dune, with
+; only one real file per example.
+(copy_files ../Smiley.ml)
+(copy_files ../Picture.ml)
+(copy_files ../Words.ml)
+(copy_files ../Misc.ml)
+(copy_files ../Animation.ml)
+(copy_files ../Mouse.ml)
+(copy_files ../Keyboard.ml)
+(copy_files ../Turtle.ml)
+(copy_files ../Mario.ml)
+(copy_files ../Flags.{ml,mli})
+(copy_files ../HttpText.ml)
+(copy_files ../PhysicsOrbit.{ml,mli})
+(copy_files ../PhysicsBounce.{ml,mli})
+(copy_files ../PhysicsMarbles.{ml,mli})
+(copy_files ../PhysicsBoxes.{ml,mli})
+(copy_files ../PhysicsPyramid.{ml,mli})
+(copy_files ../PhysicsElastic.{ml,mli})
+(copy_files ../PhysicsSolarSystem.{ml,mli})
+(copy_files ../AudioTheremin.{ml,mli})
+(copy_files ../AudioPiano.{ml,mli})
+(copy_files ../AudioAliasing.{ml,mli})
+(copy_files ../AudioSfx.{ml,mli})
+(copy_files ../AudioSpace.{ml,mli})
+(copy_files ../AudioSampler.{ml,mli})
+(copy_files ../AiTictactoe.ml)
+(copy_files ../AiPathfinding.ml)
+(copy_files ../AiSteering.ml)
+(copy_files ../AiFlock.ml)
+(copy_files ../AiGhosts.ml)
+(copy_files ../AiBots.ml)
+(copy_files ../AiDebug.ml)
+(copy_files ../AiPerceptron.ml)
+(copy_files ../AiNeuralNet.ml)
+(copy_files ../AiDigits.ml)
+(copy_files ../AiQlearn.ml)
+(copy_files ../ImageJpeg.ml)
+(copy_files ../ImagePng.ml)
+(copy_files ../ImageLzw.ml)
+(copy_files ../JuiceCurves.ml)
+(copy_files ../JuiceSquash.ml)
+(copy_files ../Demo_pictures.ml) ; generated, see ../dune
+(copy_files ../LogoFractals.{ml,mli})
+(copy_files ../KarelHarvest.ml)
+(copy_files ../PovraySpheres.ml)
+(copy_files ../PovrayWhitted.ml)
+(copy_files ../PovrayCsg.ml)
+(copy_files ../PovrayFib.ml)
+(copy_files ../PovrayMarble.ml)
+(copy_files ../PovrayCornell.ml)
+(copy_files ../TeletypeHangman.ml)
+(copy_files ../TextmodeSnake.ml)
+(copy_files ../BigBangRocket.ml)
+(copy_files ../BigBangWorm.ml)
+(copy_files ../UniverseBall.ml)
+(copy_files ../PuzzleScriptSokoban.ml)
+(copy_files ../PuzzleScriptBoulders.ml)
+; the 3D ones, for the WebGL stanza below
+(copy_files ../Triangle3d.ml)
+(copy_files ../Cube3d.ml)
+(copy_files ../Cubes3d.ml)
+(copy_files ../Spheres3d.ml)
+(copy_files ../TexturedCube3d.ml)
+(copy_files ../InteractiveCube3d.ml)
+(copy_files ../PaintersAlgorithmFail3d.ml)
+(copy_files ../FloatingCity3d.ml)
+(copy_files ../Corridor3d.ml)
+(copy_files ../CachedGrid3d.ml)
+(copy_files ../PhysicsSolarSystem3d.ml)
+(copy_files ../PhysicsSpin3d.ml)
+(copy_files ../PhysicsFloat3d.ml)
+(copy_files ../PhysicsHitbox3d.ml)
+(copy_files ../PhysicsBounce3d.ml)
+(copy_files ../PhysicsMarbles3d.ml)
+(copy_files ../PhysicsRoll3d.ml)
+(copy_files ../PhysicsStack3d.ml)
+(copy_files ../PhysicsWalk3d.ml)
+(copy_files ../PhysicsRagdoll3d.ml)
+(copy_files ../LogoFractals3d.ml)
+(copy_files ../StarCollector3d.ml)
+(copy_files ../RaytracingShadows3d.ml)
+(copy_files ../RaytracingSplit3d.ml)
+
+(executables
+  (names
+    Smiley Picture Words Misc
+    Animation
+    Mouse Keyboard
+    Turtle Mario
+    Flags HttpText
+    PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
+    AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn
+    ImageJpeg ImagePng ImageLzw
+    JuiceCurves JuiceSquash
+    LogoFractals KarelHarvest TeletypeHangman TextmodeSnake PovraySpheres PovrayWhitted PovrayCsg PovrayFib PovrayMarble PovrayCornell
+    BigBangRocket
+    BigBangWorm
+    UniverseBall
+    PuzzleScriptSokoban
+    PuzzleScriptBoulders
+  )
+  (modules :standard \ Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+    InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
+    CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
+    PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d RaytracingSplit3d)
+  (libraries
+    graphics_font ; AiDigits trains on digits this font draws
+    graphics_rgba graphics_png graphics_gif graphics_jpeg ; the Image* examples take them apart
+    graphics_yuv ; Psnr, ImageJpeg's loss measured
+    elm_playground
+    ai ; AiTictactoe's Minimax
+    kit_maze ; AiGhosts' Grid_move and Chase
+    appkit_teletype ; TeletypeHangman's program, Tty_hangman
+    appkit_tui ; TextmodeSnake's program, Tui_snake
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; claude: and the 3D examples, on WebGL (../svg/ has them drawn as SVG)
+(executables
+  (names
+    Triangle3d
+    Cube3d
+    Cubes3d
+    Spheres3d
+    TexturedCube3d
+    InteractiveCube3d
+    PaintersAlgorithmFail3d
+    FloatingCity3d
+    Corridor3d
+    CachedGrid3d
+    PhysicsSolarSystem3d
+    PhysicsSpin3d
+    PhysicsFloat3d
+    PhysicsHitbox3d
+    PhysicsBounce3d
+    PhysicsMarbles3d
+    PhysicsRoll3d
+    PhysicsStack3d
+    PhysicsWalk3d
+    PhysicsRagdoll3d
+    LogoFractals3d
+    StarCollector3d
+    RaytracingShadows3d
+    RaytracingSplit3d
+  )
+  (modules Triangle3d Cube3d Cubes3d Spheres3d TexturedCube3d
+    InteractiveCube3d PaintersAlgorithmFail3d FloatingCity3d Corridor3d
+    CachedGrid3d PhysicsSolarSystem3d PhysicsSpin3d PhysicsFloat3d
+    PhysicsHitbox3d PhysicsBounce3d PhysicsMarbles3d PhysicsRoll3d
+    PhysicsStack3d PhysicsWalk3d PhysicsRagdoll3d LogoFractals3d StarCollector3d RaytracingShadows3d RaytracingSplit3d)
+  (libraries
+    elm_core ; Set_.mem, Basics.clamp
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+    physics_2d ; PhysicsSolarSystem3d's Kepler and Planets
+    physics_3d ; PhysicsSpin3d's Quat, Body3d, Integrate3d; PhysicsFloat3d's Force3d; PhysicsHitbox3d's Hitbox3d; PhysicsBounce3d's Resolve3d; PhysicsMarbles3d's Broadphase3d; PhysicsRoll3d's rolling; PhysicsStack3d's Solver3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; claude: copy the .html pages into _build/default/<dir>/ next to the
+; generated .bc.js so the directory can be opened directly in a browser.
+; Defining the 'default' alias overrides dune's implicit one, hence the
+; explicit (alias all) to still build the executables.
+; claude: and the textures, where the WebGL pages look for them (see
+; examples/dune in this directory)
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all) examples/checker.png)
+  (action (progn)))

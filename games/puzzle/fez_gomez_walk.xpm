@@ -1,0 +1,18 @@
+/* XPM */
+static char *fez_gomez_walk[] = {
+"8 10 4 1",
+". c None",
+"w c #fafafa",
+"k c #1e141e",
+"r c #d62838",
+"...rr...",
+"..rrrk..",
+"..rrrr..",
+".wwwwww.",
+".wkwwkw.",
+".wwwwww.",
+"..wwww..",
+".wwwwww.",
+".wwwwww.",
+".w....w."
+};

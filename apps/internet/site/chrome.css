@@ -1,0 +1,35 @@
+/* about:chrome's style: a page as sites write them now -- custom
+   properties (imported), a centred column, boxes with borders and
+   paddings, inline-blocks, a float */
+@import url("chrome-colours.css");
+* { box-sizing: border-box }
+body { margin: 0; background: #f1f3f4; color: var(--ink); font-family: sans-serif }
+header { background: var(--accent); color: white; padding: var(--gap) calc(2 * var(--gap)); display: flex; align-items: center }
+header nav { margin-left: auto; display: flex; gap: 18px }
+header nav a { color: white; font-weight: bold }
+header h1 { margin: 0; font-size: 26px; font-weight: normal }
+header p { margin: 4px 0 0; color: #d2e3fc }
+main { max-width: 760px; margin: 20px auto; padding: 0 var(--gap) }
+.card { background: white; border: 1px solid var(--line); padding: 16px 20px; margin-bottom: 16px }
+.card h2 { margin: 0 0 8px; font-size: 19px; color: var(--accent) }
+.card p { margin: 6px 0; line-height: 1.4 }
+figure { float: left; margin: 4px 16px 8px 0; padding: 4px; border: 1px solid var(--line); background: #fafafa }
+figcaption { text-align: center; color: var(--muted); font-size: 12px }
+.clear { clear: both }
+a { color: var(--accent); text-decoration: none }
+.button { display: inline-block; padding: 6px 14px; margin: 4px 6px 4px 0; border: 1px solid var(--accent);
+          background: #e8f0fe; font-weight: bold }
+ul.sites { margin: 6px 0; padding-left: 22px }
+ul.sites li { margin: 3px 0 }
+.muted { color: var(--muted) }
+footer { text-align: center; color: var(--muted); font-size: 12px; margin: 24px 0 }
+.tiles { display: flex; gap: 8px; margin: 10px 0 }
+.tile { flex: 1; background: #e8f0fe; border: 1px solid var(--accent); padding: 8px; text-align: center }
+.tile.wide { flex: 2 }
+.tiles.wrap { flex-wrap: wrap; justify-content: center }
+.chip { padding: 3px 12px; border: 1px solid var(--line); background: #fafafa; color: var(--muted) }
+.svgs svg, .svgs img, .svgs span { vertical-align: middle; margin-right: 24px }
+.vote { display: inline-block; width: 32px; height: 32px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 16' width='32' height='32'%3E%3Cpath d='m2 27 14-29 14 29z' fill='%23999'/%3E%3C/svg%3E") no-repeat }
+.bell { display: inline-block; width: 40px; height: 40px; background-color: var(--accent);
+        mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M10 2a5 5 0 0 1 5 5v4l2 3H3l2-3V7a5 5 0 0 1 5-5zm-2 14h4a2 2 0 0 1-4 0z'/%3E%3C/svg%3E") }

@@ -22,11 +22,15 @@ RUN opam switch create ${OCAML_VERSION} -v
 # System deps of the native (SDL2 + cairo) backend.
 # coupling: elm_playground_native.opam (tsdl, cairo2, ocurl)
 RUN apt-get install -y pkg-config libsdl2-dev libcairo2-dev libcurl4-gnutls-dev
+# claude: and the system OpenGL, for tgls (elm_playground_3d_opengl.opam),
+# which ./configure checks for too
+RUN apt-get install -y libgl-dev
 
 WORKDIR /src
 
 # Install dependencies (copy minimal files for Docker layer caching)
-COPY configure elm_core.opam elm_system.opam elm_playground.opam elm_playground_native.opam elm_playground_web.opam ./
+# claude: every .opam, since ./configure installs the deps of ./*.opam
+COPY configure *.opam ./
 RUN eval $(opam env) && ./configure
 
 # Now copy the full source and build

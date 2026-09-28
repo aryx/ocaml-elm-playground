@@ -1,0 +1,194 @@
+; claude: tinybox, every game and app in one binary (plan_launcher.md):
+;   tinybox                       the programs, by name
+;   tinybox TinyMario [flags]     run one ("mario" is enough)
+;   tinybox TinyTurboPascal -tty  an editor in this terminal
+; Installed by `make install` (dune install), package tinybox.
+;
+; How one binary holds 200 programs that each start when linked: every
+; program's main is Program.main (elm_core), which only records the
+; entry once Program.collect () was called. Tinybox_collect calls it,
+; in a library of its own that the programs' library depends on, so it
+; is initialized first; both are -linkall, as nothing refers to their
+; modules by name. Tinybox then runs the one chosen (Program.run).
+;
+; The programs are the genres' and apps' sources, copied (as their
+; web/ do); apps/music, apps/media and apps/internet keep libraries of
+; their own in the same folder, so only their Tiny*.ml. The libraries
+; below are the union of the native stanzas' in those folders: a new
+; program needing a new library makes this link fail until it is added.
+;
+; The platforms: Cairo for 2D (the software rasterizer would be too slow
+; for the 2D games), OpenGL for 3D. They link together since the OpenGL
+; backend compiles its own copy of the HUD's rasterizer (Hud_render, see
+; playground/platforms/native/dune).
+
+(copy_files# ../games/shmup/*.{ml,mli})
+(copy_files# ../games/fighting/*.{ml,mli})
+(copy_files# ../games/platform/*.{ml,mli})
+(copy_files# ../games/arcade/*.{ml,mli})
+(copy_files# ../games/puzzle/*.{ml,mli})
+(copy_files# ../games/cards/*.{ml,mli})
+(copy_files# ../games/adventure/*.{ml,mli})
+(copy_files# ../games/rpg/*.{ml,mli})
+(copy_files# ../games/fps/*.{ml,mli})
+(copy_files# ../games/flight/*.{ml,mli})
+(copy_files# ../games/racing/*.{ml,mli})
+(copy_files# ../games/sports/*.{ml,mli})
+(copy_files# ../games/strategy/*.{ml,mli})
+(copy_files# ../games/rhythm/*.{ml,mli})
+(copy_files# ../games/programming/*.{ml,mli})
+(copy_files# ../apps/cad/*.{ml,mli})
+(copy_files# ../apps/devtools/*.{ml,mli})
+(copy_files# ../apps/education/*.{ml,mli})
+(copy_files# ../apps/gamedev/Tiny*.{ml,mli}) ; its Mario_xpm is games/platform's, the same
+(copy_files# ../apps/graphics/*.{ml,mli})
+(copy_files# ../apps/internet/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../apps/media/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../apps/music/Tiny*.{ml,mli}) ; its other modules are its library's
+(copy_files# ../apps/office/*.{ml,mli})
+(copy_files# ../apps/pim/*.{ml,mli})
+(copy_files# ../apps/system/*.{ml,mli})
+
+(library
+ (name tinybox_collect)
+ (modules Tinybox_collect)
+ (wrapped false)
+ (library_flags (-linkall))
+ (libraries elm_core))
+
+(library
+ (name tinybox_programs)
+ (modules :standard \ Tinybox Tinybox_collect Tinybox_menu Tinybox_data Tinybox_sources Preview3d_render
+   Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
+ (wrapped false)
+ (library_flags (-linkall))
+ (libraries
+   tinybox_collect ; first: Program.collect () before any program's main
+   ai appkit_astronomy appkit_blocks appkit_browser appkit_cad
+   appkit_document appkit_draw appkit_draw_view appkit_editor
+   appkit_embed appkit_file_menu appkit_indexed appkit_modeler
+   appkit_paint appkit_pim appkit_pushpull appkit_richtext appkit_sheet
+   appkit_sheet_view appkit_sketch appkit_slides appkit_stroke_text
+   appkit_teletype basic caps elm_core elm_playground elm_playground_3d
+   graphics_2d_geometry graphics_3d_geometry graphics_font graphics_gif
+   graphics_ilbm graphics_imaging graphics_jpeg graphics_png
+   graphics_raytrace graphics_rgba gui hypertalk internet_mail
+   internet_media internet_site kit_adventure kit_brawler kit_brawler3d
+   kit_cards kit_crush kit_heightmap kit_isometric kit_lightcycles
+   kit_maze kit_platformer kit_puzzle kit_racing kit_racing3d
+   kit_rhythm kit_rts kit_sectors kit_segments kit_shmup kit_sports
+   media_player music_voices myst networking networking_mail photos
+   physics_2d physics_3d random scratch smalltalk unix lang_html lang_css browser_layout
+ ))
+
+; claude: the menu's data, made at build time: the catalogue, and each
+; program's first golden frame shrunk to a thumbnail, in 8 shards made
+; side by side (a thumbnail takes 0.3 s: make_tinybox_data.ml)
+(rule
+ (alias tinybox_frames)
+ (deps
+  %{project_root}/CATALOG.md
+  (glob_files %{project_root}/tests/2d/golden/*.png)
+  (glob_files %{project_root}/tests/3d/golden/*.png))
+ (action (progn)))
+
+(rule
+ (targets Tinybox_data.ml)
+ (deps %{project_root}/CATALOG.md)
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} catalogue 8)))))
+; claude: the repository's sources, for the code map (codemap/): the
+; games', the apps', the kits', the playground's and the libraries' (see
+; make_tinybox_data.ml for which), 10 MB
+(rule
+ (targets Tinybox_sources.ml)
+ (deps
+  %{project_root}/CATALOG.md
+  (glob_files_rec %{project_root}/games/*.{ml,mli})
+  (glob_files_rec %{project_root}/apps/*.{ml,mli})
+  (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
+  (glob_files_rec %{project_root}/appkits/*.{ml,mli})
+  (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly})
+  (glob_files_rec %{project_root}/playground/*.{ml,mli})
+  (glob_files_rec %{project_root}/libs/*.{ml,mli})
+  ; claude: and tinybox's own (not a glob of launcher/: this target is there)
+  Tinybox.ml Tinybox_collect.ml Tinybox_collect.mli Tinybox_menu.ml Tinybox_menu.mli
+  (glob_files_rec %{project_root}/launcher/catalogue/*.{ml,mli})
+  (glob_files_rec %{project_root}/launcher/codegen/*.{ml,mli})
+  (glob_files_rec %{project_root}/launcher/codemap/*.{ml,mli}))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} sources)))))
+
+(rule
+ (targets Tinybox_thumbs_0.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 0 8)))))
+(rule
+ (targets Tinybox_thumbs_1.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 1 8)))))
+(rule
+ (targets Tinybox_thumbs_2.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 2 8)))))
+(rule
+ (targets Tinybox_thumbs_3.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 3 8)))))
+(rule
+ (targets Tinybox_thumbs_4.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 4 8)))))
+(rule
+ (targets Tinybox_thumbs_5.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 5 8)))))
+(rule
+ (targets Tinybox_thumbs_6.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 6 8)))))
+(rule
+ (targets Tinybox_thumbs_7.ml)
+ (deps (alias tinybox_frames))
+ (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:codegen/make_tinybox_data.exe} thumbnails 7 8)))))
+
+; claude: the 3D previews are drawn by the software rasterizer, into an
+; image shown in the menu's panel (Tinybox_menu, "Previews"): a copy of
+; software/'s Shape3d_render_software, as the OpenGL backend compiles its
+; own copy of the 2D one for its HUD (Hud_render, see
+; playground/platforms/native/dune). Not a dependency: that module lives in
+; elm_playground_3d_software, which implements elm_playground_3d, and
+; tinybox links the OpenGL implementation. The module uses nothing else
+; of its library, only graphics/'s, so the copy compiles alone. Edit the
+; original, never Preview3d_render.ml (it is in _build only).
+(rule
+ (action (copy ../playground/platforms/software/Shape3d_render_software.ml Preview3d_render.ml)))
+(rule
+ (action (copy ../playground/platforms/software/Shape3d_render_software.mli Preview3d_render.mli)))
+
+(executable
+ (name Tinybox)
+ (public_name tinybox)
+ (package tinybox)
+ (modules Tinybox Tinybox_menu Tinybox_data Tinybox_sources Preview3d_render
+   Tinybox_thumbs_0 Tinybox_thumbs_1 Tinybox_thumbs_2 Tinybox_thumbs_3 Tinybox_thumbs_4 Tinybox_thumbs_5 Tinybox_thumbs_6 Tinybox_thumbs_7)
+ (libraries
+   tinybox_programs
+   caps
+   unix ; the menu's child process
+   catalogue graphics_png graphics_rgba ; the menu's data
+   tinybox_codemap ; the code map
+   golden_scenes elm_playground_native_common ; the previews: the scenes' scripts, Input_script
+   graphics_core graphics_3d graphics_3d_geometry graphics_raytrace graphics_images ; the 3D previews' renderer (Preview3d_render)
+   terminal_unix ; Tty_unix, for -tty
+   appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
+   elm_playground_native ; implem of virtual elm_playground: Cairo
+   elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+ ))
+
+; claude: `tinybox list` in make test: every program initialized, as
+; tinybox starts, so that a program doing at its top level what belongs
+; in its main (reading the command line, Program.argv's failure; two
+; programs of one name, Program.main's) fails the tests, not the user
+(rule
+ (alias runtest)
+ (action
+  (with-stdout-to tinybox_list.out (run %{exe:Tinybox.exe} list))))

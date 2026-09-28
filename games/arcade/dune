@@ -1,0 +1,36 @@
+; claude: the arcade and party games (CATALOG.md's section): one screen
+; or one arena, one rule learned in seconds, short rounds played again
+; at once, nothing carried from one to the next, often several players
+; in the same arena (Pong, Tron, Bomberman, Boomerang Fu, Soldat). 2D
+; and 3D side by side; on the software rasterizers in software/, in the
+; browser in web/.
+(executables
+  (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
+    TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinySoldat TinySpacewar
+    TinyTron TinyTronscroll)
+  (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
+    TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinySoldat TinySpacewar
+    TinyTron TinyTronscroll)
+  (libraries
+    unix ; Pong's clock
+    elm_playground
+    ai ; TinyPacman's ghosts (ai=engine)
+    kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
+    kit_lightcycles ; TinyTron's rules
+    physics_2d graphics_2d_geometry ; TinySoldat's bodies
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyBoomerangFu TinyMarbleMadness TinyTron3d)
+  (modules TinyBoomerangFu TinyMarbleMadness TinyTron3d)
+  (libraries
+    elm_core
+    kit_lightcycles ; TinyTron3d's rules, TinyTron's own
+    physics_3d ; TinyMarbleMadness's marble
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

@@ -1,0 +1,6 @@
+; claude: unit tests for tinybox's code map, run by 'make test' (dune
+; runtest): the treemap's worked example, a file's grid and definitions
+(test
+ (name Test)
+ (libraries alcotest testo tinybox_codemap highlight_code
+   elm_playground_native)) ; implem of virtual elm_playground

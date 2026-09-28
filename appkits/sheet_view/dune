@@ -1,0 +1,11 @@
+; claude: a sheet drawn into a rectangle -- what the applications over
+; appkits/sheet share, and what appkits/embed will wrap when a sheet
+; has to live inside a document (see plan_gui_teaching.md, phases 8
+; and 10). Separate from the engine because it needs the toolkit's
+; look, and the engine deliberately needs nothing.
+(library
+ (name appkit_sheet_view)
+ (package elm_playground)
+ (wrapped false)
+ (libraries elm_core gui appkit_sheet)
+)

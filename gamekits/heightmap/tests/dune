@@ -1,0 +1,10 @@
+; claude: the heightmap kit's worked examples (Heightmap.mli), run by
+; 'make test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   kit_heightmap
+ )
+)

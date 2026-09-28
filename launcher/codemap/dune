@@ -1,0 +1,9 @@
+; claude: tinybox's code visualizer, after codemap (Codemap.mli,
+; plan_tinybox_codemap.md): Treemap (the layout, pure), Code_file (a
+; source lexed and coloured, languages' highlighters), Code_map (the
+; treemap under a camera, zoomed at will), Code_view (a file read) and
+; Codemap (the two, and which files a program's map shows)
+(library
+ (name tinybox_codemap)
+ (wrapped false)
+ (libraries elm_playground graphics_rgba graphics_font lang_ocaml highlight_code tinybox_codedeps))

@@ -1,0 +1,19 @@
+/* XPM */
+static char *mario_jump[] = {
+"10 10 5 1",
+". c None",
+"R c #dc281e",
+"S c #fabe8c",
+"B c #283cc8",
+"K c #643214",
+"...RRRR...",
+"..RRRRRRR.",
+"..KKSSKS..",
+".KSKSSSKS.",
+"..SSSSSS..",
+"S.RRBRRR.S",
+"SRRRBBRRRS",
+"..BBBBBB..",
+".BBB..BBB.",
+"KK......KK"
+};

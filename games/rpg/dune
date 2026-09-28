@@ -1,0 +1,26 @@
+; claude: the role-playing and dungeon games (CATALOG.md's section), 2D,
+; 2.5D (TinyDungeonMaster and TinyDiablo, their 3D look drawn by the
+; games themselves) and 3D side by side; on the software rasterizers in
+; software/, in the browser in web/.
+(executables
+  (names TinyDiablo TinyDungeonMaster TinyGauntlet2 TinyRogue)
+  (modules TinyDiablo TinyDungeonMaster TinyGauntlet2 TinyRogue)
+  (libraries
+    elm_playground
+    ai ; the monsters' Pathfind (TinyDungeonMaster's A*, TinyDiablo's)
+    kit_rts ; TinyGauntlet2's orders and paths
+    kit_isometric ; TinyDiablo's projection
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyHades)
+  (modules TinyHades)
+  (libraries
+    elm_core
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

@@ -1,0 +1,13 @@
+; claude: the full-screen programs of the terminal, as Tui.program
+; values (plan_terminal.md, section 6): each runs on the playground by
+; the Textmode way (examples/TextmodeSnake.ml) and in a real terminal
+; by Tty_unix (examples/tty/). Tui_snake.
+;
+; Pure OCaml, no playground (so a real terminal's program links none):
+; a private library, installed as part of elm_playground.
+(library
+ (name appkit_tui)
+ (package elm_playground)
+ (wrapped false)
+ (libraries terminal random)
+)

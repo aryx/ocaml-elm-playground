@@ -1,0 +1,19 @@
+; claude: the same applications against the software rasterizer, for
+; the golden frames (see examples/software/dune): ../Foo.ml reused
+; as-is by a build-time copy, not a committed duplicate.
+(copy_files ../*.ml)
+
+(executables
+  (names TinySketchpad TinyAutoCAD TinySketchup)
+  (libraries
+    elm_playground
+    gui ; Widget, the knobs and the switch (TinySketchpad)
+    appkit_sketch ; Sketch, Relax
+    appkit_cad ; Cad_geom, Cad_drawing, Cad_edit, Cad_snap, Dxf, Cad_session
+    caps ; the DXF files' authority to be written and read
+    appkit_pushpull ; Skp_model, Skp_infer, Skp_view, Bsp (TinySketchup)
+    graphics_3d_geometry ; Vec3, Camera
+    appkit_document ; Undo
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

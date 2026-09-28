@@ -1,0 +1,7 @@
+; claude: our own TLS on the real web (networking/unix/Tls_client.mli),
+; a program: a URL fetched, the handshake shown
+;   dune exec networking/tlsget/tls_get.exe -- https://en.wikipedia.org/
+(executable
+ (name tls_get)
+ (libraries unix caps networking networking_unix networking_tls)
+)

@@ -1,0 +1,16 @@
+; claude: OCaml read, not run (plan_tinybox_codemap.md), for a code
+; visualizer: Token_ml (every token kept, comments too, with its
+; place), Lexer_ml (ocamllex, after ocaml-light's lexer.mll) and
+; Highlight_ml (each token's category, highlight/'s Highlight_code,
+; from its neighbours). The parser (ocamlyacc, after ocaml-light's
+; parser.mly) is to come.
+;
+; Pure OCaml, no Playground (languages/README.md). A private
+; library, installed as part of elm_playground.
+(library
+ (name lang_ocaml)
+ (package elm_playground)
+ (wrapped false)
+ (libraries highlight_code))
+
+(ocamllex Lexer_ml)

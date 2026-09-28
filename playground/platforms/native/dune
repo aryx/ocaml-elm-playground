@@ -1,0 +1,79 @@
+; claude: its own stanzas, not part of playground/dune's include_subdirs
+(include_subdirs no)
+
+(library
+  (public_name elm_playground_native)
+  (implements elm_playground)
+  (modules Playground_platform Image_native Shape_render_native)
+  ; problems with tsdl on windows I think
+  (libraries
+    str
+    logs
+    cairo2 tsdl
+    graphics_rgba ; Image_decode.image's fields, in Image_native
+
+    elm_playground
+    elm_playground_native_common ; Native_loop_2d
+    networking_unix ; Udp, for Multiplayer's net=host and net=join
+    graphics_images ; Image_decode
+  )
+)
+
+; claude: the 3D native backend, on the GPU. Its own library, so that a
+; 2D program doesn't need OpenGL, and a 3D one can pick its 2D backend:
+; the software one (the genres' 3D stanzas) or Cairo's (tinybox, which
+; links every game in one binary, plan_launcher.md).
+;
+; The HUD is drawn by the software rasterizer whichever 2D backend is
+; linked, through Hud_render, a copy of software/'s
+; Shape_render_software made by the rule below. Why a copy, and not a
+; dependency:
+;
+;  - Shape_render_software lives in elm_playground_software, which is a
+;    whole 2D platform (it implements elm_playground). Depending on it
+;    would link its Playground_platform too, and a program linking
+;    Cairo's as well (elm_playground_native) would have two
+;    implementations of the same virtual module: a link error.
+;  - It cannot become a library of its own either: it draws
+;    Playground.shape, so that library would depend on elm_playground,
+;    and dune forbids an implementation of elm_playground (here
+;    elm_playground_software, which needs it too) to depend on a
+;    library that depends on elm_playground ("Library elm_playground
+;    was pulled in").
+;
+; So it is compiled twice from one source file, under two names: no
+; clash when a program links the software 2D platform and this backend
+; (the rasterizer is then in the binary twice, a few hundred KB).
+; Shape_render_software uses nothing else of its library, only
+; graphics/'s, so the copy compiles alone. Edit the original, never
+; Hud_render.ml (it is in _build only).
+(rule
+ (action (copy ../software/Shape_render_software.ml Hud_render.ml)))
+(rule
+ (action (copy ../software/Shape_render_software.mli Hud_render.mli)))
+
+(library
+ (public_name elm_playground_3d_opengl)
+ (implements elm_playground_3d)
+ (modules Playground3d_platform Hud_render)
+ (libraries
+   tsdl
+   tgls.tgl3
+   threads.posix ; tgls/ctypes-foreign needs this to link, even though we don't use threads ourselves
+   graphics_rgba ; Rgba_image.t, used by the type of get_or_create_gl_texture
+   elm_core
+   elm_playground
+   elm_playground_3d
+   elm_playground_3d_native_common ; SDL event loop
+   networking_unix ; Connect, for Multiplayer3d's net=host, net=join, net=relay
+   graphics_3d_geometry ; Mat4
+   graphics_gpu ; Mesh_cache
+   ; the HUD: drawn by the 2D software rasterizer (Hud_render, see
+   ; above), its transparency recovered by Matting (graphics_core),
+   ; then blended by the GPU
+   unix ; Unix.gettimeofday, in Hud_render: an animated image's frame
+   graphics_2d_geometry graphics_2d graphics_font ; Hud_render's rasterizer
+   graphics_core
+   graphics_images ; Texture_decode
+ )
+)

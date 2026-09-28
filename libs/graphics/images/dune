@@ -1,0 +1,27 @@
+; claude: image files: getting them from the disk or the network
+; (Download), decoding them (PNG, GIF and JPEG, by our own png/, gif/
+; and jpeg/) and
+; caching them, down to plain pixel buffers, as 2D images with their GIF
+; animation (Image_decode) or as 3D textures (Texture_decode); drawing
+; them is up to the user (Cairo surfaces in playground/platforms/native/,
+; graphics/core/'s Blit in playground/platforms/software/, the 3D backends'
+; samplers and GL textures).
+;
+; A private library (see graphics/core/dune), installed as part of
+; elm_playground_software, the package all the native backends depend
+; on (see playground/platforms/native_common/dune for why).
+(library
+ (name graphics_images)
+ (package elm_playground_software)
+ (wrapped false)
+ (libraries
+   logs
+   elm_core ; Base64, for Texture_decode's embedded textures
+   graphics_rgba ; Rgba_image, the decoded pictures
+   graphics_png ; our own PNG reader
+   graphics_gif ; our own GIF reader
+   graphics_jpeg ; our own JPEG reader
+   networking_unix ; Http_client, for http:// and https:// (our own TLS)
+   caps ; the program's Cap.network, granted (Download.grant)
+ )
+)

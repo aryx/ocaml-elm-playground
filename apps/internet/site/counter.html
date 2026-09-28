@@ -1,0 +1,31 @@
+<html>
+<head>
+<title>A counter</title>
+<style>
+#n    { font-size: 48px; color: #E66000; text-align: center }
+p     { text-align: center }
+.note { color: #606060 }
+</style>
+</head>
+<body>
+<h1>A counter</h1>
+<p id=n>0</p>
+<p><input type=button id=minus value="- 1"> <input type=button value="+ 1" onclick="add(1)"> <input type=button id=reset value="Reset">
+<p class=note>Three ways to listen to a click, one per button: the
+attribute onclick="..." (Netscape 2, 1995), addEventListener (the W3C,
+2000), and a function put in el.onclick.
+<script>
+let count = 0;
+function show() {
+  document.getElementById("n").textContent = count;
+  console.log("count is " + count);
+}
+function add(k) {
+  count = count + k;
+  show();
+}
+document.getElementById("minus").addEventListener("click", () => add(-1));
+document.getElementById("reset").onclick = () => { count = 0; show() };
+</script>
+</body>
+</html>

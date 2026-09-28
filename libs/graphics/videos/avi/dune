@@ -1,0 +1,9 @@
+; claude: AVI, the container, with Motion JPEG frames and PCM sound,
+; read and written (Avi.mli). Pure OCaml. A private library (see
+; graphics/core/dune), installed as part of elm_playground.
+(library
+ (name graphics_avi)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_rgba graphics_movie graphics_jpeg audio_signal)
+)

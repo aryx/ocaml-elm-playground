@@ -1,0 +1,9 @@
+; claude: tunes as text, ABC notation (Abc.mli) and solfege
+; (Doremi.mli), parsed into the same Abc.tune (see
+; plan_audio_formats.md). A private library, installed as part of
+; elm_playground.
+(library
+ (name audio_abc)
+ (package elm_playground)
+ (wrapped false)
+)

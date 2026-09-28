@@ -1,0 +1,14 @@
+/* XPM */
+static char *fez_bit[] = {
+"6 6 4 1",
+". c None",
+"Y c #fff096",
+"y c #f0b428",
+"o c #be781e",
+".YYYY.",
+"YYyyYy",
+"YyyyYo",
+"Yyyyyo",
+"yyyyoo",
+".oooo."
+};

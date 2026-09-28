@@ -1,0 +1,8 @@
+; claude: unit tests for networking/, run by 'make test' (dune runtest):
+; the .mlis' worked examples (RFC 3986's own table of resolved
+; references, a chunked body), on bytes, no network needed
+(test
+ (name Test)
+ (libraries str alcotest testo random networking networking_tls crypto) ; str: appendix B's regexp, to check Url.parse against
+ (deps (glob_files tls/*.pem)) ; real certificates and chains (Unit_x509)
+)

@@ -1,0 +1,8 @@
+; claude: the relay server (networking/unix/Relay.mli), a program of
+; its own:
+;   dune exec networking/relay/relay_server.exe -- port=8765 players=2
+;   dune exec networking/relay/relay_server.exe -- bind=0.0.0.0     (a LAN)
+(executable
+ (name relay_server)
+ (libraries caps networking_unix)
+)

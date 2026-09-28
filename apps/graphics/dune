@@ -1,0 +1,45 @@
+; claude: the graphics applications (CATALOG.md's section): the
+; pictures made of dots and of objects, both Apple's of 1984 --
+; TinyMacPaint (appkits/paint) and TinyMacDraw (appkits/draw) -- the
+; Amiga's dots, colour numbers in a palette that turns, TinyDeluxePaint
+; (appkits/indexed, libs/graphics/images/ilbm), and what the dots
+; became, TinyPhotoshop (libs/graphics/imaging, the photographs of
+; photos/; plan_photoshop.md), and a 3D scene built and ray traced,
+; TinyBlender (appkits/modeler, the Povray way).
+; Laid out like office/: the programs here, software/ for the golden
+; frames, web/ for the browser.
+;
+; What else it might contain, each Tiny and after a famous original:
+;  - a pixel-art editor (Deluxe Paint, 1985): palettes, brushes,
+;    animation frames, colour cycling (the sprite editor, writing what
+;    the games' Sprite draws, is gamedev/'s);
+;  - a mesh modeller (3D Studio, 1990): vertices, edges and faces
+;    edited, TinyBlender's edit mode, drawn by playground3d;
+;  - a font editor (Fontographer, 1986): Bezier outlines, graphics_font's
+;    strokes seen the other way round.
+(executables
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint TinyBlender)
+  (libraries
+    elm_playground
+    caps ; the File menu's authority to save (File_menu, plan_caps.md)
+    gui ; Widget, for text_width
+    appkit_document ; Undo, Clipboard
+    appkit_file_menu ; File_menu
+    appkit_richtext ; Style, a text's look (TinyMacDraw)
+    appkit_paint ; a picture as bits, and what paints it (TinyMacPaint)
+    appkit_draw ; a picture as objects (TinyMacDraw)
+    appkit_draw_view ; its figures as shapes, Figure_shapes
+    appkit_stroke_text ; Hershey's strokes in a look
+    graphics_imaging ; every operation of TinyPhotoshop (Lut, Mask, Brush...)
+    graphics_jpeg ; our JPEG reader and writer
+    graphics_png ; and PNG writer, for Export
+    photos ; NASA's photographs, as strings
+    appkit_indexed ; a picture of colour numbers, and cycling (TinyDeluxePaint)
+    graphics_ilbm ; its file, IFF ILBM
+    random ; Lehmer, the airbrush's dots
+    appkit_modeler ; a 3D scene, its views (TinyBlender)
+    graphics_raytrace ; Raytrace, its rendered viewport
+    graphics_3d_geometry ; Camera, Vec3
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

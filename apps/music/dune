@@ -1,0 +1,45 @@
+; claude: the music applications (CATALOG.md's Music section). Laid out
+; like office/: the programs here, software/ for the golden frames, web/
+; for the browser.
+;
+; So far TinyMinimoog, the Model D's voice (Voice_minimoog, over
+; audio/'s blocks: plan_synth_teaching.md) played from the keyboard, and
+; TinySoundtracker, the first tracker, over audio/formats/mod
+; (plan_audio_formats.md). Playing files of every kind is apps/media/'s
+; TinyMediaPlayer. What it might contain next, each Tiny and after a
+; famous original:
+;  - more synthesizers after the Minimoog (TinyHammond, TinyTB303,
+;    TinyDX7, TinyRhodes, TinyCS80, TinyJuno, TinyTR808 and its 909,
+;    TinyReBirth, TinyOp1, TinyOpxy: plan_synth_teaching.md);
+;  - the trackers after it (ProTracker, FastTracker's XM, Impulse
+;    Tracker): more channels, instruments with envelopes;
+;  - a sequencer (Cubase, 1989): tracks of MIDI notes on a timeline, a
+;    piano roll, audio/'s MIDI player;
+;  - a sound editor (SoundEdit, Audacity): a waveform to cut, fade and
+;    filter, audio/'s samples and Spectrum;
+;  - a score editor (Finale, MuseScore): ABC in, staff notation out.
+; Built on audio/ (synth, mixer, ABC, MIDI), gui/, and appkits/file_menu
+; for their File menu.
+
+; the synthesizers' voices and our songs, apart from their programs:
+; the tests play them without a screen, and apps/media's playlist has
+; the tracker's song. The voices are Voice_xxx, each a Voice.S (the
+; interface, a module type only: no implementation)
+(library
+ (name music_voices)
+ (wrapped false)
+ (modules Patch_text Voice Voice_minimoog Tonewheel Voice_hammond Voice_tb303 Voice_dx7 Voice_rhodes Voice_cs80 Voice_juno Voice_tr808 Studio_rebirth Op1_engine Studio_op1 Opxy_engine Studio_opxy Our_songs)
+ (modules_without_implementation Voice)
+ (libraries audio audio_instruments audio_effects audio_mod))
+
+(executables
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
+  (libraries
+    caps ; TinySoundtracker's authority to export its song
+    elm_core
+    elm_playground
+    music_voices
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)

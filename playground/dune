@@ -1,12 +1,84 @@
+(include_subdirs unqualified)
+
+; claude: two libraries in this directory, the 2D playground and the 3D
+; one (each with its own backends, in platforms/):
+; each says which modules it owns. Their modules are in this directory
+; and in apis/, layers/ and ways/ (playground/README.md), folders only:
+; the libraries are the same whichever folder a module sits in. The
+; backends' and tests' folders have stanzas of their own, so they say
+; (include_subdirs no). A 3D module missing from the list below lands
+; in the 2D library, whose build then fails (it needs Playground3d), so
+; the two lists can't drift apart silently.
 (library
  (public_name elm_playground)
  (virtual_modules Playground_platform)
  (wrapped false)
+ (modules :standard \ Playground3d Playground3d_platform Camera3d Audio3d
+   Character3d Gpu_scene Juice3d Logo3d Multiplayer3d Physics3d Portal3d
+   Ragdoll3d)
  (libraries
    ; commons
-   elm_core elm_system
+   elm_core
+   ; claude: the capabilities Playground_platform's store/fetch/export
+   ; take (plan_caps.md)
+   caps
+   ; claude: the physics engine under Physics.ml (private libraries, pure
+   ; OCaml, in this same package), see
+   ; docs/claude_notes/plan_physics_teaching.md
+   physics_2d graphics_2d_geometry
+   ; claude: the synthesizer under Audio.ml (private, pure OCaml, this
+   ; same package), see docs/claude_notes/plan_audio_teaching.md
+   audio
+   ; claude: and the MOD player, for Audio.play_module (plan_audio_formats.md)
+   audio_mod
+   ; the live effects, for Audio.drive, chorus, compressed (plan_synth_teaching.md)
+   audio_effects
+   ; claude: the widgets under Gui.ml (private, pure OCaml, this same
+   ; package), see docs/claude_notes/plans/plan_gui_teaching.md
+   gui
+   ; claude: the game AI under Ai.ml (private, pure OCaml, this same
+   ; package), see docs/claude_notes/plans/plan_ai_teaching.md
+   ai
+   ; claude: the game feel under Juice.ml (private, pure OCaml, this
+   ; same package), see docs/claude_notes/plans/plan_juice_teaching.md
+   juice
+   ; claude: the XPM files under Sprite.of_xpm (private, pure OCaml,
+   ; this same package), see graphics/images/xpm/Xpm.mli
+   graphics_xpm
+   graphics_rgba ; Sprite.of_rgba's pictures (private, pure OCaml too)
+   ; claude: the generator under Playground.random (private, pure
+   ; OCaml, this same package), see random/Lehmer.mli
+   random
+   ; claude: Lockstep, Sim_net, Checksum under Multiplayer.ml (private,
+   ; pure OCaml, this same package), see Multiplayer.mli
+   networking
+   ; claude: Vt and Line_discipline under Teletype.ml, Curses and Tui
+   ; under Textmode.ml (private, pure OCaml, this same package), see
+   ; docs/claude_notes/plans/plan_terminal.md
+   terminal
+   ; claude: the ray tracer under the Povray way (private, pure OCaml,
+   ; this same package), and the 3D geometry it is made of, see
+   ; docs/claude_notes/plans/plan_raytracing_teaching.md
+   graphics_raytrace graphics_3d_geometry
+   graphics_png ; Png.encode, the picture saved by "s"
  )
  ; (preprocess (pps profiling.ppx))
+)
+
+(library
+ (public_name elm_playground_3d)
+ (virtual_modules Playground3d_platform)
+ (wrapped false)
+ (modules Playground3d Playground3d_platform Camera3d Audio3d
+   Character3d Gpu_scene Juice3d Logo3d Multiplayer3d Physics3d Portal3d
+   Ragdoll3d)
+ (libraries
+   ; commons
+   elm_core elm_playground
+   juice ; Trauma and Hash, under Juice3d's shake and particles
+   graphics_3d_geometry ; Vec3, Mat4, Camera, Lighting
+   physics_3d ; Quat, Mat3, Body3d, Integrate3d, Force3d: what Physics3d is an API over
+ )
 )
 
 (documentation

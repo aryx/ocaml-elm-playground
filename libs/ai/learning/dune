@@ -1,0 +1,10 @@
+; claude: learning: a neuron, layers, backpropagation,
+; autodiff, the training loop (Matrix, Neuron, Net, Backprop, Grad,
+; Train), and learning to play from rewards (Qlearn);
+; notes_ai_learning.md. A private library,
+; installed as part of elm_playground; see ai/README.md.
+(library
+ (name ai_learning)
+ (package elm_playground)
+ (wrapped false)
+)

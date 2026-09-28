@@ -1,0 +1,66 @@
+<HTML>
+<HEAD>
+<TITLE>Style sheets</TITLE>
+<STYLE>
+/* the page's looks, out of its HTML: CSS1, December 1996 */
+body     { background-color: #F4F0E6; color: #202020 }
+h1       { color: #1F3F7F; text-align: center; font-size: 28px }
+h2       { color: #1F3F7F; margin-top: 1.5em }
+p        { margin-left: 2em; margin-right: 2em }
+.note    { color: green }
+p.note   { color: #8B0000; font-style: italic }
+#top     { color: blue }
+.box     { background-color: #FFFFFF; margin: 8px 3em }
+ul li    { color: #555555 }
+em       { font-weight: bold; font-style: normal }
+.secret  { display: none }
+code, pre { font-family: monospace; color: #004000 }
+</STYLE>
+</HEAD>
+<BODY>
+<H1>Style sheets</H1>
+
+<P>The looks of this page are not in its HTML but in rules at its top,
+in a <CODE>&lt;STYLE&gt;</CODE> element: the colours, the sizes, the
+margins, even what is not shown. Press <EM>c</EM> to see the page
+without them, as Netscape 1.1 would: the same tree, the browser's
+looks.
+
+<H2>The cascade</H2>
+
+<P>Each paragraph below is a <CODE>&lt;P&gt;</CODE>; four rules could
+give it its colour, and the one with the highest specificity wins:
+
+<DIV CLASS=box>
+<PRE>
+p        { ... }                (0, 0, 1)
+.note    { color: green }       (0, 1, 0)
+p.note   { color: #8B0000 }     (0, 1, 1)
+#top     { color: blue }        (1, 0, 0)
+</PRE>
+</DIV>
+
+<P CLASS=note>This one has class=note: p.note beats .note and p, dark
+red and in italics.
+
+<P CLASS=note ID=top>This one has id=top too: #top beats them all, blue
+(and still in italics: no rule of higher specificity says otherwise).
+
+<P CLASS=note ID=top STYLE="color: #996600">And this one says its own
+colour, style="color: ...": that beats every rule.
+
+<P>What no rule says is inherited: the items of this list are grey,
+because of <CODE>ul li</CODE>, and their <EM>emphasis</EM> is bold
+because of <CODE>em</CODE>:
+<UL>
+<LI>a selector names elements, classes and ids;
+<LI>a descendant selector, two of them, an element inside another;
+<LI>and <SPAN CLASS=note>a class alone</SPAN> matches any element.
+</UL>
+
+<P CLASS=secret>This paragraph has display: none: no browser that
+reads the style sheet shows it.
+
+<P>Back to <A HREF="about:netscape">Netscape's page</A>.
+</BODY>
+</HTML>

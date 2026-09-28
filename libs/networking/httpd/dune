@@ -1,0 +1,7 @@
+; claude: a tiny web server (networking/unix/Http_server.mli), a
+; program of its own, for TinyMosaic (apps/internet/):
+;   dune exec networking/httpd/tiny_httpd.exe -- root=apps/internet/site port=8080
+(executable
+ (name tiny_httpd)
+ (libraries unix caps networking networking_unix)
+)

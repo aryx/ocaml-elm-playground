@@ -1,0 +1,19 @@
+From bob@tiny Wed Sep 23 17:20:00 2026
+From: Bob <bob@tiny>
+To: Alice <alice@tiny>
+Cc: carol@tiny, dave@tiny
+Subject: Re: the plan
+Date: Wed, 23 Sep 2026 17:20:00 +0200
+Message-ID: <plan6@bob.tiny>
+In-Reply-To: <plan5@alice.tiny>
+References: <plan1@carol.tiny> <plan2@alice.tiny> <plan3@dave.tiny> <plan5@alice.tiny>
+Status: RO
+X-Status: S
+
+Alice wrote:
+> And Bob the client, then. Bob?
+
+Yes: TinyEudora. Mailboxes first, the network last.
+
+Bob
+

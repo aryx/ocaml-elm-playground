@@ -1,0 +1,11 @@
+; claude: the Tui programs in a real terminal, native only: the same
+; values Textmode runs on the playground (../TextmodeSnake.ml), run by
+; Tty_unix. Try: dune exec examples/tty/TextmodeSnake.exe
+(executables
+  (names TextmodeSnake)
+  (libraries
+    caps ; Cap.main, the only way to the terminal's stdin and stdout
+    terminal_unix ; Tty_unix
+    appkit_tui ; Tui_snake
+  )
+)

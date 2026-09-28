@@ -1,0 +1,7 @@
+; claude: unit tests for scratch/, run by 'make test' (dune runtest):
+; the .mlis' worked examples, the text read and printed back, and the
+; threads -- their turns, their values, their messages
+(test
+ (name Test)
+ (libraries alcotest testo scratch)
+)

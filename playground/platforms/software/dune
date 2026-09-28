@@ -1,0 +1,44 @@
+; claude: its own stanzas, not part of playground/dune's include_subdirs
+(include_subdirs no)
+
+; claude: the software-rendering backend, see Playground_platform.ml and
+; docs/claude_notes/done/plan_software_2d.md. No Cairo, on purpose.
+(library
+  (public_name elm_playground_software)
+  (implements elm_playground)
+  (modules Playground_platform Help_overlay Shape_render_software)
+  (libraries
+    tsdl
+    graphics_rgba ; Image_decode.image's fields
+    elm_core ; Color
+    elm_playground
+    ; the from-scratch graphics algorithms, see graphics/
+    graphics_core graphics_2d_geometry graphics_2d graphics_font
+    elm_playground_native_common ; Native_loop_2d
+    networking_unix ; Udp, for Multiplayer's net=host and net=join
+    graphics_images ; Image_decode
+  )
+)
+
+; claude: and the 3D one, the from-scratch rasterizer of graphics/3d/
+(library
+ (public_name elm_playground_3d_software)
+ (implements elm_playground_3d)
+ (modules Playground3d_platform Shape3d_render_software)
+ (libraries
+   tsdl
+   graphics_rgba ; Rgba_image.t, what Texture_decode gives
+   elm_core
+   elm_playground
+   elm_playground_3d
+   elm_playground_software ; Shape_render_software, for the HUD pass
+   elm_playground_3d_native_common ; SDL event loop, shared with the OpenGL backend
+   networking_unix ; Connect, for Multiplayer3d's net=host, net=join, net=relay
+   graphics_3d_geometry ; Vec3, Camera
+   graphics_3d ; Render, and the modules of its pipeline
+   graphics_raytrace ; Raytrace, Solid: the "y" key and -raytrace
+   graphics_core ; Framebuffer, Opti
+   graphics_2d ; Magnifier
+   graphics_images ; Texture_decode
+ )
+)

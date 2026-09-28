@@ -1,0 +1,60 @@
+; claude: its own stanzas, not part of playground/dune's include_subdirs
+(include_subdirs no)
+
+; claude: code shared by the SDL-based 2D playground backends --
+; playground/platforms/native/ (Cairo) and the planned
+; playground/platforms/software/ (see
+; docs/claude_notes/done/plan_software_2d.md). A plain library, not an
+; (implements elm_playground): two implementations of the same virtual
+; library can't depend on each other, but they can both depend on this.
+; Must stay Cairo-free.
+;
+; Both libraries of this file are private (no public_name, so no .opam
+; of their own): nobody but the backends is meant to use them. The
+; (package ...) field installs each as an internal part of
+; elm_playground_software, the only package all its users can share:
+; - not elm_playground (or elm_playground_3d): the web backends depend
+;   on it, and their users would have to install tsdl;
+; - not elm_playground_native: elm_playground_software would then
+;   depend on it, hence on cairo2, when it must be Cairo-free.
+; The caveat: elm_playground_native (Cairo) now depends on
+; elm_playground_software, so installing the Cairo backend also builds
+; the software rasterizer (graphics/), which it doesn't use. It costs
+; no extra external dependency, only build time. The other loss: code
+; outside this repository can't use Native_loop_2d/Native_loop_3d (to
+; write its own SDL backend); a public_name and a package of their own
+; would allow it, at the cost of two more .opam files.
+(library
+ (name elm_playground_native_common)
+ (package elm_playground_software)
+ (wrapped false)
+ (modules Input_script Native_loop_2d Store Commands)
+ (libraries
+   unix
+   networking networking_unix ; Http_request and Http_client (https://, our TLS), for the Cmd.Http_get of Commands
+   caps ; the Cap.network a Cmd.Http_get carries
+   logs
+   tsdl
+   elm_core ; Sub/Cmd, to turn SDL events into the app's msgs
+   ; NOT elm_playground: see Native_loop_2d.run's comment in the .mli
+   graphics_rgba graphics_png ; -dump-frame's PNGs (Native_loop_2d.write_frame)
+ )
+)
+
+; claude: and the 3D ones' (the OpenGL backend in native/, the software
+; one in software/): the SDL event loop they share. Private too, in the
+; same package, for the same reasons (elm_playground_3d instead of
+; elm_playground).
+(library
+ (name elm_playground_3d_native_common)
+ (package elm_playground_software)
+ (wrapped false)
+ (modules Native_loop_3d)
+ (libraries
+   tsdl
+   logs ; parse_cli_and_setup_logging, and run's per-frame Logs.debug fps line
+   elm_core
+   elm_playground
+   elm_playground_native_common ; Input_script
+ )
+)

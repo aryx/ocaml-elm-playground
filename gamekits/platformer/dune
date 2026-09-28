@@ -1,0 +1,12 @@
+; claude: the platformer kit (see docs/claude_notes/plan_games.md,
+; section 8 and "kits"): what platformers on tiles share, on top of the
+; playground -- moving a box against a Tilemap one pixel at a time
+; (Tile_move), climbing ladders (Ladder), and shaped ground felt by
+; sensors (Slope). Used by TinyMario, TinyLodeRunner,
+; TinyRick, TinySonic and TinyMarioWorld. A private
+; library, not installed: only the games use it.
+(library
+ (name kit_platformer)
+ (wrapped false)
+ (libraries elm_core elm_playground)
+)

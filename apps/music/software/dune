@@ -1,0 +1,28 @@
+; claude: the same applications against the software rasterizer, for
+; the golden frames (see examples/software/dune): ../Foo.ml reused
+; as-is by a build-time copy, not a committed duplicate.
+(copy_files ../TinyMinimoog.ml)
+(copy_files ../TinyHammond.ml)
+(copy_files ../TinyTB303.ml)
+(copy_files ../TinyDX7.ml)
+(copy_files ../TinyRhodes.ml)
+(copy_files ../TinyCS80.ml)
+(copy_files ../TinyJuno.ml)
+(copy_files ../TinyTR808.ml)
+(copy_files ../TinyReBirth.ml)
+(copy_files ../TinyOp1.ml)
+(copy_files ../TinyOpxy.ml)
+(copy_files ../TinyReface.ml)
+(copy_files ../TinySoundtracker.ml)
+
+(executables
+  (names TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
+  (modules TinyMinimoog TinyHammond TinyTB303 TinyDX7 TinyRhodes TinyCS80 TinyJuno TinyTR808 TinyReBirth TinyOp1 TinyOpxy TinyReface TinySoundtracker)
+  (libraries
+    caps
+    elm_core
+    elm_playground
+    music_voices
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

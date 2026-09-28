@@ -1,0 +1,16 @@
+; claude: SketchUp's model and its screen (SketchUp, @Last Software,
+; 2000): a model of edges and the faces they bound, push/pull, the
+; stickiness of shared vertices (Skp_model); the inference engine that
+; guesses what a point in 3D means from a point on the screen
+; (Skp_infer); the camera orbiting what you build (Skp_view); and the
+; BSP tree that draws the faces in order without a z-buffer (Bsp).
+; Used by TinySketchup. A private library, installed as part of
+; elm_playground: pure OCaml.
+(library
+ (name appkit_pushpull)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   graphics_3d_geometry ; Vec3, Camera
+ )
+)

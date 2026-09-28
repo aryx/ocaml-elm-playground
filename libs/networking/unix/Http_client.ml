@@ -1,0 +1,63 @@
+(* Claude Code
+ *
+ * Copyright (C) 2026 Yoann Padioleau
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Library General Public License
+ * (LGPL) as published by the Free Software Foundation; either version
+ * 2 of the License, or (at your option) any later version.
+ *)
+
+(* See Http_client.mli *)
+
+let ( let* ) = Result.bind
+
+let prepare ?post (url : Url.t) : (string * int * string, string) result =
+  match (url.scheme, url.authority, Url.port url) with
+  | Some ("http" | "https"), Some (a : Url.authority), Some port ->
+      (* the Host header says the port only when it isn't the default *)
+      let host_header = match a.port with Some p -> Printf.sprintf "%s:%d" a.host p | None -> a.host in
+      (* "[::1]" in a URL, "::1" for the resolver *)
+      let host =
+        if String.starts_with ~prefix:"[" a.host then String.sub a.host 1 (String.length a.host - 2) else a.host
+      in
+      let target = Url.request_target url in
+      let bytes =
+        match post with
+        | None -> Http.request_to_string (Http.get ~host:host_header target)
+        | Some (content_type, body) -> Http.request_to_string ~body (Http.post ~host:host_header ~content_type ~body target)
+      in
+      Ok (host, port, bytes)
+  | Some ("http" | "https"), _, _ -> Error (Printf.sprintf "%s: no host" (Url.to_string url))
+  | _ -> Error (Printf.sprintf "%s: not an http:// or https:// URL" (Url.to_string url))
+
+(* one request, no redirection followed: over TCP, or inside TLS for
+   https:// (Tls_client, our own TLS 1.3) *)
+let get_once ?post ?timeout (caps : < Cap.network ; .. >) (url : Url.t) : (Http.response, string) result =
+  let* host, port, request = prepare ?post url in
+  if url.scheme = Some "https" then
+    let* answer = Tls_client.exchange ?timeout caps ~host ~port request in
+    Http.parse_response answer
+  else
+    match Tcp.exchange ?timeout caps ~host ~port request with
+    | answer -> Http.parse_response answer
+    | exception Unix.Unix_error (e, _, _) -> Error (Printf.sprintf "%s: %s" (Url.to_string url) (Unix.error_message e))
+    | exception Failure msg -> Error msg
+
+let fetch ?post ?(max_redirects = 5) ?timeout (caps : < Cap.network ; .. >) (s : string) : (string * Http.response, string) result =
+  let rec follow ?post (url : Url.t) (left : int) =
+    let* (response : Http.response) = get_once ?post ?timeout caps url in
+    match (Http.is_redirect response.status, Http.header "Location" response.headers) with
+    | true, Some location ->
+        if left = 0 then Error (Printf.sprintf "%s: too many redirections" s)
+        else
+          let* next = Url.parse location in
+          (* a redirection is followed with a GET, as browsers do *)
+          follow (Url.resolve url next) (left - 1)
+    | _ -> Ok (Url.to_string url, response)
+  in
+  let* url = Url.parse s in
+  follow ?post url max_redirects
+
+let get ?max_redirects ?timeout (caps : < Cap.network ; .. >) (s : string) : (Http.response, string) result =
+  Result.map snd (fetch ?max_redirects ?timeout caps s)

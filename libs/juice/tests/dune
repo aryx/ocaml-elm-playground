@@ -1,0 +1,6 @@
+; claude: unit tests for juice/, run by 'make test' (dune runtest): the
+; .mli's worked examples, and the laws every curve keeps
+(test
+ (name Test)
+ (libraries alcotest testo juice)
+)

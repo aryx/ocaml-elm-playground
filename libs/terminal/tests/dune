@@ -1,0 +1,7 @@
+; claude: unit tests for terminal/, run by 'make test' (dune runtest):
+; the .mlis' worked examples, and a sequence at a time, bytes in and
+; the screen out, compared as text
+(test
+ (name Test)
+ (libraries alcotest testo terminal)
+)

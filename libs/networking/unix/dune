@@ -1,0 +1,20 @@
+; claude: the protocols of networking/ over real sockets: a TCP
+; connection (Tcp), and an HTTP GET with its redirections
+; (Http_client), which is what graphics/images/'s Download uses for
+; http:// URLs. The operating system's side (Unix), so native only. A
+; private library, installed as part of elm_playground_software, like
+; graphics_images, its user (see playground/platforms/native_common/dune for why
+; that package).
+(library
+ (name networking_unix)
+ (package elm_playground_software)
+ (wrapped false)
+ (libraries
+   unix
+   threads.posix ; Worker's pool
+   caps ; Cap.network, which every function opening a socket takes
+   networking ; Url, Http, and Smtp, Pop3, Mbox (Mail_server)
+   networking_tls ; Tls13, X509, Pem (Tls_client)
+   random ; Lehmer, Relay_client's masks
+ )
+)

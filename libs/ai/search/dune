@@ -1,0 +1,9 @@
+; claude: board games, thinking ahead: minimax and alpha-beta
+; (Minimax), the tricks that buy depth (Deepening, Zobrist), Monte Carlo
+; tree search (Mcts); notes_ai.md sections 7 to 10. A private library,
+; installed as part of elm_playground; see ai/README.md.
+(library
+ (name ai_search)
+ (package elm_playground)
+ (wrapped false)
+)

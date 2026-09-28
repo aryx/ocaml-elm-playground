@@ -1,0 +1,6 @@
+; claude: unit tests for compression/, run by 'make test' (dune runtest):
+; the worked examples of its .mli comments
+(test
+ (name Test)
+ (libraries alcotest testo compression)
+)

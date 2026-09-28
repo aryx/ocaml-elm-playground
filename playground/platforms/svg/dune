@@ -1,0 +1,17 @@
+; claude: its own stanzas, not part of playground/dune's include_subdirs
+(include_subdirs no)
+
+; claude: the 3D web backend that draws through the 2D one: the scene
+; compiled down to plain Playground shapes, which elm_playground_web
+; renders as SVG (see Playground3d_platform.ml).
+(library
+ (public_name elm_playground_3d_web)
+ (implements elm_playground_3d)
+ (libraries
+   elm_playground
+   elm_playground_3d
+   elm_playground_web ; not just the virtual elm_playground_3d: this
+                       ; backend reuses elm_playground_web's run_app
+                       ; directly instead of implementing its own
+ )
+)

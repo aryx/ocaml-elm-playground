@@ -1,0 +1,17 @@
+; claude: the Smalltalk compiled to JavaScript and run under node: an
+; int has 32 bits there, 63 natively, and SmallIntegers must be 31 bits
+; either way (St_memory.mli), overflowing into LargePositiveInteger at
+; the same place. The same expected values as ../'s tests, as a plain
+; program (Testo needs Unix): Test_js.ml. Run by 'make test' where node
+; is installed, skipped elsewhere.
+(executable
+ (name Test_js)
+ (modes js)
+ (libraries smalltalk)
+)
+
+(rule
+ (alias runtest)
+ (enabled_if %{bin-available:node})
+ (deps Test_js.bc.js)
+ (action (run node %{dep:Test_js.bc.js})))

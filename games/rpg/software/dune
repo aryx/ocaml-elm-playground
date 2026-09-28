@@ -1,0 +1,26 @@
+; claude: the same games as ../dune, on the software rasterizers (see
+; examples/software/dune for how copy_files works)
+(copy_files ../*.ml)
+
+(executables
+  (names TinyDiablo TinyDungeonMaster TinyGauntlet2 TinyRogue)
+  (modules TinyDiablo TinyDungeonMaster TinyGauntlet2 TinyRogue)
+  (libraries
+    elm_playground
+    ai
+    kit_rts
+    kit_isometric
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyHades)
+  (modules TinyHades)
+  (libraries
+    elm_core
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
+  )
+)

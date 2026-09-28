@@ -1,0 +1,30 @@
+; claude: the same games as ../dune, on the software rasterizers (see
+; examples/software/dune for how copy_files works)
+(copy_files ../*.ml)
+
+(executables
+  (names TinyGranTrak10 TinyMarioKart TinyMicroMachines TinyOutRun
+    TinySupercars TinySuperOffRoad TinySuperSprint)
+  (modules TinyGranTrak10 TinyMarioKart TinyMicroMachines TinyOutRun
+    TinySupercars TinySuperOffRoad TinySuperSprint)
+  (libraries
+    elm_playground
+    kit_racing
+    kit_isometric
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyBigRedRacing TinyIgnition TinyMarioKart64 TinySSX TinyVirtuaRacing)
+  (modules TinyBigRedRacing TinyIgnition TinyMarioKart64 TinySSX TinyVirtuaRacing)
+  (libraries
+    elm_core
+    kit_racing
+    kit_racing3d
+    kit_heightmap
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_software ; implem of virtual elm_playground_3d
+  )
+)

@@ -1,4 +1,6 @@
+(*****************************************************************************)
 (** {1 Entry points } *)
+(*****************************************************************************)
 
 (** The main entry points of this library are:
 - {!val:picture}
@@ -11,7 +13,9 @@ The important types are:
 
 *)
 
+(*****************************************************************************)
 (** {1 Basic types} *)
+(*****************************************************************************)
 
 (** {2 Numbers} *)
 
@@ -164,6 +168,7 @@ and form =
   | Ngon of color * int * number
   | Polygon of color * (number * number) list
   | Image of number * number * string
+  | Bitmap of number * number * Rgba_image.t
   | Words of color * string
   | Group of shape list
 
@@ -322,6 +327,22 @@ val polygon : color -> (number * number) list -> shape
 You provide the width, height, and then the URL of the image you want to show.
 *)
 val image : number -> number -> string -> shape
+
+(** claude: Show an image your program has in memory, its pixels
+    ({!Rgba_image.t}: width x height RGBA bytes), stretched to the width
+    and height you give -- a video's frames (TinyMediaPlayer), a picture
+    your program decoded or computed, a web page's pictures (TinyMosaic):
+{[
+    let view computer movie = [ bitmap 704. 576. (Movie.frame_at movie computer.time.now) ]
+]}
+    Where {!image} fetches a file once, this is drawn from its pixels as
+    they are when shown: give a new image for a new picture (a backend
+    keeps the last few it converted, 32, and redoes the work for
+    another). A small image enlarged is smoothed, like {!image}'s, unless
+    the program's [rendering] says [smooth_images = false]. On the web,
+    each new image is encoded as a PNG, fine for a picture, slow for a
+    video. *)
+val bitmap : number -> number -> Rgba_image.t -> shape
 
 (** {2 Words } *)
 
@@ -570,7 +591,9 @@ and [1] is completely solid.
 *)
 val fade : number -> shape -> shape
 
+(*****************************************************************************)
 (** {1 Computer } *)
+(*****************************************************************************)
 
 (* todo: group *)
 
@@ -623,8 +646,41 @@ You could draw a circle around the mouse with a program like this:
 ]}
 You could also use [computer.mouse.down] to change the color of the circle
 while the mouse button is down.
+
+[mdown] is the left (main) button; [mrdown], not in the original Elm
+playground, is the right one (e.g. TinyMinecraft: left click
+removes a block, right click places one).
+
+[mdx] and [mdy], not in the original Elm playground either, are how far
+the mouse moved since the last frame (y up, like [my]), for turning a
+first-person camera: unlike [mx]/[my], they keep counting when the
+mouse is captured (hidden, and not stopped by the window's edges; see
+{!Playground3d_platform.run_app3d}'s [capture_mouse]).
 *)
-type mouse = { mx : number; my : number; mdown : bool; mclick : bool; }
+type mouse = {
+  mx : number;
+  my : number;
+  mdown : bool;
+  (** Whether the button was {i released} this frame: a click is a
+      press and a release, and it is the release that means "do it"
+      (so a press you drag away from and release elsewhere is not a
+      click on anything). A transient, like {!mdx}: the update that
+      follows the release sees it, and the next tick clears it. *)
+  mclick : bool;
+  mrdown : bool;
+  mdx : number;
+  mdy : number;
+  (** How far the wheel turned since the last frame, in notches,
+      positive when scrolling up (away from you), [0.] most frames.
+      Not in Evan's playground: a game never scrolls, an application
+      always does. *)
+  mwheel : number;
+  (** Whether this frame carried a double click. Like {!mclick}, but
+      for the second click of a pair; the first one still arrives as an
+      ordinary click, so a program that ignores [mdouble] behaves
+      exactly as before. *)
+  mdouble : bool;
+}
 
 (** Figure out what is going on with the keyboard.
 
@@ -668,7 +724,35 @@ type keyboard = {
   kenter : bool;
   kshift : bool;
   kbackspace : bool;
+  (** Every key held right now, by name. The names are the browser's
+      ({{:https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/key/Key_Values}this
+      list}): ["a"], ["1"], ["ArrowUp"], ["Backspace"], ["Enter"],
+      ["Tab"], ["Shift"], ["Escape"] -- whatever backend the program
+      runs on, since a native SDL name ("Return", "Left Shift") is
+      translated to it. The one exception is the space bar, which is
+      ["space"] here and not [" "].
+
+      [Set_.mem "x" computer.keyboard.keys] asks whether a key is
+      down; the frame a key {i goes} down (its rising edge) takes
+      remembering the frame before, which {!Scene2d.pressed} does. *)
   keys : string Set_.t;
+  (** The characters {i typed} this frame, in order -- [""] most
+      frames, ["a"] for one key, and more when a key repeats.
+
+      This is not the same question as {!keys}, and the difference is
+      the reason it exists: [keys] holds key {i names} ("a", "shift",
+      "ArrowLeft"), which is what a game asks ("is left held?"), while
+      a text field needs the {i character} a key press produced --
+      ["A"] rather than ["a"] with shift, ["e"] with an accent from a
+      dead key, whatever a non-US layout puts on that key. Only the
+      platform knows that, so it tells us here.
+
+      A transient, consumed by the update that sees it:
+      {[
+        let update computer model =
+          { model with name = model.name ^ computer.keyboard.typed }
+      ]} *)
+  typed : string;
 }
 
 (** Turn the LEFT and RIGHT arrows into a number.
@@ -774,6 +858,7 @@ about your computer:
   - {!type:keyboard} - Are the arrow keys down?
   - {!type:screen} - How wide is the screen?
   - {!type:time} - What time is it right now?
+  - {!type:flags} - What parameters was the program started with?
 
 So you can use expressions like [computer.mouse.x] and [computer.keyboard.kenter]
 in games where you want some mouse or keyboard interaction.
@@ -783,21 +868,201 @@ type computer = {
   keyboard : keyboard;
   screen : screen;
   time : time;
+  flags : flags;
 }
+
+(** The parameters a program was started with, as [(name, value)] pairs,
+    e.g. [[("level", "5"); ("fast", "")]] (a parameter given without a
+    value has [""]). They come from outside the program, like Elm's
+    flags: the program's [main] reads them with
+    [Playground_platform.flags ()] and gives them to
+    [Playground_platform.run_app ~flags]; then every [view] and
+    [update] sees them in [computer.flags], unchanged from start to end.
+
+    Natively, they are the command line's arguments without a dash,
+    [name=value] or [name] ([dune exec games/arcade/Snake.exe -- level=5 fast]),
+    the dashed ones being the playground's own ([-debug], ...); on the
+    web, the page's URL parameters ([Snake.html?level=5&fast]).
+
+    For example, a game running twice as fast with [speed=fast]:
+{[
+    let update computer memory =
+      let speed =
+        match List.assoc_opt "speed" computer.flags with
+        | Some "fast" -> 2.
+        | _ -> 1.
+      in
+      ...
+
+    let main = Playground_platform.run_app ~flags:(Playground_platform.flags ()) app
+]}
+*)
+and flags = (string * string) list
 
 val initial_computer : computer
 
+(**/**)
+(* claude: [update_keyboard is_down key keyboard]: the keyboard after a
+ * key went down or up, as the platforms make it from their events;
+ * exported for tinybox's 3D previews, which make a computer themselves *)
+val update_keyboard : bool -> string -> keyboard -> keyboard
+(**/**)
 
+(**/**)
+(* claude: ["level=5"; "fast"] -> [("level", "5"); ("fast", "")] (split
+ * at the first '=', empty strings skipped): how the backends turn
+ * command-line arguments or URL parameters into flags; not meant to be
+ * used by applications *)
+val flags_of_strings : string list -> flags
+(**/**)
+
+
+(*****************************************************************************)
+(** {1 Randomness} *)
+(*****************************************************************************)
+
+(** claude: random numbers kept in the model, Elm's [Random] without
+    the command: a {!seed} is a value, and each draw gives a number and
+    the next seed, to keep for the next draw.
+{[
+    type model = { x : number; seed : seed }
+
+    let update computer model =
+      if computer.mouse.click then
+        let x, seed = random (-400.) 400. model.seed in
+        { x; seed }
+      else model
+
+    let app = game view update { x = 0.; seed = initial_seed 42 }
+]}
+    The same seed gives the same numbers, in every run and on every
+    backend, native or web: a game replays the same way (golden frames,
+    a bug caught again), and two computers given one seed draw the same
+    numbers (plan_networking_teaching.md). OCaml's [Random] gives none
+    of that: a hidden global state, seeded from the clock. The
+    generator is random/Lehmer.mli (Park and Miller's minimal standard). *)
+type seed
+
+(** a seed from any number, e.g. the flag seed=n, or the clock at the
+    start for a game different each time -- read once, then kept in the
+    model *)
+val initial_seed : int -> seed
+
+(** [random lo hi seed]: a number between [lo] and [hi] (up to [hi],
+    not included), and the next seed *)
+val random : number -> number -> seed -> number * seed
+
+(** [random_int lo hi seed]: an integer from [lo] to [hi], both
+    included *)
+val random_int : int -> int -> seed -> int * seed
+
+(** one of the list's elements (it must not be empty) *)
+val pick : 'a list -> seed -> 'a * seed
+
+(*****************************************************************************)
 (** {1 The Application} *)
+(*****************************************************************************)
 
+(** [init] is given the program's {!flags} (see [Playground_platform.run_app]) *)
 type ('model, 'msg) app = {
-  init : unit -> 'model * 'msg Cmd.t;
+  init : flags -> 'model * 'msg Cmd.t;
   update : 'msg -> 'model -> 'model * 'msg Cmd.t;
   view : 'model -> shape list;
   subscriptions : 'model -> 'msg Sub.t;
 }
 
+(**/**)
+(* claude: not for programs: tinybox's (plan_launcher.md, the previews).
+ * An app of any model and msg, and a hook: when set, the native
+ * platform's run_app gives it the app and returns, instead of opening
+ * a window and running it -- so that tinybox's menu, where every
+ * program is linked, can take a program's app from its main and play it
+ * itself, in its own window, a preview. *)
+type any_app = Any_app : ('model, 'msg) app -> any_app
+val capture : (any_app -> unit) option ref
+(**/**)
+
+(** claude: Elm's [Http], asking a server for something from [init] or
+    [update]: a command ({!Cmd.t}) the platform performs, the answer
+    coming back as a message, without the frames stopping meanwhile.
+{[
+    type msg = GotText of (string, Http.error) result
+
+    let init caps _flags =
+      (Loading, Http.get caps ~url:"http://localhost:8001/examples/HttpText.ml"
+                  ~expect:(Http.expect_string (fun result -> GotText result)))
+
+    let update msg _model =
+      match msg with
+      | GotText (Ok text) -> (Success text, Cmd.none)
+      | GotText (Error e) -> (Failure (Http.error_to_string e), Cmd.none)
+]}
+    Natively, http:// by our own client, stepped every frame, and
+    https:// by curl, blocking (the frame waits), until TLS is written;
+    in a browser, whatever the browser allows
+    (the page's own server, or another that says so: CORS). Only for
+    the {!app} level: [picture], [animation] and [game] have no
+    commands, as in Evan's playground. It takes the capability to reach
+    the network ([< Cap.network; .. >]: any capabilities that include it,
+    from the program's [Cap.main]), which the command carries. See examples/HttpText.ml. *)
+module Http : sig
+  type error = Cmd.http_error =
+    | Bad_url of string
+    | Timeout
+    | Network_error of string
+    | Bad_status of int
+    | Bad_body of string
+
+  (** what to do with the answer: Elm's [Http.Expect] *)
+  type 'msg expect
+
+  (** what the server answered: the URL it came from after the
+      redirections, the status, the headers, the body's bytes *)
+  type response = Cmd.http_response = { url : string; status : int; headers : (string * string) list; body : string }
+
+  (** the body as text, when the status is 2xx ([Bad_status] otherwise) *)
+  val expect_string : ((string, error) result -> 'msg) -> 'msg expect
+
+  (** the whole response, whatever its status (Elm's
+      [expectBytesResponse]): what a browser needs -- a 404's page is
+      shown too, an image's bytes are not text, and the page's links are
+      relative to the URL it finally came from (TinyMosaic) *)
+  val expect_response : ((response, error) result -> 'msg) -> 'msg expect
+
+  val get : < Cap.network ; .. > -> url:string -> expect:'msg expect -> 'msg Cmd.t
+
+  (** a POST of [body], of [content_type] (a form's fields:
+      "application/x-www-form-urlencoded", TinyMosaic); a redirection
+      answered with a GET, as browsers do *)
+  val post :
+    < Cap.network ; .. > -> url:string -> content_type:string -> body:string -> expect:'msg expect -> 'msg Cmd.t
+
+  (** for showing: "status 404", "network error: ... Connection refused" *)
+  val error_to_string : error -> string
+end
+
+(** How to draw, for the backends that can honor it, given to
+    [Playground_platform.run_app ~rendering]:
+    - [antialiasing]: smooth edges (true), or all-or-nothing pixels,
+      crisper but jagged (false);
+    - [smooth_images]: enlarged images blend their pixels (true), or
+      show them as sharp squares (false), which is what pixel art
+      sprites, like Mario's, want.
+
+    Each backend maps these to what it has (the software rasterizer
+    to its own algorithms, Cairo to its antialias mode and image
+    filter, the web to SVG's [shape-rendering] and CSS's
+    [image-rendering]), and the software rasterizer's debug keys can
+    still change them while the app runs: these are the starting
+    values. *)
+type rendering = { antialiasing : bool; smooth_images : bool }
+
+(** Both on *)
+val default_rendering : rendering
+
+(*****************************************************************************)
 (** {1 Playgrounds} *)
+(*****************************************************************************)
 
 (** {2 Pictures} *)
 
@@ -826,8 +1091,13 @@ type msg =
   | Resized of int * int
   | KeyChanged of bool * string
   | MouseMove of (number * number)
+  | MouseMoveBy of (number * number)
   | MouseClick
   | MouseButton of bool
+  | RightMouseButton of bool
+  | Typed of string
+  | MouseWheel of number
+  | MouseDouble
 
 type animation
 

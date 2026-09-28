@@ -1,0 +1,27 @@
+; claude: the flight and space games (CATALOG.md's section): 2D, the 2.5D
+; ones (their 3D drawn by the game itself on the 2D playground, see
+; ../README-2.5d.md) next to their 3D twins; on the software
+; rasterizers in software/, in the browser in web/.
+(executables
+  (names TinyComanche TinyDescent TinyElite TinyXpilot)
+  (modules TinyComanche TinyDescent TinyElite TinyXpilot)
+  (libraries
+    elm_playground
+    kit_heightmap ; TinyComanche's island
+    kit_segments ; TinyDescent's mine and ship
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+(executables
+  (names TinyComanche3d TinyDescent3d TinyElite3d)
+  (modules TinyComanche3d TinyDescent3d TinyElite3d)
+  (libraries
+    elm_core
+    kit_heightmap ; TinyComanche3d's island, TinyComanche's own
+    kit_segments ; TinyDescent3d's mine, TinyDescent's own
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)

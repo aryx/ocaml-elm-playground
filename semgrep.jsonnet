@@ -30,6 +30,31 @@ local semgrep_rules = [
       exclude: ['common2.ml'],
     },
   },
+  {
+    // claude: tinybox links every game and app in one binary, where a
+    // main run at initialization would start them all (Program.mli)
+    id: 'main-through-program',
+    match: {
+      any: [
+        'let main = Playground_platform.run_app ...',
+        'let main = Playground3d_platform.run_app3d ...',
+        'let main = Cap.main ...',
+        'let main = ...; Playground_platform.run_app ...',
+        'let main = ...; Playground3d_platform.run_app3d ...',
+      ],
+    },
+    languages: ['ocaml'],
+    severity: 'ERROR',
+    message: |||
+      A game's or app's main goes through Program.main, so that tinybox
+      can link it without starting it:
+        let main = Program.main __MODULE__ (fun () -> ...)
+    |||,
+    paths: {
+      include: ['games/', 'apps/'],
+      exclude: ['apps/devtools/tty/'],
+    },
+  },
 ];
 
 // ----------------------------------------------------------------------------

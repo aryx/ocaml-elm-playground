@@ -1,0 +1,12 @@
+; claude: the racing kit's worked examples (Road.mli, Car.mli), run by
+; 'make test'
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   kit_racing
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
+)

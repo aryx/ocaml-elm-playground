@@ -1,0 +1,25 @@
+#!/bin/sh
+# A CGI program (tiny_httpd.ml says what CGI is): the request in the
+# environment and on the standard input, the answer on the standard
+# output -- headers, an empty line, the page. What the form sent is
+# shown as it came, still encoded, escaped for HTML (a field could hold
+# a "<"): decoding it is TinyMosaic's about:echo's job, in OCaml.
+
+escape() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g'; }
+
+echo "Content-Type: text/html"
+echo
+echo "<TITLE>A CGI program's answer</TITLE>"
+echo "<H1>A CGI program's answer</H1>"
+echo "<P>Run by tiny_httpd for a <CODE>$REQUEST_METHOD</CODE>, from $REMOTE_ADDR."
+echo "<P>The query (<CODE>QUERY_STRING</CODE>):"
+echo "<PRE>"
+printf '%s\n' "$QUERY_STRING" | escape
+echo "</PRE>"
+if [ "$REQUEST_METHOD" = POST ]; then
+  echo "<P>The body ($CONTENT_LENGTH bytes of <CODE>$CONTENT_TYPE</CODE>, on the standard input):"
+  echo "<PRE>"
+  head -c "$CONTENT_LENGTH" | escape
+  echo
+  echo "</PRE>"
+fi

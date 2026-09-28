@@ -1,0 +1,17 @@
+From alice@tiny Mon Sep 21 15:10:00 2026
+Received: from alice.tiny by tiny with SMTP; Mon, 21 Sep 2026 15:10:00 +0200
+From: Alice <alice@tiny>
+To: bob@tiny
+Subject: tiny_maild
+Date: Mon, 21 Sep 2026 15:10:00 +0200
+Message-ID: <maild@alice.tiny>
+Status: RO
+
+Bob,
+
+The server takes mail by SMTP and gives it by POP3; mail for
+anyone@tiny goes to anyone's mailbox, mail for elsewhere is
+refused. It is not a relay: the 1990s' spam closed those.
+
+Alice
+

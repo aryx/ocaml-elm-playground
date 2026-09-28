@@ -1,0 +1,17 @@
+# Files not sent to 'docker build' (see the Dockerfile and 'make build-docker').
+# The image builds from a clean tree, so it needs no build artifacts or VCS metadata.
+
+# dune's build dirs: the top one (gigabytes) and the toy examples' ones in docs/
+**/_build/
+_opam/
+
+# git (the build does not need the history)
+.git/
+
+# generated or editor/tool leftovers (see also .gitignore)
+**/*.bc.js
+**/__pycache__/
+**/.merlin
+.claude/
+gitlog.txt
+todo.txt

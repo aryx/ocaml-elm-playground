@@ -1,0 +1,76 @@
+; claude: the action-adventure and horror games (CATALOG.md's section),
+; 2D and 3D side by side; on the software rasterizers in software/, in
+; the browser in web/.
+(executables
+  (names TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus TinyMyst)
+  (modules TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus TinyMyst Lttp_xpm)
+  (libraries
+    elm_playground
+    kit_platformer ; TinyZelda's and TinyZeldaLinkPast's Tile_move
+    kit_shmup ; TinyZelda's shots
+    ai ; TinyMetalGearSolid's guards (Fsm, Pathfind), TinyManiacMansion's walkboxes (Pathfind)
+    kit_racing ; TinyGTA's cars, Topdown
+    kit_adventure ; TinyZork's and TinyManiacMansion's world and rules, Adventure
+    appkit_teletype ; TinyWumpus's program, Tty_wumpus
+    myst ; TinyMyst's island and its stills
+    hypertalk ; TinyMyst's scripts, Hypertalk
+    graphics_raytrace ; TinyMyst's pictures made live, Raytrace
+    graphics_jpeg ; TinyMyst's stills, Jpeg
+    elm_playground_native ; implem of virtual elm_playground
+  )
+)
+
+; claude: TinyZeldaLinkPast's pixel art -- Link's and the soldier's
+; sheets, the tree, the ground tiles, the items, the pedestal -- drawn
+; as XPM files, embedded as strings: lttp_link.xpm becomes
+; Lttp_xpm.link at build time, and so on, as TinyFez's are (see
+; README-tools.md)
+(rule
+ (targets Lttp_xpm.ml)
+ (deps lttp_link.xpm lttp_soldier.xpm lttp_tree.xpm lttp_tiles.xpm lttp_items.xpm lttp_pedestal.xpm)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from lttp_*.xpm by games/adventure/dune *)\n")
+    (echo "let link = {|")
+    (cat lttp_link.xpm)
+    (echo "|}\nlet soldier = {|")
+    (cat lttp_soldier.xpm)
+    (echo "|}\nlet tree = {|")
+    (cat lttp_tree.xpm)
+    (echo "|}\nlet tiles = {|")
+    (cat lttp_tiles.xpm)
+    (echo "|}\nlet items = {|")
+    (cat lttp_items.xpm)
+    (echo "|}\nlet pedestal = {|")
+    (cat lttp_pedestal.xpm)
+    (echo "|}\n")))))
+
+(executables
+  (names TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina)
+  (modules TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina Tomb_atlas)
+  (libraries
+    elm_core
+    kit_brawler3d ; TinyAloneInTheDark's and TinyTombRaider's Skeleton
+    kit_brawler ; TinyZeldaOcarina's Frame_data
+    kit_heightmap ; TinyZeldaOcarina's Hyrule Field
+    kit_puzzle ; TinyTombRaider's Push, the same one TinySokoban uses
+    elm_playground_software ; implem of virtual elm_playground (elm_playground_3d's own dep; the OpenGL backend's HUD uses it)
+    elm_playground_3d
+    elm_playground_3d_opengl ; implem of virtual elm_playground_3d
+  )
+)
+
+; claude: the tomb's texture atlas, embedded in the program: tomb.png
+; becomes Tomb_atlas.base64 at build time, so TinyTombRaider carries
+; its walls with it and runs from anywhere (see
+; scripts/build/make_tomb_atlas.py, which drew it, and
+; Playground3d.embedded_texture)
+(rule
+ (targets Tomb_atlas.ml)
+ (deps tomb.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml tomb.png))))

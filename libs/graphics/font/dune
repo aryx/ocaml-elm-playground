@@ -1,0 +1,36 @@
+; claude: fonts: Hershey's stroke font (Hershey), turning a string into
+; pen strokes, and the VGA's bitmap font (Vga_font), a character's 8 by 16
+; pixels. Depends on nothing. See docs/claude_notes/notes_font.md.
+; A private library, see graphics/core/dune.
+(library
+ (name graphics_font)
+ (package elm_playground_software)
+ (wrapped false)
+)
+
+; the Hershey font file, embedded as a string (Hershey.ml parses it), so
+; the library needs no file at runtime
+(rule
+ (targets Hershey_futural.ml)
+ (deps fonts/futural.jhf)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from fonts/futural.jhf by graphics/font/dune *)\n")
+    (echo "let jhf = {|")
+    (cat %{deps})
+    (echo "|}\n")))))
+
+; the VGA font's file, embedded the same way (Vga_font.ml parses it)
+(rule
+ (targets Vga_font_data.ml)
+ (deps fonts/vga8x16.txt)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from fonts/vga8x16.txt by graphics/font/dune *)\n")
+    (echo "let txt = {|")
+    (cat %{deps})
+    (echo "|}\n")))))

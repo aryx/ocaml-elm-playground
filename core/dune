@@ -1,8 +1,0 @@
-(library
- (public_name elm_core)
- (wrapped false)
- (libraries
-   ; commons; was for Set_.ml but now included here
- )
- ; (preprocess (pps profiling.ppx))
-)

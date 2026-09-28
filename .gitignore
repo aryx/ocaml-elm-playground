@@ -4,3 +4,6 @@ _build/
 docs/toy-native-example/bin/
 
 todo.txt
+
+# claude: the Python scripts' compiled modules (scripts/games/)
+__pycache__/

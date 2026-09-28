@@ -1,0 +1,31 @@
+; claude: the same applications against the software rasterizer, for
+; the golden frames (see examples/software/dune): ../Foo.ml reused
+; as-is by a build-time copy, not a committed duplicate.
+(copy_files ../*.ml)
+
+(executables
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint TinyBlender)
+  (libraries
+    elm_playground
+    caps ; the File menu's authority to save (File_menu, plan_caps.md)
+    gui ; Widget, for text_width
+    appkit_document ; Undo, Clipboard
+    appkit_file_menu ; File_menu
+    appkit_richtext ; Style, a text's look (TinyMacDraw)
+    appkit_paint ; a picture as bits, and what paints it (TinyMacPaint)
+    appkit_draw ; a picture as objects (TinyMacDraw)
+    appkit_draw_view ; its figures as shapes, Figure_shapes
+    appkit_stroke_text ; Hershey's strokes in a look
+    graphics_imaging ; every operation of TinyPhotoshop (Lut, Mask, Brush...)
+    graphics_jpeg ; our JPEG reader and writer
+    graphics_png ; and PNG writer, for Export
+    photos ; NASA's photographs, as strings
+    appkit_indexed ; a picture of colour numbers, and cycling (TinyDeluxePaint)
+    graphics_ilbm ; its file, IFF ILBM
+    random ; Lehmer, the airbrush's dots
+    appkit_modeler ; a 3D scene, its views (TinyBlender)
+    graphics_raytrace ; Raytrace, its rendered viewport
+    graphics_3d_geometry ; Camera, Vec3
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

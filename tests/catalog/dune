@@ -1,0 +1,28 @@
+; claude: CATALOG.md kept complete: every program of games/<genre>/ and
+; apps/<category>/ (the (names ...) of their dune files) has its row, its golden
+; frame and its web page, and is within its budget (5,000 lines of its
+; own code, README). See Unit_catalog.ml.
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   tinybox_codedeps ; the budget: a program's own code, as tinybox counts it
+ )
+ (deps
+   %{project_root}/CATALOG.md
+   (glob_files_rec %{project_root}/games/dune)
+   (glob_files_rec %{project_root}/apps/dune)
+   (glob_files %{project_root}/tests/2d/golden/*.png)
+   (glob_files %{project_root}/tests/3d/golden/*.png)
+   (glob_files_rec %{project_root}/games/*.html)
+   (glob_files_rec %{project_root}/apps/*.html)
+   (glob_files_rec %{project_root}/games/*.{ml,mli})
+   (glob_files_rec %{project_root}/apps/*.{ml,mli})
+   (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
+   (glob_files_rec %{project_root}/appkits/*.{ml,mli})
+   (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly})
+   (glob_files_rec %{project_root}/playground/*.{ml,mli})
+   (glob_files_rec %{project_root}/libs/*.{ml,mli})
+ )
+)

@@ -1,0 +1,13 @@
+; claude: a picture of colour numbers and its palette, Deluxe Paint's
+; (Dan Silva, Electronic Arts, 1985): the picture and what paints it
+; (Indexed: dots, lines, rectangles, ellipses, the bucket, brushes cut
+; from the picture, symmetry) and the palette turning (Cycling). Over
+; libs/graphics/images/ilbm, the Amiga's file format, whose ranges
+; Cycling turns. Pure OCaml, no playground: a private library,
+; installed as part of elm_playground. TinyDeluxePaint's.
+(library
+ (name appkit_indexed)
+ (package elm_playground)
+ (wrapped false)
+ (libraries graphics_ilbm)
+)

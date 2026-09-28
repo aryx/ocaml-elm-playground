@@ -1,0 +1,73 @@
+(* Media: what a file is, and what to do with it -- the part of a media
+ * player (VLC, 2001; Windows' Media Player, 1991) before any playing.
+ *
+ * A player is given bytes and a name, and the name can lie (a PNG saved
+ * as .wav) or say nothing (a file from a URL). So it looks at the bytes
+ * first: nearly every format begins with a **magic number**, a few
+ * bytes chosen to be unlikely anywhere else, which is how Unix's file(1)
+ * (1973) and VLC's demuxers, trying each in turn, recognize a file:
+ *
+ *     "RIFF" .... "WAVE"        WAV (RIFF, Microsoft and IBM, 1991)
+ *     "MThd"                    a Standard MIDI File (1988)
+ *     "M.K." at byte 1080       a MOD (and the other tags: Mod.mli)
+ *     89 "PNG" 0D 0A 1A 0A      PNG (1996): a high byte, then a DOS and a
+ *                               Unix newline and a DOS end-of-file, so a
+ *                               transfer that mangles either shows
+ *     "GIF87a", "GIF89a"        GIF (1987, 1989)
+ *     FF D8 FF                  JPEG (a start-of-image marker, then the next)
+ *     "/* XPM */"               XPM (a C comment: the file is C source)
+ *     "YUV4MPEG2 "              Y4M, raw video (mjpegtools, 2001)
+ *     "RIFF" .... "AVI "        AVI (Video for Windows, 1992): WAV's
+ *                               container, another type
+ *     00 00 01 B3               MPEG-1 video (1993): a start code, the
+ *                               sequence header's
+ *     00 00 01 BA               an MPEG-1 system stream, .mpg: the video
+ *                               and its sound interleaved, a pack's
+ *                               start code first (Mpeg_system.mli)
+ *     FF Ex / FF Fx, or "ID3"   MPEG audio, MP2 and MP3 (1993): 11 bits
+ *                               of sync, a frame's header, checked by the
+ *                               next frame's being where it says; or a
+ *                               music player's ID3 tag before it
+ *                               (Mpeg_audio_header.mli)
+ *     11 AF, 12 AF at byte 4    FLI, FLC (Autodesk Animator, 1989):
+ *                               (two bytes only: a weak magic, trusted
+ *                               only in a file of the header's 128 bytes)
+ *     "X:" first                an ABC tune (its first field, the number)
+ *
+ * and only then the name: Ultimate Soundtracker's modules have no tag
+ * (.mod), and a tune in solfege is plain text (.doremi, .txt).
+ *
+ * Opened, a file is one of four things to a player: a [Sound], samples
+ * to play (a recording, decoded first if an MP2 or MP3, Mpeg_audio.mli;
+ * or a tune rendered by audio/'s synthesizer, with its notes for a
+ * piano roll); a [Module], a song played live by
+ * its own player (Mod_player.mli), too long to render ahead; a
+ * [Picture]; a [Movie], pictures in time, decoded as they're shown
+ * (Movie.mli), and its sound if it has one (an AVI's): a GIF's frames,
+ * Y4M, FLI and FLC, AVI, MPEG-1, and an .mpg's video with its MP2
+ * (plan_video_teaching.md). *)
+
+type kind = Wav | Mp2 | Mp3 | Midi | Mod | Abc | Solfege | Png | Gif | Jpeg | Xpm | Y4m | Flic | Avi | Mpeg1 | Mpg
+
+val kind_name : kind -> string
+
+(* [sniff ~name bytes]: what it is, by its bytes, else by its name's
+ * extension; None if neither says *)
+val sniff : name:string -> string -> kind option
+
+type media =
+  | Sound of { samples : Signal.stereo; notes : Midi.note list (* none for a recording *) }
+  | Module of Mod.song
+  | Picture of Rgba_image.t
+  | Movie of {
+      movie : Movie.t;
+      sound : Signal.stereo option; (* played with it, its clock *)
+      mpeg : (Mpeg1.header * (int -> Mpeg1.info) * Movie.t Lazy.t) option;
+          (* an MPEG-1's decisions, and what was sent (the residual), for the analyzer *)
+    }
+
+(* [open_ ~name bytes]: what it is and what it holds, or why not *)
+val open_ : name:string -> string -> (kind * media, string) result
+
+(* how long a sound or a movie lasts, in seconds; None for the others *)
+val duration : media -> float option

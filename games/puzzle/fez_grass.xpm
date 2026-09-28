@@ -1,0 +1,17 @@
+/* XPM */
+static char *fez_grass[] = {
+"8 8 5 1",
+"a c #d0b8e6",
+"c c #b896d6",
+"b c #6e4f8c",
+"g c #78ce60",
+"G c #50a448",
+"gggggggg",
+"gGgggGgg",
+"GcbGcGcb",
+"aaaaaaba",
+"ccccccbc",
+"bbbbbbbb",
+"aabaaaaa",
+"ccbccccc"
+};

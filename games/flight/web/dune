@@ -1,0 +1,38 @@
+; claude: the same games as ../dune, in the browser: the 2D ones on
+; elm_playground_web, the 3D ones on WebGL
+(copy_files ../*.ml)
+
+(executables
+  (names TinyComanche TinyDescent TinyElite TinyXpilot)
+  (modules TinyComanche TinyDescent TinyElite TinyXpilot)
+  (libraries
+    elm_playground
+    kit_heightmap
+    kit_segments
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+(executables
+  (names TinyComanche3d TinyDescent3d TinyElite3d)
+  (modules TinyComanche3d TinyDescent3d TinyElite3d)
+  (libraries
+    elm_core
+    kit_heightmap
+    kit_segments
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; the .html pages next to the .bc.js
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

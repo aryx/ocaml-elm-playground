@@ -1,0 +1,41 @@
+<HTML>
+<HEAD>
+<TITLE>A fill-out form</TITLE>
+</HEAD>
+<BODY>
+<H1>A fill-out form</H1>
+
+<P>Mosaic 2.0 (1993) let a page ask. This form is answered by
+TinyMosaic itself (<CODE>about:echo</CODE>), which shows what a server
+would have received.
+
+<FORM ACTION="about:echo">
+<P>Your name: <INPUT NAME="name" SIZE=24>
+<P>Your browser:
+<SELECT NAME="browser"><OPTION>Mosaic<OPTION>Netscape<OPTION>Lynx</SELECT>
+<INPUT TYPE=checkbox NAME="images" CHECKED> images on
+<P>Your modem:
+<INPUT TYPE=radio NAME="modem" VALUE="9600"> 9600
+<INPUT TYPE=radio NAME="modem" VALUE="14400" CHECKED> 14400
+<INPUT TYPE=radio NAME="modem" VALUE="28800"> 28800 bits a second
+<P>Anything else:<BR>
+<TEXTAREA NAME="comments" ROWS=3 COLS=40></TEXTAREA>
+<P><INPUT TYPE=submit NAME="send" VALUE="Send"> <INPUT TYPE=reset>
+</FORM>
+
+<P>The same, sent with POST: the fields in the request's body, not in
+the URL, where a password should not be.
+
+<FORM ACTION="about:echo" METHOD=POST>
+<P>Password: <INPUT TYPE=password NAME="secret" SIZE=12> <INPUT TYPE=submit>
+</FORM>
+
+<P>And one answered by a server, when this page comes from
+<CODE>tiny_httpd</CODE> (<CODE>http://localhost:8080/form.html</CODE>):
+a CGI program, <CODE>cgi-bin/echo</CODE>, run for the request.
+
+<FORM ACTION="cgi-bin/echo" METHOD=POST>
+<P>Say something: <INPUT NAME="said" SIZE=30> <INPUT TYPE=submit>
+</FORM>
+</BODY>
+</HTML>

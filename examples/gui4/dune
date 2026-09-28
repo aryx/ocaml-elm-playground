@@ -1,0 +1,12 @@
+; claude: 7GUIs tasks, each written four ways -- immediate mode,
+; callbacks, MVC, MVU -- over the same gui/ widgets and the same Look.
+; Example code, but a library: examples/GuiFourWays runs the four side
+; by side, and tests/Unit_gui4 checks that, fed the same session, they
+; paint the same picture (see
+; docs/claude_notes/tutorials/notes_gui.md section 4). Pure OCaml, like
+; gui/; not installed.
+(library
+ (name gui4)
+ (wrapped false)
+ (libraries elm_core gui)
+)

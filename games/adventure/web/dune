@@ -1,0 +1,49 @@
+; claude: the same games as ../dune, in the browser: the 2D ones on
+; elm_playground_web, the 3D ones on WebGL; and ../dune's Tomb_atlas.ml
+; with them, and Lttp_xpm.ml
+(copy_files ../*.ml)
+
+(executables
+  (names TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus TinyMyst)
+  (modules TinyGTA TinyIco TinyJourney TinyManiacMansion TinyMetalGearSolid TinyZelda TinyZeldaLinkPast TinyZork TinyWumpus TinyMyst Lttp_xpm)
+  (libraries
+    elm_playground
+    kit_platformer
+    kit_shmup
+    ai
+    kit_racing
+    kit_adventure
+    appkit_teletype
+    myst
+    hypertalk
+    graphics_raytrace
+    graphics_jpeg
+    elm_playground_web ; implem of virtual elm_playground
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+(executables
+  (names TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina)
+  (modules TinyAloneInTheDark TinyTombRaider TinyZeldaOcarina Tomb_atlas)
+  (libraries
+    elm_core
+    kit_brawler3d
+    kit_brawler
+    kit_heightmap
+    kit_puzzle
+    elm_playground
+    elm_playground_web ; implem of virtual elm_playground (elm_playground_3d's own dep)
+    elm_playground_3d
+    elm_playground_3d_webgl ; implem of virtual elm_playground_3d
+  )
+  (modes js)
+  (link_flags -no-check-prims)
+)
+
+; the .html pages next to the .bc.js
+(rule
+  (alias default)
+  (deps (glob_files *.html) (alias all))
+  (action (progn)))

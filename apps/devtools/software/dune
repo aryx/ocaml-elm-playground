@@ -1,0 +1,21 @@
+; claude: the same apps against the software rasterizer, for the golden
+; frames (see examples/software/dune): ../Foo.ml reused as-is by a
+; build-time copy, not a committed duplicate.
+(copy_files ../*.ml)
+
+(executables
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap Scratch_look Scratch_ide)
+  (libraries
+    basic ; Basic_parse, Basic_run, Basic_session
+    appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
+    smalltalk ; the Blue Book's Smalltalk-80, St_*
+    caps ; TinySmalltalk80's image and file outs, in the store
+    graphics_rgba ; the Smalltalk Display's pixels, a picture
+    scratch ; Scratch_blocks, Scratch_text, Scratch_run (TinyScratch, TinySnap)
+    appkit_blocks ; Block_layout, Block_edit
+    graphics_font ; Hershey, the blocks' words measured
+    elm_playground
+    elm_playground_software ; implem of virtual elm_playground
+  )
+)

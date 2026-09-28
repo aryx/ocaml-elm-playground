@@ -1,0 +1,12 @@
+; claude: randomness, from scratch, for teaching (plan_teaching_other.md
+; item 4): one idea per module, each .mli with its diagram, worked
+; example and references, like graphics/, physics/ and audio/. So far
+; the one generator the playground's seeded randomness stands on
+; (Playground.random, plan_playground_other.md section 1). A private
+; library, installed as part of elm_playground: pure OCaml, the same
+; numbers natively and in a browser.
+(library
+ (name random)
+ (package elm_playground)
+ (wrapped false)
+)

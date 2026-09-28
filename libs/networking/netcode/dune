@@ -1,0 +1,15 @@
+; claude: the netcode of multiplayer games (plan_networking_teaching.md,
+; notes_networking.md): Checksum (a model's bytes hashed, for desyncs),
+; Sim_net (a network in one process), Inputs (the input exchange),
+; Lockstep, Rollback, and the client-server trio Snapshot, Prediction,
+; Interpolation; under Multiplayer. On the protocols' Wire.
+; Pure OCaml. See networking/README.md.
+(library
+ (name networking_netcode)
+ (package elm_playground)
+ (wrapped false)
+ (libraries
+   random ; Lehmer, Sim_net's seeded network
+   networking_protocols ; Wire
+ )
+)

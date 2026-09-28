@@ -1,0 +1,684 @@
+; claude: the games' rules, played without drawing them: each test
+; plays a game headlessly, calling its update frame after frame with
+; keys held, and checks the model (a car's laps, a ghost's state, a
+; bomb's fire) -- scenario tests of the rules, where the golden frames
+; (tests/2d, tests/3d) check the pixels. See Unit_games.ml.
+;
+; A game's source can't be linked as is: its last line,
+;   let main = Playground_platform.run_app app
+; runs the game when the module is initialized. So each game is copied
+; here with that line turned into a function, never called:
+;   let main () = Playground_platform.run_app app
+; (the games themselves unchanged; see notes_debugging_techniques.md
+; section 9 for the same trick done by hand).
+
+; claude: TinyTronscroll, for Unit_tronscroll (its options' rules)
+(rule
+ (target TinyTronscroll.ml)
+ (deps (:src %{project_root}/games/arcade/TinyTronscroll.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+; claude: Tetris, for Unit_determinism (its randomness in the model)
+(rule
+ (target Tetris.ml)
+ (deps (:src %{project_root}/games/puzzle/Tetris.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySokoban.ml)
+ (deps (:src %{project_root}/games/puzzle/TinySokoban.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+; claude: TinyCeleste's Madeline, embedded as games/platform/dune does
+; (the copied game expects the module here too)
+(rule
+ (targets Celeste_xpm.ml)
+ (deps %{project_root}/games/platform/celeste_madeline.xpm)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let madeline = {|")
+    (cat %{deps})
+    (echo "|}\n")))))
+
+; claude: TinyMario's sprites, for TinyMarioGalaxy2D: the module
+; games/platform/dune generates, copied
+(rule
+ (targets Mario_xpm.ml)
+ (action (copy %{project_root}/games/platform/Mario_xpm.ml %{targets})))
+
+; claude: and its levels, embedded as games/puzzle/dune does
+(rule
+ (targets Sokoban_levels.ml)
+ (deps %{project_root}/games/puzzle/TinySokoban.xsb)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let xsb = {|")
+    (cat %{deps})
+    (echo "|}\n")))))
+
+(rule
+ (target TinyPacman.ml)
+ (deps (:src %{project_root}/games/arcade/TinyPacman.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySoldat.ml)
+ (deps (:src %{project_root}/games/arcade/TinySoldat.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target AiConnect4.ml)
+ (deps (:src %{project_root}/games/puzzle/AiConnect4.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target AiGo.ml)
+ (deps (:src %{project_root}/games/puzzle/AiGo.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBomberman.ml)
+ (deps (:src %{project_root}/games/arcade/TinyBomberman.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMicroMachines.ml)
+ (deps (:src %{project_root}/games/racing/TinyMicroMachines.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDoom.ml)
+ (deps (:src %{project_root}/games/fps/TinyDoom.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+; claude: TinyMinecraft's texture, embedded as base64 beside it (the
+; same rule as games/fps/dune's: the copied game expects the module here
+; too)
+(rule
+ (targets Texture_atlas.ml)
+ (deps %{project_root}/games/fps/minecraft.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml %{project_root}/games/fps/minecraft.png))))
+
+; claude: and the tomb's, for TinyTombRaider
+(rule
+ (targets Tomb_atlas.ml)
+ (deps %{project_root}/games/adventure/tomb.png %{project_root}/scripts/build/file_to_base64_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (run ocaml %{project_root}/scripts/build/file_to_base64_ml.ml %{project_root}/games/adventure/tomb.png))))
+
+(rule
+ (target TinyTombRaider.ml)
+ (deps (:src %{project_root}/games/adventure/TinyTombRaider.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMinecraft.ml)
+ (deps (:src %{project_root}/games/fps/TinyMinecraft.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyQuake.ml)
+ (deps (:src %{project_root}/games/fps/TinyQuake.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDescent.ml)
+ (deps (:src %{project_root}/games/flight/TinyDescent.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyComanche.ml)
+ (deps (:src %{project_root}/games/flight/TinyComanche.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMarioKart.ml)
+ (deps (:src %{project_root}/games/racing/TinyMarioKart.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMario64.ml)
+ (deps (:src %{project_root}/games/platform/TinyMario64.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPinball3d.ml)
+ (deps (:src %{project_root}/games/sports/TinyPinball3d.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyHalfLife2.ml)
+ (deps (:src %{project_root}/games/fps/TinyHalfLife2.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPortal.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyPortal.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMarbleMadness.ml)
+ (deps (:src %{project_root}/games/arcade/TinyMarbleMadness.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyXpilot.ml)
+ (deps (:src %{project_root}/games/flight/TinyXpilot.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyGalaga.ml)
+ (deps (:src %{project_root}/games/shmup/TinyGalaga.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDonkeyKong.ml)
+ (deps (:src %{project_root}/games/platform/TinyDonkeyKong.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyLodeRunner.ml)
+ (deps (:src %{project_root}/games/platform/TinyLodeRunner.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyRick.ml)
+ (deps (:src %{project_root}/games/platform/TinyRick.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyGradius.ml)
+ (deps (:src %{project_root}/games/shmup/TinyGradius.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyZelda.ml)
+ (deps (:src %{project_root}/games/adventure/TinyZelda.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyZeldaLinkPast.ml)
+ (deps (:src %{project_root}/games/adventure/TinyZeldaLinkPast.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+; claude: and its pixel art, embedded as games/adventure/dune does
+(rule
+ (targets Lttp_xpm.ml)
+ (deps
+  (:link %{project_root}/games/adventure/lttp_link.xpm)
+  (:soldier %{project_root}/games/adventure/lttp_soldier.xpm)
+  (:tree %{project_root}/games/adventure/lttp_tree.xpm)
+  (:tiles %{project_root}/games/adventure/lttp_tiles.xpm)
+  (:items %{project_root}/games/adventure/lttp_items.xpm)
+  (:pedestal %{project_root}/games/adventure/lttp_pedestal.xpm))
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let link = {|")
+    (cat %{link})
+    (echo "|}\nlet soldier = {|")
+    (cat %{soldier})
+    (echo "|}\nlet tree = {|")
+    (cat %{tree})
+    (echo "|}\nlet tiles = {|")
+    (cat %{tiles})
+    (echo "|}\nlet items = {|")
+    (cat %{items})
+    (echo "|}\nlet pedestal = {|")
+    (cat %{pedestal})
+    (echo "|}\n")))))
+
+(rule
+ (target TinyRogue.ml)
+ (deps (:src %{project_root}/games/rpg/TinyRogue.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyStreetFighter.ml)
+ (deps (:src %{project_root}/games/fighting/TinyStreetFighter.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyFinalFight.ml)
+ (deps (:src %{project_root}/games/fighting/TinyFinalFight.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBabaIsYou.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyBabaIsYou.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMissileCommand.ml)
+ (deps (:src %{project_root}/games/shmup/TinyMissileCommand.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyLemmings.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyLemmings.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPuzzleBobble.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyPuzzleBobble.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySonic.ml)
+ (deps (:src %{project_root}/games/platform/TinySonic.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyRobotron.ml)
+ (deps (:src %{project_root}/games/shmup/TinyRobotron.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPinball.ml)
+ (deps (:src %{project_root}/games/sports/TinyPinball.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPortal2D.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyPortal2D.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyGauntlet2.ml)
+ (deps (:src %{project_root}/games/rpg/TinyGauntlet2.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyKickOff2.ml)
+ (deps (:src %{project_root}/games/sports/TinyKickOff2.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySpeedball2.ml)
+ (deps (:src %{project_root}/games/sports/TinySpeedball2.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySensibleSoccer.ml)
+ (deps (:src %{project_root}/games/sports/TinySensibleSoccer.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyGuitarHero.ml)
+ (deps (:src %{project_root}/games/rhythm/TinyGuitarHero.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyRockBand.ml)
+ (deps (:src %{project_root}/games/rhythm/TinyRockBand.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyWorms.ml)
+ (deps (:src %{project_root}/games/strategy/TinyWorms.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMetroid.ml)
+ (deps (:src %{project_root}/games/platform/TinyMetroid.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyXCOM.ml)
+ (deps (:src %{project_root}/games/strategy/TinyXCOM.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyIncredibleMachine.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyIncredibleMachine.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyRType.ml)
+ (deps (:src %{project_root}/games/shmup/TinyRType.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMarioWorld.ml)
+ (deps (:src %{project_root}/games/platform/TinyMarioWorld.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyCivilization.ml)
+ (deps (:src %{project_root}/games/strategy/TinyCivilization.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySimCity.ml)
+ (deps (:src %{project_root}/games/strategy/TinySimCity.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDDR.ml)
+ (deps (:src %{project_root}/games/rhythm/TinyDDR.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPerspective.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyPerspective.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyFez.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyFez.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+; claude: and its pixel art, embedded as games/puzzle/dune does (the
+; copied game expects the module here too)
+(rule
+ (targets Fez_xpm.ml)
+ (deps
+  (:brick %{project_root}/games/puzzle/fez_brick.xpm)
+  (:grass %{project_root}/games/puzzle/fez_grass.xpm)
+  (:stand %{project_root}/games/puzzle/fez_gomez_stand.xpm)
+  (:walk %{project_root}/games/puzzle/fez_gomez_walk.xpm)
+  (:bit %{project_root}/games/puzzle/fez_bit.xpm))
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let brick = {|")
+    (cat %{brick})
+    (echo "|}\nlet grass = {|")
+    (cat %{grass})
+    (echo "|}\nlet gomez_stand = {|")
+    (cat %{stand})
+    (echo "|}\nlet gomez_walk = {|")
+    (cat %{walk})
+    (echo "|}\nlet bit = {|")
+    (cat %{bit})
+    (echo "|}\n")))))
+
+(rule
+ (target TinyMazeWar.ml)
+ (deps (:src %{project_root}/games/fps/TinyMazeWar.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyTennisForTwo.ml)
+ (deps (:src %{project_root}/games/sports/TinyTennisForTwo.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyTonyHawk.ml)
+ (deps (:src %{project_root}/games/sports/TinyTonyHawk.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyHamurabi.ml)
+ (deps (:src %{project_root}/games/strategy/TinyHamurabi.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyManiacMansion.ml)
+ (deps (:src %{project_root}/games/adventure/TinyManiacMansion.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyZork.ml)
+ (deps (:src %{project_root}/games/adventure/TinyZork.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyGTA.ml)
+ (deps (:src %{project_root}/games/adventure/TinyGTA.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMetalGearSolid.ml)
+ (deps (:src %{project_root}/games/adventure/TinyMetalGearSolid.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBraid.ml)
+ (deps (:src %{project_root}/games/platform/TinyBraid.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyCeleste.ml)
+ (deps (:src %{project_root}/games/platform/TinyCeleste.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySuperMeatBoy.ml)
+ (deps (:src %{project_root}/games/platform/TinySuperMeatBoy.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyVVVVVV.ml)
+ (deps (:src %{project_root}/games/platform/TinyVVVVVV.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyKarel.ml)
+ (deps (:src %{project_root}/games/programming/TinyKarel.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyStoneAge.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyStoneAge.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMarioGalaxy.ml)
+ (deps (:src %{project_root}/games/platform/TinyMarioGalaxy.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMarioGalaxy2D.ml)
+ (deps (:src %{project_root}/games/platform/TinyMarioGalaxy2D.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMonumentValley.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyMonumentValley.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyHades.ml)
+ (deps (:src %{project_root}/games/rpg/TinyHades.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDiablo.ml)
+ (deps (:src %{project_root}/games/rpg/TinyDiablo.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyZaxxon.ml)
+ (deps (:src %{project_root}/games/shmup/TinyZaxxon.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDefender.ml)
+ (deps (:src %{project_root}/games/shmup/TinyDefender.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyJoust.ml)
+ (deps (:src %{project_root}/games/platform/TinyJoust.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyWarcraft2.ml)
+ (deps (:src %{project_root}/games/strategy/TinyWarcraft2.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDune2.ml)
+ (deps (:src %{project_root}/games/strategy/TinyDune2.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyTowerDefense.ml)
+ (deps (:src %{project_root}/games/strategy/TinyTowerDefense.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target AiOthello.ml)
+ (deps (:src %{project_root}/games/puzzle/AiOthello.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target AiChess.ml)
+ (deps (:src %{project_root}/games/puzzle/AiChess.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBoomerangFu.ml)
+ (deps (:src %{project_root}/games/arcade/TinyBoomerangFu.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyElite.ml)
+ (deps (:src %{project_root}/games/flight/TinyElite.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyShufflePuck.ml)
+ (deps (:src %{project_root}/games/sports/TinyShufflePuck.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBattlezone.ml)
+ (deps (:src %{project_root}/games/fps/TinyBattlezone.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyElite3d.ml)
+ (deps (:src %{project_root}/games/flight/TinyElite3d.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyTeardown.ml)
+ (deps (:src %{project_root}/games/fps/TinyTeardown.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyAloneInTheDark.ml)
+ (deps (:src %{project_root}/games/adventure/TinyAloneInTheDark.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyZeldaOcarina.ml)
+ (deps (:src %{project_root}/games/adventure/TinyZeldaOcarina.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyStarFox.ml)
+ (deps (:src %{project_root}/games/shmup/TinyStarFox.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyVirtuaFighter.ml)
+ (deps (:src %{project_root}/games/fighting/TinyVirtuaFighter.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMarioKart64.ml)
+ (deps (:src %{project_root}/games/racing/TinyMarioKart64.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyBlockout.ml)
+ (deps (:src %{project_root}/games/puzzle/TinyBlockout.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target PuzzleScriptSokoban.ml)
+ (deps (:src %{project_root}/examples/PuzzleScriptSokoban.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target PuzzleScriptBoulders.ml)
+ (deps (:src %{project_root}/examples/PuzzleScriptBoulders.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyDungeonMaster.ml)
+ (deps (:src %{project_root}/games/rpg/TinyDungeonMaster.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyFreeCell.ml)
+ (deps (:src %{project_root}/games/cards/TinyFreeCell.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinySolitaire.ml)
+ (deps (:src %{project_root}/games/cards/TinySolitaire.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyCoreWar.ml)
+ (deps (:src %{project_root}/games/programming/TinyCoreWar.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyLunarLander.ml)
+ (deps (:src %{project_root}/games/arcade/TinyLunarLander.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyFrogger.ml)
+ (deps (:src %{project_root}/games/arcade/TinyFrogger.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyPrinceOfPersia.ml)
+ (deps (:src %{project_root}/games/platform/TinyPrinceOfPersia.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(test
+ (name Test)
+ (libraries
+   alcotest
+   testo
+   testutil ; Testutil_heavy, the searches make test-lite skips
+   elm_core
+   elm_playground
+   elm_playground_software ; an implem of virtual elm_playground
+   elm_playground_3d
+   elm_playground_3d_software ; an implem of virtual elm_playground_3d
+   graphics_3d ; Cull, against TinyElite's hidden lines
+   kit_racing
+   kit_racing3d ; TinyMarioKart64's circuit
+   kit_brawler3d ; TinyVirtuaFighter's Skeleton
+   kit_sectors
+   kit_heightmap
+   kit_segments
+   kit_isometric
+   kit_maze
+   kit_lightcycles
+   kit_shmup
+   kit_platformer
+   kit_brawler
+   kit_puzzle
+   kit_rhythm
+   kit_sports
+   ai ; AiOthello's Minimax, TinyDungeonMaster's Pathfind
+   kit_rts
+   kit_cards ; TinyFreeCell's and TinySolitaire's cards and deals
+   kit_adventure ; TinyZork's and TinyManiacMansion's world, Adventure
+   networking ; Checksum, for Unit_determinism
+ )
+ ; claude: 4 workers, not Testo's default of one per core: each worker
+ ; starts by paying for every game's setup again, so on 64 cores this
+ ; suite took 197 s of CPU for the 15 it takes here, in the same 5 s
+ (action (run %{test} -j 4))
+)

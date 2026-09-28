@@ -1,0 +1,10 @@
+; claude: MPEG audio, decoded by our own code: MP2 (Layer2) and MP3
+; (Layer3), their frames (Mpeg_audio_header) and the filterbank they
+; end with (Polyphase), read with compression's Bits and Vlc. Pure
+; OCaml. A private library, installed as part of elm_playground.
+(library
+ (name audio_mpeg)
+ (package elm_playground)
+ (wrapped false)
+ (libraries audio_signal compression)
+)

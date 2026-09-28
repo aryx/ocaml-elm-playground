@@ -1,0 +1,11 @@
+; claude: Sketchpad's drawing (Ivan Sutherland, MIT, 1963; see
+; docs/claude_notes/plans/plan_cad.md): points shared by the lines and
+; circles on them, constraints, instances of other sheets (Sketch), and
+; the relaxation that makes the constraints hold (Relax). Used by
+; TinySketchpad. A private library, installed as part of
+; elm_playground: pure OCaml.
+(library
+ (name appkit_sketch)
+ (package elm_playground)
+ (wrapped false)
+)
