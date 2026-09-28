@@ -26,6 +26,7 @@
    appkit_pim ; Ics, Vcard
    appkit_money ; Money, Ledger, Reconcile, Qif
    appkit_nls ; Nls_doc
+   appkit_diagram ; Diagram, Ortho_route
    appkit_astronomy ; Celestial, Ephemeris, Bright_stars, Stereographic
    appkit_teletype ; Tty_hangman, Tty_guess
    basic ; Basic_parse, Basic_run, Basic_session

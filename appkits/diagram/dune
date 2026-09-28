@@ -1,0 +1,14 @@
+; claude: diagrams as Visio made them (TinyVisio, apps/graphics/): a
+; page of shapes whose geometry is formulas in named cells, the whole
+; page one sheet of appkits/sheet's engine, so that glue is a formula
+; and a connector follows the shape it is glued to (Diagram); and the
+; connectors' right-angled routes around the shapes (Ortho_route).
+;
+; Pure OCaml, no gui, no playground: a private library, installed as
+; part of elm_playground; tested without a screen in appkits/tests/.
+(library
+ (name appkit_diagram)
+ (package elm_playground)
+ (wrapped false)
+ (libraries appkit_sheet)
+)

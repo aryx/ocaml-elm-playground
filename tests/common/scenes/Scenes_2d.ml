@@ -195,6 +195,9 @@ let scenes : Golden_scene.scene list =
     (* 1984: a page described as a program, the tree its recursive
      * procedure draws -- 50,151 objects executed, run at once *)
     ("apps/graphics/software/TinyPostScript", "", 12);
+    (* 1992: a flowchart glued and routed round, and the block arrow's
+     * ShapeSheet -- its geometry as formulas in named cells *)
+    ("apps/graphics/software/TinyVisio", "", 5);
     (* 1986: one text flowing over pages from a master page, a sheet
      * anchored in it *)
     ("apps/office/software/TinyFrameMaker", "", 5);
@@ -1712,6 +1715,17 @@ let scripted : Golden_scene.scripted list =
     (* Step, twice: /tree, then its procedure -- pushed on the operand
      * stack as data, not run, until def names it *)
     ("apps/graphics/software/TinyPostScript", "step", 10, "at(-196;-60):2-9,click:3,click:6");
+    (* the arrow stretched by its corner: the shaft longer, the head as
+     * it was, User.Head = MIN(0.5, Width*0.5) *)
+    ("apps/graphics/software/TinyVisio", "stretch", 16, "at(-104;-18):2-5,click:4-12,at(-40;-18):6-7,at(20;-18):8-9,at(60;-18):10-16");
+    (* Ship it dragged down: the yes connector's end, a formula naming
+     * its cells, follows it, rerouted in right angles *)
+    ("apps/graphics/software/TinyVisio", "move", 16, "at(215;362):2-5,click:4-12,at(215;300):6-7,at(215;200):8-9,at(215;120):10-16");
+    (* a formula of one's own: User.Head typed over, Width*0.5 *)
+    ("apps/graphics/software/TinyVisio", "formula", 12, "at(-450;-221):2-4,click:3,type(Width*0.5):6,return:8");
+    (* a connector dragged from the arrow's tip to Order more: glued at
+     * both ends, the formulas in its ShapeSheet *)
+    ("apps/graphics/software/TinyVisio", "glue", 16, "at(-103;14):2-5,click:4-12,at(-80;60):6-7,at(-50;130):8-9,at(-35;159):10-16");
     (* claude: TinyDeluxePaint: a stroke in symmetry, six times around
      * the middle; the sun cut as a brush, its band of sky the
      * transparent colour (a right click on it), stamped thrice *)
