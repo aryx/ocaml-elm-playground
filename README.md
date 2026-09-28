@@ -27,7 +27,7 @@ your browser, from the same source file:
 | [TinyBreakout](games/arcade/TinyBreakout.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html)) | [TinyTurboPascal](apps/devtools/TinyTurboPascal.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html)) |
 | :---: | :---: |
 | <a href="https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html"><img src="docs/screenshots/game-breakout.png" width="400" alt="TinyBreakout"></a> | <a href="https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html"><img src="docs/screenshots/app-turbopascal.png" width="400" alt="TinyTurboPascal"></a> |
-| Breakout (Atari, 1976): the wall, the paddle, the ball -- **525 lines**, in one file | Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger -- **3,213 lines** in 15 files: the IDE, and the Pascal compiler and P-machine under it |
+| Breakout (Atari, 1976): the wall, the paddle, the ball -- **525 lines**, [in one file](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyBreakout) | Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger -- **3,213 lines** [in 15 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyTurboPascal): the IDE, and the Pascal compiler and P-machine under it |
 
 They are all in [CATALOG.md](CATALOG.md), and all in one menu,
 [tinybox](https://aryx.github.io/ocaml-elm-playground/tinybox.html)
@@ -79,23 +79,34 @@ With the library doing the heavy lifting, a program built on it stays
 short enough to read in one sitting. It is not a toy sketch either, but
 a working version of a famous original:
 
-- [TinyMario](games/platform/TinyMario.ml): **350 lines**;
-- [TinyStreetFighter](games/fighting/TinyStreetFighter.ml): 450 lines;
-- [TinyZelda](games/adventure/TinyZelda.ml): 380 lines;
-- [TinyDoom](games/fps/TinyDoom.ml): 500 lines, and its 3D twin
-  [TinyDoom3d](games/fps/TinyDoom3d.ml), over the same level: 180;
-- [TinyQuake](games/fps/TinyQuake.ml), whose level is compiled by its
-  own qbsp, vis and light at startup: 600 lines;
-- [TinySimCity](games/strategy/TinySimCity.ml): 530 lines;
-- [TinyExcel](apps/office/TinyExcel.ml), a spreadsheet with a menu bar,
-  a formula bar and range selection: **300 lines**. It uses the same
-  engine as [TinyVisiCalc](apps/office/TinyVisiCalc.ml), and the header
-  explains what changed between 1979 and 1985;
-- [TinyWord](apps/office/TinyWord.ml), a word processor: 450 lines;
-- [TinyMacPaint](apps/graphics/TinyMacPaint.ml), with its patterns and
-  flood fill: 540 lines;
-- [TinyMinimoog](apps/music/TinyMinimoog.ml), the Model D synthesizer
-  with its panel of knobs: 400 lines.
+- [TinyMario](games/platform/TinyMario.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/platform/TinyMario.html)):
+  **[350 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMario)**;
+- [TinyStreetFighter](games/fighting/TinyStreetFighter.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fighting/TinyStreetFighter.html)):
+  [450 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyStreetFighter);
+- [TinyZelda](games/adventure/TinyZelda.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/adventure/TinyZelda.html)):
+  [380 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyZelda);
+- [TinyDoom](games/fps/TinyDoom.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fps/TinyDoom.html)):
+  [500 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyDoom), and its 3D twin
+  [TinyDoom3d](games/fps/TinyDoom3d.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fps/TinyDoom3d.html)),
+  over the same level: [180](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyDoom3d);
+- [TinyQuake](games/fps/TinyQuake.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/fps/TinyQuake.html)),
+  whose level is compiled by its own qbsp, vis and light at startup:
+  [600 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyQuake);
+- [TinySimCity](games/strategy/TinySimCity.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/strategy/TinySimCity.html)):
+  [530 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinySimCity);
+- [TinyExcel](apps/office/TinyExcel.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/office/TinyExcel.html)),
+  a spreadsheet with a menu bar, a formula bar and range selection:
+  **[300 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyExcel)**. It uses the same
+  engine as [TinyVisiCalc](apps/office/TinyVisiCalc.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/office/TinyVisiCalc.html)),
+  and the header explains what changed between 1979 and 1985;
+- [TinyWord](apps/office/TinyWord.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/office/TinyWord.html)),
+  a word processor: [450 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyWord);
+- [TinyMacPaint](apps/graphics/TinyMacPaint.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/graphics/TinyMacPaint.html)),
+  with its patterns and flood fill:
+  [540 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMacPaint);
+- [TinyMinimoog](apps/music/TinyMinimoog.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/music/TinyMinimoog.html)),
+  the Model D synthesizer with its panel of knobs:
+  [400 lines](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyMinimoog).
 
 **A budget.** No program may be longer than **5,000 lines of its own
 code**. That counts its file and every module of its folder, of the
@@ -117,6 +128,20 @@ browser's engine), [TinyMosaic](apps/internet/TinyMosaic.ml) (the
 browser's engine: HTML, CSS and the layout), and
 [TinyOffice](apps/office/TinyOffice.ml) (the spreadsheet's formulas
 and HyperTalk).
+
+The biggest, [TinyChrome](apps/internet/TinyChrome.ml), is **14,991
+lines**, [in 89 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyChrome).
+Yes, you read that right: 15,000 lines of OCaml for a web browser that
+parses HTML and CSS, cascades the styles, lays out blocks, floats,
+tables and flexbox, draws SVG, plays `<video>`, carries its own
+JavaScript engine and Chrome's developer tools -- enough to read
+Hacker News with it, over the repository's own TLS 1.3:
+
+    tinybox chrome url=https://news.ycombinator.com
+
+It runs [in your browser](https://aryx.github.io/ocaml-elm-playground/apps/internet/TinyChrome.html)
+too, but there a page may only read the sites that allow it (CORS), and
+Hacker News does not: on the web it shows its own built-in pages.
 
 There are 145 games and 53 applications like these, listed in
 [CATALOG.md](CATALOG.md). Each one starts with a header about its
