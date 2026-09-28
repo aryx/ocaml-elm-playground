@@ -246,7 +246,7 @@ type env = (string * (category * int)) list
 let resolve (file : file) :
     (int, category) Hashtbl.t
     * (int, int) Hashtbl.t
-    * ((int * Highlight_code.space) list * (int * string list * Highlight_code.space) list * string list) =
+    * ((int * Highlight_code.space * string) list * (int * string list * Highlight_code.space * string list) list * string list) =
   let out = Hashtbl.create 1024 in
   let binds = Hashtbl.create 256 in
   let mark (n : name) (c : category) = if n.tok >= 0 then Hashtbl.replace out n.tok c in
@@ -261,15 +261,22 @@ let resolve (file : file) :
    * own namespace as in OCaml. A name no local binds is bound to the
    * latest of its kind; a module's struct keeps its own to itself *)
   let top_values : env ref = ref [] and top_types : env ref = ref [] and top_constrs : env ref = ref [] in
-  (* claude: and for other files (level 3): the file's own top-level
-   * definitions (not a nested module's, [depth] > 0), its names defined
-   * elsewhere (M.x, or not defined here), its opens; tokens' indexes *)
+  (* claude: and for other files (level 3): the file's definitions, a
+   * nested module's by their path (N.x: [prefix], the modules we are in,
+   * innermost first; none in an unnamed struct, [depth] deeper than
+   * [prefix]), its names defined elsewhere (M.x, or not defined here)
+   * with the modules opened around them ([local_opens], let open M in,
+   * M.(e)), its top-level opens; tokens' indexes *)
   let defs = ref [] and refs = ref [] and opens = ref [] and depth = ref 0 in
+  let prefix = ref [] and local_opens = ref [] in
+  let record (tok : int) (space : Highlight_code.space) (text : string) =
+    if tok >= 0 && !depth = List.length !prefix then defs := (tok, space, String.concat "." (List.rev (text :: !prefix))) :: !defs
+  in
   let define (r : env ref) (space : Highlight_code.space) (n : name) (c : category) =
     if n.tok >= 0 then begin
       Hashtbl.replace binds n.tok n.tok;
       r := (n.text, (c, n.tok)) :: !r;
-      if !depth = 0 then defs := (n.tok, space) :: !defs
+      record n.tok space n.text
     end
   in
   let refer (r : env ref) (space : Highlight_code.space) (l : longid) =
@@ -277,9 +284,17 @@ let resolve (file : file) :
     | [ n ] -> (
         match List.assoc_opt n.text !r with
         | Some (_, b) -> if n.tok >= 0 && b >= 0 then Hashtbl.replace binds n.tok b
-        | None -> if n.tok >= 0 then refs := (n.tok, [], space) :: !refs)
-    | n :: ms -> if n.tok >= 0 then refs := (n.tok, List.rev_map (fun (m : name) -> m.text) ms, space) :: !refs
+        | None -> if n.tok >= 0 then refs := (n.tok, [], space, !local_opens) :: !refs)
+    | n :: ms -> if n.tok >= 0 then refs := (n.tok, List.rev_map (fun (m : name) -> m.text) ms, space, !local_opens) :: !refs
     | [] -> ()
+  in
+  (* the last name of a module's path: M.N is N *)
+  let last_name (l : longid) = match List.rev l with n :: _ -> Some n.text | [] -> None in
+  (* inside module [n]'s body: its definitions are n's, N.x *)
+  let in_module (n : name) (f : unit -> unit) =
+    prefix := n.text :: !prefix;
+    f ();
+    prefix := List.tl !prefix
   in
   let scoped (f : unit -> unit) =
     let v, t, c = (!top_values, !top_types, !top_constrs) in
@@ -377,7 +392,13 @@ let resolve (file : file) :
         expr env a; expr env b; expr (bound :: env) body
     | Econstraint (e, t) -> expr env e; ty t
     | Eletmodule (n, m, body) -> mark n Module; modexpr m; expr env body
-    | Eopen (m, e) -> modexpr m; expr env e
+    | Eopen (m, e) ->
+        modexpr m;
+        (* let open M in e, M.(e): M's names seen first in e *)
+        let saved = !local_opens in
+        (match m with Mident l -> Option.iter (fun n -> local_opens := n :: !local_opens) (last_name l) | _ -> ());
+        expr env e;
+        local_opens := saved
     | Enewtype (n, e) -> mark n Type; expr env e
     | Epack m -> modexpr m
   (* a function's parameters, and their defaults *)
@@ -435,7 +456,7 @@ let resolve (file : file) :
               | p ->
                   let bound = pat Def_value p in
                   top_values := bound @ !top_values;
-                  if !depth = 0 then List.iter (fun (_, (_, tok)) -> if tok >= 0 then defs := (tok, Highlight_code.Value) :: !defs) bound)
+                  List.iter (fun (text, (_, tok)) -> record tok Highlight_code.Value text) bound)
             bs
         in
         if recursive then (names (); List.iter top_binding bs) else (List.iter top_binding bs; names ())
@@ -459,8 +480,8 @@ let resolve (file : file) :
     | Iexception c -> constr c; mark c.cname Def_type; define top_constrs Constr c.cname Def_type
     | Iexternal (n, t) -> mark n Def_function; ty t; define top_values Value n Def_function
     | Ival (n, t) -> mark n (match t with Tarrow _ -> Def_function | _ -> Def_value); ty t; define top_values Value n Def_value
-    | Imodule (n, m) -> mark n Def_module; modexpr m
-    | Imodsig (n, t) -> mark n Def_module; modtype t
+    | Imodule (n, m) -> mark n Def_module; in_module n (fun () -> modexpr m)
+    | Imodsig (n, t) -> mark n Def_module; in_module n (fun () -> modtype t)
     | Imodtype (n, t) -> mark n Def_module; Option.iter modtype t
     | Iopen m ->
         (match m with Mident l when !depth = 0 -> ( match List.rev l with n :: _ -> opens := n.text :: !opens | [] -> ()) | _ -> ());
@@ -508,8 +529,8 @@ let analyze (src : string) : analysis =
   {
     spans = Highlight_code.lines src (List.rev (List.rev_map (fun ((t : Token_ml.t), c) -> (t.line, t.col, t.text, c)) cats));
     occurrences = Highlight_code.occurrences places binds;
-    definitions = List.rev (List.rev_map (fun (tok, space) -> Highlight_code.definition places tok space 3) defs);
-    references = List.rev (List.rev_map (fun (tok, path, space) -> Highlight_code.reference places tok path space) refs);
+    definitions = List.rev (List.rev_map (fun (tok, space, name) -> Highlight_code.definition ~name places tok space 3) defs);
+    references = List.rev (List.rev_map (fun (tok, path, space, opens) -> Highlight_code.reference ~opens places tok path space) refs);
     opens;
     includes = [];
   }

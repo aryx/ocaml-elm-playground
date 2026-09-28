@@ -8,8 +8,10 @@
 
    OCaml. M.x: x among the top-level definitions of M's files (m.ml,
    m.mli), a module being a file by its name, the libraries being
-   unwrapped. A bare x its file does not define: among its opened
-   modules', the last open first, the first that has it (OCaml's own
+   unwrapped. M.N.x: N.x in M's files (a nested module's x), else x in
+   N's own (a wrapped library's). A bare x its file does not define:
+   among the modules opened around it (let open M in, M.(e)), then its
+   file's opens, the last open first, the first that has it (OCaml's own
    rule). Several files of one module's name (two Parser.ml): the one
    whose directory shares the most with the use's, the .ml before its
    .mli.
@@ -33,9 +35,14 @@ type candidate = {
   col : int;
   len : int;
   near : int * int; (* its rank: lower is nearer (a group, then minus the path shared) *)
+  other_project : bool; (* under another root than the use (below) *)
 }
 
-(* [find files ~from f r]: [r], used in [f] (at [from]), among [files]
-   (the map's, lexed if need be): the candidates, the nearest first, and
-   whether the first is alone at its rank *)
-val find : (string * Code_file.t Lazy.t) list -> from:string -> Code_file.t -> Highlight_code.reference -> candidate list * bool
+(* [find ?roots files ~from f r]: [r], used in [f] (at [from]), among
+   [files] (the map's, lexed if need be): the candidates, the nearest
+   first, and whether the first is alone at its rank. [roots]: the
+   projects' top directories in the map (a .git, a dune-project there);
+   a file's project is the deepest root above it, and another project's
+   candidates come after all of the use's own, marked *)
+val find :
+  ?roots:string list -> (string * Code_file.t Lazy.t) list -> from:string -> Code_file.t -> Highlight_code.reference -> candidate list * bool

@@ -87,8 +87,9 @@ type space = Value | Type | Constr | Tag
 type definition = { dname : string; dspace : space; dline : int; dcol : int; drank : int }
 
 (* a name defined elsewhere, where it is used: M.x ([rpath] ["M"]), or a
-   bare name its file does not define ([rpath] []) *)
-type reference = { rline : int; rcol : int; rlen : int; rpath : string list; rname : string; rspace : space }
+   bare name its file does not define ([rpath] []), with the modules
+   opened around it, the innermost first (OCaml's let open M in, M.(e)) *)
+type reference = { rline : int; rcol : int; rlen : int; rpath : string list; rname : string; rspace : space; ropens : string list }
 
 (* all a highlighter knows of a file, from one parse *)
 type analysis = {
@@ -100,9 +101,10 @@ type analysis = {
   includes : string list; (* C's #include "x.h", their file names *)
 }
 
-(* from a token's index (as [occurrences]'s tokens) *)
-val definition : (int * int * string) array -> int -> space -> int -> definition
-val reference : (int * int * string) array -> int -> string list -> space -> reference
+(* from a token's index (as [occurrences]'s tokens); a definition's name
+   the token's, or [name] (a nested module's x is "N.x") *)
+val definition : ?name:string -> (int * int * string) array -> int -> space -> int -> definition
+val reference : ?opens:string list -> (int * int * string) array -> int -> string list -> space -> reference
 
 (* [lines src tokens]: [src]'s lines, from its tokens, each given as its
    first line (from 1), its column (from 0), its text and its category;

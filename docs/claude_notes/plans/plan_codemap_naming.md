@@ -183,11 +183,15 @@ in the status line; a click goes there, or lists the places as near
 (1 to 9 to choose); b goes back. The search is `Code_names` (its .mli's
 worked example tested), the files' facts `Highlight_code.analysis`.
 
-Not done: the projects' roots (the search does not stop at a
-dune-project or an mkfile), OCaml's `let open` and `M.(e)` (only a
-file's top-level opens), nested modules' `M.N.x` (only the last
-module's file, N's, is searched, for x), step 4's measure and step 5, the web (the code is
-shared, untried there).
+Then (the same day): the projects' roots, a .git or a dune-project in a
+directory (not an mkfile: Plan 9 has one per program, the libraries'
+too), another project's candidates after the use's own, marked; OCaml's
+`let open M in` and `M.(e)`, the modules opened around a name tried
+before the file's; `M.N.x`, a nested module's definitions recorded as
+N.x, searched in M's file, then x in N's own (a wrapped library).
+
+Not done: step 4's measure and step 5, the web (the code is shared,
+untried there).
 
 ## Open questions for the author
 

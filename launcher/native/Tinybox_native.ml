@@ -339,15 +339,19 @@ let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h" ]
 
 (* claude: the capabilities as proof that we may, the Stdlib and Unix
  * doing the reading, as File_menu and Tty_unix do *)
-let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string) : (Code_config.t * (string * string) list, string) result =
+let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string) :
+    (Code_config.t * string list * (string * string) list, string) result =
   let read path = match In_channel.with_open_bin path In_channel.input_all with s -> Some s | exception Sys_error _ -> None in
   match Code_config.make ~ignore:(read (Filename.concat dir ".codemapignore")) ~config:(read (Filename.concat dir ".codemapconfig")) with
   | Error e -> Error (".codemapconfig: " ^ e)
   | Ok config ->
-  let out = ref [] in
+  let out = ref [] and roots = ref [] in
   let rec walk (rel : string) =
     let entries = try Sys.readdir (if rel = "" then dir else Filename.concat dir rel) with Sys_error _ -> [||] in
     Array.sort compare entries;
+    (* claude: a project's top: a .git or a dune-project in it (not an
+     * mkfile: Plan 9 has one per program, the libraries' too) *)
+    if Array.exists (fun e -> e = ".git" || e = "dune-project") entries then roots := rel :: !roots;
     Array.iter
       (fun e ->
         if e <> "" && e.[0] <> '.' && e.[0] <> '_' then begin
@@ -363,4 +367,4 @@ let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string
       entries
   in
   walk "";
-  Ok (config, List.rev !out)
+  Ok (config, List.rev !roots, List.rev !out)

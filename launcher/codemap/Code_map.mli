@@ -32,9 +32,17 @@ type t
    [numbered] (default false), each file's tab numbered by its place in
    [entries], the order to read them in; [colours] (a directory's
    .codemapconfig's, Code_config) the colours of the parts it names, over
-   ours, the roles' and the hashed hues *)
+   ours, the roles' and the hashed hues; [roots] the projects' tops, for
+   finding a name defined elsewhere (Code_names.find) *)
 val make :
-  ?numbered:bool -> ?colours:(string * (int * int * int)) list -> area:float * float * int * int -> title:string -> marked:string list -> entry list -> t
+  ?numbered:bool ->
+  ?colours:(string * (int * int * int)) list ->
+  ?roots:string list ->
+  area:float * float * int * int ->
+  title:string ->
+  marked:string list ->
+  entry list ->
+  t
 
 type action = Stay | Open of Code_file.t * int (* its line, from 0 *) | Close
 

@@ -71,6 +71,7 @@ type t = {
   mutable choices : Code_names.candidate list option;
   mutable note : string;
   mutable found : ((string * int * int) * (Code_names.candidate list * bool)) option;
+  roots : string list; (* claude: the projects' tops (Code_names.find) *)
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -107,7 +108,7 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ?(numbered = false) ?(colours = []) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(numbered = false) ?(colours = []) ?(roots = []) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout a Ordered entries in
@@ -115,7 +116,7 @@ let make ?(numbered = false) ?(colours = []) ~(area : float * float * int * int)
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None }
+    back = []; choices = None; note = ""; found = None; roots }
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries
@@ -494,7 +495,7 @@ let found (t : t) (i : int) (path : string) (r : Highlight_code.reference) : Cod
   | Some (k, res) when k = key -> res
   | _ ->
       let f = match t.placed.(i).node with File (_, _, e) -> Lazy.force e.file | Dir _ -> assert false in
-      let res = Code_names.find (List.map (fun (e : entry) -> (e.path, e.file)) t.entries) ~from:path f r in
+      let res = Code_names.find ~roots:t.roots (List.map (fun (e : entry) -> (e.path, e.file)) t.entries) ~from:path f r in
       t.found <- Some (key, res);
       res
 
@@ -844,7 +845,7 @@ let names_lit (computer : computer) (t : t) : shape list =
         @ [ words yellow "several places: 1 to 9 to choose, esc to close" |> scale (13. /. words_font_size) |> move 0. (top +. 14.) ]
         @ List.mapi
             (fun k (c : Code_names.candidate) ->
-              words ink (Printf.sprintf "%d   %s:%d" (k + 1) c.path (c.line + 1))
+              words ink (Printf.sprintf "%d   %s:%d%s" (k + 1) c.path (c.line + 1) (if c.other_project then "   (another project)" else ""))
               |> scale (14. /. words_font_size)
               |> move 0. (top -. (float_of_int (k + 1) *. row_h) +. 6.))
             cs
@@ -867,7 +868,10 @@ let where_to (computer : computer) (t : t) : string option =
           let name = String.concat "." (r.rpath @ [ r.rname ]) in
           match found t i path r with
           | [], _ -> Some (name ^ ": not in this map")
-          | c :: _, true -> Some (Printf.sprintf "%s -> %s:%d   (click to go, b back)" name c.path (c.line + 1))
+          | c :: _, true ->
+              Some
+                (Printf.sprintf "%s -> %s:%d%s   (click to go, b back)" name c.path (c.line + 1)
+                   (if c.other_project then ", in another project" else ""))
           | cs, false -> Some (Printf.sprintf "%s -> %d places as near (click to choose)" name (List.length cs)))
       | None -> None
   in

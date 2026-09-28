@@ -51,13 +51,14 @@ let tests =
       Testo.create "names in other files" (fun () ->
           let files srcs = List.map (fun (p, src) -> (p, lazy (Code_file.make p src))) srcs in
           (* where [name], used in [from], goes; "!" if sure *)
-          let where fs from name =
+          let where ?roots fs from name =
             let (f : Code_file.t) = Lazy.force (List.assoc from fs) in
             let r =
               List.find (fun (r : Highlight_code.reference) -> r.rname = name) (List.concat (Array.to_list f.refs))
             in
-            let cs, sure = Code_names.find fs ~from f r in
-            String.concat " " (List.map (fun (c : Code_names.candidate) -> Printf.sprintf "%s:%d" c.path (c.line + 1)) cs)
+            let cs, sure = Code_names.find ?roots fs ~from f r in
+            String.concat " "
+              (List.map (fun (c : Code_names.candidate) -> Printf.sprintf "%s:%d%s" c.path (c.line + 1) (if c.other_project then "(other)" else "")) cs)
             ^ if sure then " !" else ""
           in
           let c =
@@ -85,7 +86,27 @@ let tests =
           in
           Alcotest.(check string) "M.x: the .ml, then the .mli" "games/Road.ml:1 games/Road.mli:1 !" (where ml "games/Main.ml" "curve");
           Alcotest.(check string) "a bare name, from an open" "games/Road.ml:2 games/Road.mli:2 !" (where ml "games/Main.ml" "straight");
-          Alcotest.(check string) "two Parser.ml: the nearest" "games/Parser.ml:1 tools/Parser.ml:1 !" (where ml "games/Main.ml" "parse"));
+          Alcotest.(check string) "two Parser.ml: the nearest" "games/Parser.ml:1 tools/Parser.ml:1 !" (where ml "games/Main.ml" "parse");
+          let ml2 =
+            files
+              [
+                ("games/Other.ml", "let d = let open Road in straight 1\nlet e = Road.(curve 2)\nlet f = Outer.Inner.g 3\nlet h = Lib.M.h 4\n");
+                ("games/Road.ml", "let curve x = x\nlet straight x = x\n");
+                ("games/Outer.ml", "let g x = x\nmodule Inner = struct\n  let g x = x + 1\nend\n");
+                ("games/M.ml", "let h x = x\n");
+              ]
+          in
+          Alcotest.(check string) "let open M in" "games/Road.ml:2 !" (where ml2 "games/Other.ml" "straight");
+          Alcotest.(check string) "M.(e)" "games/Road.ml:1 !" (where ml2 "games/Other.ml" "curve");
+          Alcotest.(check string) "M.N.x: N's x in M's file, not M's own x" "games/Outer.ml:3 !" (where ml2 "games/Other.ml" "g");
+          Alcotest.(check string) "Lib.M.x, Lib not here: M's own file" "games/M.ml:1 !" (where ml2 "games/Other.ml" "h");
+          (* claude: a nested project (a submodule) nearer by its path *)
+          let p =
+            files [ ("src/main.c", "int f(void) { return helper(1); }\n"); ("src/vendor/h.c", "int helper(int x) { return x; }\n"); ("tools/h.c", "int helper(int x) { return x; }\n") ]
+          in
+          Alcotest.(check string) "without roots: the nearest path" "src/vendor/h.c:1 tools/h.c:1 !" (where p "src/main.c" "helper");
+          Alcotest.(check string) "with roots: its own project first" "tools/h.c:1 src/vendor/h.c:1(other) !"
+            (where ~roots:[ ""; "src/vendor" ] p "src/main.c" "helper"));
       Testo.create "a file's grid and definitions" (fun () ->
           let f = Code_file.make "x.ml" "(*****)\n(* Model *)\n(*****)\nlet move p = p\ntype t = int\n" in
           Alcotest.(check (list (pair int string))) "the section, the function, the type"
