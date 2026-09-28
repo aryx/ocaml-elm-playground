@@ -57,6 +57,10 @@ let scenes : Golden_scene.scene list =
     ("examples/software/Gui7Cells", "", 5);
     (* 7GUIs 5: a list, a filter, and a selection kept as a person *)
     ("examples/software/Gui7Crud", "", 5);
+    (* 1968: the document as a tree of statements, numbered 1, 1a,
+     * 1a1, the links in bold, the keyset and the mouse under the
+     * screen *)
+    ("apps/office/software/TinyNLS", "", 5);
     (* 1979, on a character display: green on black, the three status
      * lines, the block cursor, and the formulas in VisiCalc's own
      * spelling (+B3*2 rather than =B3*2) *)
@@ -1143,6 +1147,14 @@ let scripted : Golden_scene.scripted list =
      * as 1979 spelled it. (The slash commands take characters, which
      * a script cannot send: a key is not a character.) *)
     ("apps/office/software/TinyVisiCalc", "cursor", 16, "right:3,down:6,down:10");
+    (* Move Branch, spelled out by the feedback line as it is given: m
+     * b, the bug on dairy, the bug on produce, both lit, OK? *)
+    ("apps/office/software/TinyNLS", "command", 12, "type(mb):3,at(-380;-142):4-7,click:5,at(-380;-10):8-11,click:9");
+    (* and OK: dairy's branch after produce, renumbered -- 2c is now
+     * 2b, milk and cheese going with it *)
+    ("apps/office/software/TinyNLS", "moved", 18, "type(mb):3,at(-380;-142):4-7,click:5,at(-380;-10):8-11,click:9,return:13");
+    (* a view: v 1, the first level only, the document's outline *)
+    ("apps/office/software/TinyNLS", "view", 10, "type(v1):3,return:5");
     (* the menu that explains itself: /, then the highlight moved to
      * Copy, and the line below saying what Copy does *)
     ("apps/office/software/TinyLotus123", "menu", 10, "type(/):3,right:5,right:7");

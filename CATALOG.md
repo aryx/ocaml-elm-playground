@@ -366,6 +366,7 @@ each have a section, which names their directory.
 
 | Program | Dir | Year | Platform | Players | After | In one line | What it brought |
 |---|---|---|---|---|---|---|---|
+| [TinyNLS](apps/office/TinyNLS.ml) | app | 1968 | mainframe | 1 | NLS, the oN-Line System (Douglas Engelbart, SRI, 1968: the Mother of All Demos) | A document as a tree of statements, edited with a mouse and viewed and linked in several ways. | Text edited on a screen with a mouse; the document a tree, branches moved as one; views that clip levels and lines; links jumped along and back; commands as a verb, a noun and the bug on the target; the chord keyset. |
 | [TinyBravo](apps/office/TinyBravo.ml) | app | 1974 | workstation | 1 | Bravo (Butler Lampson and Charles Simonyi, Xerox PARC, 1974) | The first editor where the screen looked like the page. | WYSIWYG, and the piece table; modal commands, with their famous "edit" trap. |
 | [TinyWord](apps/office/TinyWord.ml) | app | 1983 | PC | 1 | Microsoft Word (1983 on DOS, 1985 on the Macintosh) | The same text as TinyBravo, with no modes. | No modes: a caret wherever you click, cut, copy and paste, menus you can read, undo by name. |
 | [TinyFrameMaker](apps/office/TinyFrameMaker.ml) | app | 1986 | workstation | 1 | FrameMaker (Charles Corfield, Frame Technology, 1986) | A long document that lays itself out in columns and pages. | Text flowing through a chain of frames over pages; master pages; anchored frames carrying parts along with the text. |

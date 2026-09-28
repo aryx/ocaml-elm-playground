@@ -334,7 +334,7 @@ draw, compound documents, a browser's engine, editors, CAD, ...
     Sketch Relax Cad_geom Cad_drawing Cad_edit Cad_snap Cad_session Dxf
     Skp_model Skp_infer Skp_view Bsp Modeler Modeler_view
     Celestial Ephemeris Bright_stars Stereographic Ics Vcard
-    Money Ledger Reconcile Qif
+    Money Ledger Reconcile Qif Nls_doc
 }
 
 {3:gamekits Game kits}

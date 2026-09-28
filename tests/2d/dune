@@ -17,6 +17,7 @@
    %{project_root}/examples/software/Gui7Circles.exe
    %{project_root}/examples/software/Gui7Cells.exe
    %{project_root}/examples/software/Gui7Crud.exe
+   %{project_root}/apps/office/software/TinyNLS.exe
    %{project_root}/apps/office/software/TinyVisiCalc.exe
    %{project_root}/apps/office/software/TinyLotus123.exe
    %{project_root}/apps/office/software/TinyExcel.exe

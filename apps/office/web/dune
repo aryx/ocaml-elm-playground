@@ -5,7 +5,7 @@
 
 (executables
   (names
-    TinyVisiCalc TinyLotus123 TinyExcel TinyBravo TinyWord TinyOpenDoc TinyPowerPoint TinyHyperCard TinyFrameMaker TinyOffice
+    TinyNLS TinyVisiCalc TinyLotus123 TinyExcel TinyBravo TinyWord TinyOpenDoc TinyPowerPoint TinyHyperCard TinyFrameMaker TinyOffice
   )
   (libraries
     elm_playground
@@ -14,6 +14,7 @@
     appkit_sheet
     appkit_sheet_view
     terminal
+    appkit_nls
     appkit_document
     appkit_file_menu
     appkit_richtext
