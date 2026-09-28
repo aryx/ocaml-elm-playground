@@ -19,3 +19,7 @@ val make : ?line:int -> ?lit:int -> Code_file.t -> t
 val update : Playground.computer -> pressed:(string -> bool) -> arrow:string option -> t -> t
 
 val view : Playground.computer -> t -> Playground.shape list
+
+(* claude: a name that must catch the eye, [w] by [h], centred on (0, 0),
+   pulsing (a halo growing and fading), for the map too (Code_map) *)
+val glow : Playground.computer -> Playground.color -> float -> float -> Playground.shape list

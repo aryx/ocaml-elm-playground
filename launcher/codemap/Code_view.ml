@@ -264,23 +264,37 @@ let page_of (v : t) (q : float) : Rgba_image.t =
   done;
   img
 
+(* claude: a name that must catch the eye (a binding, where a jump
+ * landed): it pulses, the eye being quicker to see what moves than what
+ * is bright -- a halo round it, growing and fading, once a second or so,
+ * never smaller than a few units (a name small on a map far away), and
+ * the name itself brighter and dimmer. Centred on (0, 0). *)
+let glow (computer : computer) (color : color) (w : number) (h : number) : shape list =
+  let (Time t) = computer.time in
+  let k = 0.5 +. (0.5 *. Float.sin (t *. 2. *. Float.pi *. 1.1)) in
+  let pad = Float.max 5. (h *. 0.35) *. (0.6 +. (0.8 *. k)) in
+  [
+    rectangle color (w +. (2. *. pad)) (h +. (2. *. pad)) |> fade (0.12 +. (0.3 *. (1. -. k)));
+    rectangle color w h |> fade (0.3 +. (0.35 *. k));
+  ]
+
 (* claude: the name under the mouse, bound in the file: its binding
- * framed brighter, its uses on the page lit *)
+ * pulsing (glow), its uses on the page lit *)
 let name_lit (computer : computer) (v : t) : shape list =
   let mouse = computer.mouse in
   match Option.bind (code_at v.top mouse.mx mouse.my) (fun (l, c) -> Code_file.name_at v.file l c) with
   | None -> []
   | Some o ->
       let cw, ch = cell_units () in
-      List.filter_map
+      List.concat_map
         (fun (u : Highlight_code.occurrence) ->
-          if u.line < v.top || u.line >= v.top + visible || u.col >= cols then None
+          if u.line < v.top || u.line >= v.top + visible || u.col >= cols then []
           else
             let w = float_of_int (min u.len (cols - u.col)) *. cw in
             let x = code_left +. (float_of_int (gutter + 1 + u.col) *. cw) +. (w /. 2.) in
             let y = top_y -. ((float_of_int (u.line - v.top) +. 0.5) *. ch) in
-            let binding = (u.line, u.col) = o.bound_at in
-            Some (rectangle (if binding then cyan else yellow) w ch |> move x y |> fade (if binding then 0.38 else 0.25)))
+            if (u.line, u.col) = o.bound_at then List.map (move x y) (glow computer cyan w ch)
+            else [ rectangle yellow w ch |> move x y |> fade 0.25 ])
         (Code_file.uses v.file o)
 
 let code_lines (computer : computer) (v : t) : shape list =

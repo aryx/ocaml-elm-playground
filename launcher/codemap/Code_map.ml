@@ -791,13 +791,16 @@ let labels (t : t) (c : camera) (q : float) : shape list =
 let names_lit (computer : computer) (t : t) : shape list =
   let c = t.cam in
   let a = c.a in
-  let place (i : int) ((line, col) : int * int) (len : int) (color : color) (alpha : float) : shape list =
+  (* [glow]: pulsing (Code_view.glow), where the eye must go *)
+  let place ?(glow = false) (i : int) ((line, col) : int * int) (len : int) (color : color) (alpha : float) : shape list =
     match t.geometry.(i) with
     | Some g ->
         let x, y = name_pos t.placed.(i).rect g line col in
         let w = float_of_int len *. g.cell_w *. c.z and h = g.cell_h *. c.z in
         let px = to_px c x +. (w /. 2.) and py = to_py c y +. (h /. 2.) in
-        if on a px py then [ rectangle color w h |> move (sx a px) (sy a py) |> fade alpha ] else []
+        if not (on a px py) then []
+        else if glow then List.map (move (sx a px) (sy a py)) (Code_view.glow computer color w h)
+        else [ rectangle color w h |> move (sx a px) (sy a py) |> fade alpha ]
     | None -> []
   in
   let file (i : int) = match t.placed.(i).node with File (_, _, e) when Lazy.is_val e.file -> Some (Lazy.force e.file) | _ -> None in
@@ -814,7 +817,7 @@ let names_lit (computer : computer) (t : t) : shape list =
               List.concat_map
                 (fun (w : Highlight_code.occurrence) ->
                   let binding = (w.line, w.col) = o.bound_at in
-                  place i (w.line, w.col) w.len (if binding then rgb 0 225 255 else yellow) (if binding then 0.38 else 0.25))
+                  place ~glow:binding i (w.line, w.col) w.len (if binding then rgb 0 225 255 else yellow) 0.25)
                 (Code_file.uses f o)
           | None -> [])
       | None -> []
@@ -824,7 +827,7 @@ let names_lit (computer : computer) (t : t) : shape list =
     | Some (i, at) -> (
         match file i with
         | Some f -> (
-            match Code_file.name_at f (fst at) (snd at) with Some o -> place i at o.len (rgb 90 210 120) 0.45 | None -> [])
+            match Code_file.name_at f (fst at) (snd at) with Some o -> place ~glow:true i at o.len (rgb 90 210 120) 0.45 | None -> [])
         | None -> [])
     | None -> []
   in
