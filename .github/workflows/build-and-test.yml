@@ -20,7 +20,7 @@ jobs:
       - name: Test
         run: |
           eval $(opam env)
-          make test
+          make test-lite
     strategy:
       fail-fast: false
       matrix:

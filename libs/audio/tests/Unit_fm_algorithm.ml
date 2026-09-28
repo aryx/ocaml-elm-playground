@@ -105,7 +105,9 @@ let test_feedback () =
   Alcotest.(check (list (float 0.1))) "fb 5: harmonics 2-5 (dB), a darkened sawtooth" [ -7.2; -11.6; -14.8; -17.4 ] harmonics;
   Alcotest.(check (float 0.1)) "fb 5: the noise (dB)" (-58.1) noise;
   Alcotest.(check (float 0.1)) "fb 6: buzzing (dB)" (-7.7) (snd (spectrum 6));
-  Alcotest.(check (float 0.1)) "fb 7: noise above the harmonics (dB)" 5.5 (snd (spectrum 7))
+  (* claude: within half a dB: at 7 the loop is chaotic, and another
+   * libm's sine grows into another noise (5.3 on macOS) *)
+  Alcotest.(check (float 0.5)) "fb 7: noise above the harmonics (dB)" 5.5 (snd (spectrum 7))
 
 let tests =
   Testo.categorize "Fm_algorithm"

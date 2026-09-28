@@ -93,6 +93,8 @@ let tests =
     t "Matrix, the shape and the flat array" test_shape;
     t "Matrix, arithmetic" test_arithmetic;
     t "Matrix, the two products agree" test_same_answer;
-    t "Matrix, and the fast one is faster" test_speed;
+    (* claude: not on CI's machines, shared: the ratio there is anyone's *)
+    t ?skipped:(if Sys.getenv_opt "CI" <> None then Some "a timing: CI's machines are shared" else None)
+      "Matrix, and the fast one is faster" test_speed;
     t "Matrix, random weights" test_random;
   ]
