@@ -17,6 +17,10 @@
    two bytes of C-x C-s, what global-set-key takes. ?a is the character a, the integer 97 (?\n, ?\s for a
    space, ?\C-a).
 
+   The reading itself is languages/sexpr's, the syntax the Lisps share
+   (Sexpr_read.mli, its Emacs dialect); this module turns its tree
+   into Emacs's values, a character into its integer.
+
    Worked example (in the tests):
 
        read {|(defun double (x) (+ x x)) ; twice|} 0

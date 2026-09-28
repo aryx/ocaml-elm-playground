@@ -1,0 +1,6 @@
+; claude: unit tests for scheme/, run by 'make test' (dune runtest): the
+; language (Unit_scheme) and the stepper (Unit_scheme_step)
+(test
+ (name Test)
+ (libraries alcotest testo sexpr scheme)
+)

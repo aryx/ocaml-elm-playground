@@ -362,13 +362,16 @@ and in 3D
 {3:languages Languages}
 
 Languages as text, parsed and run: a spreadsheet's formulas, BASIC,
-Emacs Lisp, Pascal, HyperTalk, Smalltalk-80, Scratch, JavaScript, and
-HTML and CSS:
+s-expressions, Emacs Lisp, Scheme, Pascal, HyperTalk, Smalltalk-80,
+Scratch, JavaScript, and HTML and CSS:
 
 {!modules:
     Formula
     Basic_parse Basic_run Basic_session Basic_disk
+    Sexpr Sexpr_read
     Lisp Lisp_read Lisp_eval Lisp_prelude
+    Scheme Scheme_image Scheme_syntax Scheme_prims Scheme_prelude
+    Scheme_eval Scheme_step
     Pascal_lexer Pascal_compile Pcode Pmachine Pdebug Pascal_disk
     Hypertalk
     St_lexer St_parse St_ast St_compile St_bytecode St_chunk St_memory

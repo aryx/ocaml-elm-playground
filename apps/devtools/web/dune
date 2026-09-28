@@ -4,10 +4,13 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap)
-  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap Scratch_look Scratch_ide)
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap TinyDrScheme)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap TinyDrScheme Scratch_look Scratch_ide)
   (libraries
     basic ; Basic_parse, Basic_run, Basic_session
+    scheme ; TinyDrScheme's language: the machine, the stepper, Scheme_*
+    sexpr ; and its reader, Sexpr_read
+    gui ; TinyDrScheme's texts, Text_edit
     appkit_editor ; Tui_vi, Tui_emacs, Tui_turbo
     smalltalk ; the Blue Book's Smalltalk-80, St_*
     caps ; TinySmalltalk80's image and file outs, in the store

@@ -1,0 +1,12 @@
+; claude: s-expressions, the syntax the Lisps share (languages/README.md):
+; Sexpr (the tree, each part with its span in the text), Sexpr_read (the
+; reader, Emacs Lisp's and Scheme's). languages/lisp's Lisp_read and
+; languages/scheme's Scheme_read turn the tree into their own values.
+;
+; Pure OCaml, no Playground. A private library, installed as part of
+; elm_playground.
+(library
+ (name sexpr)
+ (package elm_playground)
+ (wrapped false)
+)

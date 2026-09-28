@@ -333,6 +333,9 @@ let scenes : Golden_scene.scene list =
      * reporter and a recursive command -- the zebra-coloured ring in
      * map *)
     ("apps/devtools/software/TinySnap", "", 5);
+    (* DrScheme 209: the program in the Definitions window, coloured,
+     * the Interactions' banner and prompt *)
+    ("apps/devtools/software/TinyDrScheme", "", 5);
     ("games/rpg/software/TinyGauntlet2", "", 5);
     ("games/sports/software/TinyKickOff2", "", 5);
     ("games/sports/software/TinySpeedball2", "", 5);
@@ -1861,6 +1864,14 @@ let scripted_flagged : Golden_scene.scripted_flagged list =
     ("apps/devtools/software/TinySnap", "flag", 12, "at(400;485):1-3,click:2,at(300;-400):4-12", []);
     ("apps/devtools/software/TinySnap", "click", 12, "at(328;236):1-3,click:2,at(-200;55):5-7,click:6,at(300;-400):8-12", []);
     ("apps/devtools/software/TinySnap", "make", 16, "at(-440;337):1-3,click:2,at(-440;311):5-7,click:6,at(300;-400):8-16", []);
+    (* claude: TinyDrScheme: Control-T, 120 and the three discs printed,
+     * the rocket's world opened; the stepper, three steps into 5
+     * factorial; at the prompt, the world closed, a list, an image and
+     * car's error *)
+    ("apps/devtools/software/TinyDrScheme", "execute", 40, "Control:3-5,t:4", []);
+    ("apps/devtools/software/TinyDrScheme", "stepper", 30, "at(195;435):1-4,click:3,at(365;-350):5-30,click:8,click:12,click:16", []);
+    ("apps/devtools/software/TinyDrScheme", "prompt", 140,
+     "Control:3-5,t:4,Escape:60,type((map sqr (list 1 2 3))):70,Enter:80,type((above (square 30 \"solid\" \"blue\") (text \"hi\" 24 \"black\"))):90,Enter:100,type((car 5)):110,Enter:120", []);
     ("apps/devtools/software/TinyScratch", "pencil", 80, "at(-350;110):1-3,click:2,at(38;403):4-6,click:5,at(150;330):7-9,click:8,at(300;-400):10-80", []);
     (* claude: TinyWumpus: the instructions, then the first room and
      * what its neighbours give away (seed 1's cave) *)

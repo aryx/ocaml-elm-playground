@@ -1,5 +1,6 @@
 ; claude: a small Emacs Lisp (languages/README.md): Lisp (the
-; values, and printing them), Lisp_read (the reader), Lisp_eval (eval
+; values, and printing them), Lisp_read (the reader, over sexpr/'s),
+; Lisp_eval (eval
 ; and apply, dynamic scope, the state threaded as a value; a host adds
 ; its functions and special forms), Lisp_prelude (the macros written
 ; in Lisp: when, dolist...). TinyEmacs (apps/devtools/) is its host:
@@ -11,4 +12,5 @@
  (name lisp)
  (package elm_playground)
  (wrapped false)
+ (libraries sexpr) ; Lisp_read's reading, the syntax shared with Scheme
 )

@@ -43,6 +43,7 @@
    %{project_root}/apps/devtools/software/TinySmalltalk80.exe
    %{project_root}/apps/devtools/software/TinyScratch.exe
    %{project_root}/apps/devtools/software/TinySnap.exe
+   %{project_root}/apps/devtools/software/TinyDrScheme.exe
    %{project_root}/apps/music/software/TinyMinimoog.exe
    %{project_root}/apps/music/software/TinyHammond.exe
    %{project_root}/apps/music/software/TinyTB303.exe

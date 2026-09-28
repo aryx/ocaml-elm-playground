@@ -1,0 +1,6 @@
+; claude: unit tests for sexpr/, run by 'make test' (dune runtest): the
+; reader's worked example and spans, each dialect's syntax, its errors
+(test
+ (name Test)
+ (libraries alcotest testo sexpr)
+)

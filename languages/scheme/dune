@@ -1,0 +1,17 @@
+; claude: a small Scheme, and HtDP's teaching languages over it
+; (languages/README.md): Scheme (the values, the code, printing),
+; Scheme_image (2htdp/image's images as data), Scheme_syntax (the
+; special forms, the derived ones rewritten), Scheme_prims (the
+; built-ins), Scheme_prelude (map, filter, sort... in Scheme),
+; Scheme_eval (the CESK machine: call/cc, tail calls, fuel),
+; Scheme_step (the Beginning Student stepper). Read by sexpr/'s reader,
+; shared with lisp/. TinyDrScheme (apps/devtools/) is its host.
+;
+; Pure OCaml, no Playground. A private library, installed as part of
+; elm_playground.
+(library
+ (name scheme)
+ (package elm_playground)
+ (wrapped false)
+ (libraries sexpr)
+)
