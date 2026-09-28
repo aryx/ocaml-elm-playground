@@ -22,7 +22,7 @@ your browser, from the same source file:
 
 | [TinyBreakout](games/arcade/TinyBreakout.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html)) | [TinyTurboPascal](apps/devtools/TinyTurboPascal.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html)) |
 | :---: | :---: |
-| <a href="https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html"><img src="tests/2d/golden/TinyBreakout.png" width="400" alt="TinyBreakout"></a> | <a href="https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html"><img src="tests/2d/golden/TinyTurboPascal.png" width="400" alt="TinyTurboPascal"></a> |
+| <a href="https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html"><img src="docs/screenshots/game-breakout.png" width="400" alt="TinyBreakout"></a> | <a href="https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html"><img src="docs/screenshots/app-turbopascal.png" width="400" alt="TinyTurboPascal"></a> |
 | Breakout (Atari, 1976): the wall, the paddle, the ball -- **525 lines**, in one file | Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger -- **3,213 lines** in 15 files: the IDE, and the Pascal compiler and P-machine under it |
 
 They are all in [CATALOG.md](CATALOG.md), and all in one menu,
@@ -154,7 +154,7 @@ The main API is defined in a single
  - a *native* (SDL-based) backend to run your game on your desktop from a terminal
  - a *web* (vdom-based) backend to run your game in a browser
 
-Here is for example a simple [Snake game](https://aryx.github.io/ocaml-elm-playground/games/Snake.html) you can run from your browser (use the arrow keys to change the direction of the snake and eat the ball to grow your length). You can run the same game
+Here is for example a simple [Snake game](https://aryx.github.io/ocaml-elm-playground/games/arcade/Snake.html) you can run from your browser (use the arrow keys to change the direction of the snake and eat the ball to grow your length). You can run the same game
 on your desktop *without changing a line of code*.
 
 The same idea one dimension up is `Playground3d`
@@ -439,11 +439,11 @@ Look at the code under [examples/](examples/) and [games/](games/), a
 directory per genre; every game and application is listed, with the
 original it is a toy version of, in [CATALOG.md](CATALOG.md).
 
-Here is a screenshot of the [Tetris](games/puzzle/Tetris.ml) Playgound game running:
+Here is a screenshot of the [Tetris](games/puzzle/Tetris.ml) Playground game running:
 <img src="docs/screenshots/game-tetris.png" alt="Toy app screenshot"
  width="50%">
 
-You can even try it online [here](https://aryx.github.io/ocaml-elm-playground/games/Tetris.html)
+You can even try it online [here](https://aryx.github.io/ocaml-elm-playground/games/puzzle/Tetris.html)
 
 You can see a few more screenshots [here](docs/screenshots/).
 
