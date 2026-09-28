@@ -14,7 +14,7 @@
 ; (appkits/file_menu, appkits/stroke_text, appkits/draw_view).
 (executables
   (names
-    TinyVisiCalc TinyExcel TinyBravo TinyWord TinyOpenDoc TinyPowerPoint TinyHyperCard TinyFrameMaker TinyOffice
+    TinyVisiCalc TinyLotus123 TinyExcel TinyBravo TinyWord TinyOpenDoc TinyPowerPoint TinyHyperCard TinyFrameMaker TinyOffice
   )
   (libraries
     elm_playground
@@ -22,6 +22,7 @@
     gui ; Widget, for text_width
     appkit_sheet ; Formula and Sheet, the engine
     appkit_sheet_view ; a sheet drawn into a rectangle (TinyExcel)
+    terminal ; Curses and Vt, the PC's text screen (TinyLotus123)
     appkit_document ; Undo (TinyBravo, TinyWord)
     appkit_file_menu ; File_menu
     appkit_richtext ; text with looks, and its page (TinyBravo, TinyWord)

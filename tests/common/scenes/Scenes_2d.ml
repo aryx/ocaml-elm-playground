@@ -61,6 +61,10 @@ let scenes : Golden_scene.scene list =
      * lines, the block cursor, and the formulas in VisiCalc's own
      * spelling (+B3*2 rather than =B3*2) *)
     ("apps/office/software/TinyVisiCalc", "", 5);
+    (* 1983, on the PC's 80 columns: the control panel and its mode,
+     * the borders in reverse, labels flowing over empty cells -- the
+     * two macros in column F are readable because of it *)
+    ("apps/office/software/TinyLotus123", "", 5);
     (* and 1985: the same engine with a menu bar, a formula bar and a
      * mouse *)
     ("apps/office/software/TinyExcel", "", 5);
@@ -1135,6 +1139,20 @@ let scripted : Golden_scene.scripted list =
      * as 1979 spelled it. (The slash commands take characters, which
      * a script cannot send: a key is not a character.) *)
     ("apps/office/software/TinyVisiCalc", "cursor", 16, "right:3,down:6,down:10");
+    (* the menu that explains itself: /, then the highlight moved to
+     * Copy, and the line below saying what Copy does *)
+    ("apps/office/software/TinyLotus123", "menu", 10, "type(/):3,right:5,right:7");
+    (* POINT mode: +B4*C4 typed in D3, /Copy from it, and the TO range
+     * pointed at -- '.' anchoring D4, three downs growing it, lit *)
+    ( "apps/office/software/TinyLotus123",
+      "point",
+      31,
+      "right:3,right:5,right:7,down:9,down:11,type(+b4*c4):13,return:15,type(/c):17,return:19,down:21,type(.):23,down:25,down:27,down:29"
+    );
+    (* Alt-G: the macro in F3 and F4 typed back into the program, a
+     * few keys a frame -- /Graph Reset, Type Bar, the X, A and B
+     * ranges, View -- and the PC switched to its CGA graph *)
+    ("apps/office/software/TinyLotus123", "macro", 60, "Alt:3-4,type(g):3");
     (* what 1985 bought, in one scripted run: a range dragged out with
      * the mouse (D2 to D5), Edit > Fill Down copying the formula into
      * it -- =B2*C2 becoming =B3*C3, =B4*C4, =B5*C5, which is what

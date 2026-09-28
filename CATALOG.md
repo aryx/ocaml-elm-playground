@@ -375,6 +375,7 @@ each have a section, which names their directory.
 | Program | Dir | Year | Platform | Players | After | In one line | What it brought |
 |---|---|---|---|---|---|---|---|
 | [TinyVisiCalc](apps/office/TinyVisiCalc.ml) | app | 1979 | computer | 1 | VisiCalc (Dan Bricklin and Bob Frankston, 1979) | The program that sold the Apple II: cells and formulas. | The spreadsheet on a 40-column screen with no mouse: the cursor as the interface, slash commands, recalculation in row or column order. |
+| [TinyLotus123](apps/office/TinyLotus123.ml) | app | 1983 | PC | 1 | Lotus 1-2-3 (Mitch Kapor and Jonathan Sachs, Lotus, 1983) | The program that sold the IBM PC: the sheet, its graph and its database in one. | Keystroke macros, your own keys as a program kept in the sheet; the two-line menu that explains itself; pointing at ranges without a mouse; natural-order recalculation. |
 | [TinyExcel](apps/office/TinyExcel.ml) | app | 1985 | Mac | 1 | Excel (Microsoft, 1985, on the Macintosh) | The same spreadsheet six years later, with the mouse. | The same engine with 1985's answers: ranges, menus, a formula bar, Fill Down's relative references, a dependency graph. |
 
 ## Presentations
