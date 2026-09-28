@@ -39,6 +39,14 @@ val make : area:float * float * int * int -> sources:(string * string) list -> p
 val make_own :
   own:(string -> bool) -> area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> t
 
+(* claude: the map of a directory's files, [sources] (read from the disk,
+   their paths relative to it), named [name]: all of them, no program to
+   start from, w doing nothing *)
+val of_directory : area:float * float * int * int -> name:string -> sources:(string * string) list -> t
+
+(* ... as a program of its own, in a window: tinybox codemap <dir> *)
+val run_directory : name:string -> sources:(string * string) list -> unit
+
 (* the map of the program's own code alone, for a glance (tinybox's
    panel: Code_map.view ~chrome:false) *)
 val preview : area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> Code_map.t

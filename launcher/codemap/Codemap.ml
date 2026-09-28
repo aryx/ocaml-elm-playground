@@ -10,8 +10,10 @@
 
 (* See Codemap.mli *)
 
-(* which files: the program's own code, then with all it uses, then all *)
-type scope = Own | Uses | Whole
+(* which files: the program's own code, then with all it uses, then all;
+ * or a directory's, read from the disk (tinybox codemap <dir>), no
+ * program in it to start from *)
+type scope = Own | Uses | Whole | Directory of string
 
 type t = {
   program : string;
@@ -50,7 +52,7 @@ let map_of ~(own : string -> bool) ~(area : float * float * int * int) ~(sources
     match scope with
     | Own -> Code_deps.closure ~keep:own sources path
     | Uses -> Code_deps.closure sources path
-    | Whole -> List.map fst sources
+    | Whole | Directory _ -> List.map fst sources
   in
   let entries = List.filter_map (fun p -> Option.map (entry p) (List.assoc_opt p sources)) paths in
   let n = List.length entries in
@@ -61,15 +63,22 @@ let map_of ~(own : string -> bool) ~(area : float * float * int * int) ~(sources
     | Own -> Printf.sprintf "%s: its code, %s   (w: with what it uses)" program files
     | Uses -> Printf.sprintf "%s and what it uses: %s   (w: the whole repository)" program files
     | Whole -> Printf.sprintf "the whole repository: %s   (w: %s's code)" files program
+    | Directory name -> Printf.sprintf "%s: %s" name files
   in
   (* claude: numbered in their reading order (Code_deps.closure's), but
-   * the whole repository's *)
-  Code_map.make ~numbered:(scope <> Whole) ~area ~title ~marked:[ path ] entries
+   * the whole repository's and a directory's *)
+  let numbered = match scope with Own | Uses -> true | Whole | Directory _ -> false in
+  Code_map.make ~numbered ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   { program; path; sources; scope = Own; area; map = map_of ~own ~area ~sources ~program ~path ~scope:Own; file = None; tour = None; own }
 
 let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) ~area ~sources ~program ~path
+
+let of_directory ~(area : float * float * int * int) ~(name : string) ~(sources : (string * string) list) : t =
+  let scope = Directory name in
+  let own _ = true in
+  { program = name; path = ""; sources; scope; area; map = map_of ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own }
 
 let preview ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : Code_map.t =
   map_of ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
@@ -116,8 +125,8 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
       if pressed "Escape" || pressed "Backspace" then Some { t with file = None }
       else Some { t with file = Some (Code_view.update computer ~pressed ~arrow v) }
   | None ->
-      if pressed "w" then
-        let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole -> Own in
+      if pressed "w" && (match t.scope with Directory _ -> false | _ -> true) then
+        let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ -> Own in
         Some { t with scope; map = map_of ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
@@ -151,3 +160,36 @@ let view (computer : Playground.computer) (t : t) : Playground.shape list =
         | None -> [])
   (* claude: over the map, the magnifying glass *)
   | None -> Code_map.view computer t.map @ Code_map.glass computer t.map
+
+(*****************************************************************************)
+(* Alone *)
+(*****************************************************************************)
+
+(* claude: a directory's map as a program of its own (tinybox codemap
+ * <dir>), on the menu's screen (16:9), the keys given as the menu gives
+ * them: pressed this frame, an arrow held repeating every 0.08 s after
+ * 0.4 s. Made at the first frame, when the screen is known; Escape on
+ * the map leaves it as it is, the window closing the program. *)
+type alone = { code : t option; before : string Set_.t; repeat : (string * float) option }
+
+let area_of (screen : Playground.screen) = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162)
+
+let run_directory ~(name : string) ~(sources : (string * string) list) : unit =
+  let update (computer : Playground.computer) (m : alone) : alone =
+    let code = match m.code with Some c -> c | None -> of_directory ~area:(area_of computer.screen) ~name ~sources in
+    let keys = computer.keyboard.keys in
+    let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
+    let (Time now) = computer.time in
+    let arrow, repeat =
+      match List.find_opt pressed [ "ArrowLeft"; "ArrowRight"; "ArrowUp"; "ArrowDown" ] with
+      | Some k -> (Some k, Some (k, now +. 0.4))
+      | None -> (
+          match m.repeat with
+          | Some (k, next) when Set_.mem k keys -> if now >= next then (Some k, Some (k, now +. 0.08)) else (None, m.repeat)
+          | _ -> (None, None))
+    in
+    { code = Some (Option.value (update computer ~pressed ~arrow code) ~default:code); before = keys; repeat }
+  in
+  let view (computer : Playground.computer) (m : alone) = match m.code with Some c -> view computer c | None -> [] in
+  Playground_platform.run_app ~screen:(1778, 1000) ~flags:(Playground_platform.flags ())
+    (Playground.game view update { code = None; before = Set_.empty; repeat = None })

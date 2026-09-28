@@ -9,3 +9,10 @@
  * [host caps names]: over the programs [names] can start; [caps]: the
  * authority to start one and wait for it. *)
 val host : < Cap.fork ; Cap.exec ; Cap.wait ; .. > -> string list -> Tinybox_menu.host
+
+(* claude: a directory's sources, read from the disk, for its code map
+ * (tinybox codemap <dir>): the OCaml and C files under it, their paths
+ * relative to it; not what is under a name starting with . or _ (.git,
+ * _build), nor under a symbolic link to a directory (xix's principia/,
+ * principia again) *)
+val directory_sources : < Cap.readdir ; Cap.open_in ; .. > -> string -> (string * string) list

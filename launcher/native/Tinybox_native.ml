@@ -329,3 +329,36 @@ let host (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string lis
                 (preview_ms p));
         };
   }
+
+(*****************************************************************************)
+(* A directory's code *)
+(*****************************************************************************)
+
+(* the files the code map colours: OCaml's (Highlight_ml), C's (Highlight_c) *)
+let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h" ]
+
+(* claude: the capabilities as proof that we may, the Stdlib and Unix
+ * doing the reading, as File_menu and Tty_unix do *)
+let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string) : (string * string) list =
+  let out = ref [] in
+  let rec walk (rel : string) =
+    let entries = try Sys.readdir (if rel = "" then dir else Filename.concat dir rel) with Sys_error _ -> [||] in
+    Array.sort compare entries;
+    Array.iter
+      (fun e ->
+        if e <> "" && e.[0] <> '.' && e.[0] <> '_' then begin
+          let r = if rel = "" then e else Filename.concat rel e in
+          let path = Filename.concat dir r in
+          match (Unix.lstat path).st_kind with
+          | S_DIR -> walk r
+          | S_REG when List.exists (Filename.check_suffix e) source_extensions -> (
+              match In_channel.with_open_bin path In_channel.input_all with
+              | src -> out := (r, src) :: !out
+              | exception Sys_error _ -> ())
+          | _ -> ()
+          | exception Unix.Unix_error _ -> ()
+        end)
+      entries
+  in
+  walk "";
+  List.rev !out

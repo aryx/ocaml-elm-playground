@@ -19,6 +19,8 @@
  *   tinybox mario [args]           a name found case-insensitively,
  *                                  "Tiny" optional, or any unique part
  *   tinybox TinyTurboPascal -tty   an editor in this terminal, not a window
+ *   tinybox codemap ~/principia    the code map of a directory's OCaml
+ *                                  and C files, read from the disk
  *   tinymario [args]               BusyBox's way: started under a
  *                                  program's name (a link to tinybox)
  *
@@ -46,7 +48,12 @@
 
 let menu = "tinybox"
 
-let programs () : string list = List.filter (( <> ) menu) (List.map fst (Program.collected ()))
+(* claude: a directory's code map, one more program too, the directory
+ * given before it runs *)
+let codemap = "codemap"
+let codemap_dir = ref "."
+
+let programs () : string list = List.filter (fun p -> p <> menu && p <> codemap) (List.map fst (Program.collected ()))
 
 (* The editors that also run in a terminal (apps/devtools/tty/, whose
  * modules can't be linked here: they have the GUI versions' names). *)
@@ -95,8 +102,9 @@ let columns (names : string list) : string =
   Buffer.contents b
 
 let usage =
-  "usage: tinybox [-platform flags | chosen=<program> | code=<program> | list | <program> [args] | <program> -tty]\n\
+  "usage: tinybox [-platform flags | chosen=<program> | code=<program> | list | codemap <dir> | <program> [args] | <program> -tty]\n\
   \  chosen=, code=: the menu on a program, or in its code map\n\
+  \  codemap <dir>: the code map of a directory's OCaml and C files\n\
   \  <program>: its name, case-insensitive, \"Tiny\" optional, or a unique part of it\n\
   \  args: the program's own, e.g. -debug-keys, artwork=shapes\n"
 
@@ -134,11 +142,25 @@ let start (query : string) (args : string list) : unit =
 let () = Program.main menu (fun () -> Cap.main (fun caps -> Tinybox_menu.run (Tinybox_native.host caps (programs ()))))
 
 let () =
+  Program.main codemap (fun () ->
+      Cap.main (fun caps ->
+          let dir = !codemap_dir in
+          let sources = Tinybox_native.directory_sources caps dir in
+          if sources = [] then (eprint caps (Printf.sprintf "tinybox codemap: no OCaml nor C file under %s\n" dir); exit 2);
+          (* its name: the directory's own, not "." *)
+          let name = Filename.basename (if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir) in
+          Codemap.run_directory ~name ~sources))
+
+let () =
   let invoked = Filename.remove_extension (Filename.basename Sys.argv.(0)) in
   match Array.to_list Sys.argv with
   (* BusyBox's way: tinybox under another name *)
   | _ :: args when String.lowercase_ascii invoked <> "tinybox" -> start invoked args
   | [ _; "list" ] -> list_programs ()
+  (* claude: a directory's code map, with the platform's flags if any *)
+  | exe :: "codemap" :: dir :: flags ->
+      codemap_dir := dir;
+      Program.run codemap ~argv:(Array.of_list (exe :: flags))
   | [ _; ("-h" | "-help" | "--help") ] -> Cap.main (fun caps -> print caps usage)
   (* the menu, with the platform's flags if any (-fixed-time, -dump-frame),
    * claude: and its own, name=value (code=TinyVi: Tinybox_menu.run), no
