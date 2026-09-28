@@ -1,0 +1,5 @@
+; claude: unit tests for the C lexer and highlighter, run by 'make
+; test' (dune runtest): the worked examples of the .mlis
+(test
+ (name Test)
+ (libraries alcotest testo lang_c highlight_code))

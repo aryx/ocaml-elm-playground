@@ -1,0 +1,16 @@
+; claude: C read, not run, for a code visualizer, as ../ocaml/ is for
+; OCaml: Token_c (every token kept, comments and the preprocessor's lines
+; too), Lexer_c (ocamllex), Ast_c and Parse_c (the names and what they
+; are, recursive descent, no preprocessor: Parse_c.mli's heuristics) and
+; Highlight_c (each token's category, highlight/'s Highlight_code).
+;
+; Pure OCaml, no Playground (languages/README.md). A private
+; library, installed as part of elm_playground.
+(library
+ (name lang_c)
+ (package elm_playground)
+ (wrapped false)
+ (modules_without_implementation Ast_c)
+ (libraries highlight_code))
+
+(ocamllex Lexer_c)
