@@ -314,7 +314,7 @@ let host (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string lis
     play = play caps runnable;
     running = (fun () -> Option.map (fun c -> c.name) !child);
     ended = ended caps;
-    sources = Some (lazy Tinybox_sources.sources);
+    sources = (fun () -> Tinybox_menu.Sources Tinybox_sources.sources);
     preview =
       Some
         {

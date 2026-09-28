@@ -17,9 +17,39 @@ setting `window.location` itself (`Ojs`) -- no navigation command in
 `Cmd` yet. Checked in Chrome: the menu, the thumbnails from the assets,
 the arrows and Enter loading the program's page.
 
+Then the code map on the web (step 7): the sources a file in the
+assets (`tinybox_sources.txt`, 10.2 MB, 3.0 MB gzipped), fetched the
+first time the menu asks for them (`host.sources`: `Loading`, then
+`Sources`), the panel saying so meanwhile. Made fast, measured in
+headless Chrome through its DevTools protocol (frame times, long
+tasks, the sampling profiler):
+
+| | before | after |
+|---|---|---|
+| startup's worst freeze | 1.4 s | 0.18 s |
+| zooming the code map | 2 fps | 30 fps |
+| the map still, the glass over it | 1 fps | 53 fps |
+
+- The fetched bytes made a string a byte at a time (`String.init` over
+  the `Uint8Array`, 10 million calls): 1.4 s, most of it the garbage
+  collector. Now the browser builds it (`String.fromCharCode` of 32 KB
+  slices, `Js.to_bytestring`): Tinybox_web.
+- A bitmap on the web was a PNG made by our encoder compiled to
+  JavaScript (row filters, deflate, base64): 1 s for a code map. Now the
+  browser's, a canvas's `toDataURL` over the bitmap's own bytes: 28 ms.
+  The web platform's `bitmap_url`, so every program showing a bitmap
+  gains.
+- The glass repainted every frame while the map moved under it: now it
+  waits for the camera to stop (Code_map.glass).
+- `fill` wrote every pixel's 4 bytes: now its first row, then copied
+  (Bigarray's blit, a typed array's `set`).
+
+Left: the treemap's layout, 0.5 s when a map is made; painting itself
+(`paint_code`), the most of a zoom's frame now.
+
 Next, in order: Back returning to the program chosen (`?chosen=`, the
-URL replaced before leaving); the code map on the web (step 7); a way
-back from a program's page (a link, or Escape); the previews.
+URL replaced before leaving); a way back from a program's page (a
+link, or Escape); the previews.
 
 ## The problem
 

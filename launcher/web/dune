@@ -8,7 +8,8 @@
  (libraries
    caps elm_core elm_playground catalogue
    tinybox_menu
-   ojs ; the page's location
+   ojs ; the page's location, the sources' request
+   js_of_ocaml ; Js.to_bytestring, the sources' bytes
    elm_playground_web ; implem of virtual elm_playground
  )
  (modes js)

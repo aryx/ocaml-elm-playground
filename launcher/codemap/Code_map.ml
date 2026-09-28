@@ -58,6 +58,7 @@ type t = {
   before_right : bool;
   mutable painted : (camera * float * Rgba_image.t) option; (* the picture of [cam], at a pixel ratio *)
   mutable last : camera option; (* the camera the frame before: is it still? *)
+  mutable moving : bool; (* it was not, this frame (view): no glass *)
   mutable lens : (camera * Rgba_image.t) option; (* the magnifying glass's last picture, and its camera *)
   order : (string, int) Hashtbl.t; (* claude: a file's place in the reading order, when numbered *)
 }
@@ -103,7 +104,7 @@ let make ?(numbered = false) ~(area : float * float * int * int) ~(title : strin
   let order = Hashtbl.create 64 in
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
-    before_right = false; painted = None; last = None; lens = None; order }
+    before_right = false; painted = None; last = None; moving = false; lens = None; order }
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries
@@ -199,16 +200,29 @@ let at_ratio (c : camera) (q : float) : camera =
   let n x = max 1 (int_of_float (Float.round (float_of_int x *. q))) in
   { c with z = c.z *. q; a = { c.a with pw = n c.a.pw; ph = n c.a.ph } }
 
+(* claude: the rectangle's first row a pixel at a time, then copied to
+ * the others (Bigarray's blit: a memcpy natively, a typed array's set
+ * on the web, where writing the 4 bytes of every pixel one by one made
+ * a code map's background -- a million and a half pixels -- a quarter
+ * of its frame)
+ *
+ *   old: every row as the first
+ *)
 let fill (img : Rgba_image.t) (x0 : int) (y0 : int) (x1 : int) (y1 : int) ((r, g, b) : int * int * int) : unit =
-  for y = y0 to y1 - 1 do
+  if x1 > x0 && y1 > y0 then begin
     for x = x0 to x1 - 1 do
-      let i = 4 * ((y * img.width) + x) in
+      let i = 4 * ((y0 * img.width) + x) in
       Bigarray.Array1.unsafe_set img.rgba i r;
       Bigarray.Array1.unsafe_set img.rgba (i + 1) g;
       Bigarray.Array1.unsafe_set img.rgba (i + 2) b;
       Bigarray.Array1.unsafe_set img.rgba (i + 3) 255
+    done;
+    let n = 4 * (x1 - x0) in
+    let first = Bigarray.Array1.sub img.rgba (4 * ((y0 * img.width) + x0)) n in
+    for y = y0 + 1 to y1 - 1 do
+      Bigarray.Array1.blit first (Bigarray.Array1.sub img.rgba (4 * ((y * img.width) + x0)) n)
     done
-  done
+  end
 
 (* a rectangle's pixels on the map, clipped: None if off it *)
 let clip (c : camera) (r : Treemap.rect) : (int * int * int * int) option =
@@ -616,6 +630,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
   let still = t.last = Some c in
   t.last <- Some c;
+  t.moving <- not still;
   let want = if still then q else Float.min q 0.5 in
   let img =
     match t.painted with
@@ -838,5 +853,10 @@ let reading_glass (computer : computer) (t : t) : shape list =
         words (rgb 190 190 205) (Printf.sprintf "x%.1f" power) |> scale (12. /. words_font_size) |> move (gx +. (w /. 2.) -. 24.) (gy +. (h /. 2.) +. 1.);
       ]
 
+(* claude: no glass while the map moves under it: its picture follows
+ * the map's camera, so it would be painted anew every frame, as much
+ * again as the map's own (on the web, half of a zoom's frame); it comes
+ * back the frame the camera stops, as the map's sharp picture does *)
 let glass (computer : computer) (t : t) : shape list =
-  match !glass_shape with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []
+  if t.moving then []
+  else match !glass_shape with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []

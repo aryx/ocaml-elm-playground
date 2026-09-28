@@ -386,6 +386,28 @@ The full case, with the tools behind these numbers (mini-qemu's
 `-prof`, `pcprof.py`, `timecmd.py`), is in ix's
 `docs/notes_performance.md`.
 
+## 15. On the web: let the browser do it
+
+tinybox's code map in a browser (js_of_ocaml, plan_tinybox_web.md):
+zooming ran at 2 frames a second, and the page froze 1.4 s at start.
+Measured in headless Chrome through its DevTools protocol: frame times
+from `requestAnimationFrame`, freezes from the `longtask` observer,
+and the sampling profiler's self and inclusive times by function (the
+development build: release-js minifies the names away).
+
+| where the time went | fix | |
+|---|---|---|
+| a PNG per new bitmap, our encoder compiled to JavaScript (`filter_row`, `compress`, base64): 1 s for 1738 by 838 | the browser's: the bytes on a canvas (`putImageData`, the Bigarray *is* a typed array, no copy), `toDataURL` | 28 ms |
+| 10 MB of fetched bytes to a string, `String.init` over a `Uint8Array`: 10 million calls, the garbage collector | `String.fromCharCode` of 32 KB slices, joined, `Js.to_bytestring` | 1.4 s to ~0.1 s |
+| a second picture (the magnifying glass) repainted every frame of a zoom | none while the camera moves | half a frame |
+| `fill` writing 4 bytes a pixel | its first row, then `Bigarray.Array1.blit` (a typed array's `set`) | a quarter of a frame |
+
+Zooming went from 2 to 30 frames a second. The lesson: compiled to
+JavaScript, a loop over every byte is a loop of function calls; what
+the browser already does in native code (encoding a PNG, building a
+string, copying memory) should be left to it, and on the web the
+profile shows at once which of our loops is doing the browser's job.
+
 ## The .mpg decoder, step by step
 
 60 frames of a 352 x 288 VCD .mpg (`albator_78_debut.mpg`), video only,

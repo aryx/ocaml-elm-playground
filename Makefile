@@ -159,7 +159,9 @@ doc:
 # directories are emptied first, so that a program gone leaves no page.
 # And tinybox's menu for the web (launcher/web/, plan_tinybox_web.md),
 # docs/tinybox.html, its program beside the others in the assets: a
-# program chosen there is its own page, docs/<dir>/<Name>.html.
+# program chosen there is its own page, docs/<dir>/<Name>.html; and
+# beside it the repository's sources for its code map (10 MB, fetched
+# when first needed), written from the source tree.
 VERSION=$(shell sed -n 's/^(version "\(.*\)")/\1/p' dune-project)
 ASSETS ?= $(HOME)/github/assets
 ASSETS_URL=https://aryx.github.io/assets
@@ -204,6 +206,7 @@ website:
 	./_build/default/launcher/website/make_website.exe $(ASSETS_URL)
 	mkdir -p $(ASSETS)/js/launcher
 	install -m 644 _build/default/launcher/web/Tinybox_web.bc.js $(ASSETS)/js/launcher/
+	./_build/default/launcher/codegen/make_tinybox_data.exe sources-file > $(ASSETS)/js/launcher/tinybox_sources.txt
 	printf '<html>\n  <head>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
 	  $(ASSETS_URL)/js/launcher/Tinybox_web.bc.js > docs/tinybox.html
 

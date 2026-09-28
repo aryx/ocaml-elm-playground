@@ -8,7 +8,7 @@
  * one started in a process of its own (tinybox <Name>), the thumbnails
  * and the sources embedded, the chosen one previewed live; on the web
  * (web/), no program linked in, one started by loading its own page, the
- * thumbnails fetched by URL, no code map yet. *)
+ * thumbnails and the sources fetched by URL. *)
 
 (* what the menu needs from where it runs *)
 type host = {
@@ -18,11 +18,16 @@ type host = {
   running : unit -> string option; (* the program the menu waits for, if any *)
   ended : unit -> string option;
       (* once, when the one waited for ended: "", or how it failed *)
-  sources : (string * string) list Lazy.t option;
-      (* the repository's sources (path, text), for the code map; None: no
-       * code map here *)
+  sources : unit -> sources;
+      (* the repository's sources, for the code map: natively at once,
+       * on the web once fetched (asking for them starts the fetch) *)
   preview : preview option; (* the chosen one, live in the panel *)
 }
+
+and sources =
+  | Sources of (string * string) list (* (path, text) *)
+  | Loading (* on their way *)
+  | No_sources of string (* why not *)
 
 (* claude: the chosen program playing in the detail panel, after a
  * second on it (natively: Tinybox_native's "Previews") *)

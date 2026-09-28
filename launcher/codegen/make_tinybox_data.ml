@@ -44,7 +44,9 @@
  *   make_tinybox_data sources          Tinybox_sources.ml, the sources of
  *                                      the games, apps, kits, playground
  *                                      and libs, for the code map
- *                                      (codemap/), native only *)
+ *                                      (codemap/), native only
+ *   make_tinybox_data sources-file     the same, as a file, for the web's
+ *                                      code map (make website) *)
 
 let read (path : string) : string =
   let ic = open_in_bin path in
@@ -71,7 +73,7 @@ let frame (p : Catalogue.program) : string =
 
 let () =
   let catalogue = read "CATALOG.md" in
-  if Sys.argv.(1) <> "pngs" then
+  if Sys.argv.(1) <> "pngs" && Sys.argv.(1) <> "sources-file" then
     print_string "(* generated from CATALOG.md and the golden frames by launcher/codegen/make_tinybox_data.ml *)\n";
   match Array.to_list Sys.argv with
   | [ _; "thumbs"; n ] ->
@@ -116,4 +118,10 @@ let () =
                output_string oc (thumbnail (read frame));
                close_out oc
              end)
-  | _ -> failwith "usage: make_tinybox_data (catalogue | thumbs n | thumbnails k n | sources | pngs dir)"
+  (* claude: the same sources as a file, for the web's code map (fetched,
+   * the 10 MB too many for its program): each file its path, a newline,
+   * its length in bytes, a newline, and its text (Tinybox_web.parse) *)
+  | [ _; "sources-file" ] ->
+      List.iter (fun (path, text) -> Printf.printf "%s\n%d\n%s" path (String.length text) text)
+        (Code_deps.repository_sources ~root:".")
+  | _ -> failwith "usage: make_tinybox_data (catalogue | thumbs n | thumbnails k n | sources | sources-file | pngs dir)"

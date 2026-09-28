@@ -483,11 +483,49 @@ let render_image w h src x y angle s alpha =
  * frame, which a single one kept would encode again each time *)
 let last_bitmaps : (Rgba_image.t * string) list ref = ref []
 
+(* claude: the PNG encoded by the browser, in native code: the pixels
+ * put on a canvas (putImageData, the Rgba_image's own bytes, no copy:
+ * a Bigarray is a typed array in JavaScript) and the canvas asked for
+ * a PNG (toDataURL). 28 ms for 1738 by 838 where Png.encode compiled to
+ * JavaScript took 1 s (row filters, deflate, base64): tinybox's code
+ * map, a new picture every frame it moves, went from 1 frame a second.
+ * The same lossless PNG. One canvas, kept, resized to each picture.
+ *
+ *   old: "data:image/png;base64," ^ String_base64.encode (Png.encode img)
+ *)
+let canvas : Ojs.t option ref = ref None
+
+let png_data_url (img : Rgba_image.t) : string =
+  let c =
+    match !canvas with
+    | Some c -> c
+    | None ->
+        let c = Ojs.call (Ojs.get_prop_ascii Ojs.global "document") "createElement" [| Ojs.string_to_js "canvas" |] in
+        canvas := Some c;
+        c
+  in
+  Ojs.set_prop_ascii c "width" (Ojs.int_to_js img.width);
+  Ojs.set_prop_ascii c "height" (Ojs.int_to_js img.height);
+  let ctx = Ojs.call c "getContext" [| Ojs.string_to_js "2d" |] in
+  let u8 : Ojs.t =
+    (* an Ojs.t and a Js.t are the same JavaScript value, the two
+     * libraries' types for it *)
+    Obj.magic
+      (Js_of_ocaml.Typed_array.from_genarray Js_of_ocaml.Typed_array.Int8_unsigned (Bigarray.genarray_of_array1 img.rgba))
+  in
+  let clamped =
+    Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8ClampedArray")
+      [| Ojs.get_prop_ascii u8 "buffer"; Ojs.get_prop_ascii u8 "byteOffset"; Ojs.get_prop_ascii u8 "length" |]
+  in
+  let data = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "ImageData") [| clamped; Ojs.int_to_js img.width; Ojs.int_to_js img.height |] in
+  ignore (Ojs.call ctx "putImageData" [| data; Ojs.int_to_js 0; Ojs.int_to_js 0 |]);
+  Ojs.string_of_js (Ojs.call c "toDataURL" [| Ojs.string_to_js "image/png" |])
+
 let bitmap_url (img : Rgba_image.t) : string =
   match List.find_opt (fun (i, _) -> i == img) !last_bitmaps with
   | Some (_, url) -> url
   | None ->
-      let url = "data:image/png;base64," ^ String_base64.encode (Png.encode img) in
+      let url = png_data_url img in
       last_bitmaps := List.filteri (fun k _ -> k < 32) ((img, url) :: !last_bitmaps);
       url
 

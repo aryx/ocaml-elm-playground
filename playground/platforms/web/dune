@@ -11,6 +11,7 @@
 
    elm_playground
    graphics_png ; claude: Playground.bitmap's pixels, as a PNG data: URL
+   js_of_ocaml ; claude: Typed_array, a bitmap's bytes put on a canvas
  )
  ;(preprocess (pps profiling.ppx))
 )

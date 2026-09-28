@@ -214,9 +214,11 @@ type host = {
   play : Catalogue.program -> string;
   running : unit -> string option;
   ended : unit -> string option;
-  sources : (string * string) list Lazy.t option;
+  sources : unit -> sources;
   preview : preview option;
 }
+
+and sources = Sources of (string * string) list | Loading | No_sources of string
 
 and preview = {
   step : now:number -> dwell:int -> Catalogue.program option -> unit;
@@ -405,14 +407,14 @@ let bar_key (computer : computer) (m : model) (key : string) : model =
  * above and the status and keys below *)
 let code_map_area (screen : screen) = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162)
 
-(* claude: where the host has no sources (the web, for now), no code map *)
-let no_code = "its code: not here yet (tinybox, natively, has it)"
+(* claude: the sources not here yet (the web's, on their way) *)
+let not_yet = function Loading -> "its code: on its way..." | No_sources why -> "its code: " ^ why | Sources _ -> ""
 
 (* the chosen program's code map *)
 let open_code (host : host) (screen : screen) (m : model) : model =
-  match (chosen m, host.sources) with
-  | Some p, Some sources -> { m with code = Some (Codemap.make ~area:(code_map_area screen) ~sources:(Lazy.force sources) ~program:p.name ~path:p.source) }
-  | Some _, None -> { m with status = no_code }
+  match (chosen m, host.sources ()) with
+  | Some p, Sources sources -> { m with code = Some (Codemap.make ~area:(code_map_area screen) ~sources ~program:p.name ~path:p.source) }
+  | Some _, s -> { m with status = not_yet s }
   | None, _ -> m
 
 (* claude: tinybox's own code map, the menu and the code map showing
@@ -424,10 +426,10 @@ let open_code (host : host) (screen : screen) (m : model) : model =
 let tinybox_code (host : host) (screen : screen) (m : model) : model =
   let starts pre p = String.length p >= String.length pre && String.sub p 0 (String.length pre) = pre in
   let own p = starts "launcher/" p || starts "languages/" p || starts "libs/code/" p in
-  match host.sources with
-  | Some sources ->
-      { m with code = Some (Codemap.make_own ~own ~area:(code_map_area screen) ~sources:(Lazy.force sources) ~program:"tinybox" ~path:"launcher/native/Tinybox.ml") }
-  | None -> { m with status = no_code }
+  match host.sources () with
+  | Sources sources ->
+      { m with code = Some (Codemap.make_own ~own ~area:(code_map_area screen) ~sources ~program:"tinybox" ~path:"launcher/native/Tinybox.ml") }
+  | s -> { m with status = not_yet s }
 
 let update (host : host) (computer : computer) (m : model) : model =
   let m = wait host m in
@@ -678,15 +680,16 @@ let players_text (p : Catalogue.program) : string =
 let code_preview : (string * Code_map.t) option ref = ref None
 
 let code_of (host : host) (p : Catalogue.program) : Code_map.t option =
-  match (!code_preview, host.sources) with
-  | Some (name, c), _ when name = p.name -> Some c
-  | _, None -> None
-  | _, Some sources ->
-      if fst !chosen_since = p.name && !frames - snd !chosen_since >= 20 then begin
-        let c = Codemap.preview ~area:code_area ~sources:(Lazy.force sources) ~program:p.name ~path:p.source in
+  match !code_preview with
+  | Some (name, c) when name = p.name -> Some c
+  | _ ->
+      if fst !chosen_since = p.name && !frames - snd !chosen_since >= 20 then (
+      match host.sources () with
+      | Sources sources ->
+        let c = Codemap.preview ~area:code_area ~sources ~program:p.name ~path:p.source in
         code_preview := Some (p.name, c);
         Some c
-      end
+      | Loading | No_sources _ -> None)
       else None
 
 let code_panel (host : host) (computer : computer) (p : Catalogue.program) : shape list =
@@ -694,9 +697,11 @@ let code_panel (host : host) (computer : computer) (p : Catalogue.program) : sha
   let w = float_of_int w and h = float_of_int h in
   let cx = x +. (w /. 2.) and cy = y -. (h /. 2.) in
   let code_of = code_of host in
-  if host.sources = None then
-    [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy no_code; frame cyan w h 2. |> move cx cy ]
-  else
+  (* claude: the sources not here (yet): say so where the map would be *)
+  match host.sources () with
+  | (Loading | No_sources _) as s ->
+    [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy (not_yet s); frame cyan w h 2. |> move cx cy ]
+  | Sources _ ->
   (* claude: how much code, all the files shown, once the map is made *)
   let size =
     match code_of p with
