@@ -27,7 +27,7 @@ type action = Stay | Open of Code_file.t * int | Close
 
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
-let styles = [ Map_classic.style; Map_streets.style ]
+let styles = [ Map_classic.style; Map_streets.style; Map_atlas.style ]
 let chosen = ref Map_classic.style
 let choose_style (name : string) = match List.find_opt (fun s -> s.sname = name) styles with Some s -> chosen := s | None -> ()
 let style_name () = !chosen.sname
@@ -406,6 +406,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
   let u = to_u c mpx and v = to_v c mpy in
   let hovered = if on a mpx mpy then under t u v else None in
+  t.pointer <- (if on a mpx mpy then Some (u, v) else None);
   let box color th (x0, y0, x1, y1) = frame a color (float_of_int x0) (float_of_int y0) (float_of_int x1) (float_of_int y1) th in
   let marks =
     Array.to_list t.placed

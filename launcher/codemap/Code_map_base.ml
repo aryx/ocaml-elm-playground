@@ -75,7 +75,14 @@ type t = {
   style : style; (* claude: how the map is drawn (Map_classic, ...) *)
   mutable index : Code_names.index option; (* claude: its files indexed, once (index_of) *)
   mutable rank : Code_rank.t option; (* claude: its definitions' uses, once (rank_of) *)
+  mutable search : string option; (* claude: the query typed after /, while searching *)
+  mutable flight : flight option; (* claude: a smooth flight under way (a search's, a jump's) *)
+  mutable pointer : (float * float) option; (* claude: the layout's point under the mouse, when on the map (view's) *)
 }
+
+(* claude: a flight from one camera to another, zooming out and back in
+ * (van Wijk and Nuij), from a time on (nan: the next frame's) *)
+and flight = { from : camera; dest : camera; mutable start : float; duration : float }
 
 (* claude: a style: the map's picture (the directories, the files, their
  * code) and the names over it, the rest (the camera, the names lit and
@@ -84,6 +91,9 @@ and style = {
   sname : string;
   paint : aa:bool -> t -> camera -> Rgba_image.t;
   labels : t -> camera -> float -> shape list;
+  (* claude: the definition a label under a pixel of the map names, if
+   * the style's labels name any (its file, line and name) *)
+  pick : t -> camera -> float -> float -> float -> (string * int * string) option;
 }
 
 (*****************************************************************************)
@@ -126,7 +136,7 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ~(style : style) ~(ar
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None }
+    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries

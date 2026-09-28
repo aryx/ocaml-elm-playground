@@ -25,6 +25,11 @@
 (* the level for a line this high on the screen (window pixels): 0 to 4 *)
 val level : float -> int
 
+(* claude: where the code's colours come in (Z3), and a step smoothed
+   between two heights (0 below a, 1 above b) *)
+val t_colours : float
+val smooth : float -> float -> float -> float
+
 (* a file's colour, its role's over its part's *)
 val file_colour : Code_map_base.t -> string -> int * int * int
 

@@ -139,4 +139,5 @@ let labels_by ~(emphasis : string -> int -> string -> Highlight_code.category ->
 
 let labels = labels_by ~emphasis:(fun _ _ _ cat -> Highlight_code.emphasis cat)
 
-let style : style = { sname = "classic"; paint; labels }
+(* claude: its labels are drawn, not kept: none to pick *)
+let style : style = { sname = "classic"; paint; labels; pick = (fun _ _ _ _ _ -> None) }

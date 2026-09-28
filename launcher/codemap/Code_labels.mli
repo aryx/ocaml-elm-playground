@@ -22,6 +22,7 @@
    while its levels allow it. *)
 
 type kind =
+  | Dir (* a directory's name, over its middle: a country, a region *)
   | Tab (* a file's name, on a tab at its top left corner *)
   | Landmark (* a "trick of this game" mark *)
   | Capital (* one of the map's most used definitions *)
@@ -42,20 +43,35 @@ type label = {
   fw : float; (* its file's rectangle, in the layout's units *)
   fh : float;
   color : int * int * int;
+  target : (string * int * string) option; (* the definition it names: its file, line, name *)
   mutable minz : float; (* infinity: never placed *)
   mutable maxz : float;
 }
 
 val label :
-  kind -> string -> x:float -> y:float -> ?left:bool -> px:float -> rank:float -> from_level:float -> to_level:float -> fw:float -> fh:float -> int * int * int -> label
+  kind ->
+  string ->
+  x:float ->
+  y:float ->
+  ?left:bool ->
+  px:float ->
+  rank:float ->
+  from_level:float ->
+  to_level:float ->
+  fw:float ->
+  fh:float ->
+  ?target:string * int * string ->
+  int * int * int ->
+  label
 
 (* a label's box, in the screen's pixels: width and height *)
 val size : label -> float * float
 
-(* [place ~level ~zmin ~zmax labels]: every label's minz and maxz, for
-   zooms from [zmin] to [zmax] (pixels a unit), [level z] the map's level
-   at zoom z *)
-val place : level:(float -> float) -> zmin:float -> zmax:float -> label array -> unit
+(* [place ~level ~dir_level ~zmin ~zmax labels]: every label's minz and
+   maxz, for zooms from [zmin] to [zmax] (pixels a unit), [level z] the
+   map's level at zoom z; a directory's, [dir_level z]: the countries at
+   the whole map whatever its size, a street map's first names *)
+val place : level:(float -> float) -> dir_level:(float -> float) -> zmin:float -> zmax:float -> label array -> unit
 
 (* how much a label shows at zoom z: 0 outside its zooms, 1 inside,
    fading over a sixth of a zoom step either side *)

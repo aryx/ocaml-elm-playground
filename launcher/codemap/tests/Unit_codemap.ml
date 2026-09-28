@@ -128,7 +128,7 @@ let tests =
       Testo.create "labels placed once, zoom by zoom" (fun () ->
           let mk text x rank = Code_labels.label Def text ~x ~y:10. ~px:12. ~rank ~from_level:0. ~to_level:9. ~fw:1000. ~fh:1000. (255, 255, 255) in
           let a = mk "important" 10. 10. and b = mk "shadowed" 10. 5. and c = mk "far" 900. 1. in
-          Code_labels.place ~level:(fun _ -> 2.) ~zmin:0.5 ~zmax:400. [| a; b; c |];
+          Code_labels.place ~level:(fun _ -> 2.) ~dir_level:(fun _ -> 2.) ~zmin:0.5 ~zmax:400. [| a; b; c |];
           Alcotest.(check (float 1e-9)) "the more important from the start" 0.5 a.minz;
           Alcotest.(check bool) "the other at the same point never" true (b.minz = Float.infinity);
           Alcotest.(check (float 1e-9)) "one far away from the start too" 0.5 c.minz;
@@ -172,4 +172,13 @@ let tests =
       Testo.create "a config's mistake" (fun () ->
           Alcotest.(check (result unit string)) "not a colour" (Error {|kernel: "orange" is no #rrggbb|})
             (Result.map ignore (Code_config.make ~ignore:None ~config:(Some {|{ "colors": { "kernel": "orange" } }|}))));
+      (* claude: a road's spline starts and ends at its parts, and passes
+       * near, not through, the directories between (Holten's bundles) *)
+      Testo.create "a road's B-spline" (fun () ->
+          let pts = Map_atlas.bspline ~per:4 [| (0., 0.); (10., 10.); (20., 0.) |] in
+          let first = List.hd pts and last = List.hd (List.rev pts) in
+          Alcotest.(check (list (float 1e-9))) "its ends" [ 0.; 0.; 20.; 0. ] [ fst first; snd first; fst last; snd last ];
+          let top = List.fold_left (fun m (_, y) -> Float.max m y) 0. pts in
+          Alcotest.(check bool) "the middle pulled towards (10, 10), short of it" true (top > 4. && top < 10.);
+          Alcotest.(check (list int)) "the zooms' depths" [ 1; 2; max_int ] [ Map_atlas.depth_at 1.; Map_atlas.depth_at 4.; Map_atlas.depth_at 20. ]);
     ]

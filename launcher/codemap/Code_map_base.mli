@@ -57,7 +57,14 @@ type t = {
   style : style; (* how the map is drawn *)
   mutable index : Code_names.index option; (* its files indexed, once (index_of) *)
   mutable rank : Code_rank.t option; (* its definitions' uses, once (rank_of) *)
+  mutable search : string option; (* the query typed after /, while searching *)
+  mutable flight : flight option; (* a smooth flight under way (a search's, a jump's) *)
+  mutable pointer : (float * float) option; (* the layout's point under the mouse, when on the map, for a style's labels *)
 }
+
+(* a flight from one camera to another, zooming out and back in (van Wijk
+   and Nuij), from a time on (nan: the next frame's) *)
+and flight = { from : camera; dest : camera; mutable start : float; duration : float }
 
 (* a style: the map's picture (the directories, the files, their code),
    painted at a camera, anti-aliased if [aa]; and the names over it, [q]
@@ -66,6 +73,9 @@ and style = {
   sname : string;
   paint : aa:bool -> t -> camera -> Rgba_image.t;
   labels : t -> camera -> float -> Playground.shape list;
+  (* the definition a label under a pixel of the map ([q], px, py) names,
+     if the style's labels name any: its file, line and name *)
+  pick : t -> camera -> float -> float -> float -> (string * int * string) option;
 }
 
 (*****************************************************************************)

@@ -85,9 +85,11 @@ val cycle_glass : unit -> unit
 val glass_name : unit -> string
 
 (* claude: the map's style (Code_map_base.style: Map_classic, today's;
-   Map_streets, plan_codemap_google_maps.md's), one setting for every
+   Map_streets, plan_codemap_google_maps.md's; Map_atlas, the street
+   map with the files' heat and the parts' roads), one setting for every
    map as the glass's: m (in update, or cycle_style) goes to the next;
-   choose_style by its name (the flag style=, "classic" or "streets");
+   choose_style by its name (the flag style=, "classic", "streets" or
+   "atlas");
    a map is made in the style chosen *)
 val cycle_style : unit -> unit
 val choose_style : string -> unit

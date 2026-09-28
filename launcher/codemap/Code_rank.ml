@@ -12,14 +12,19 @@
 
 type use = { own : int; others : int; files : int }
 
-(* a definition by its file, its line and its (last) name *)
-type t = { uses : (string * int * string, use) Hashtbl.t }
+(* a definition by its file, its line and its (last) name; and the files
+ * using it, how many times each *)
+type t = {
+  uses : (string * int * string, use) Hashtbl.t;
+  users : (string * int * string, (string, int) Hashtbl.t) Hashtbl.t;
+  links : (string * string, int) Hashtbl.t; (* claude: a file's uses of another's definitions *)
+}
 
 let last_name (s : string) : string = match String.rindex_opt s '.' with Some i -> String.sub s (i + 1) (String.length s - i - 1) | None -> s
 
 let compute ?roots (files : (string * Code_file.t Lazy.t) list) : t =
   let ix = Code_names.index files in
-  let h = Hashtbl.create 4096 in
+  let h = Hashtbl.create 4096 and users = Hashtbl.create 4096 and links = Hashtbl.create 1024 in
   let get k = Option.value (Hashtbl.find_opt h k) ~default:{ own = 0; others = 0; files = 0 } in
   List.iter
     (fun (path, lf) ->
@@ -46,11 +51,21 @@ let compute ?roots (files : (string * Code_file.t Lazy.t) list) : t =
                  let u = get k in
                  let first = not (Hashtbl.mem seen k) in
                  if first then Hashtbl.replace seen k ();
-                 Hashtbl.replace h k { u with others = u.others + 1; files = (u.files + if first then 1 else 0) }
+                 Hashtbl.replace h k { u with others = u.others + 1; files = (u.files + if first then 1 else 0) };
+                 let by = match Hashtbl.find_opt users k with Some by -> by | None -> let by = Hashtbl.create 8 in Hashtbl.replace users k by; by in
+                 Hashtbl.replace by path (1 + Option.value (Hashtbl.find_opt by path) ~default:0);
+                 if c.path <> path then Hashtbl.replace links (path, c.path) (1 + Option.value (Hashtbl.find_opt links (path, c.path)) ~default:0)
              | _ -> ()))
         f.refs)
     files;
-  { uses = h }
+  { uses = h; users; links }
+
+let links (t : t) : (string * string * int) list = Hashtbl.fold (fun (a, b) n acc -> (a, b, n) :: acc) t.links [] |> List.sort compare
+
+let users (t : t) (path : string) (line : int) (name : string) : (string * int) list =
+  match Hashtbl.find_opt t.users (path, line, last_name name) with
+  | Some by -> List.sort (fun (a, n) (b, m) -> compare (m, a) (n, b)) (Hashtbl.fold (fun p n acc -> (p, n) :: acc) by [])
+  | None -> []
 
 let uses (t : t) (path : string) (line : int) (name : string) : use =
   Option.value (Hashtbl.find_opt t.uses (path, line, last_name name)) ~default:{ own = 0; others = 0; files = 0 }

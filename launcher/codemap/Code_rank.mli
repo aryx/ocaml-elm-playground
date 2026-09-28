@@ -33,6 +33,14 @@ val compute : ?roots:string list -> (string * Code_file.t Lazy.t) list -> t
    of [path]; none counted if it is not one *)
 val uses : t -> string -> int -> string -> use
 
+(* claude: the other files using it, and how many times each, the most
+   first (a place card's "most from") *)
+val users : t -> string -> int -> string -> (string * int) list
+
+(* claude: the files' links: [(a, b, n)], file [a] using [b]'s
+   definitions [n] times (b not a), the roads of Map_atlas *)
+val links : t -> (string * string * int) list
+
 (* codemap's buckets and weights, and their product *)
 val bucket : int -> float
 val weight : Highlight_code.category -> float
