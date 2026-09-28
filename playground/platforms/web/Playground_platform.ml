@@ -967,11 +967,113 @@ let phone_page () : unit =
  * in time and place a double click. preventDefault: no mouse events of
  * the browser's after it, which would click twice. [svg]: the drawing,
  * once there is one (for adjust_x_y); [process]: run_app's. *)
-let listen_to_fingers ~(svg : unit -> Element.t option) ~(process : E.event -> unit) : unit =
+(* The phone's keyboard, for a program that wants keys (Space to start a
+ * game, a letter): a small button in a corner, shown from the first
+ * touch, focuses a text field that cannot be seen, and the phone's
+ * keyboard comes up; what it types becomes keys, each down then up a
+ * moment later (a game looks for a key held, or pressed this frame),
+ * and the typed text. The button again, and the keyboard goes.
+ *
+ * The catches. A phone's keyboard often gives no key's name
+ * ("Unidentified") and the character only in the field's input event:
+ * the keys are made from that. One that does give a name (Enter,
+ * Backspace, iOS's letters) goes the desktop's way, run_app's keydown,
+ * and is not made twice. And Backspace in an empty field gives nothing:
+ * the field keeps one character, for Backspace to take. Returns the
+ * button, which listen_to_fingers leaves alone. *)
+let phone_keyboard ~(process : E.event -> unit) : Ojs.t =
+  let doc = Ojs.get_prop_ascii Ojs.global "document" in
+  let create tag = Ojs.call doc "createElement" [| Ojs.string_to_js tag |] in
+  let css el (props : (string * string) list) =
+    let style = Ojs.get_prop_ascii el "style" in
+    List.iter (fun (k, v) -> Ojs.set_prop_ascii style k (Ojs.string_to_js v)) props
+  in
+  let body = Ojs.get_prop_ascii doc "body" in
+  let field = create "input" in
+  List.iter (fun (k, v) -> ignore (Ojs.call field "setAttribute" [| Ojs.string_to_js k; Ojs.string_to_js v |]))
+    [ ("autocomplete", "off"); ("autocorrect", "off"); ("autocapitalize", "off"); ("spellcheck", "false") ];
+  (* seen by the phone, not by the person; 16px, or iOS zooms on focus *)
+  css field [ ("position", "fixed"); ("left", "0"); ("bottom", "0"); ("width", "1px"); ("height", "1px");
+              ("opacity", "0"); ("fontSize", "16px"); ("border", "0"); ("padding", "0") ];
+  let button = create "div" in
+  (* a keyboard's sign, U+2328, made by the browser: a string from here
+   * would reach it as bytes, three characters *)
+  Ojs.set_prop_ascii button "textContent"
+    (Ojs.call (Ojs.get_prop_ascii Ojs.global "String") "fromCharCode" [| Ojs.int_to_js 0x2328 |]);
+  css button [ ("position", "fixed"); ("right", "8px"); ("bottom", "8px"); ("width", "44px"); ("height", "44px");
+               ("lineHeight", "44px"); ("textAlign", "center"); ("fontSize", "26px"); ("borderRadius", "8px");
+               ("background", "rgba(255,255,255,0.75)"); ("color", "#222"); ("zIndex", "10"); ("display", "none") ];
+  ignore (Ojs.call body "appendChild" [| field |]);
+  ignore (Ojs.call body "appendChild" [| button |]);
+  let reset () = Ojs.set_prop_ascii field "value" (Ojs.string_to_js "_") in
+  reset ();
+  (* a tap on the button must not take the focus from the field (that
+   * would close the keyboard before the click could): the pointer's and
+   * the mouse's default, focusing, prevented *)
+  List.iter
+    (fun kind ->
+      ignore (Ojs.call button "addEventListener" [| Ojs.string_to_js kind; Ojs.fun_to_js 1 (fun e -> ignore (Ojs.call e "preventDefault" [||])) |]))
+    [ "pointerdown"; "mousedown" ];
+  (* open or not, kept here, the field's blur saying when something else
+   * closed it *)
+  let opened = ref false in
+  ignore
+    (Ojs.call field "addEventListener" [| Ojs.string_to_js "blur"; Ojs.fun_to_js 1 (fun _ -> opened := false) |]);
+  ignore
+    (Ojs.call button "addEventListener"
+       [| Ojs.string_to_js "click";
+          Ojs.fun_to_js 1 (fun _ ->
+              if !opened then (opened := false; ignore (Ojs.call field "blur" [||]))
+              else (reset (); ignore (Ojs.call field "focus" [||]); opened := true)) |]);
+  (* a key, down now and up a moment later *)
+  let press (key : string) (typed : string option) =
+    process (E.EKeyChanged (true, key));
+    Option.iter (fun s -> process (E.ETyped s)) typed;
+    ignore (Ojs.call Ojs.global "setTimeout" [| Ojs.fun_to_js 1 (fun _ -> process (E.EKeyChanged (false, key))); Ojs.int_to_js 80 |])
+  in
+  (* did the last keydown in the field name its key (then run_app's
+   * keydown did it)? *)
+  let named = ref false in
+  ignore
+    (Ojs.call field "addEventListener"
+       [| Ojs.string_to_js "keydown";
+          Ojs.fun_to_js 1 (fun e -> named := Ojs.string_of_js (Ojs.get_prop_ascii e "key") <> "Unidentified") |]);
+  ignore
+    (Ojs.call field "addEventListener"
+       [| Ojs.string_to_js "input";
+          Ojs.fun_to_js 1 (fun e ->
+              if not !named then begin
+                let kind = Ojs.string_of_js (Ojs.get_prop_ascii e "inputType") in
+                let data = Ojs.get_prop_ascii e "data" in
+                if kind = "deleteContentBackward" then press "Backspace" None
+                else if not (Ojs.is_null data) then
+                  String.iter (fun c -> let s = String.make 1 c in press (if c = ' ' then "space" else s) (Some s)) (Ojs.string_of_js data)
+              end;
+              named := false;
+              reset ()) |]);
+  button
+
+(* The keyboard's button, made and shown the first time it is asked for
+ * -- at the first touch, so never with a mouse alone *)
+let keyboard_button ~(process : E.event -> unit) : unit -> Ojs.t =
+  let button = ref None in
+  fun () ->
+    match !button with
+    | Some b -> b
+    | None ->
+        let b = phone_keyboard ~process in
+        Ojs.set_prop_ascii (Ojs.get_prop_ascii b "style") "display" (Ojs.string_to_js "block");
+        button := Some b;
+        b
+
+(* [keyboard]: keyboard_button's, whose taps are its own, not the
+ * program's *)
+let listen_to_fingers ~(svg : unit -> Element.t option) ~(process : E.event -> unit) ~(keyboard : unit -> Ojs.t) :
+    unit =
   let last_tap = ref (-1000., 0., 0.) in
   let on_pointer evt =
     let get p = Ojs.get_prop_ascii (Event.t_to_js evt) p in
-    if Ojs.string_of_js (get "pointerType") <> "mouse" then begin
+    if Ojs.string_of_js (get "pointerType") <> "mouse" && not (get "target" == keyboard ()) then begin
       Event.prevent_default evt;
       resume_audio ();
       let cx = Ojs.float_of_js (get "clientX") and cy = Ojs.float_of_js (get "clientY") in
@@ -1268,5 +1370,6 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
       true;
     (* claude: and a phone's: its width, its fingers (Phones, above) *)
     phone_page ();
-    listen_to_fingers ~svg:(fun () -> Option.map snd !current) ~process:process_playground_event;
+    listen_to_fingers ~svg:(fun () -> Option.map snd !current) ~process:process_playground_event
+      ~keyboard:(keyboard_button ~process:process_playground_event);
   )
