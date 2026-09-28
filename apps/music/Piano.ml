@@ -20,6 +20,7 @@ type look = {
   letters_from : int;
   velocity : number;
   octaves : int * int;
+  by_depth : bool;
   white_key : color;
   black_key : color;
   letter_on_white : color;
@@ -73,9 +74,16 @@ let update (look : look) (computer : computer) (t : t) (inst : Instrument.t) : t
   let mouse = computer.mouse in
   let on_keys = if mouse.mdown && not t.was_down then key_at look mouse.mx mouse.my <> None else mouse.mdown && t.on_keys in
   let under = if on_keys then Option.map (note look t) (key_at look mouse.mx mouse.my) else None in
+  let velocity =
+    match key_at look mouse.mx mouse.my with
+    | Some s when look.by_depth ->
+        let h = if is_black s then look.black_height else look.white_height in
+        0.2 + (0.8 * (look.top - mouse.my) / h)
+    | _ -> look.velocity
+  in
   if under <> t.mouse_note then begin
     Option.iter inst.note_off t.mouse_note;
-    Option.iter (fun n -> inst.note_on n look.velocity) under
+    Option.iter (fun n -> inst.note_on n velocity) under
   end;
   { octave; held = now; mouse_note = under; on_keys; was_down = mouse.mdown }
 

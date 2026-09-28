@@ -14,10 +14,9 @@ let segment (c : color) (w : number) (x1, y1) (x2, y2) : shape =
   let dx = x2 - x1 and dy = y2 - y1 in
   rectangle c (sqrt ((dx * dx) + (dy * dy))) w |> rotate (atan2 dy dx * 180. / Float.pi) |> move ((x1 + x2) / 2.) ((y1 + y2) / 2.)
 
-let spectrum ~at:(cx, cy) ~size:(w, h) ~(color : color) ~(back : color) (samples : Signal.t) : shape list =
+let spectrum ~at:(cx, cy) ~size:(w, h) ~(color : color) ~(back : color) ?(bars = 90) (samples : Signal.t) : shape list =
   let mags = Spectrum.of_signal samples in
   let n = 2 *.. (Array.length mags -.. 1) in
-  let bars = 90 in
   let freq b = 20. * (1000. ** (float_of_int b / float_of_int bars)) in
   let bar b =
     let lo = freq b and hi = freq (b +.. 1) in

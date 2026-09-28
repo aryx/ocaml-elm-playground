@@ -38,20 +38,22 @@
  * modulator.
  *
  * Each face is a panel embedded as a part (Component.mli, the office's
- * idea for music, plan_tiny_reason.md), this program their host: the
- * YC's is TinyHammond's own panel, Part_hammond, scaled into the case
- * (the mouse mapped back into it, so its drawbars still pull); the
- * others, until they have panels of their own, the grid of their
- * voice's knobs by name, Part_voice (Voice.mli: every voice gives its
- * knobs the same way). The TYPE menu is the panel's own menu, merged
- * into the case's, as a document's menu bar takes the active part's.
+ * idea for music, plan_tiny_reason.md), this program their host: each
+ * face is the original's own panel, the stand-alone app's, scaled into
+ * the case (the mouse mapped back into it, so the YC's drawbars still
+ * pull) -- TinyHammond's Part_hammond, TinyRhodes' Part_rhodes (its
+ * pickup's curve and Suitcase speakers with it), TinyDX7's Part_dx7
+ * (its LCD, the algorithm's graph, the envelopes), TinyCS80's Part_cs80
+ * (without the ribbon, the player's). The TYPE menu is the panel's own
+ * menu, merged into the case's, as a document's menu bar takes the
+ * active part's.
  *
  * The letters play (a s d f g h j k the white keys from C, w e t y u
  * the black ones, z and x an octave), and the mouse on the keys.
  *
  * Uses: Voice_hammond, Voice_rhodes, Voice_dx7, Voice_cs80 (the
- * voices), Part_hammond and Part_voice (their panels, over Panel's
- * widgets), Component, Piano, Meters (the scope), Audio's instruments
+ * voices), Part_hammond, Part_rhodes, Part_dx7, Part_cs80 (their
+ * panels, over Panel's widgets), Component, Piano, Meters (the scope), Audio's instruments
  * (one playing at a time: the face left is stopped), Gui (the switch,
  * the menu). Not: Spectrum, Scene2d, Sprite, File_menu.
  *
@@ -78,9 +80,9 @@ type face = {
   recent : unit -> Signal.t;
 }
 
-(* the YC's is TinyHammond's own panel, Part_hammond, scaled into the
- * case; the others the grid of their knobs, Part_voice, until they have
- * a panel of their own *)
+(* each the original's own panel, the stand-alone app's, scaled into the
+ * case: the YC's TinyHammond's (Part_hammond), the CP's TinyRhodes',
+ * the DX's TinyDX7's, the CS's TinyCS80's *)
 let yc () : face =
   let v = Voice_hammond.create (snd (List.hd Voice_hammond.presets)) in
   {
@@ -93,55 +95,34 @@ let yc () : face =
   }
 
 let cp () : face =
-  let v = Voice_rhodes.create (snd (List.hd Voice_rhodes.presets)) and color = rgb 210 60 70 in
-  let voice : Voice_rhodes.patch Part_voice.voice =
-    { knobs = Voice_rhodes.knobs; presets = Voice_rhodes.presets; patch = (fun () -> Voice_rhodes.patch v); set_patch = Voice_rhodes.set_patch v;
-      to_string = Voice_rhodes.to_string; of_string = Voice_rhodes.of_string }
-  in
+  let v = Voice_rhodes.create (snd (List.hd Voice_rhodes.presets)) in
   {
     name = "CP";
     what = "electric piano: the Rhodes, the Wurlitzer, the Clavinet";
-    color;
-    panel =
-      Part_voice.make ~kind:"rhodes" ~color voice
-        [ ("MODEL", "model"); ("VOICING", "voicing"); ("HARDNESS", "hardness"); ("DECAY", "decay"); ("TREMOLO", "tremolo.depth"); ("RATE", "tremolo.rate"); ("VOLUME", "volume") ];
+    color = rgb 210 60 70;
+    panel = Part_rhodes.make v;
     inst = Voice_rhodes.instrument v;
     recent = (fun () -> Voice_rhodes.recent v);
   }
 
 let dx () : face =
-  let v = Voice_dx7.create (snd (List.hd Voice_dx7.presets)) and color = rgb 60 120 210 in
-  let voice : Voice_dx7.patch Part_voice.voice =
-    { knobs = Voice_dx7.knobs; presets = Voice_dx7.presets; patch = (fun () -> Voice_dx7.patch v); set_patch = Voice_dx7.set_patch v;
-      to_string = Voice_dx7.to_string; of_string = Voice_dx7.of_string }
-  in
+  let v = Voice_dx7.create (snd (List.hd Voice_dx7.presets)) in
   {
     name = "DX";
     what = "FM: the DX7's six operators";
-    color;
-    panel =
-      Part_voice.make ~kind:"dx7" ~color voice
-        ([ ("ALGO", "algorithm"); ("FB", "feedback") ] @ List.init 6 (fun k -> (Printf.sprintf "OP%d" (k +.. 1), Printf.sprintf "op%d.output" (k +.. 1))));
+    color = rgb 60 120 210;
+    panel = Part_dx7.make v;
     inst = Voice_dx7.instrument v;
     recent = (fun () -> Voice_dx7.recent v);
   }
 
 let cs () : face =
-  let v = Voice_cs80.create (snd (List.hd Voice_cs80.presets)) and color = rgb 70 160 90 in
-  let voice : Voice_cs80.patch Part_voice.voice =
-    { knobs = Voice_cs80.knobs; presets = Voice_cs80.presets; patch = (fun () -> Voice_cs80.patch v); set_patch = Voice_cs80.set_patch v;
-      to_string = Voice_cs80.to_string; of_string = Voice_cs80.of_string }
-  in
+  let v = Voice_cs80.create (snd (List.hd Voice_cs80.presets)) in
   {
     name = "CS";
     what = "virtual analog: the CS-80's two layers";
-    color;
-    panel =
-      Part_voice.make ~kind:"cs80" ~color voice
-        [
-          ("CUTOFF", "I.lpf"); ("RESO", "I.lpf_res"); ("ATTACK", "I.attack"); ("DECAY", "I.decay"); ("SUSTAIN", "I.sustain"); ("RELEASE", "I.release");
-          ("MIX", "mix"); ("DETUNE", "detune"); ("LFO", "sub.speed"); ("VIBRATO", "sub.vco"); ("CHORUS", "chorus"); ("VOLUME", "volume");
-        ];
+    color = rgb 70 160 90;
+    panel = Part_cs80.make v;
     inst = Voice_cs80.instrument v;
     recent = (fun () -> Voice_cs80.recent v);
   }
@@ -162,7 +143,7 @@ let panel (m : model) : Component.part = match m.panels.(m.face) with Some p -> 
 
 (* the room over the keys, a panel as big as it fits, centred *)
 let panel_box (p : Component.part) : Widget.box =
-  let w, h = Part_voice.natural in
+  let w = 960. and h = 290. in
   match p.natural with
   | Some (nw, nh) ->
       let s = Float.min (w / nw) (h / nh) in
@@ -185,6 +166,7 @@ let look : Piano.look =
     letters_from = 12;
     velocity = 0.8;
     octaves = (2, 6);
+    by_depth = false;
     white_key = rgb 245 245 242;
     black_key = rgb 30 30 32;
     letter_on_white = rgb 140 140 140;
