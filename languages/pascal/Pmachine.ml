@@ -207,18 +207,29 @@ let start (program : Pcode.program) : machine =
   { program; store = Array.make stack_words 0; pc = 0; sp = 0; mp = 0; line = None; col = 0; out = Buffer.create 256; executed = 0 }
 
 (* instructions until something stops the machine, [k] at most; [pause]
-   asked before each *)
-let rec resume ?(pause = fun _ -> false) (m : machine) (k : int) : stop =
-  if k = 0 then Slice_over
-  else if pause m then Paused
-  else
-    match instruction m with
-    | None ->
-        m.executed <- m.executed + 1;
-        resume ~pause m (k - 1)
-    | Some stop -> stop
-    | exception Runtime (code, msg) -> Failed (code, msg)
-    | exception Invalid_argument _ -> Failed (204, "Invalid address")
+   asked before each
+
+   claude: the loop a local function without the optional argument:
+   resume calling itself with ~pause was a tail call natively, but not
+   compiled to JavaScript (a call through the optional argument's
+   closure), and a frame's budget of instructions, a stack frame each,
+   overflowed the browser's stack -- Run froze TinyTurboPascal on the web
+
+     old: let rec resume ?(pause = ...) m k = ... resume ~pause m (k - 1) *)
+let resume ?(pause = fun _ -> false) (m : machine) (k : int) : stop =
+  let rec go k =
+    if k = 0 then Slice_over
+    else if pause m then Paused
+    else
+      match instruction m with
+      | None ->
+          m.executed <- m.executed + 1;
+          go (k - 1)
+      | Some stop -> stop
+      | exception Runtime (code, msg) -> Failed (code, msg)
+      | exception Invalid_argument _ -> Failed (204, "Invalid address")
+  in
+  go k
 
 let give_line (m : machine) (l : string) : unit =
   m.line <- Some l;
