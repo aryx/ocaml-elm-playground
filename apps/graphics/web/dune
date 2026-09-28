@@ -4,7 +4,7 @@
 (copy_files ../*.ml)
 
 (executables
-  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint TinyBlender)
+  (names TinyMacPaint TinyMacDraw TinyPhotoshop TinyDeluxePaint TinyBlender TinyPostScript)
   (libraries
     elm_playground
     caps ; the File menu's authority to save (File_menu, plan_caps.md)
@@ -26,6 +26,8 @@
     appkit_modeler ; a 3D scene, its views (TinyBlender)
     graphics_raytrace ; Raytrace, its rendered viewport
     graphics_3d_geometry ; Camera, Vec3
+    postscript ; Ps_machine, Ps_disk (TinyPostScript)
+    graphics_font ; Hershey, PostScript's letters
     elm_playground_web ; implem of virtual elm_playground
   )
   (modes js)

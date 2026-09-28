@@ -364,7 +364,7 @@ and in 3D
 
 Languages as text, parsed and run: a spreadsheet's formulas, BASIC,
 s-expressions, Emacs Lisp, Scheme, Pascal, HyperTalk, Smalltalk-80,
-Scratch, JavaScript, and HTML and CSS:
+Scratch, PostScript, JavaScript, and HTML and CSS:
 
 {!modules:
     Formula
@@ -379,6 +379,7 @@ Scratch, JavaScript, and HTML and CSS:
     St_class St_kernel St_interp St_primitives St_bitblt St_image
     St_boot St_debug
     Scratch_blocks Scratch_text Scratch_run
+    Ps_lexer Ps_graphics Ps_machine Ps_disk
     Js_lexer Js_parse Js_ast Js_value Js_eval Js_builtins Js_regexp
     Html_lexer Html_tree Dtd Entities Charset Dom Forms Line_mode
     Css Css_syntax Css_values Selectors Cascade Computed Looks Ua_sheet

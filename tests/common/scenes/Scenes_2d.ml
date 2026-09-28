@@ -192,6 +192,9 @@ let scenes : Golden_scene.scene list =
      * and 40 frames later, the water and the fire turned by the
      * palette's cycling, not a dot redrawn *)
     ("apps/graphics/software/TinyDeluxePaint", "", 3);
+    (* 1984: a page described as a program, the tree its recursive
+     * procedure draws -- 50,151 objects executed, run at once *)
+    ("apps/graphics/software/TinyPostScript", "", 12);
     (* 1986: one text flowing over pages from a master page, a sheet
      * anchored in it *)
     ("apps/office/software/TinyFrameMaker", "", 5);
@@ -1706,6 +1709,9 @@ let scripted : Golden_scene.scripted list =
      * space; the Layers palette *)
     ("apps/graphics/software/TinyPhotoshop", "layers", 20, "at(430;475):1-3,click:2,at(430;299):4-6,click:5,at(372;255):7-9,click:8,at(372;151):10-12,click:11,at(467;195):13-14,at(430;195):15,at(391;195):16-20,click:14-17");
     ("apps/graphics/software/TinyDeluxePaint", "cycling", 43, "");
+    (* Step, twice: /tree, then its procedure -- pushed on the operand
+     * stack as data, not run, until def names it *)
+    ("apps/graphics/software/TinyPostScript", "step", 10, "at(-196;-60):2-9,click:3,click:6");
     (* claude: TinyDeluxePaint: a stroke in symmetry, six times around
      * the middle; the sun cut as a brush, its band of sky the
      * transparent colour (a right click on it), stamped thrice *)
@@ -1822,6 +1828,11 @@ let flagged : Golden_scene.flagged list =
     (* claude: the Palm's three other applications: the cards by last
      * name, the to-dos by priority, the memos by their first line *)
     ("apps/pim/software/TinyPalmPilot", "address", 5, [ "app=address" ]);
+    (* PostScript's text: a word turned twelve times, twelve greys *)
+    ("apps/graphics/software/TinyPostScript", "rosette", 12, [ "sample=rosette" ]);
+    (* the language without a page: the calculator's transcript, 10
+     * fact and 15 fib, and pstack's 6 4 2 *)
+    ("apps/graphics/software/TinyPostScript", "calculator", 12, [ "sample=calculator" ]);
     ("apps/pim/software/TinyPalmPilot", "todo", 5, [ "app=todo" ]);
     ("apps/pim/software/TinyPalmPilot", "memo", 5, [ "app=memo" ]);
     (* claude: TinySketchpad's construction, sheet D: a rough hexagon,

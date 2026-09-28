@@ -1,0 +1,8 @@
+; claude: unit tests for postscript/, run by 'make test' (dune runtest):
+; the .mlis' worked examples (the lexer's tokens, the arc's constant,
+; the CTM composed), the stack and procedures, loops and exit, the
+; LaserWriter's errors, and every program of the disk run to its end
+(test
+ (name Test)
+ (libraries alcotest testo postscript)
+)

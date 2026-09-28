@@ -1,0 +1,15 @@
+; claude: PostScript (John Warnock and Chuck Geschke, Adobe, 1984): a
+; page described as a program -- Ps_lexer (the tokens), Ps_graphics
+; (the current transformation matrix, paths, arcs as Beziers, curves
+; flattened), Ps_machine (the operand, dictionary and execution stacks,
+; the operators, a step at a time), Ps_disk (programs to run). Run by
+; TinyPostScript (apps/graphics/).
+;
+; No Playground and no font (languages/README.md): the letters' strokes
+; are the host's, a function the caller gives. A private library,
+; installed as part of elm_playground.
+(library
+ (name postscript)
+ (package elm_playground)
+ (wrapped false)
+)
