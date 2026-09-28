@@ -523,6 +523,26 @@ The plans and tutorial notes for each are in
 [docs/claude_notes/](docs/claude_notes/); for the applications, start
 with [notes_gui.md](docs/claude_notes/tutorials/notes_gui.md).
 
+Trademarks and originals
+------------------------
+
+The games and applications here are small studies of famous programs,
+written from scratch to show how much of an original's design fits in
+a few hundred lines of OCaml. They are for learning, not a substitute
+for the originals, which we encourage you to play and buy. No code,
+graphics, music, levels or text were taken from the originals: the
+pixel art, tunes and levels are our own, in the originals' spirit, and
+only the ideas and mechanics (which copyright does not cover) are
+reproduced.
+
+The names of the originals (Super Mario Bros., Zelda, Tetris,
+Photoshop, Chrome, ...) are trademarks of their owners, used here only
+to say which program each study is after. This project is not
+affiliated with, endorsed by, or sponsored by any of them. It is free,
+non-commercial, and makes no money. If you hold rights to one of these
+works and object to anything here, please open an issue and it will be
+changed or removed.
+
 AI disclaimer
 ------------
 
