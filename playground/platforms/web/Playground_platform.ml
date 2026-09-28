@@ -936,6 +936,74 @@ let fetch_response ?post (url : string) (k : (Cmd.http_response, Cmd.http_error)
           ignore (Ojs.call xhr "send" [| Ojs.string_to_js body |])
       | None -> ignore (Ojs.call xhr "send" [||])
 
+(*****************************************************************************)
+(* Phones *)
+(*****************************************************************************)
+(* claude: a phone or a tablet (plan_mobile.md, notes_mobile.md), kept
+ * apart from the desktop's simpler path: run_app calls these two, and
+ * nothing else of it knows about fingers. *)
+
+(* The page laid out at the phone's own width, not 980 pixels shrunk,
+ * and no double-tap zoom: the viewport tag, added here so that no page
+ * needs it; a drag the program's, not the page's scroll. *)
+let phone_page () : unit =
+  let doc = Ojs.get_prop_ascii Ojs.global "document" in
+  let meta = Ojs.call doc "createElement" [| Ojs.string_to_js "meta" |] in
+  Ojs.set_prop_ascii meta "name" (Ojs.string_to_js "viewport");
+  Ojs.set_prop_ascii meta "content" (Ojs.string_to_js "width=device-width, initial-scale=1");
+  ignore (Ojs.call (Ojs.get_prop_ascii doc "head") "appendChild" [| meta |]);
+  List.iter
+    (fun el ->
+      let style = Ojs.get_prop_ascii el "style" in
+      Ojs.set_prop_ascii style "touchAction" (Ojs.string_to_js "none");
+      Ojs.set_prop_ascii style "userSelect" (Ojs.string_to_js "none"))
+    [ Ojs.get_prop_ascii doc "documentElement"; Ojs.get_prop_ascii doc "body" ]
+
+(* A finger or a pen as the mouse, from pointer events, which every
+ * browser sends -- Safari on iOS sends no mouse event for a tap on a
+ * page listening on the window, and no browser one for a drag. The
+ * mouse itself keeps its own events (run_app's). A tap is the button
+ * down and up at the finger, a drag its moves between; two taps close
+ * in time and place a double click. preventDefault: no mouse events of
+ * the browser's after it, which would click twice. [svg]: the drawing,
+ * once there is one (for adjust_x_y); [process]: run_app's. *)
+let listen_to_fingers ~(svg : unit -> Element.t option) ~(process : E.event -> unit) : unit =
+  let last_tap = ref (-1000., 0., 0.) in
+  let on_pointer evt =
+    let get p = Ojs.get_prop_ascii (Event.t_to_js evt) p in
+    if Ojs.string_of_js (get "pointerType") <> "mouse" then begin
+      Event.prevent_default evt;
+      resume_audio ();
+      let cx = Ojs.float_of_js (get "clientX") and cy = Ojs.float_of_js (get "clientY") in
+      let move () =
+        match svg () with
+        | Some svg ->
+            let x, y = adjust_x_y svg cx cy in
+            process (E.EMouseMove (int_of_float x, int_of_float y))
+        | None -> ()
+      in
+      match Event.type_ evt with
+      | "pointerdown" -> move (); process (E.EMouseButton true)
+      | "pointermove" -> move ()
+      | "pointerup" ->
+          move ();
+          process (E.EMouseButton false);
+          let now = Date.now () and (t, x, y) = !last_tap in
+          if now -. t < 300. && Float.abs (cx -. x) < 30. && Float.abs (cy -. y) < 30. then begin
+            process E.EMouseDouble;
+            last_tap := (-1000., 0., 0.)
+          end
+          else last_tap := (now, cx, cy)
+      | _ -> ()
+    end
+  in
+  List.iter
+    (fun kind ->
+      ignore
+        (Ojs.call Ojs.global "addEventListener"
+           [| Ojs.string_to_js kind; Ojs.fun_to_js 1 (fun e -> on_pointer (Event.t_of_js e)); Ojs.bool_to_js true |]))
+    [ "pointerdown"; "pointermove"; "pointerup" ]
+
 (* when using the simple DOM *)
 (* claude: [network] unused: the browser downloads the images, by its
  * own rules (the page's site, or CORS) *)
@@ -1194,4 +1262,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
     Window.add_event_listener window Event.Keydown
       (fun evt -> let k = Event.key evt in if game_key k || ctrl_digit evt k then Event.prevent_default evt)
       true;
+    (* claude: and a phone's: its width, its fingers (Phones, above) *)
+    phone_page ();
+    listen_to_fingers ~svg:(fun () -> Option.map snd !current) ~process:process_playground_event;
   )
