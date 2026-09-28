@@ -27,7 +27,14 @@ your browser, from the same source file:
 | [TinyBreakout](games/arcade/TinyBreakout.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html)) | [TinyTurboPascal](apps/devtools/TinyTurboPascal.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html)) |
 | :---: | :---: |
 | <a href="https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html"><img src="docs/screenshots/game-breakout.png" width="400" alt="TinyBreakout"></a> | <a href="https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html"><img src="docs/screenshots/app-turbopascal.png" width="400" alt="TinyTurboPascal"></a> |
-| Breakout (Atari, 1976): the wall, the paddle, the ball -- **525 lines**, [in one file](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyBreakout) | Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger -- **3,213 lines** [in 15 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyTurboPascal): the IDE, and the Pascal compiler and P-machine under it |
+| Breakout (Atari, 1976): the wall, the paddle, the ball -- **525 lines**, [in one file](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyBreakout) | Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger -- **3,213 lines** [in 15 files](https://aryx.github.io/ocaml-elm-playground/tinybox.html?code=TinyTurboPascal): the IDE, and the Pascal compiler and P-machine under it[^fkeys] |
+
+[^fkeys]: Turbo Pascal lives on its function keys (F9 compiles, F10
+    opens the menus). If yours are taken -- a laptop's top row set to
+    volume and brightness, a Mac, a browser keeping them -- press **Esc,
+    then a digit**: Esc 9 is F9, Esc 0 is F10. Alt and the digit work
+    too, except on a Mac, and Ctrl and the digit is Ctrl and the F key
+    (Ctrl 9 runs).
 
 They are all in [CATALOG.md](CATALOG.md), and all in one menu,
 [tinybox](https://aryx.github.io/ocaml-elm-playground/tinybox.html)

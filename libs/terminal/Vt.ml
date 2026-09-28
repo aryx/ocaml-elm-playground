@@ -422,4 +422,11 @@ let key ?(alt = false) ~(ctrl : bool) (name : string) : string option =
      (set the mark: NUL, C-@) and C-/ (undo: 0x1F, C-_) *)
   | " " | "space" | "Space" | "@" when ctrl -> Some "\x00"
   | "/" | "_" | "-" when ctrl -> Some "\x1f"
+  (* claude: Control and a digit, which ASCII has no code for: xterm's
+     modifyOtherKeys, ESC [ 27 ; 5 ; <the digit's code> ~ (Control-9
+     ESC [ 27 ; 5 ; 57 ~), one key to a program that does not know it
+     (Line_discipline.split_keys), Control and an F key to TinyTurboPascal
+     on a keyboard without them (Tui_turbo.function_key) *)
+  | _ when ctrl && String.length name = 1 && name.[0] >= '0' && name.[0] <= '9' ->
+      Some (Printf.sprintf "\x1b[27;%d;%d~" (if alt then 7 else 5) (Char.code name.[0]))
   | _ -> Option.map (with_modifiers ~ctrl ~alt) (named_key name)

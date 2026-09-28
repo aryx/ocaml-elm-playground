@@ -90,6 +90,7 @@ type model = {
   breakpoints : int list; (* lines, from 1 *)
   watches : string list;
   quit : bool;
+  escaped : bool; (* claude: a lone Esc just typed in the editor: a digit next is an F key *)
 }
 
 (* the Watches window's height, when there are watches: at the bottom,
@@ -380,7 +381,8 @@ let act (m : model) (a : action) : model =
             ( "Keys",
               [ "F9 Make   Alt+F9 Compile   Ctrl+F9 Run"; "Alt+F5 User screen   F2 Save   F3 Open"; "F10 or Alt+letter: the menus   Alt+X Exit"; "";
                 "F7 Trace into   F8 Step over   F4 Go to cursor"; "Ctrl+F8 Breakpoint   Ctrl+F7 Watch   Ctrl+F3 Calls"; "Ctrl+F2 Reset   Ctrl+C Break"; "";
-                "Arrows, or Ctrl+E X S D    Ctrl+A F words"; "Ctrl+Y delete a line    Insert: overwrite"; "Ctrl+L search again" ] ) }
+                "Arrows, or Ctrl+E X S D    Ctrl+A F words"; "Ctrl+Y delete a line    Insert: overwrite"; "Ctrl+L search again"; "";
+                "No F keys? Esc then 1 to 0 (or Alt+1 to Alt+0): F1 to F10,"; "Ctrl+1 to Ctrl+0: Ctrl+F1 to Ctrl+F10 (Ctrl+9 Run)" ] ) }
   | About ->
       { m with
         mode =
@@ -432,7 +434,39 @@ let input_key (m : model) (title, label, text, purpose) (k : string) : model =
 (* Update *)
 (*****************************************************************************)
 
-let key (m : model) (k : string) : model =
+(* claude: Esc then a digit, F1 to F10 (0 for F10): the convention of
+ * Midnight Commander and the terminals without function keys, for the
+ * keyboards whose top row is the volume's and the screen's, the
+ * desktop's or the browser's. Two keys typed one after the other, or
+ * Alt and the digit at once (Escape and the digit, the same bytes) --
+ * though not on a Mac, where Option and a digit types another
+ * character (Option-9, "ª"): there, Esc and then the digit *)
+let digit (k : string) : bool = String.length k = 1 && k.[0] >= '0' && k.[0] <= '9'
+
+let f_of_digit (d : char) : string = if d = '0' then "F10" else "F" ^ String.make 1 d
+
+(* and Control and a digit (Vt.key's ESC [ 27 ; 5 ; <code> ~), Control
+ * and that F key: Ctrl-9, Ctrl-F9, Run *)
+let function_key (k : string) : string =
+  let n = String.length k in
+  if n = 2 && k.[0] = '\x1b' && digit (String.sub k 1 1) then Option.value ~default:k (Vt.key ~ctrl:false (f_of_digit k.[1]))
+  else if n = 10 && String.sub k 0 7 = "\x1b[27;5;" && k.[9] = '~' then
+    match int_of_string_opt (String.sub k 7 2) with
+    | Some c when c >= 48 && c <= 57 -> Option.value ~default:k (Vt.key ~ctrl:true (f_of_digit (Char.chr c)))
+    | _ -> k
+  else k
+
+let rec key (m : model) (k : string) : model =
+  match (m.mode, k) with
+  (* in the editor, a lone Esc waits for its digit (else it does
+   * nothing, as before) *)
+  | Editing, "\x1b" -> { m with escaped = true }
+  | Editing, _ when m.escaped && digit k -> key { m with escaped = false } ("\x1b" ^ k)
+  | _ -> key_now { m with escaped = false } k
+
+and key_now (m : model) (k : string) : model =
+  (* the running program's keys are its own *)
+  let k = match m.mode with Executing -> k | _ -> function_key k in
   match m.mode with
   | Executing -> ( match m.session with Some s -> executing_key m s k | None -> { m with mode = Editing })
   | Finished (_, err) -> (
@@ -821,7 +855,8 @@ let init : model =
   load
     { lines = [| "" |]; row = 0; col = 0; top = 0; left = 0; file = noname; modified = false; overwrite = false; disk = Pascal_disk.files;
       mode = Editing; error = None; compiled = None; last_screen = None; search = ""; runs = 0; session = None; breakpoints = []; watches = [];
-      quit = false }
+      quit = false;
+      escaped = false }
     "QUEENS.PAS"
 
 let program : model Tui.program = { init; update; view; over = (fun m -> m.quit) }

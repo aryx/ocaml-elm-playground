@@ -14,6 +14,10 @@
  *   type; F9 compiles, Ctrl-F9 runs (a key comes back from the program's
  *   screen), Alt-F5 shows that screen again; F10 or Alt and a letter
  *   for the menus (Compile / P-code: the code of the cursor's line);
+ *   no F keys (a laptop's top row the volume's, a browser keeping
+ *   them)? Esc then 1 to 0 are F1 to F10, Midnight Commander's way (or
+ *   Alt and the digit, but for a Mac's Option, which types a letter),
+ *   and Ctrl and the digit Ctrl and the F key (Ctrl+9 runs);
  *   F2 saves, F3 opens, Alt-X quits; the editor's keys are WordStar's
  *   too (Ctrl-E X S D, Ctrl-Y); the debugger: F7 trace into, F8 step
  *   over, F4 go to the cursor, Ctrl-F8 a breakpoint, Ctrl-F7 a watch,

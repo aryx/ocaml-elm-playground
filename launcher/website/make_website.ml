@@ -75,6 +75,7 @@ let page ~(title : string) (body : string) : string =
       .card img { width: 100%%; aspect-ratio: 1; display: block; }
       .card .name { font-weight: bold; }
       .card .meta, .card .src { color: #777; }
+      .card .note { color: #b8860b; }
       h2 a { color: inherit; text-decoration: none; }
       :target { scroll-margin-top: 12px; }
     </style>
@@ -100,14 +101,19 @@ let subdir (p : Catalogue.program) : string = Filename.basename (Filename.dirnam
 
 (* a card, as in tinybox's menu: several side by side, as many as the
  * window has room for; what it is after in its tooltip *)
+(* claude: a word on a card where a program needs one before it is run *)
+let notes : (string * string) list =
+  [ ("TinyTurboPascal", "No F keys (a laptop, a Mac, the browser)? Esc then a digit: Esc 9 is F9, Esc 0 is F10; Ctrl 9 runs.") ]
+
 let card ~(assets : string) ~(base : string) ~(meta : string) (p : Catalogue.program) : string =
   let play = Printf.sprintf "%s%s/%s.html" base (subdir p) p.name in
+  let note = match List.assoc_opt p.name notes with Some n -> Printf.sprintf {|<br/><span class="note">%s</span>|} (escape n) | None -> "" in
   Printf.sprintf
     {|<div class="card" id="%s" title="after %s"><a href="%s"><img loading="lazy" src="%s/pngs/%s.png" alt="%s"/>
 <span class="name">%s</span></a> <span class="meta">%s</span><br/>%s <a class="src" href="%s%s">source</a> &middot;
-<a class="src" href="../tinybox.html?code=%s">code map</a></div>
+<a class="src" href="../tinybox.html?code=%s">code map</a>%s</div>
 |}
-    p.name (escape p.after) play assets p.name p.name p.name meta (escape p.one_line) github p.source p.name
+    p.name (escape p.after) play assets p.name p.name p.name meta (escape p.one_line) github p.source p.name note
 
 (* "2D, 1978", "app, 1983" *)
 let look_year ~(games : bool) (p : Catalogue.program) : string =
