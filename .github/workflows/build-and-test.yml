@@ -7,6 +7,9 @@ jobs:
       - uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+      - if: runner.os == 'Linux'
+        name: Refresh apt index
+        run: sudo apt-get update
       - name: Install dependencies
         run: |
           opam install --deps-only .

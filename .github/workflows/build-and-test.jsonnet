@@ -44,6 +44,14 @@ local job = {
 	// and in a portable way (for linux/mac/windows)!.
       },
     },
+    // claude: the runner's apt index can be older than the mirror, whose
+    // packages then 404 when opam's depext installs libcairo2-dev and
+    // libsdl2-dev; refresh it first
+    {
+      name: 'Refresh apt index',
+      'if': "runner.os == 'Linux'",
+      run: 'sudo apt-get update',
+    },
     {
       name: 'Install dependencies',
       run: |||
