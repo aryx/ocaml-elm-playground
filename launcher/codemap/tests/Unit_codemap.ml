@@ -57,7 +57,10 @@ let tests =
           Alcotest.(check (option string)) "a space" None (Option.map Highlight_code.show (Code_file.at f 3 3)));
       Testo.create "modules used" (fun () ->
           Alcotest.(check (list string)) "M.x, open N" [ "List"; "N"; "Playground" ]
-            (Code_file.modules_used "open N\nlet x = List.map f (Playground.foo) (* C.x *)"));
+            (Code_file.modules_used "open N\nlet x = List.map f (Playground.foo) (* C.x *)");
+          (* claude: TinyScratch's aliases, its modules then named B.x *)
+          Alcotest.(check (list string)) "module B = M" [ "B"; "R"; "Scratch_blocks"; "Scratch_run" ]
+            (Code_file.modules_used "module B = Scratch_blocks\nmodule R = Scratch_run\nlet x = B.f R.g"));
       (* claude: Code_config.mli's worked example *)
       Testo.create "a directory's .codemapignore and .codemapconfig" (fun () ->
           match

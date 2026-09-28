@@ -15,6 +15,10 @@ let modules_used (src : string) : string list =
     | (a : Token_ml.t) :: (b :: _ as rest) when a.kind = Uident && b.text = "." -> go (a.text :: acc) rest
     | (a : Token_ml.t) :: ((b : Token_ml.t) :: _ as rest) when (a.text = "open" || a.text = "include") && b.kind = Uident ->
         go (b.text :: acc) rest
+    (* claude: module B = Scratch_blocks, the alias then used as B.x *)
+    | (a : Token_ml.t) :: (b : Token_ml.t) :: (c : Token_ml.t) :: (d : Token_ml.t) :: rest
+      when a.text = "module" && b.kind = Uident && c.text = "=" && d.kind = Uident ->
+        go (d.text :: acc) (d :: rest)
     | _ :: rest -> go acc rest
     | [] -> acc
   in
