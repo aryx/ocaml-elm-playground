@@ -1,10 +1,11 @@
 OCaml Elm Playground
 =======================
 
-Create pictures, animations, and video games with OCaml, in 2D and 3D!
+Create pictures, animations, and video games (and even applications)
+with OCaml, in 2D and 3D!
 
-This is a port of the excellent Elm playground package
-https://github.com/evancz/elm-playground to OCaml.
+It started as a port to OCaml of the excellent Elm playground package
+https://github.com/evancz/elm-playground, and it keeps its spirit:
 
 > This is the package I wanted when I was learning programming. Start by
 > putting shapes on screen and work up to making games. I hope this
@@ -13,11 +14,14 @@ https://github.com/evancz/elm-playground to OCaml.
 
 Evan's package is a library and a handful of examples. This repository
 goes further: besides the library, it holds **145 games and 53
-applications** written with it, most of them a small but working
-version of a famous original, from Pong, Breakout and Pac-Man to Doom
-and Quake, from VisiCalc and MacPaint to Turbo Pascal and Smalltalk-80.
-And each one is small, a few hundred lines to a few thousand, so that
-you can read the whole of it; it runs natively on your desktop and in
+applications** written with it. It is an ode to code: a collection of
+the programs that made computing history, from Pong, Breakout and
+Pac-Man to Doom and Quake, from VisiCalc and MacPaint to Turbo Pascal
+and Smalltalk-80. Each one is rebuilt in miniature but working, and
+comes with its story: who made the original, when, and what it brought
+that was new. And each is small, a few hundred lines to a few
+thousand, so that you can read the whole of it and appreciate it as a
+piece of art, not only use it; it runs natively on your desktop and in
 your browser, from the same source file:
 
 | [TinyBreakout](games/arcade/TinyBreakout.ml) ([play it](https://aryx.github.io/ocaml-elm-playground/games/arcade/TinyBreakout.html)) | [TinyTurboPascal](apps/devtools/TinyTurboPascal.ml) ([run it](https://aryx.github.io/ocaml-elm-playground/apps/devtools/TinyTurboPascal.html)) |
