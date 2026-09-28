@@ -172,6 +172,9 @@ frames, time, and keys.
 - No input: you can't press keys or move the mouse with plain command-line
   flags. For interactive checks, use `web_headless.js`, or drive a real
   browser (Puppeteer/Playwright, or the claude-in-chrome extension).
+  claude: or headless Chrome itself through its DevTools protocol --
+  keys, taps, an emulated phone, frame times, profiles:
+  `notes_mobile.md` section 4.
 - Virtual time is not wall-clock time. It shows *what* gets rendered, not
   how fast. For frame-rate questions, open the page in a real Chrome and
   use its Performance tab.
