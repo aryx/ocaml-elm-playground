@@ -1100,16 +1100,46 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
     in
     Window.request_animation_frame window animation_frame;
 
+    (* claude: the keys this page saw go down and not yet up. A key-up
+     * can go elsewhere -- the browser or the desktop taking the focus
+     * for a moment on a shortcut -- and the key then stays held for the
+     * program: a Control held forever turned every letter typed after a
+     * Ctrl-Y into a control code (TinyTurboPascal typed nothing more).
+     * So every event says where the modifiers really are (ctrlKey,
+     * altKey, shiftKey, metaKey) and one held that is not is released;
+     * and the page losing the focus releases them all *)
+    let held : string list ref = ref [] in
+    let release (k : string) =
+      if List.mem k !held then begin
+        held := List.filter (fun h -> h <> k) !held;
+        process_playground_event (E.EKeyChanged (false, k))
+      end
+    in
+    let sync_modifiers evt =
+      let flag prop = Ojs.bool_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) prop) in
+      List.iter
+        (fun (k, prop) -> if List.mem k !held && not (flag prop) then release k)
+        [ ("Control", "ctrlKey"); ("Alt", "altKey"); ("Shift", "shiftKey"); ("Meta", "metaKey") ]
+    in
+    ignore
+      (Ojs.call Ojs.global "addEventListener"
+         [| Ojs.string_to_js "blur"; Ojs.fun_to_js 1 (fun _ -> List.iter release !held) |]);
     let on_js_event evt =
       (* claude: the browser lets sound start only after an input *)
       resume_audio ();
+      sync_modifiers evt;
       (* the root <svg>, needed to convert mouse coordinates (see
        * adjust_x_y); None if the first frame is not drawn yet *)
       let svg_opt = Option.map snd !current in
       let evt_opt = js_event_to_event evt svg_opt in
       (match evt_opt with
       | None -> ()
-      | Some event -> process_playground_event event
+      | Some event ->
+          (match event with
+          | E.EKeyChanged (true, k) -> if not (List.mem k !held) then held := k :: !held
+          | E.EKeyChanged (false, k) -> held := List.filter (fun h -> h <> k) !held
+          | _ -> ());
+          process_playground_event event
       );
       (* claude: the relative move too (mdx/mdy), from movementX/Y (not
        * in vdom's binding, hence Ojs), which keep counting when the
@@ -1154,7 +1184,14 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_
       || String.length k >= 2 && k.[0] = 'F'
          && (match int_of_string_opt (String.sub k 1 (Stdlib.( - ) (String.length k) 1)) with Some n -> n >= 1 && n <= 10 | None -> false)
     in
+    (* claude: and Control and a digit, the stand-in for Control and an F
+     * key on a keyboard without them (TinyTurboPascal's Ctrl+9, Run),
+     * not the browser's move to the nth tab *)
+    let ctrl_digit evt k =
+      Ojs.bool_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) "ctrlKey")
+      && String.length k = 1 && k.[0] >= '0' && k.[0] <= '9'
+    in
     Window.add_event_listener window Event.Keydown
-      (fun evt -> if game_key (Event.key evt) then Event.prevent_default evt)
+      (fun evt -> let k = Event.key evt in if game_key k || ctrl_digit evt k then Event.prevent_default evt)
       true;
   )
