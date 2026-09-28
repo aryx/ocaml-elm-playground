@@ -1259,6 +1259,12 @@ let scripted : Golden_scene.scripted list =
     (* claude: ReBirth started (space): the four machines' step 6 lit
      * together -- the one clock -- and the PCF's *)
     ("apps/music/software/TinyReBirth", "running", 40, "space:3");
+    (* claude: steps edited by clicks: a note high on 303 #1's step 5,
+     * the 808's instrument clicked from BD to LT, two LT hits added *)
+    ( "apps/music/software/TinyReBirth",
+      "edited",
+      22,
+      "at(80;375):1-4,click:2,at(-410;156):5-12,click:6,click:10,at(-10;180):13-16,click:14,at(20;180):17-20,click:18" );
     (* claude: the OP-1's T1 pressed again, the next engine (the
      * cluster), then C E G held -- its supersaw on the screen's scope *)
     ("apps/music/software/TinyOp1", "playing", 30, "at(-265;45):1-4,click:2,a:5-40,d:5-40,g:5-40");

@@ -19,12 +19,17 @@
  * level and its mute, its 16 steps drawn as the original draws them
  * (the 303's notes a piano roll, accents orange, slides reaching the
  * next step; the 808's buttons in its colours by fours, the 909's light,
- * an LED over each lit for a hit), the step playing lit: the four lit
- * together, the one clock. Each strip is a rack unit, ears and screws.
+ * an LED over each lit for a hit of the instrument edited, BD, SD, ...,
+ * a button under the name), the step playing lit: the four lit
+ * together, the one clock. A click on a step edits it: on a 303 a note
+ * at the click's height, or a rest if it is there already; on a drum
+ * machine the instrument edited toggled. Each strip is a rack unit,
+ * ears and screws.
  * Over them start/stop (and space), the tempo, the volume; under them
  * the effects: the distortion on the 303s, the delay, the compressor,
  * and the PCF, the pattern controlled filter, its 16 cutoffs bars to
- * click. Editing a pattern in depth is TinyTB303's and TinyTR808's job;
+ * click. Editing a pattern in depth (accents, slides, the drums' knobs)
+ * is TinyTB303's and TinyTR808's job;
  * this one is the whole: which patterns, how loud, through what.
  *
  * Uses: Studio_rebirth (the four machines on one clock), Voice_tb303,
@@ -32,8 +37,8 @@
  * (the knobs, the rockers, the buttons, the menu), Spectrum. Not:
  * Scene2d, Sprite, File_menu.
  *
- * Exercises: the song mode (patterns chained, ReBirth's own); a pattern
- * edited here; each machine's own effects sends; ReBirth's .rbs songs
+ * Exercises: the song mode (patterns chained, ReBirth's own); accents
+ * and slides edited here; each machine's own effects sends; ReBirth's .rbs songs
  * saved (File_menu, the voices' text).
  *)
 open Playground
@@ -43,6 +48,7 @@ type model = {
   patch : Studio_rebirth.patch;
   song : int;
   patterns : int array; (* each machine's pattern, an index in its presets *)
+  instruments : int array; (* each drum machine's instrument edited, in [Voice_tr808.instruments] *)
   space : bool;
 }
 
@@ -53,7 +59,7 @@ let patterns_of (p : Studio_rebirth.patch) : int array =
   let find x l = let rec go i = function [] -> 0 | (_, y) :: r -> if y = x then i else go (i +.. 1) r in go 0 l in
   [| find p.bass1 Voice_tb303.presets; find p.bass2 Voice_tb303.presets; find p.drums808 Voice_tr808.presets; find p.drums909 Voice_tr808.presets |]
 
-let initial_model : model = { patch = snd (List.hd songs); song = 0; patterns = patterns_of (snd (List.hd songs)); space = false }
+let initial_model : model = { patch = snd (List.hd songs); song = 0; patterns = patterns_of (snd (List.hd songs)); instruments = [| 0; 0; 0; 0 |]; space = false }
 
 (* the studio lives with the sound, not in the model: the mixer pulls
  * its blocks between frames (Instrument.mli) *)
@@ -92,13 +98,35 @@ let with_pattern (p : Studio_rebirth.patch) (k : int) (i : int) : Studio_rebirth
   | 2 -> { p with drums808 = snd (List.nth Voice_tr808.presets i) }
   | _ -> { p with drums909 = snd (List.nth Voice_tr808.presets i) }
 
-(* a step's cell: lit if the machine plays on it *)
-let step_on (p : Studio_rebirth.patch) (k : int) (s : int) : bool =
-  match k with
-  | 0 -> p.bass1.pattern.(s mod Array.length p.bass1.pattern).note <> None
-  | 1 -> p.bass2.pattern.(s mod Array.length p.bass2.pattern).note <> None
-  | 2 -> Array.exists (fun t -> t.(s)) p.drums808.tracks
-  | _ -> Array.exists (fun t -> t.(s)) p.drums909.tracks
+(* a drum step's LED: lit if the instrument edited plays on it *)
+let step_on (d : Voice_tr808.patch) (i : int) (s : int) : bool = d.tracks.(Voice_tr808.index (List.nth Voice_tr808.instruments i)).(s)
+
+(* the 303's piano roll: its notes' range, an octave at least, from the
+ * cell's bottom to its top *)
+let pitch_range (pattern : Sequencer.step array) : int * int =
+  let notes = Array.to_list pattern |> List.filter_map (fun (st : Sequencer.step) -> st.note) in
+  let lo = List.fold_left min 127 notes and hi = List.fold_left max 0 notes in
+  if notes = [] then (36, 48) else (lo, max hi (lo +.. 12))
+
+let pitch_y (lo, hi) (n : int) : number = -16. + (float_of_int (n -.. lo) / float_of_int (hi -.. lo) * 32.)
+
+(* a click on a 303's cell: a note at the click's height, or a rest if
+ * that note is there already *)
+let click_303 (pattern : Sequencer.step array) (s : int) (dy : number) : Sequencer.step array =
+  let lo, hi = pitch_range pattern in
+  let n = lo +.. int_of_float (Float.round ((Float.min 1. (Float.max 0. ((dy + 16.) / 32.))) * float_of_int (hi -.. lo))) in
+  let pattern = Array.copy pattern in
+  let st = pattern.(s) in
+  pattern.(s) <- (if st.note = Some n then Sequencer.rest else { st with note = Some n });
+  pattern
+
+(* a click on a drum machine's step: the instrument edited toggled there *)
+let click_drum (d : Voice_tr808.patch) (i : int) (s : int) : Voice_tr808.patch =
+  let t = Voice_tr808.index (List.nth Voice_tr808.instruments i) in
+  let tracks = Array.copy d.tracks in
+  tracks.(t) <- Array.copy tracks.(t);
+  tracks.(t).(s) <- not tracks.(t).(s);
+  { d with tracks }
 
 let pcf_x (s : int) : number = -40. + (float_of_int s * 30.)
 let pcf_bottom = -95.
@@ -123,6 +151,8 @@ let update (computer : computer) (m : model) : model =
   let patch = { patch with tempo; volume } in
   (* the strips: the pattern, the level, the mute *)
   let patterns = if song <> m.song then patterns_of patch else Array.copy m.patterns in
+  let instruments = Array.copy m.instruments in
+  let mouse = computer.mouse in
   let patch =
     List.fold_left
       (fun (p : Studio_rebirth.patch) k ->
@@ -141,7 +171,23 @@ let update (computer : computer) (m : model) : model =
         let levels = Array.copy p.levels and mutes = Array.copy p.mutes in
         levels.(k) <- Gui.knob computer ~at:(-130., y) ~from:0. ~to_:1. p.levels.(k);
         mutes.(k) <- Gui.rocker computer ~at:(-80., y) p.mutes.(k);
-        { p with levels; mutes })
+        let p = { p with levels; mutes } in
+        (* a drum machine's instrument edited, the next at each click *)
+        if k >= 2 then begin
+          let d = if k = 2 then p.drums808 else p.drums909 in
+          let label = Voice_tr808.label d.machine (List.nth Voice_tr808.instruments instruments.(k)) in
+          if Gui.button_in computer { x = -410.; y = y - 24.; w = 44.; h = 22. } label then
+            instruments.(k) <- (instruments.(k) +.. 1) mod List.length Voice_tr808.instruments
+        end;
+        (* a click on a step edits it *)
+        let s = int_of_float (Float.round ((mouse.mx - cell_x 0) / 30.)) in
+        if mouse.mclick && s >= 0 && s < 16 && Float.abs (mouse.mx - cell_x s) <= 13. && Float.abs (mouse.my - y) <= 20. then
+          match k with
+          | 0 -> { p with bass1 = { p.bass1 with pattern = click_303 p.bass1.pattern s (mouse.my - y) } }
+          | 1 -> { p with bass2 = { p.bass2 with pattern = click_303 p.bass2.pattern s (mouse.my - y) } }
+          | 2 -> { p with drums808 = click_drum p.drums808 instruments.(k) s }
+          | _ -> { p with drums909 = click_drum p.drums909 instruments.(k) s }
+        else p)
       patch [ 0; 1; 2; 3 ]
   in
   (* the effects *)
@@ -150,7 +196,6 @@ let update (computer : computer) (m : model) : model =
   let compressor = Gui.rocker computer ~at:(-240., -30.) patch.compressor in
   let pcf_on = Gui.rocker computer ~at:(-160., -30.) patch.pcf_on in
   (* the PCF's bars: a click sets a step's cutoff *)
-  let mouse = computer.mouse in
   let pcf = Array.copy patch.pcf in
   if mouse.mdown then
     Array.iteri
@@ -160,7 +205,7 @@ let update (computer : computer) (m : model) : model =
       pcf;
   let patch = { patch with distortion; delay; compressor; pcf_on; pcf } in
   Studio_rebirth.set_patch rebirth patch;
-  { patch; song; patterns; space }
+  { patch; song; patterns; instruments; space }
 
 (*****************************************************************************)
 (* view *)
@@ -190,8 +235,7 @@ let ears (y : number) (h : number) : shape list =
  * in the pattern's range, orange if accented, reaching into the next
  * step if it slides *)
 let step_303 (pattern : Sequencer.step array) (y : number) (s : int) (lit : bool) : shape list =
-  let notes = Array.to_list pattern |> List.filter_map (fun (st : Sequencer.step) -> st.note) in
-  let lo = List.fold_left min 127 notes and hi = List.fold_left max 0 notes in
+  let range = pitch_range pattern in
   let st = pattern.(s mod Array.length pattern) in
   let x = cell_x s in
   [ rectangle (if lit then rgb 110 100 40 else rgb 45 45 48) 26. 40. |> move x y ]
@@ -199,9 +243,8 @@ let step_303 (pattern : Sequencer.step array) (y : number) (s : int) (lit : bool
   match st.note with
   | None -> []
   | Some n ->
-      let h = if hi > lo then float_of_int (n -.. lo) / float_of_int (hi -.. lo) else 0.5 in
       let w = if st.slide then 30. else 20. in
-      [ rectangle (if st.accent then rgb 240 140 50 else rgb 235 232 222) w 4. |> move (x + ((w - 20.) / 2.)) (y - 16. + (h * 32.)) ]
+      [ rectangle (if st.accent then rgb 240 140 50 else rgb 235 232 222) w 4. |> move (x + ((w - 20.) / 2.)) (y + pitch_y range n) ]
 
 (* a drum machine's step: a button and its LED; the 808's buttons in
  * the colours of its groups of four, red, orange, yellow, cream; the
@@ -221,10 +264,12 @@ let strips_view (m : model) : shape list =
          let face, text = colors k in
          let machine = List.nth Studio_rebirth.machines k in
          let model = match k with 0 | 1 -> "Bass Line" | _ -> "Rhythm Composer" in
+         (* the drum machines' name higher, their instrument button under it *)
+         let dy = if k >= 2 then 10. else 0. in
          [
            rectangle face 950. 80. |> move 0. y;
-           words text (Studio_rebirth.name machine) |> scale 1.5 |> move (-410.) (y + 8.);
-           words text model |> scale 0.8 |> move (-410.) (y - 20.);
+           words text (Studio_rebirth.name machine) |> scale 1.5 |> move (-410.) (y + 8. + dy);
+           words text model |> scale 0.8 |> move (-410.) (y - 20. + (2. * dy));
            words text (List.nth (pattern_names k) m.patterns.(k)) |> scale 1.1 |> move (-260.) y;
            words text "LEVEL" |> scale 0.9 |> move (-130.) (y - 30.);
            words text "MUTE" |> scale 0.9 |> move (-80.) (y - 30.);
@@ -238,7 +283,8 @@ let strips_view (m : model) : shape list =
                   match k with
                   | 0 -> step_303 m.patch.bass1.pattern y s lit
                   | 1 -> step_303 m.patch.bass2.pattern y s lit
-                  | _ -> step_drum k y s (step_on m.patch k s) lit))))
+                  | 2 -> step_drum k y s (step_on m.patch.drums808 m.instruments.(k) s) lit
+                  | _ -> step_drum k y s (step_on m.patch.drums909 m.instruments.(k) s) lit))))
 
 let effects_view (m : model) : shape list =
   let label word x = words ink word |> scale 0.9 |> move x (-62.) in
