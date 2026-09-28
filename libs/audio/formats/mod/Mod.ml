@@ -15,7 +15,7 @@
 (*****************************************************************************)
 
 type instrument = { name : string; finetune : int; volume : int; loop_start : int; loop_length : int; data : string }
-type cell = { instrument : int; period : int; effect : int; param : int }
+type cell = { instrument : int; period : int; fx : int; param : int }
 
 type song = {
   title : string;
@@ -26,7 +26,7 @@ type song = {
   tag : string;
 }
 
-let empty_cell = { instrument = 0; period = 0; effect = 0; param = 0 }
+let empty_cell = { instrument = 0; period = 0; fx = 0; param = 0 }
 
 let channels_of_tag (tag : string) : int option =
   let digit c = if c >= '0' && c <= '9' then Some (Char.code c - Char.code '0') else None in
@@ -50,7 +50,7 @@ let cell_of_bytes (s : string) (i : int) : cell =
   {
     instrument = (b 0 land 0xF0) lor (b 2 lsr 4);
     period = ((b 0 land 0x0F) lsl 8) lor b 1;
-    effect = b 2 land 0x0F;
+    fx = b 2 land 0x0F;
     param = b 3;
   }
 
@@ -59,7 +59,7 @@ let cell_to_bytes (c : cell) : string =
   let set k v = Bytes.set b k (Char.chr (v land 0xFF)) in
   set 0 ((c.instrument land 0xF0) lor ((c.period lsr 8) land 0x0F));
   set 1 c.period;
-  set 2 (((c.instrument land 0x0F) lsl 4) lor (c.effect land 0x0F));
+  set 2 (((c.instrument land 0x0F) lsl 4) lor (c.fx land 0x0F));
   set 3 c.param;
   Bytes.to_string b
 

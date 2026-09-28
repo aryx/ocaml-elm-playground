@@ -24,7 +24,7 @@ let knobs : Effect.knob list =
     { name = "mix"; control = Knob (0., 1.); initial = 0.5 };
   ]
 
-let effect () : Effect.t =
+let fx () : Effect.t =
   (* each kind keeps its own state: switching back finds it as it was *)
   let delay = Modulated_delay.create () and phaser = Phaser.create () in
   let kind = ref Chorus and rate = ref 0. and depth = ref 0. and feedback = ref 0. and mix = ref 0. in

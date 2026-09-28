@@ -146,19 +146,19 @@ let play_cell (p : t) (c : channel) (cell : Mod.cell) : unit =
    * slide goes *)
   if cell.period > 0 then (
     let period = bend cell.period ~finetune:c.finetune ~semitones:0 in
-    if cell.effect = 3 || cell.effect = 5 then c.target <- period
+    if cell.fx = 3 || cell.fx = 5 then c.target <- period
     else (
       c.period <- period;
       c.vibrato_pos <- 0;
       if c.instrument > 0 then (
         let k = c.instrument - 1 in
         let i = p.song.instruments.(k) in
-        let offset = if cell.effect = 9 then cell.param * 256 else 0 in
+        let offset = if cell.fx = 9 then cell.param * 256 else 0 in
         if Array.length p.samples.(k) > 0 then
           Paula.trigger c.paula p.samples.(k) ~loop_start:i.loop_start ~loop_length:i.loop_length ~offset)));
   (* the effects of the first tick *)
   let x = cell.param lsr 4 and y = cell.param land 0x0F in
-  match cell.effect with
+  match cell.fx with
   | 3 -> if cell.param > 0 then c.slide_speed <- cell.param
   | 4 ->
       if x > 0 then c.vibrato_speed <- x;
@@ -194,7 +194,7 @@ let vibrato_delta (c : channel) : int =
  * or the vibrato *)
 let heard_period (p : t) (c : channel) : int =
   let cell = c.cell in
-  match cell.effect with
+  match cell.fx with
   | 0 when cell.param > 0 ->
       let s = match p.tick mod 3 with 0 -> 0 | 1 -> cell.param lsr 4 | _ -> cell.param land 0x0F in
       bend c.period ~finetune:0 ~semitones:s
@@ -204,7 +204,7 @@ let heard_period (p : t) (c : channel) : int =
 let effect_tick (p : t) (c : channel) : unit =
   let cell = c.cell in
   let x = cell.param lsr 4 and y = cell.param land 0x0F in
-  match cell.effect with
+  match cell.fx with
   | 1 -> c.period <- clamp_period (c.period - cell.param)
   | 2 -> c.period <- clamp_period (c.period + cell.param)
   | 3 -> slide_to c

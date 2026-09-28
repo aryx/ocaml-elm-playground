@@ -346,7 +346,7 @@ let tracker (song : Mod.song) : shape list =
       let pattern = song.patterns.(song.positions.(min position (Array.length song.positions -.. 1))) in
       let cell (c : Mod.cell) =
         Printf.sprintf "%s %s %s" (if c.period = 0 then "---" else Mod.note_name c.period) (if c.instrument = 0 then ".." else Printf.sprintf "%02d" c.instrument)
-          (if c.effect = 0 && c.param = 0 then "..." else Printf.sprintf "%X%02X" c.effect c.param)
+          (if c.fx = 0 && c.param = 0 then "..." else Printf.sprintf "%X%02X" c.fx c.param)
       in
       (rectangle (rgb 70 40 40) vw 34. |> move vx vy)
       :: List.concat

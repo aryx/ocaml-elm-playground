@@ -447,9 +447,9 @@ let after_task (cfg : 'msg config) (network : < Cap.network ; .. >) (tab : t) : 
         with_pictures cfg network ({ tab with state = Shown (Browser_page.with_tree (cfg.settings tab) p tree); focus }, Cmd.none)
     | _ -> (tab, Cmd.none))
 
-let form_effect (cfg : 'msg config) (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (tab : t) :
+let form_effect (cfg : 'msg config) (network : < Cap.network ; .. >) ~(keep_focus : bool) (outcome : Browser_forms.outcome) (tab : t) :
     t * 'msg Cmd.t =
-  match effect with
+  match outcome with
   | Nothing -> (tab, Cmd.none)
   | Focus e -> ({ tab with focus = Some e }, Cmd.none)
   | Unfocus -> ({ tab with focus = None }, Cmd.none)

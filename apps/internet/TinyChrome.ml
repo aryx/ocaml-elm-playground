@@ -354,8 +354,8 @@ let edit_omnibox (network : < Cap.network ; .. >) (key : string) (m : model) : m
   | "backspace" -> ({ m with omnibox = (if m.fresh then "" else backspace m.omnibox); fresh = false }, Cmd.none)
   | _ -> (m, Cmd.none)
 
-let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (m : model) : model * msg Cmd.t =
-  on_current m (fun cfg tab -> Browser_tab.form_effect cfg network ~keep_focus effect tab)
+let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (outcome : Browser_forms.outcome) (m : model) : model * msg Cmd.t =
+  on_current m (fun cfg tab -> Browser_tab.form_effect cfg network ~keep_focus outcome tab)
 
 (* a task of the page's scripts done by [f], then the page laid out
  * again if its tree changed (Browser_tab.after_task) *)

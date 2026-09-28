@@ -67,7 +67,9 @@ type cell = int * int (* row, column *)
 (* a bubble on the move: the shot, or a popped or falling one *)
 type flying = { x : number; y : number; vx : number; vy : number; color : int }
 
-type effect = { b : flying; age : int; falls : bool }
+(* claude: a bubble leaving the board, popped or falling (leaving, not
+ * effect: a keyword since OCaml 5.3) *)
+type leaving = { b : flying; age : int; falls : bool }
 
 type game = {
   board : (cell * int) list; (* the bubbles hanging, and their color *)
@@ -75,7 +77,7 @@ type game = {
   shot : flying option;
   current : int; (* the colors of the bubble in the launcher, and the next *)
   next : int;
-  effects : effect list;
+  effects : leaving list;
   shots : int; (* since the ceiling last came down *)
   drop : int; (* rows the ceiling came down *)
   round : int;

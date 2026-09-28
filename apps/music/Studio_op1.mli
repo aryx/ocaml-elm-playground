@@ -63,7 +63,7 @@ type sound = {
   engine_params : float array; (* its four encoders, 0 to 1 *)
   envelope : float array; (* attack, decay, sustain, release, 0 to 1 *)
   play_mode : int;
-  effect : int; (* an index in [effects] *)
+  fx : int; (* the effect, an index in [effects] (claude: fx, effect being a keyword since OCaml 5.3) *)
   effect_params : float array;
   effect_on : bool;
   lfo : int; (* an index in [lfos] *)

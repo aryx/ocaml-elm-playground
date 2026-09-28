@@ -97,7 +97,7 @@ let knobs : Effect.knob list =
     { name = "oversampling"; control = Switch; initial = 1. };
   ]
 
-let effect () : Effect.t =
+let fx () : Effect.t =
   (* a drive per channel and per oversampling, each keeping its filters'
    * state while the other is used *)
   let plain = (create ~oversampling:1 (), create ~oversampling:1 ()) and oversampled = (create ~oversampling:4 (), create ~oversampling:4 ()) in

@@ -139,7 +139,7 @@ val got_picture : 'msg config -> < Cap.network ; .. > -> string -> (Playground.H
 (* what a form's click or key did (Browser_forms): the focus moved, the
  * page's values changed (its script told, if it has one), or the form
  * sent *)
-val form_effect : 'msg config -> < Cap.network ; .. > -> keep_focus:bool -> Browser_forms.effect -> t -> t * 'msg Cmd.t
+val form_effect : 'msg config -> < Cap.network ; .. > -> keep_focus:bool -> Browser_forms.outcome -> t -> t * 'msg Cmd.t
 
 (* after a script's task (a click, a key, a timer): if the tree changed,
  * the page laid out again from it, the field in focus found again in

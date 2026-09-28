@@ -229,8 +229,8 @@ let edit_location (network : < Cap.network ; .. >) (key : string) (m : model) : 
 (* the Location field clicked: what is there selected, to be typed over *)
 let start_editing (m : model) : model = { m with editing = true; fresh = true; location = current_url m }
 
-let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (m : model) : model * msg Cmd.t =
-  with_tab m (Browser_tab.form_effect (config m) network ~keep_focus effect m.tab)
+let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (outcome : Browser_forms.outcome) (m : model) : model * msg Cmd.t =
+  with_tab m (Browser_tab.form_effect (config m) network ~keep_focus outcome m.tab)
 
 let update (network : < Cap.network ; .. >) (msg : msg) (m : model) : model * msg Cmd.t =
   let cfg = config m in

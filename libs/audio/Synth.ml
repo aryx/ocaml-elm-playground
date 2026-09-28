@@ -60,14 +60,14 @@ let sliding (target : float) = map_voices (fun v -> { v with slide = Some target
 let with_effect (e : Pitch_effect.t) = map_voices (fun v -> { v with effects = v.effects @ [ e ] })
 
 let rec faster (k : float) (s : t) : t =
-  let effect (e : Pitch_effect.t) : Pitch_effect.t =
+  let quicker (e : Pitch_effect.t) : Pitch_effect.t =
     match e with
     | Vibrato { rate; depth } -> Vibrato { rate = rate *. k; depth }
     | Jump { semitones; at } -> Jump { semitones; at = at /. k }
     | Arpeggio { semitones; step } -> Arpeggio { semitones; step = step /. k }
   in
   match s with
-  | Voice v -> Voice { v with seconds = v.seconds /. k; effects = List.map effect v.effects }
+  | Voice v -> Voice { v with seconds = v.seconds /. k; effects = List.map quicker v.effects }
   | Together l -> Together (List.map (faster k) l)
   | After l -> After (List.map (faster k) l)
   | Samples s -> Samples s

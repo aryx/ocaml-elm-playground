@@ -108,7 +108,7 @@ let process (t : t) ~(fast : bool) (s : Signal.stereo) : unit = process_mix t ~f
 let knobs : Effect.knob list =
   [ { name = "fast"; control = Switch; initial = 0. }; { name = "mix"; control = Knob (0., 1.); initial = 1. } ]
 
-let effect () : Effect.t =
+let fx () : Effect.t =
   let t = create () and fast = ref false and mix = ref 1. and last_mix = ref 1. in
   let set (knob : string) (x : float) =
     match knob with "fast" -> fast := Control.on x | "mix" -> mix := x | _ -> ()

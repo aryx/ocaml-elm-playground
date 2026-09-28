@@ -120,7 +120,7 @@ let type_digit (m : model) (d : int) : model =
   let c = cell_at m in
   let c : Mod.cell =
     match m.column with
-    | 1 -> { c with effect = d }
+    | 1 -> { c with fx = d }
     | 2 -> { c with param = (d lsl 4) lor (c.param land 0x0F) }
     | _ -> { c with param = (c.param land 0xF0) lor d }
   in
@@ -183,7 +183,7 @@ let keys (caps : < Cap.open_out >) (computer : computer) (m : model) : model =
       { m with song = { m.song with positions }; position = at }
   | Some _ when pressed "Backspace" ->
       let c = cell_at m in
-      with_cell m (if m.column = 0 then { c with period = 0; instrument = 0 } else { c with effect = 0; param = 0 })
+      with_cell m (if m.column = 0 then { c with period = 0; instrument = 0 } else { c with fx = 0; param = 0 })
   | Some k -> (
       match (m.column, piano k, hex k) with
       | 0, Some s, _ ->
@@ -242,7 +242,7 @@ let cell_view (c : Mod.cell) (x : number) (y : number) (bright : bool) : shape l
   [
     txt cell_size col (if c.period = 0 then "---" else Mod.note_name c.period) |> move (x - 55.) y;
     txt cell_size col (if c.instrument = 0 then ".." else Printf.sprintf "%02d" c.instrument) |> move (x + 5.) y;
-    txt cell_size col (if c.effect = 0 && c.param = 0 then "..." else Printf.sprintf "%X%02X" c.effect c.param) |> move (x + 60.) y;
+    txt cell_size col (if c.fx = 0 && c.param = 0 then "..." else Printf.sprintf "%X%02X" c.fx c.param) |> move (x + 60.) y;
   ]
 
 let pattern_view (m : model) : shape list =

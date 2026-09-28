@@ -68,7 +68,7 @@ type instrument = {
 type cell = {
   instrument : int; (* 1 to 31; 0: none *)
   period : int; (* 0: no new note *)
-  effect : int; (* 0 to 15 *)
+  fx : int; (* the effect, 0 to 15 (claude: fx, effect being a keyword since OCaml 5.3) *)
   param : int; (* 0 to 255 *)
 }
 

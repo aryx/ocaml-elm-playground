@@ -25,7 +25,7 @@ let instrument name (a : float array) ~loop : Mod.instrument =
 let square = instrument "square" (Array.init 32 (fun i -> if i < 16 then 0.5 else -0.5)) ~loop:true
 let sine = instrument "sine" (Array.init 32 (fun i -> 0.5 *. sin (2. *. Float.pi *. float_of_int i /. 32.))) ~loop:true
 let silent = instrument "" [||] ~loop:false
-let cell ?(i = 1) ?(e = 0) ?(x = 0) period : Mod.cell = { instrument = i; period; effect = e; param = x }
+let cell ?(i = 1) ?(e = 0) ?(x = 0) period : Mod.cell = { instrument = i; period; fx = e; param = x }
 let note name = Option.get (Mod.period_of_name name)
 
 (* a song of patterns given as (row, channel, cell) lists *)

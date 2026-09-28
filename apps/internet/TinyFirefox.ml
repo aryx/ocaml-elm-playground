@@ -266,8 +266,8 @@ let edit_command (network : < Cap.network ; .. >) (key : string) (m : model) : m
   | "backspace" -> ({ m with command = backspace m.command }, Cmd.none)
   | _ -> (m, Cmd.none)
 
-let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (m : model) : model * msg Cmd.t =
-  with_tab m (Browser_tab.form_effect (config m) network ~keep_focus effect m.tab)
+let form (network : < Cap.network ; .. >) ~(keep_focus : bool) (outcome : Browser_forms.outcome) (m : model) : model * msg Cmd.t =
+  with_tab m (Browser_tab.form_effect (config m) network ~keep_focus outcome m.tab)
 
 (* a click on the page: the scripts first (the element under the
  * pointer, bubbling); then, unless one prevented it, what the browser

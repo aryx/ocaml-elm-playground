@@ -431,7 +431,7 @@ and statements (st : st) (c : code) (body : stmt list) ~(value : bool) : unit =
     | Return (x, _) :: _ -> gen_return st c x
     | [ Expr x ] when value -> gen st c x
     | Expr x :: rest ->
-        effect st c x;
+        for_effect st c x;
         if rest = [] && value then begin
           emit c 115;
           push_depth st 1
@@ -451,8 +451,9 @@ and gen_return (st : st) (c : code) (x : expr) : unit =
       emit c 124;
       push_depth st (-1)
 
-(* an expression whose value is not wanted *)
-and effect (st : st) (c : code) (x : expr) : unit =
+(* an expression whose value is not wanted (claude: for_effect, effect
+ * being a keyword since OCaml 5.3) *)
+and for_effect (st : st) (c : code) (x : expr) : unit =
   match x.e with
   | Assign (v, y) ->
       gen st c y;

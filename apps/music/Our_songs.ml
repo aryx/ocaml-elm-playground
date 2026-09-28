@@ -15,7 +15,7 @@ let instrument name (a : float array) ~loop : Mod.instrument =
   { name; finetune = 0; volume = 64; loop_start = 0; loop_length = (if loop then String.length data else 0); data }
 
 let cell ?(i = 1) ?(e = 0) ?(x = 0) (n : string) : Mod.cell =
-  { instrument = i; period = Option.value (Mod.period_of_name n) ~default:0; effect = e; param = x }
+  { instrument = i; period = Option.value (Mod.period_of_name n) ~default:0; fx = e; param = x }
 
 let soundtracker_song : Mod.song =
   let pi2 = 2. *. Float.pi in

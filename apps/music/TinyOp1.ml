@@ -110,7 +110,7 @@ let page_names (s : Studio_op1.sound) (page : int) : string array =
   match page with
   | 0 -> (List.nth Op1_engine.all s.engine).encoders
   | 1 -> Studio_op1.envelope_encoders
-  | 2 -> Studio_op1.effect_encoders s.effect
+  | 2 -> Studio_op1.effect_encoders s.fx
   | _ -> Studio_op1.lfo_encoders s.lfo
 
 let page_values (s : Studio_op1.sound) (page : int) : float array =
@@ -131,8 +131,8 @@ let next_kind (s : Studio_op1.sound) (page : int) : Studio_op1.sound =
   | 0 -> { s with engine = (s.engine +.. 1) mod List.length Op1_engine.all }
   | 1 -> { s with play_mode = (s.play_mode +.. 1) mod List.length Studio_op1.play_modes }
   | 2 ->
-      let k = cycle s.effect s.effect_on in
-      if k >= List.length Studio_op1.effects then { s with effect_on = false } else { s with effect = k; effect_on = true }
+      let k = cycle s.fx s.effect_on in
+      if k >= List.length Studio_op1.effects then { s with effect_on = false } else { s with fx = k; effect_on = true }
   | _ ->
       let k = cycle s.lfo s.lfo_on in
       if k >= List.length Studio_op1.lfos then { s with lfo_on = false } else { s with lfo = k; lfo_on = true }
@@ -336,7 +336,7 @@ let synth_screen (m : model) : shape list =
     match m.page with
     | 0 -> "T1 " ^ String.uppercase_ascii engine.name
     | 1 -> Printf.sprintf "T2 ENVELOPE  %s" (String.uppercase_ascii (List.nth Studio_op1.play_modes s.play_mode))
-    | 2 -> if s.effect_on then "T3 " ^ String.uppercase_ascii (List.nth Studio_op1.effects s.effect) else "T3 NO EFFECT"
+    | 2 -> if s.effect_on then "T3 " ^ String.uppercase_ascii (List.nth Studio_op1.effects s.fx) else "T3 NO EFFECT"
     | _ -> if s.lfo_on then "T4 " ^ String.uppercase_ascii (List.nth Studio_op1.lfos s.lfo) else "T4 NO LFO"
   in
   let middle =

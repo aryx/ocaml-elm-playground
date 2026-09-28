@@ -141,5 +141,5 @@ val reduction : t -> float
  * [gate]) *)
 val knobs : Effect.knob list
 
-(* [effect ()]: "dynamics", its meter "reduction" (dB) *)
-val effect : unit -> Effect.t
+(* [fx ()]: "dynamics", its meter "reduction" (dB) *)
+val fx : unit -> Effect.t

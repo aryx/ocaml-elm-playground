@@ -32,7 +32,7 @@ type sound = {
   engine_params : float array;
   envelope : float array;
   play_mode : int;
-  effect : int;
+  fx : int;
   effect_params : float array;
   effect_on : bool;
   lfo : int;
@@ -44,30 +44,30 @@ type sound = {
 type patch = { sounds : sound array; current : int; levels : float array; volume : float }
 
 (* ours: eight sounds, one or two per engine, as the OP-1 comes with *)
-let sound ?(effect = 0) ?(effect_on = false) ?(effect_params = [| 0.5; 0.5; 0.4; 0.3 |]) ?(lfo = 0) ?(lfo_on = false)
+let sound ?(fx = 0) ?(effect_on = false) ?(effect_params = [| 0.5; 0.5; 0.4; 0.3 |]) ?(lfo = 0) ?(lfo_on = false)
     ?(lfo_params = [| 0.4; 0.2; 0.3; 0.5 |]) ?(octave = 0) ?(play_mode = 0) engine engine_params envelope : sound =
-  { engine; engine_params; envelope; play_mode; effect; effect_params; effect_on; lfo; lfo_params; lfo_on; octave }
+  { engine; engine_params; envelope; play_mode; fx; effect_params; effect_on; lfo; lfo_params; lfo_on; octave }
 
 let initial : patch =
   {
     sounds =
       [|
         (* FM, two pairs, a bell *)
-        sound 0 [| 0.5; 0.25; 0.4; 0.3 |] [| 0.; 0.45; 0.; 0.55 |] ~effect:1 ~effect_on:true;
+        sound 0 [| 0.5; 0.25; 0.4; 0.3 |] [| 0.; 0.45; 0.; 0.55 |] ~fx:1 ~effect_on:true;
         (* the cluster, a pad *)
-        sound 1 [| 1.; 0.5; 0.5; 0.4 |] [| 0.55; 0.4; 0.8; 0.6 |] ~effect:1 ~effect_on:true ~lfo_on:true;
+        sound 1 [| 1.; 0.5; 0.5; 0.4 |] [| 0.55; 0.4; 0.8; 0.6 |] ~fx:1 ~effect_on:true ~lfo_on:true;
         (* the string, plucked *)
         sound 2 [| 0.7; 0.3; 0.3; 0.2 |] [| 0.; 0.5; 0.6; 0.4 |];
         (* pulse, a lead, mono *)
-        sound 3 [| 0.6; 0.4; 0.3; 0.5 |] [| 0.05; 0.4; 0.7; 0.3 |] ~play_mode:1 ~effect:0 ~effect_on:true;
+        sound 3 [| 0.6; 0.4; 0.3; 0.5 |] [| 0.05; 0.4; 0.7; 0.3 |] ~play_mode:1 ~fx:0 ~effect_on:true;
         (* phase, a bass an octave down *)
-        sound 4 [| 0.; 0.7; 0.3; 0.2 |] [| 0.; 0.35; 0.5; 0.25 |] ~octave:(-1) ~effect:2 ~effect_on:true;
+        sound 4 [| 0.; 0.7; 0.3; 0.2 |] [| 0.; 0.35; 0.5; 0.25 |] ~octave:(-1) ~fx:2 ~effect_on:true;
         (* digital, crunchy *)
         sound 5 [| 0.4; 0.5; 0.3; 0.6 |] [| 0.; 0.4; 0.5; 0.3 |];
         (* FM, the stack, bright *)
-        sound 0 [| 0.4; 0.5; 0.; 0.2 |] [| 0.02; 0.5; 0.6; 0.4 |] ~effect:3 ~effect_on:true;
+        sound 0 [| 0.4; 0.5; 0.; 0.2 |] [| 0.02; 0.5; 0.6; 0.4 |] ~fx:3 ~effect_on:true;
         (* the cluster, a supersaw lead through the delay *)
-        sound 1 [| 0.85; 0.; 0.7; 0.6 |] [| 0.02; 0.4; 0.7; 0.4 |] ~effect:0 ~effect_on:true ~octave:1;
+        sound 1 [| 0.85; 0.; 0.7; 0.6 |] [| 0.02; 0.4; 0.7; 0.4 |] ~fx:0 ~effect_on:true ~octave:1;
       |];
     current = 0;
     levels = [| 0.8; 0.8; 0.8; 0.8 |];
@@ -191,13 +191,13 @@ let modulated (s : sound) (lfo : float) : sound =
   end
 
 (* the effect on the live sound, both sides *)
-let effect (t : t) (s : sound) (out : Signal.stereo) : unit =
+let fx (t : t) (s : sound) (out : Signal.stereo) : unit =
   let p = s.effect_params and n = Array.length out.left in
   let lowpass (a : int) cutoff q =
     Svf.process t.filters.(a) Zero_delay Low_pass ~cutoff:(Array.make n cutoff) ~q out.left;
     Svf.process t.filters.(a + 1) Zero_delay Low_pass ~cutoff:(Array.make n cutoff) ~q out.right
   in
-  match s.effect with
+  match s.fx with
   | 0 -> Delay.process t.delay { time = 0.05 +. (0.95 *. p.(0)); feedback = 0.9 *. p.(2); tone = 500. *. Float.pow 40. p.(1); ping_pong = false; mix = p.(3) } out
   | 1 ->
       Reverb.process t.spring { kind = Freeverb; seconds = 0.3 +. (4. *. p.(1)); damping = p.(2); mix = p.(3) } out;
@@ -261,7 +261,7 @@ let fill (t : t) (out : Signal.stereo) : unit =
       t.live.left.(i) <- gain *. x;
       t.live.right.(i) <- gain *. x)
     t.mono;
-  if s.effect_on then effect t s t.live;
+  if s.effect_on then fx t s t.live;
   (* the tape: the live sound recorded on the armed track, the tracks
    * played back beside it *)
   let mono_live = Array.map2 (fun l r -> 0.5 *. (l +. r)) t.live.left t.live.right in

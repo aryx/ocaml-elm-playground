@@ -27,5 +27,5 @@ val process : t -> bass:float -> middle:float -> treble:float -> Signal.stereo -
 (* bass, middle, treble: -12 to 12 dB, 0 at first *)
 val knobs : Effect.knob list
 
-(* [effect ()]: "eq" *)
-val effect : unit -> Effect.t
+(* [fx ()]: "eq" *)
+val fx : unit -> Effect.t

@@ -16,7 +16,9 @@
  * The values are the page's (Browser_page.values), kept with it, so
  * that the history gives a half-filled form back half filled. *)
 
-type effect =
+(* claude: what a click or a key does to a form (outcome, not effect: a
+ * keyword since OCaml 5.3) *)
+type outcome =
   | Nothing
   | Focus of Dom.element (* the field takes the keys *)
   | Unfocus (* it gives them up *)
@@ -29,11 +31,11 @@ type effect =
 val submission : Browser_page.t -> Forms.form -> submitter:Dom.element option -> string * (string * string) option
 
 (* a click on a control *)
-val click : Browser_page.t -> Dom.element -> effect
+val click : Browser_page.t -> Dom.element -> outcome
 
 (* a key (its name lowercased: "backspace", "enter"...) while a field
  * has the keys *)
-val key : Browser_page.t -> Dom.element -> string -> effect
+val key : Browser_page.t -> Dom.element -> string -> outcome
 
 (* text typed while a field has the keys: the page with it added *)
 val typed : Browser_page.t -> Dom.element -> string -> Browser_page.t

@@ -15,12 +15,12 @@ let t = Testo.create
 let hex (s : string) : string = String.concat " " (List.map (fun c -> Printf.sprintf "%02X" (Char.code c)) (List.of_seq (String.to_seq s)))
 
 let test_cell () =
-  let c : Mod.cell = { instrument = 1; period = 428; effect = 0xC; param = 0x20 } in
+  let c : Mod.cell = { instrument = 1; period = 428; fx =0xC; param = 0x20 } in
   Alcotest.(check string) "instrument 1, C-2, C20" "01 AC 1C 20" (hex (Mod.cell_to_bytes c));
   Alcotest.(check string) "instrument 17" "11 AC 1C 20" (hex (Mod.cell_to_bytes { c with instrument = 17 }));
   List.iter
     (fun (c : Mod.cell) -> if Mod.cell_of_bytes (Mod.cell_to_bytes c) 0 <> c then Alcotest.fail "a cell not read back")
-    [ c; { instrument = 31; period = 113; effect = 0xF; param = 0xFF }; Mod.empty_cell ]
+    [ c; { instrument = 31; period = 113; fx =0xF; param = 0xFF }; Mod.empty_cell ]
 
 let test_periods () =
   Alcotest.(check (option int)) "C-2: 428" (Some 428) (Mod.period_of_name "C-2");
@@ -44,7 +44,7 @@ let square = Mod.data_of_floats (Array.init 32 (fun i -> if i < 16 then 0.5 else
 let sine = Mod.data_of_floats (Array.init 1000 (fun i -> sin (2. *. Float.pi *. float_of_int i /. 32.)))
 
 let song ~count : Mod.song =
-  let cell i p e x : Mod.cell = { instrument = i; period = p; effect = e; param = x } in
+  let cell i p e x : Mod.cell = { instrument = i; period = p; fx =e; param = x } in
   let pattern first = Array.init 64 (fun r -> Array.init 4 (fun c -> if r mod 16 = 0 && c = 0 then cell first 428 0 0 else if r = 8 && c = 1 then cell 2 214 0xC 0x30 else Mod.empty_cell)) in
   let blank = instrument "" "" ~loop:false in
   {

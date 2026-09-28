@@ -85,5 +85,5 @@ val process : t -> shape -> drive:float -> mix:float -> Signal.t -> unit
  * drive, 0 to 36 dB: 12), oversampling (a switch: x4 or none, on) *)
 val knobs : Effect.knob list
 
-(* [effect ()]: "drive", both channels, the dry sound gone (mix 1) *)
-val effect : unit -> Effect.t
+(* [fx ()]: "drive", both channels, the dry sound gone (mix 1) *)
+val fx : unit -> Effect.t

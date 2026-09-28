@@ -142,7 +142,7 @@ let knobs : Effect.knob list =
     { name = "makeup"; control = Knob (0., 24.); initial = 0. };
   ]
 
-let effect () : Effect.t =
+let fx () : Effect.t =
   let t = create () and s = ref compressor in
   let set (knob : string) (x : float) =
     match knob with

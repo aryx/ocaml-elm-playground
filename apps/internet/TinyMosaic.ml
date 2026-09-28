@@ -368,9 +368,9 @@ let visit ?post (network : < Cap.network ; .. >) (url : string) (m : model) : mo
   | _ -> load ?post network target m
 
 (* what a click or a key did to a form (Browser_forms), done *)
-let form_effect (network : < Cap.network ; .. >) ~(keep_focus : bool) (effect : Browser_forms.effect) (m : model) :
+let form_effect (network : < Cap.network ; .. >) ~(keep_focus : bool) (outcome : Browser_forms.outcome) (m : model) :
     model * msg Cmd.t =
-  match effect with
+  match outcome with
   | Nothing -> (m, Cmd.none)
   | Focus e -> ({ m with focus = Some e }, Cmd.none)
   | Unfocus -> ({ m with focus = None }, Cmd.none)

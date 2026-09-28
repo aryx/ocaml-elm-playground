@@ -10,7 +10,7 @@
 
 (* See Browser_forms.mli *)
 
-type effect =
+type outcome =
   | Nothing
   | Focus of Dom.element
   | Unfocus
@@ -26,11 +26,11 @@ let submission (p : Browser_page.t) (form : Forms.form) ~(submitter : Dom.elemen
   if form.post then (action, Some ("application/x-www-form-urlencoded", fields))
   else (fst (Browser_url.split_query (fst (Browser_url.split_fragment action))) ^ "?" ^ fields, None)
 
-let submit (p : Browser_page.t) (form : Forms.form) ~(submitter : Dom.element option) : effect =
+let submit (p : Browser_page.t) (form : Forms.form) ~(submitter : Dom.element option) : outcome =
   let url, post = submission p form ~submitter in
   Submit { url; post; page = p }
 
-let click (p : Browser_page.t) (e : Dom.element) : effect =
+let click (p : Browser_page.t) (e : Dom.element) : outcome =
   match Forms.control e with
   | None -> Nothing
   | Some control -> (
@@ -64,7 +64,7 @@ let click (p : Browser_page.t) (e : Dom.element) : effect =
       (* a script's business: Browser_script.click *)
       | Button | Hidden -> Nothing)
 
-let key (p : Browser_page.t) (e : Dom.element) (key : string) : effect =
+let key (p : Browser_page.t) (e : Dom.element) (key : string) : outcome =
   let v = value_of p e in
   let is_textarea = match Forms.control e with Some { kind = Textarea; _ } -> true | _ -> false in
   match key with

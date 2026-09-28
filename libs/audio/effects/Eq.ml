@@ -54,7 +54,7 @@ let process (t : t) ~(bass : float) ~(middle : float) ~(treble : float) (s : Sig
 let knobs : Effect.knob list =
   List.map (fun name : Effect.knob -> { name; control = Knob (-12., 12.); initial = 0. }) [ "bass"; "middle"; "treble" ]
 
-let effect () : Effect.t =
+let fx () : Effect.t =
   let t = create () and gains = [| 0.; 0.; 0. |] in
   let set (knob : string) (x : float) =
     match knob with "bass" -> gains.(0) <- x | "middle" -> gains.(1) <- x | "treble" -> gains.(2) <- x | _ -> ()

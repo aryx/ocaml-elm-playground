@@ -84,6 +84,6 @@ val drum_seconds : float
  * share, 1 at first) *)
 val knobs : Effect.knob list
 
-(* [effect ()]: "leslie", its meters the rotors' speeds, "horn" and
+(* [fx ()]: "leslie", its meters the rotors' speeds, "horn" and
  * "drum" (turns a second) *)
-val effect : unit -> Effect.t
+val fx : unit -> Effect.t

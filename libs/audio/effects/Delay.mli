@@ -75,5 +75,5 @@ val process : t -> settings -> Signal.stereo -> unit
  * (0 to 1: 0.3) *)
 val knobs : Effect.knob list
 
-(* [effect ()]: "delay" *)
-val effect : unit -> Effect.t
+(* [fx ()]: "delay" *)
+val fx : unit -> Effect.t

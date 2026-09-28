@@ -10,12 +10,13 @@
 
 (* See Rack.mli *)
 
-type stage = { effect : Effect.t; mutable on : bool }
+(* claude: fx, not effect: a keyword since OCaml 5.3 (effect handlers) *)
+type stage = { fx : Effect.t; mutable on : bool }
 type t = { mutable stages : stage list }
 
-let create (effects : Effect.t list) : t = { stages = List.map (fun effect -> { effect; on = false }) effects }
+let create (effects : Effect.t list) : t = { stages = List.map (fun fx -> { fx; on = false }) effects }
 let standard () : t =
-  create [ Drive.effect (); Eq.effect (); Modulation.effect (); Delay.effect (); Reverb.effect (); Dynamics.effect () ]
+  create [ Drive.fx (); Eq.fx (); Modulation.fx (); Delay.fx (); Reverb.fx (); Dynamics.fx () ]
 
 (* an effect's knobs under its name, its switch first *)
 let prefixed (name : string) (knobs : Effect.knob list) : Effect.knob list =
@@ -34,27 +35,27 @@ let standard_knobs : Effect.knob list =
       ("dynamics", Dynamics.knobs);
     ]
 
-let knobs (t : t) : Effect.knob list = List.concat_map (fun s -> prefixed s.effect.name s.effect.knobs) t.stages
+let knobs (t : t) : Effect.knob list = List.concat_map (fun s -> prefixed s.fx.name s.fx.knobs) t.stages
 
 let set (t : t) (name : string) (x : float) : unit =
   match String.index_opt name '.' with
   | None -> ()
   | Some i ->
-      let effect = String.sub name 0 i and knob = String.sub name (i + 1) (String.length name - i - 1) in
+      let stage = String.sub name 0 i and knob = String.sub name (i + 1) (String.length name - i - 1) in
       List.iter
-        (fun s -> if s.effect.name = effect then if knob = "on" then s.on <- Control.on x else s.effect.set knob x)
+        (fun s -> if s.fx.name = stage then if knob = "on" then s.on <- Control.on x else s.fx.set knob x)
         t.stages
 
-let order (t : t) : string list = List.map (fun s -> s.effect.name) t.stages
+let order (t : t) : string list = List.map (fun s -> s.fx.name) t.stages
 
 let reorder (t : t) (names : string list) : unit =
-  let named = List.filter_map (fun n -> List.find_opt (fun s -> s.effect.name = n) t.stages) names in
+  let named = List.filter_map (fun n -> List.find_opt (fun s -> s.fx.name = n) t.stages) names in
   t.stages <- named @ List.filter (fun s -> not (List.memq s named)) t.stages
 
-let process (t : t) (out : Signal.stereo) : unit = List.iter (fun s -> if s.on then s.effect.process out) t.stages
+let process (t : t) (out : Signal.stereo) : unit = List.iter (fun s -> if s.on then s.fx.process out) t.stages
 
 let meter (t : t) (name : string) : float =
   List.find_map
-    (fun s -> List.find_map (fun (m, x) -> if s.effect.name ^ "." ^ m = name then Some x else None) (s.effect.meters ()))
+    (fun s -> List.find_map (fun (m, x) -> if s.fx.name ^ "." ^ m = name then Some x else None) (s.fx.meters ()))
     t.stages
   |> Option.value ~default:0.

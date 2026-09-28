@@ -210,12 +210,12 @@ let sounds =
           Mix.gain 2. x ) ]
 
 (* [x] through a stereo effect a block of 735 at a time, its left side *)
-let through (effect : Signal.stereo -> unit) (x : Signal.t) : Signal.t =
+let through (fx : Signal.stereo -> unit) (x : Signal.t) : Signal.t =
   let left = Array.copy x and right = Array.copy x and k = ref 0 in
   while !k < Array.length x do
     let n = min 735 (Array.length x - !k) in
     let b = { Signal.left = Array.sub left !k n; right = Array.sub right !k n } in
-    effect b;
+    fx b;
     Array.blit b.left 0 left !k n;
     Array.blit b.right 0 right !k n;
     k := !k + n

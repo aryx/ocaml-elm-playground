@@ -171,8 +171,8 @@ let rms (x : Signal.t) (a : float) (b : float) : float =
 
 (* a sine (FM at amount 0) through an envelope: attack 0.1 s, sustain
  * 0.5, release; its level in dB through the note *)
-let sine_sound ?(effect_on = false) ?(effect = 0) ?(lfo_on = false) ?(lfo_params = [| 0.4; 0.; 0.8; 0.5 |]) () : Studio_op1.sound =
-  { (Studio_op1.initial.sounds.(0)) with engine = 0; engine_params = [| 0.; 0.; 0.; 0. |]; envelope = [| 0.5; 0.5; 0.5; 0.5 |]; effect_on; effect; lfo_on; lfo = 0; lfo_params }
+let sine_sound ?(effect_on = false) ?(fx = 0) ?(lfo_on = false) ?(lfo_params = [| 0.4; 0.; 0.8; 0.5 |]) () : Studio_op1.sound =
+  { (Studio_op1.initial.sounds.(0)) with engine = 0; engine_params = [| 0.; 0.; 0.; 0. |]; envelope = [| 0.5; 0.5; 0.5; 0.5 |]; effect_on; fx; lfo_on; lfo = 0; lfo_params }
 
 let with_sound (s : Studio_op1.sound) : Studio_op1.patch = { Studio_op1.initial with sounds = Array.make 8 s; current = 0 }
 
@@ -193,7 +193,7 @@ let test_effects () =
   let off = note_held (sine_sound ()) 1.5 in
   List.iteri
     (fun k name ->
-      let on = note_held (sine_sound ~effect_on:true ~effect:k ()) 1.5 in
+      let on = note_held (sine_sound ~effect_on:true ~fx:k ()) 1.5 in
       let d = Array.fold_left Float.max 0. (Array.mapi (fun i x -> Float.abs (x -. off.(i))) on) in
       Alcotest.(check bool) (Printf.sprintf "%s changes the sound (by %.3f)" name d) true (d > 0.01))
     Studio_op1.effects

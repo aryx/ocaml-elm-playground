@@ -8,7 +8,7 @@
  * patch, which stores numbers by name. So each module also makes an
  * [Effect.t], its settings kept inside:
  *
- *     Delay.effect () : Effect.t
+ *     Delay.fx () : Effect.t
  *
  *        knobs    time, feedback, tone, pingpong, mix: what a panel
  *                 draws and a patch stores (Control.mli)

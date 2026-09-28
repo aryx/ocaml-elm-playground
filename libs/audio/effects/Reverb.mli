@@ -116,5 +116,5 @@ val process : t -> settings -> Signal.stereo -> unit
  * damping (0 to 1: 0.3), mix (0 to 1: 0.25) *)
 val knobs : Effect.knob list
 
-(* [effect ()]: "reverb" *)
-val effect : unit -> Effect.t
+(* [fx ()]: "reverb" *)
+val fx : unit -> Effect.t

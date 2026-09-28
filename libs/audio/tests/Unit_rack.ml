@@ -51,12 +51,12 @@ let test_knobs () =
 
 (* an effect's knobs turned by name = its typed settings *)
 let test_wrappers () =
-  let e = Delay.effect () in
+  let e = Delay.fx () in
   e.set "time" 0.1;
   e.set "pingpong" 1.;
   let typed = { Delay.time = 0.1; feedback = 0.4; tone = 3000.; ping_pong = true; mix = 0.3 } in
   Alcotest.(check (float 0.)) "Delay" 0. (largest_difference (through e.process).right (through (Delay.process (Delay.create ()) typed)).right);
-  let e = Reverb.effect () in
+  let e = Reverb.fx () in
   e.set "kind" 1.;
   e.set "time" 1.;
   let typed = { Reverb.kind = Freeverb; seconds = 1.; damping = 0.3; mix = 0.25 } in

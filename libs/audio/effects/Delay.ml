@@ -83,7 +83,7 @@ let knobs : Effect.knob list =
     { name = "mix"; control = Knob (0., 1.); initial = 0.3 };
   ]
 
-let effect () : Effect.t =
+let fx () : Effect.t =
   let t = create () and s = ref { time = 0.; feedback = 0.; tone = 0.; ping_pong = false; mix = 0. } in
   let set (knob : string) (x : float) =
     match knob with

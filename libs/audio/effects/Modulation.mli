@@ -24,6 +24,6 @@ val name : kind -> string
  * depth (0 to 1: 0.5), feedback (0 to 0.9: 0), mix (0 to 1: 0.5) *)
 val knobs : Effect.knob list
 
-(* [effect ()]: "modulation" (not "mod": a synthesizer's own panel has
+(* [fx ()]: "modulation" (not "mod": a synthesizer's own panel has
  * a modulation section, the Minimoog's "mod.mix") *)
-val effect : unit -> Effect.t
+val fx : unit -> Effect.t
