@@ -390,6 +390,7 @@ let scenes : Golden_scene.scene list =
     ("games/adventure/software/TinyJourney", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
+    ("games/adventure/software/TinyAdventure", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
     ("games/adventure/software/TinyZeldaLinkPast", "", 5);
     ("games/rpg/software/TinyRogue", "", 5);
@@ -921,6 +922,10 @@ let scripted : Golden_scene.scripted list =
     (* the first waves, a turret firing; later, a red one shot down *)
     ("games/shmup/software/TinyGradius", "waves", 200, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150");
     ("games/shmup/software/TinyGradius", "later", 600, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150,space:220,space:240,space:260,space:300,space:330");
+    (* before the gold castle, its portcullis down; two rooms on, the
+     * west hall, Yorgle coming, the gold key on the floor *)
+    ("games/adventure/software/TinyAdventure", "castle", 10, "space:1");
+    ("games/adventure/software/TinyAdventure", "yorgle", 310, "space:1,down:3-150,left:152-310");
     (* the sword taken, and swung; walking into the next room, the
      * screen sliding to it *)
     ("games/adventure/software/TinyZelda", "sword", 130, "space:1,right:3-42,up:43-110,space:120");

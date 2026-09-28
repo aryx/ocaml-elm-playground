@@ -2135,6 +2135,75 @@ let zelda_robot () =
   Alcotest.(check bool) "hit at most twice" true (!hits <= 2)
 
 (*****************************************************************************)
+(* TinyAdventure *)
+(*****************************************************************************)
+
+(* a robot's quest, from point to point, each reached along x then y:
+ * the gold key taken from below (held above, it reaches the
+ * portcullis), the gold castle opened, the sword, Grundle, the black
+ * key, the maze, the black castle opened, back for the sword, Rhindle,
+ * the chalice, and home. [adventure_route] is the route; a step is
+ * left when its room is *)
+type adventure_step = To of int * float * float | Drop | Wait of int
+
+let adventure_route =
+  [ To (0, 0., -450.);
+    (* the gold key, from below, Yorgle fleeing it *)
+    To (2, 0., 0.); To (2, -500., 0.); To (3, 400., -240.); To (3, -400., -240.); To (3, -400., -12.); To (3, -400., -240.); To (3, 400., -240.);
+    To (3, 400., 0.); To (3, 500., 0.); To (2, 0., 0.); To (2, 0., 450.);
+    (* the gold castle; the sword, from its left, held in front *)
+    To (0, 0., 100.); To (1, 0., 0.); To (1, 200., 0.); To (1, 0., 0.); To (1, 0., -450.); To (0, 0., -450.);
+    (* Grundle meets the sword; the black key, from below *)
+    To (2, 0., 0.); To (2, 500., 0.); To (4, -300., 0.); Wait 120; To (4, 160., 0.); To (4, 160., -240.); To (4, 300., -240.); To (4, 300., -12.);
+    To (4, 300., -240.); To (4, 160., -240.); To (4, 160., 0.); To (4, -500., 0.);
+    (* down the maze to the black castle, its gate opened, the key left aside *)
+    To (2, -24., 0.); To (2, -24., -450.); To (5, -24., -240.); To (5, -216., -240.); To (5, -216., -450.); To (6, -216., 240.); To (6, -420., 240.);
+    To (6, -420., -240.); To (6, -500., -240.); To (7, 0., -240.); To (7, 0., -72.); To (7, -300., -72.); Drop; To (7, -300., -240.); To (7, 500., -240.);
+    (* back up the maze for the sword, taken from its right *)
+    To (6, -420., -240.); To (6, -420., 240.); To (6, -216., 240.); To (6, -216., 450.); To (5, -216., -240.); To (5, -24., -240.); To (5, -24., 450.);
+    To (2, -24., 0.); To (2, 500., 0.); To (4, -420., 0.); To (4, -420., -240.); To (4, 400., -240.); To (4, 400., -18.); To (4, 370., -18.); To (4, -500., -18.);
+    To (2, -24., -18.); To (2, -24., -450.); To (5, -24., -240.); To (5, -216., -240.); To (5, -216., -450.); To (6, -216., 240.); To (6, -420., 240.);
+    To (6, -420., -240.); To (6, -500., -240.); To (7, 0., -240.); To (7, 0., 100.);
+    (* Rhindle, the sword left aside (walked into again, it would be
+     * swapped for the chalice), the chalice, and home *)
+    Wait 120; To (8, 0., -240.); To (8, -420., -240.); Drop; To (8, -300., -240.); To (8, -300., 250.); To (8, 0., 250.); To (8, -300., 250.); To (8, -300., -240.); To (8, 0., -240.);
+    To (8, 0., -450.); To (7, 0., -240.); To (7, 500., -240.); To (6, -420., -240.); To (6, -420., 240.); To (6, -216., 240.); To (6, -216., 450.);
+    To (5, -216., -240.); To (5, -24., -240.); To (5, -24., 450.); To (2, -24., 450.); To (0, -24., 100.) ]
+
+let adventure_robot () =
+  let open TinyAdventure in
+  let s = ref initial_model and todo = ref adventure_route and i = ref 0 and won = ref false and waited = ref 0 in
+  let k = initial_computer.keyboard in
+  while !i < 60 * 300 && not !won do
+    incr i;
+    let keyboard =
+      match !s.scene with
+      | Playing g -> (
+          match !todo with
+          | Drop :: rest -> todo := rest; { k with kspace = true }
+          | Wait n :: rest -> incr waited; if !waited >= n then (waited := 0; todo := rest); k
+          | To (r, tx, ty) :: rest ->
+              if g.room <> r || (Float.abs (tx -. g.x) < 3. && Float.abs (ty -. g.y) < 3.) then todo := rest;
+              if Float.abs (tx -. g.x) >= 3. then (if tx > g.x then { k with kright = true } else { k with kleft = true })
+              else if ty > g.y then { k with kup = true } else { k with kdown = true }
+          | [] -> k)
+      | Won _ -> won := true; k
+      | Eaten g -> Alcotest.failf "eaten in room %d, %d steps left" g.room (List.length !todo)
+      | Title -> { k with kspace = !i = 1 }
+    in
+    s := update (computer ~keyboard !i) !s
+  done;
+  let left =
+    match !s.scene with
+    | Playing g ->
+        let where = List.map (fun t -> Printf.sprintf "%d(%.0f,%.0f)" t.troom t.tx t.ty) g.things |> String.concat " " in
+        Printf.sprintf "in room %d at (%.0f, %.0f), %d steps left, carrying %b, things %s, dead dragons %d" g.room g.x g.y (List.length !todo) (g.carried <> None) where
+          (List.length (List.filter (fun d -> d.state = Dead) g.dragons))
+    | _ -> ""
+  in
+  Alcotest.(check string) "the chalice home" "" (if !won then "" else left)
+
+(*****************************************************************************)
 (* TinyRogue *)
 (*****************************************************************************)
 
@@ -7884,6 +7953,7 @@ let tests =
       t "TinyGradius, the power-up bar" gradius_bar;
       t "TinyGradius, a robot clears the stage" gradius_robot;
       t "TinyZelda, a robot's quest" zelda_robot;
+      t "TinyAdventure, a robot brings the chalice home" adventure_robot;
       t "TinyZeldaLinkPast, behind a tree or in front" lttp_behind_tree;
       t "TinyZeldaLinkPast, a bush cut" lttp_bush;
       t "TinyZeldaLinkPast, the pedestal and the pendants" lttp_pedestal;

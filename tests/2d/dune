@@ -145,6 +145,7 @@
    %{project_root}/games/adventure/software/TinyJourney.exe
    %{project_root}/games/platform/software/TinyPrinceOfPersia.exe
    %{project_root}/games/shmup/software/TinyGradius.exe
+   %{project_root}/games/adventure/software/TinyAdventure.exe
    %{project_root}/games/adventure/software/TinyZelda.exe
    %{project_root}/games/adventure/software/TinyZeldaLinkPast.exe
    %{project_root}/games/rpg/software/TinyRogue.exe
