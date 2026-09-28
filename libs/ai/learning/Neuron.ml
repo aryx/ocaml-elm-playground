@@ -14,8 +14,8 @@ type t = { weights : float array; bias : float }
 type example = float array * float
 
 let make ~(inputs : int) ~(seed : int) : t =
-  let st = Random.State.make [| seed |] in
-  { weights = Array.init inputs (fun _ -> Random.State.float st 0.2 -. 0.1); bias = 0. }
+  let st = Lehmer.make seed in
+  { weights = Array.init inputs (fun _ -> Lehmer.float st 0.2 -. 0.1); bias = 0. }
 
 let sum (n : t) (x : float array) : float =
   if Array.length x <> Array.length n.weights then invalid_arg "Neuron: wrong number of inputs";

@@ -7,4 +7,5 @@
  (name ai_learning)
  (package elm_playground)
  (wrapped false)
+ (libraries random) ; claude: Lehmer, the first weights the same on every OCaml
 )

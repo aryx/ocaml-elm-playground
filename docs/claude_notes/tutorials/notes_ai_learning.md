@@ -409,16 +409,19 @@ when given, replaces the playout entirely. Measured on tic-tac-toe
 with a *perfect* value function standing in for a trained one
 (`Unit_mcts`, so that the hook is measured and not the network): at
 twelve playouts it finds the winning move in 12 of 12 won positions
-against 10 of 12 for random playouts, a pointed policy takes 93% of
-the visits where a flat one takes 73%, and over twenty games at forty
-playouts each the searcher with both wins 11 and loses 0 to the
-2006-style version of itself.
+against 9 of 12 for random playouts, a pointed policy takes 93% of
+the visits where a flat one takes 78%, and over twenty games at forty
+playouts each the searcher with both wins 6 and loses 0 to the
+2006-style version of itself, the rest drawn. (With the stdlib's
+Random, before the search drew from `Lehmer`, the same on every
+OCaml: 10 of 12, 73%, 11-0.)
 
 Two things fell out of writing it, and both are worth more than the
 numbers. A policy must be a *distribution*: priors that do not sum to
 1 make PUCT's exploring term swamp the win rate, and the search then
 spreads its visits evenly over good moves and bad -- which is how the
-first version of that twenty-game match came out 8-4 instead of 11-0.
+first version of that twenty-game match came out 8-4 instead of 11-0
+(both then with the stdlib's Random).
 And "the most visited move" decides nothing at small budgets, where
 every child has been visited once: ties now go to the better win rate,
 without which a search with a *perfect* evaluation was picking losing

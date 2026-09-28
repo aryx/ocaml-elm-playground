@@ -113,7 +113,7 @@ type 'move result = {
 val search :
   ?exploration:float ->
   ?seed:int ->
-  ?playout:(Random.State.t -> ('state, 'move) Minimax.game -> 'state -> 'state) ->
+  ?playout:(Lehmer.state -> ('state, 'move) Minimax.game -> 'state -> 'state) ->
   ?prior:('state -> ('move * float) list) ->
   ?evaluate:('state -> float) ->
   ('state, 'move) Minimax.game ->
@@ -140,7 +140,7 @@ type ('state, 'move) thinking
 val start :
   ?exploration:float ->
   ?seed:int ->
-  ?playout:(Random.State.t -> ('state, 'move) Minimax.game -> 'state -> 'state) ->
+  ?playout:(Lehmer.state -> ('state, 'move) Minimax.game -> 'state -> 'state) ->
   ?prior:('state -> ('move * float) list) ->
   ?evaluate:('state -> float) ->
   ('state, 'move) Minimax.game ->

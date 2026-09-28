@@ -6,4 +6,5 @@
  (name ai_search)
  (package elm_playground)
  (wrapped false)
+ (libraries random) ; claude: Lehmer, Mcts's playouts the same on every OCaml
 )

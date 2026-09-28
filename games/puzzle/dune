@@ -13,6 +13,7 @@
     caps ; TinySokobanEd's authority to export its file
     elm_playground
     ai ; AiChess's and AiOthello's Minimax
+    random ; AiGo's playouts, Lehmer (Mcts's)
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
     kit_crush ; TinyCrush's levels and rules, Crush
     kit_platformer ; TinyFez's running and jumping, Tile_move

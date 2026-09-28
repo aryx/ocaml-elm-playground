@@ -31,8 +31,8 @@ let to_lists (m : t) : float list list =
 let identity (n : int) : t = init n n (fun r c -> if r = c then 1. else 0.)
 
 let random ~(seed : int) ?(spread = 1.) (rows : int) (cols : int) : t =
-  let st = Random.State.make [| seed |] in
-  { rows; cols; data = Array.init (rows * cols) (fun _ -> Random.State.float st (2. *. spread) -. spread) }
+  let st = Lehmer.make seed in
+  { rows; cols; data = Array.init (rows * cols) (fun _ -> Lehmer.float st (2. *. spread) -. spread) }
 
 let vector (a : float array) : t = { rows = Array.length a; cols = 1; data = Array.copy a }
 let to_vector (m : t) : float array = Array.copy m.data

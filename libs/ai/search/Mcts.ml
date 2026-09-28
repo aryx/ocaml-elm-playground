@@ -33,11 +33,11 @@ let outcome (game : ('state, 'move) Minimax.game) (state : 'state) : float =
   if s > 0. then 1. else if s < 0. then 0. else 0.5
 
 (* the default playout: uniformly random moves to the end *)
-let random_playout (st : Random.State.t) (game : ('state, 'move) Minimax.game) (state : 'state) : 'state =
+let random_playout (st : Lehmer.state) (game : ('state, 'move) Minimax.game) (state : 'state) : 'state =
   let rec go state =
     match game.moves state with
     | [] -> state
-    | moves -> go (game.play state (List.nth moves (Random.State.int st (List.length moves))))
+    | moves -> go (game.play state (List.nth moves (Lehmer.int st (List.length moves))))
   in
   go state
 
@@ -65,12 +65,12 @@ type ('state, 'move) thinking = {
   root_state : 'state;
   root : 'move node;
   exploration : float;
-  playout : Random.State.t -> ('state, 'move) Minimax.game -> 'state -> 'state;
+  playout : Lehmer.state -> ('state, 'move) Minimax.game -> 'state -> 'state;
   (* AlphaGo's two: what the moves are worth before trying them, and
    * what a position is worth without playing it out *)
   prior : ('state -> ('move * float) list) option;
   evaluate : ('state -> float) option;
-  st : Random.State.t;
+  st : Lehmer.state;
   mutable played : int;
   mutable nodes : int;
 }
@@ -87,7 +87,7 @@ let start ?exploration ?(seed = 0) ?(playout = random_playout) ?prior ?evaluate
     playout;
     prior;
     evaluate;
-    st = Random.State.make [| seed |];
+    st = Lehmer.make seed;
     played = 0;
     nodes = 1;
   }
@@ -98,7 +98,7 @@ let rec descend (t : ('state, 'move) thinking) (n : 'move node) (state : 'state)
     'move node list * 'state =
   if n.untried <> [] then (
     (* expand: one of the moves never tried here *)
-    let i = Random.State.int t.st (List.length n.untried) in
+    let i = Lehmer.int t.st (List.length n.untried) in
     let move = List.nth n.untried i in
     n.untried <- List.filteri (fun j _ -> j <> i) n.untried;
     let child_state = t.game.play state move in

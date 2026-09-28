@@ -22,9 +22,9 @@ let split ?(part = 0.2) (examples : Backprop.example list) : Backprop.example li
 (* a shuffle that repeats: Fisher-Yates from a seed *)
 let shuffled (seed : int) (examples : Backprop.example list) : Backprop.example array =
   let a = Array.of_list examples in
-  let st = Random.State.make [| seed |] in
+  let st = Lehmer.make seed in
   for i = Array.length a - 1 downto 1 do
-    let j = Random.State.int st (i + 1) in
+    let j = Lehmer.int st (i + 1) in
     let t = a.(i) in
     a.(i) <- a.(j);
     a.(j) <- t

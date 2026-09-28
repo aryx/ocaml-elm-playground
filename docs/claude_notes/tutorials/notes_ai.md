@@ -524,7 +524,7 @@ The first of those is nearly true rather than exactly true, and the
 exception is worth knowing. Uniformly random playouts work on
 tic-tac-toe (`Unit_mcts`: with 2000 playouts a move it opens in the
 centre, blocks a threat and takes a win, blocking 20 times out of 20
-over 20 seeds -- against 8 out of 20 with ten playouts, barely better
+over 20 seeds -- against 11 out of 20 with ten playouts, barely better
 than chance), but in Go they need exactly one rule: **do not
 fill your own eyes**. A random player that fills its own eyes kills
 its own groups, and then the playouts say nothing about the position.
@@ -549,8 +549,12 @@ win counts with a neural network -- and the two places it goes are
 move is as attractive as the policy says, not infinitely attractive)
 and `?evaluate` (an opinion instead of a random game). Measured on
 tic-tac-toe with a perfect value function standing in for a trained
-one: 12 of 12 won positions found at twelve playouts against 10 of 12,
-and 11-0 over twenty games against the version with neither. The
+one: 12 of 12 won positions found at twelve playouts against 9 of 12,
+and 6-0 over twenty games against the version with neither (the rest
+draws, tic-tac-toe's result between good players). These counts are
+the playouts' luck as much as the method's: they moved when the
+search's random numbers moved from the stdlib's Random to `Lehmer`
+(the same on every OCaml), from 10 of 12 and 11-0 -- the zeros did not. The
 network that would fill those hooks for Go is
 [`notes_ai_learning.md`](notes_ai_learning.md) §9, and the compute it
 needs is why AiGo still plays out at random.

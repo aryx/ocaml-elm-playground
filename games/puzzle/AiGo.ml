@@ -231,7 +231,7 @@ let own_eye (p : position) (i : int) : bool = p.board.(i) = Empty && all_around 
  * playout asks for it at every step of every one of a thousand games.
  * A first version did it the plain way and took 15 seconds a move
  * where this takes a fifth of one. *)
-let playout (st : Random.State.t) (_ : (position, move) Minimax.game) (p : position) : position =
+let playout (st : Lehmer.state) (_ : (position, move) Minimax.game) (p : position) : position =
   let rec go p steps =
     if over p || steps > 300 then p
     else begin
@@ -243,7 +243,7 @@ let playout (st : Random.State.t) (_ : (position, move) Minimax.game) (p : posit
       let rec try_from k =
         if k >= n then go (play p Pass) (steps +.. 1)
         else begin
-          let j = k +.. Random.State.int st (n -.. k) in
+          let j = k +.. Lehmer.int st (n -.. k) in
           let i = candidates.(j) in
           candidates.(j) <- candidates.(k);
           match put p i with Some p' -> go p' (steps +.. 1) | None -> try_from (k +.. 1)

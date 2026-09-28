@@ -76,3 +76,20 @@ val next : t -> t
 
 (* the seed as a number in [0, 1) *)
 val to_unit : t -> float
+
+(* claude: the generator as a state that moves on at each draw, the
+ * shape of the stdlib's Random.State, for code drawing many numbers
+ * (a search's playouts, a network's first weights: libs/ai). Unlike
+ * Random.State, the same numbers on every OCaml: Random's algorithm
+ * changed in OCaml 5 (LXM), and a test's seed chosen on 4.14 drew
+ * other games and other weights on 5.2. *)
+type state
+
+(* from a seed, scrambled (a person's 1 and 2 unrelated) *)
+val make : int -> state
+
+(* a number in [0, n), n > 0 *)
+val int : state -> int -> int
+
+(* a number in [0, x) *)
+val float : state -> float -> float

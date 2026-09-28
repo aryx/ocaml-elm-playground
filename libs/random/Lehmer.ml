@@ -36,3 +36,14 @@ let next (s : t) : t =
   if t > 0 then t else t + m
 
 let to_unit (s : t) : float = float_of_int (s - 1) /. float_of_int (m - 1)
+
+type state = t ref
+
+let make (seed : int) : state = ref (scramble seed)
+
+let draw (st : state) : float =
+  st := next !st;
+  to_unit !st
+
+let int (st : state) (n : int) : int = min (n - 1) (int_of_float (draw st *. float_of_int n))
+let float (st : state) (x : float) : float = draw st *. x
