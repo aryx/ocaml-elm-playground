@@ -25,8 +25,11 @@ type t
    its top left corner (in the playground's coordinates) and its width and
    height in pixels; [marked] (paths) framed, the program's own files;
    [numbered] (default false), each file's tab numbered by its place in
-   [entries], the order to read them in *)
-val make : ?numbered:bool -> area:float * float * int * int -> title:string -> marked:string list -> entry list -> t
+   [entries], the order to read them in; [colours] (a directory's
+   .codemapconfig's, Code_config) the colours of the parts it names, over
+   ours, the roles' and the hashed hues *)
+val make :
+  ?numbered:bool -> ?colours:(string * (int * int * int)) list -> area:float * float * int * int -> title:string -> marked:string list -> entry list -> t
 
 type action = Stay | Open of Code_file.t * int (* its line, from 0 *) | Close
 

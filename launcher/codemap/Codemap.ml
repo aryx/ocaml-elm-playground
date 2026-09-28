@@ -46,7 +46,7 @@ let entry (path : string) (src : string) : Code_map.entry =
   in
   { path; nlines = Code_deps.count_lines src; file }
 
-let map_of ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
+let map_of ~(colours : (string * (int * int * int)) list) ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
     ~(scope : scope) : Code_map.t =
   let paths =
     match scope with
@@ -68,20 +68,20 @@ let map_of ~(own : string -> bool) ~(area : float * float * int * int) ~(sources
   (* claude: numbered in their reading order (Code_deps.closure's), but
    * the whole repository's and a directory's *)
   let numbered = match scope with Own | Uses -> true | Whole | Directory _ -> false in
-  Code_map.make ~numbered ~area ~title ~marked:[ path ] entries
+  Code_map.make ~numbered ~colours ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
-  { program; path; sources; scope = Own; area; map = map_of ~own ~area ~sources ~program ~path ~scope:Own; file = None; tour = None; own }
+  { program; path; sources; scope = Own; area; map = map_of ~colours:[] ~own ~area ~sources ~program ~path ~scope:Own; file = None; tour = None; own }
 
 let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) ~area ~sources ~program ~path
 
-let of_directory ~(area : float * float * int * int) ~(name : string) ~(sources : (string * string) list) : t =
+let of_directory ?(colours = []) ~(area : float * float * int * int) ~(name : string) ~(sources : (string * string) list) () : t =
   let scope = Directory name in
   let own _ = true in
-  { program = name; path = ""; sources; scope; area; map = map_of ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own }
+  { program = name; path = ""; sources; scope; area; map = map_of ~colours ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own }
 
 let preview ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : Code_map.t =
-  map_of ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
+  map_of ~colours:[] ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
 
 (*****************************************************************************)
 (* Update and view *)
@@ -127,7 +127,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
   | None ->
       if pressed "w" && (match t.scope with Directory _ -> false | _ -> true) then
         let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ -> Own in
-        Some { t with scope; map = map_of ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
+        Some { t with scope; map = map_of ~colours:[] ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         | _, Close -> None
@@ -174,9 +174,9 @@ type alone = { code : t option; before : string Set_.t; repeat : (string * float
 
 let area_of (screen : Playground.screen) = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162)
 
-let run_directory ~(name : string) ~(sources : (string * string) list) : unit =
+let run_directory ?colours ~(name : string) ~(sources : (string * string) list) () : unit =
   let update (computer : Playground.computer) (m : alone) : alone =
-    let code = match m.code with Some c -> c | None -> of_directory ~area:(area_of computer.screen) ~name ~sources in
+    let code = match m.code with Some c -> c | None -> of_directory ?colours ~area:(area_of computer.screen) ~name ~sources () in
     let keys = computer.keyboard.keys in
     let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
     let (Time now) = computer.time in

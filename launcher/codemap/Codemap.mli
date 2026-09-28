@@ -41,11 +41,13 @@ val make_own :
 
 (* claude: the map of a directory's files, [sources] (read from the disk,
    their paths relative to it), named [name]: all of them, no program to
-   start from, w doing nothing *)
-val of_directory : area:float * float * int * int -> name:string -> sources:(string * string) list -> t
+   start from, w doing nothing; [colours], its .codemapconfig's
+   (Code_config) *)
+val of_directory :
+  ?colours:(string * (int * int * int)) list -> area:float * float * int * int -> name:string -> sources:(string * string) list -> unit -> t
 
 (* ... as a program of its own, in a window: tinybox codemap <dir> *)
-val run_directory : name:string -> sources:(string * string) list -> unit
+val run_directory : ?colours:(string * (int * int * int)) list -> name:string -> sources:(string * string) list -> unit -> unit
 
 (* the map of the program's own code alone, for a glance (tinybox's
    panel: Code_map.view ~chrome:false) *)

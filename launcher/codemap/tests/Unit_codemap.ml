@@ -44,4 +44,27 @@ let tests =
       Testo.create "modules used" (fun () ->
           Alcotest.(check (list string)) "M.x, open N" [ "List"; "N"; "Playground" ]
             (Code_file.modules_used "open N\nlet x = List.map f (Playground.foo) (* C.x *)"));
+      (* claude: Code_config.mli's worked example *)
+      Testo.create "a directory's .codemapignore and .codemapconfig" (fun () ->
+          match
+            Code_config.make ~ignore:(Some "# hi\n/gitlog.txt\ntest/\n*_tests.c\n")
+              ~config:(Some {|{ "colors": { "kernel": "#e08030", "MISC/BIG": "#606060" } }|})
+          with
+          | Error e -> Alcotest.fail e
+          | Ok c ->
+              Alcotest.(check (list bool)) "gitlog.txt, kernel/test/ out; test.c, kernel/gitlog.txt in; lib/io_tests.c out"
+                [ true; true; false; false; true ]
+                [
+                  Code_config.ignored c "gitlog.txt" ~dir:false;
+                  Code_config.ignored c "kernel/test" ~dir:true;
+                  Code_config.ignored c "test.c" ~dir:false;
+                  Code_config.ignored c "kernel/gitlog.txt" ~dir:false;
+                  Code_config.ignored c "lib/io_tests.c" ~dir:false;
+                ];
+              Alcotest.(check (list (pair string (list int)))) "the colours"
+                [ ("kernel", [ 224; 128; 48 ]); ("MISC/BIG", [ 96; 96; 96 ]) ]
+                (List.map (fun (p, (r, g, b)) -> (p, [ r; g; b ])) (Code_config.colours c)));
+      Testo.create "a config's mistake" (fun () ->
+          Alcotest.(check (result unit string)) "not a colour" (Error {|kernel: "orange" is no #rrggbb|})
+            (Result.map ignore (Code_config.make ~ignore:None ~config:(Some {|{ "colors": { "kernel": "orange" } }|}))));
     ]

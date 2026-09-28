@@ -145,11 +145,14 @@ let () =
   Program.main codemap (fun () ->
       Cap.main (fun caps ->
           let dir = !codemap_dir in
-          let sources = Tinybox_native.directory_sources caps dir in
-          if sources = [] then (eprint caps (Printf.sprintf "tinybox codemap: no OCaml nor C file under %s\n" dir); exit 2);
-          (* its name: the directory's own, not "." *)
-          let name = Filename.basename (if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir) in
-          Codemap.run_directory ~name ~sources))
+          let stop msg = eprint caps (Printf.sprintf "tinybox codemap: %s\n" msg); exit 2 in
+          match Tinybox_native.directory_sources caps dir with
+          | Error e -> stop e
+          | Ok (_, []) -> stop (Printf.sprintf "no OCaml nor C file under %s" dir)
+          | Ok (config, sources) ->
+              (* its name: the directory's own, not "." *)
+              let name = Filename.basename (if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir) in
+              Codemap.run_directory ~colours:(Code_config.colours config) ~name ~sources ()))
 
 let () =
   let invoked = Filename.remove_extension (Filename.basename Sys.argv.(0)) in

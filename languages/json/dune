@@ -1,0 +1,11 @@
+; claude: JSON read (Json), for configuration files (tinybox's
+; .codemapconfig), over JavaScript's lexer (Js_lexer): only the grammar
+; is here. jsonnet, JSON's superset, would grow from it.
+;
+; Pure OCaml, no Playground (languages/README.md). A private
+; library, installed as part of elm_playground.
+(library
+ (name lang_json)
+ (package elm_playground)
+ (wrapped false)
+ (libraries javascript))

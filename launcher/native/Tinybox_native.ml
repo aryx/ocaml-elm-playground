@@ -339,7 +339,11 @@ let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h" ]
 
 (* claude: the capabilities as proof that we may, the Stdlib and Unix
  * doing the reading, as File_menu and Tty_unix do *)
-let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string) : (string * string) list =
+let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string) : (Code_config.t * (string * string) list, string) result =
+  let read path = match In_channel.with_open_bin path In_channel.input_all with s -> Some s | exception Sys_error _ -> None in
+  match Code_config.make ~ignore:(read (Filename.concat dir ".codemapignore")) ~config:(read (Filename.concat dir ".codemapconfig")) with
+  | Error e -> Error (".codemapconfig: " ^ e)
+  | Ok config ->
   let out = ref [] in
   let rec walk (rel : string) =
     let entries = try Sys.readdir (if rel = "" then dir else Filename.concat dir rel) with Sys_error _ -> [||] in
@@ -350,15 +354,13 @@ let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string
           let r = if rel = "" then e else Filename.concat rel e in
           let path = Filename.concat dir r in
           match (Unix.lstat path).st_kind with
-          | S_DIR -> walk r
-          | S_REG when List.exists (Filename.check_suffix e) source_extensions -> (
-              match In_channel.with_open_bin path In_channel.input_all with
-              | src -> out := (r, src) :: !out
-              | exception Sys_error _ -> ())
+          | S_DIR -> if not (Code_config.ignored config r ~dir:true) then walk r
+          | S_REG when List.exists (Filename.check_suffix e) source_extensions && not (Code_config.ignored config r ~dir:false) -> (
+              match read path with Some src -> out := (r, src) :: !out | None -> ())
           | _ -> ()
           | exception Unix.Unix_error _ -> ()
         end)
       entries
   in
   walk "";
-  List.rev !out
+  Ok (config, List.rev !out)

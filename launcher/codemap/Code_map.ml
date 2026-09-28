@@ -61,6 +61,7 @@ type t = {
   mutable moving : bool; (* it was not, this frame (view): no glass *)
   mutable lens : (camera * Rgba_image.t) option; (* the magnifying glass's last picture, and its camera *)
   order : (string, int) Hashtbl.t; (* claude: a file's place in the reading order, when numbered *)
+  colours : (string * (int * int * int)) list; (* claude: a .codemapconfig's (archi) *)
 }
 
 type action = Stay | Open of Code_file.t * int | Close
@@ -97,14 +98,14 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ?(numbered = false) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(numbered = false) ?(colours = []) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout a Squarified entries in
   let order = Hashtbl.create 64 in
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Squarified; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
-    before_right = false; painted = None; last = None; moving = false; lens = None; order }
+    before_right = false; painted = None; last = None; moving = false; lens = None; order; colours }
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries
@@ -150,10 +151,49 @@ let line_at (g : geometry) (r : Treemap.rect) (u : float) (v : float) : int =
 (* Colours *)
 (*****************************************************************************)
 
+(* claude: a hue, its colour at the saturation and brightness of the
+ * repository's parts' *)
+let of_hue (h : float) : int * int * int =
+  let s = 0.6 and v = 0.82 in
+  let h6 = h *. 6. in
+  let i = int_of_float h6 mod 6 and f = h6 -. Float.of_int (int_of_float h6) in
+  let p = v *. (1. -. s) and q = v *. (1. -. (s *. f)) and t = v *. (1. -. (s *. (1. -. f))) in
+  let r, g, b = match i with 0 -> (v, t, p) | 1 -> (q, v, p) | 2 -> (p, v, t) | 3 -> (p, q, v) | 4 -> (t, p, v) | _ -> (v, p, q) in
+  let c x = int_of_float (x *. 255.) in
+  (c r, c g, c b)
+
+(* claude: the roles that almost every project names the same way, a
+ * colour each: codemap's archi_code (Main, Test, Core, Utils...), but
+ * only the names that do not mislead; the rest is a project's own *)
+let role (name : string) : (int * int * int) option =
+  let starts p = String.length name >= String.length p && String.sub name 0 (String.length p) = p in
+  match String.lowercase_ascii name with
+  | "tests" | "test" | "testsuite" | "regressions" -> Some (220, 200, 60)
+  | "docs" | "doc" | "documentation" -> Some (150, 160, 190)
+  | "include" | "includes" -> Some (90, 150, 210)
+  | "scripts" -> Some (160, 150, 100)
+  | "examples" | "samples" | "demos" -> Some (100, 180, 230)
+  | "third_party" | "vendor" | "external" | "contrib" -> Some (95, 95, 95)
+  | "kernel" -> Some (200, 60, 90)
+  (* libs, lib_core, libc: the libraries', as ours *)
+  | _ when starts "lib" -> Some (200, 90, 60)
+  | _ -> None
+
 (* claude: a colour per part of the repository, as codemap's archi_code
- * colours a file by its role (its directory: Main, Test, Core...) *)
-let archi (path : string) : int * int * int =
-  let first = match String.index_opt path '/' with Some i -> String.sub path 0 i | None -> path in
+ * colours a file by its role (its directory: Main, Test, Core...). First
+ * what the directory's .codemapconfig says ([colours], Code_config: the
+ * longest path of the file's that it names); then ours by name; then a
+ * role (above); then a hue of its own, from its name, the same from one
+ * run to the next and in every project (the hash times the golden
+ * ratio: close names far apart). A file at the top grey. *)
+let archi (colours : (string * (int * int * int)) list) (path : string) : int * int * int =
+  let under (p : string) = path = p || (String.length path > String.length p && String.sub path 0 (String.length p + 1) = p ^ "/") in
+  let given = List.fold_left (fun best (p, c) -> if under p && (match best with Some (q, _) -> String.length p > String.length q | None -> true) then Some (p, c) else best) None colours in
+  match (given, String.index_opt path '/') with
+  | Some (_, c), _ -> c
+  | None, None -> (120, 120, 120)
+  | None, Some i -> (
+  let first = String.sub path 0 i in
   match first with
   | "games" -> (70, 100, 220)
   | "apps" -> (170, 80, 210)
@@ -164,15 +204,19 @@ let archi (path : string) : int * int * int =
   (* claude: tinybox's own, its logo's magenta; the languages grey *)
   | "launcher" -> (220, 70, 150)
   | "languages" -> (120, 120, 120)
-  | _ -> (120, 120, 120)
+  | _ when role first <> None -> Option.get (role first)
+  | _ ->
+      let golden = 0.618033988749895 in
+      let x = float_of_int (Hashtbl.hash first) *. golden in
+      of_hue (x -. Float.of_int (int_of_float x)))
 
 let mix ((r, g, b) : int * int * int) (a : float) ((r2, g2, b2) : int * int * int) : int * int * int =
   let f x y = int_of_float ((a *. float_of_int x) +. ((1. -. a) *. float_of_int y)) in
   (f r r2, f g g2, f b b2)
 
 let dark = (12, 10, 28)
-let file_background (path : string) = mix (archi path) 0.18 (20, 22, 30)
-let dir_colour (path : string) (depth : int) = mix (archi path) (0.12 +. (0.04 *. float_of_int (min depth 4))) dark
+let file_background (t : t) (path : string) = mix (archi t.colours path) 0.18 (20, 22, 30)
+let dir_colour (t : t) (path : string) (depth : int) = mix (archi t.colours path) (0.12 +. (0.04 *. float_of_int (min depth 4))) dark
 let palette : (int * int * int) array = Array.map Highlight_code.rgb Highlight_code.all
 
 (*****************************************************************************)
@@ -330,17 +374,17 @@ let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
       | None -> ()
       | Some ((x0, y0, x1, y1) as box) -> (
           match (p.node, t.geometry.(i)) with
-          | Dir _, _ -> fill img x0 y0 x1 y1 (dir_colour p.path p.depth)
+          | Dir _, _ -> fill img x0 y0 x1 y1 (dir_colour t p.path p.depth)
           | File (_, _, e), Some g ->
-              let bg = file_background p.path in
+              let bg = file_background t p.path in
               (* claude: a file too small to show anything is not lexed:
                * the whole repository's map opens without lexing it all *)
-              if (x1 - x0) * (y1 - y0) < 40 && not (Lazy.is_val e.file) then fill img x0 y0 x1 y1 (mix (archi p.path) 0.5 bg)
+              if (x1 - x0) * (y1 - y0) < 40 && not (Lazy.is_val e.file) then fill img x0 y0 x1 y1 (mix (archi t.colours p.path) 0.5 bg)
               else paint_code ~aa img c p.rect g (Lazy.force e.file) box bg;
               (* claude: its outline, in its part's colour, a file told
                * apart from its neighbours (the layout's gap between them) *)
               if x1 - x0 > 6 && y1 - y0 > 6 then begin
-                let edge = mix (archi p.path) 0.6 dark in
+                let edge = mix (archi t.colours p.path) 0.6 dark in
                 fill img x0 y0 x1 (y0 + 1) edge;
                 fill img x0 (y1 - 1) x1 y1 edge;
                 fill img x0 y0 (x0 + 1) y1 edge;
@@ -572,7 +616,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
               let has_files = List.exists (function Treemap.File _ -> true | Dir _ -> false) kids in
               if has_files && w >= tw && h >= 40. then begin
                 let tx = Float.min (float_of_int x1 -. tw -. 2.) (float_of_int a.pw -. tw) and ty = Float.max 0. (to_py c p.rect.y +. 2.) in
-                let box, shape = tab a ~alpha:1. (lighter (archi p.path)) size tx ty dir in
+                let box, shape = tab a ~alpha:1. (lighter (archi t.colours p.path)) size tx ty dir in
                 files := { rank = 300. -. float_of_int p.depth; box; shape } :: !files
               end
           | File (_, _, e), Some g ->
@@ -586,7 +630,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
               let s = Float.min (fit_size (String.length name + 2)) (Float.min ((h -. 6.) /. 2.) 18.) in
               let s = if main then Float.max s 12. else s in
               if s >= 9. then begin
-                let box, shape = tab a (if main then yellow else lighter (archi p.path)) s (float_of_int x0 +. 1.) (float_of_int y0 +. 1.) name in
+                let box, shape = tab a (if main then yellow else lighter (archi t.colours p.path)) s (float_of_int x0 +. 1.) (float_of_int y0 +. 1.) name in
                 files := { rank = (if main then 1000. else 100. +. s); box; shape } :: !files
               end;
               (* claude: the tricks (Code_file.marks), marked where they are *)

@@ -1,0 +1,4 @@
+; claude: unit tests for the JSON reader, run by 'make test'
+(test
+ (name Test)
+ (libraries alcotest testo lang_json))
