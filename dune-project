@@ -14,7 +14,7 @@
    "Yoann Padioleau <yoann.padioleau@gmail.com"
 )
 
-(version "0.2.1")
+(version "0.3.0")
 
 (source (github aryx/ocaml-elm-playground))
 (homepage "https://github.com/aryx/ocaml-elm-playground")
