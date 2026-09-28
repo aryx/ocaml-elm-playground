@@ -137,9 +137,9 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
     let line = int_of_float ((top_y -. mouse.my) /. h *. float_of_int (Array.length v.lines)) in
     clamp v (line - (visible / 2))
   else
-    (* claude: a click on a parameter or a local: to its binding, lit
-     * (plan_codemap_naming.md, level 1), where it is if on the page, else
-     * near the top *)
+    (* claude: a click on a name bound in the file (a parameter, a local,
+     * a top-level definition): to its binding, lit (plan_codemap_naming.md,
+     * levels 1 and 2), where it is if on the page, else near the top *)
     match if mouse.mclick then Option.bind (code_at v.top mouse.mx mouse.my) (fun (l, c) -> Code_file.name_at v.file l c) else None with
     | Some o ->
         let line, _ = o.bound_at in
@@ -264,7 +264,7 @@ let page_of (v : t) (q : float) : Rgba_image.t =
   done;
   img
 
-(* claude: the name under the mouse, a parameter or a local: its binding
+(* claude: the name under the mouse, bound in the file: its binding
  * framed brighter, its uses on the page lit *)
 let name_lit (computer : computer) (v : t) : shape list =
   let mouse = computer.mouse in
@@ -336,7 +336,7 @@ let view (computer : computer) (v : t) : shape list =
   @ overview v @ code_lines computer v @ name_lit computer v
   @ [
       text ~size:13. dim map_left (-470.)
-        "arrows wheel pgup pgdn home end scroll   click the overview to go there, a local to its binding   esc back to the map";
+        "arrows wheel pgup pgdn home end scroll   click the overview to go there, a name to its definition   esc back to the map";
       text ~size:11. cyan (map_left +. map_w +. 10.) (bottom_y -. 14.)
         (Printf.sprintf "%d-%d" (v.top + 1) (min (Array.length v.lines) (v.top + visible)));
     ]

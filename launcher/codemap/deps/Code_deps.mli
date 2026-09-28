@@ -14,7 +14,7 @@
    and so does the build-time generator that counts every program's
    lines (launcher/codegen). *)
 
-(* the modules [src] names: M in M.x, open M, include M, module X = M *)
+(* the modules [src] names: M in M.x, open M, include M *)
 val modules_used : string -> string list
 
 val count_lines : string -> int

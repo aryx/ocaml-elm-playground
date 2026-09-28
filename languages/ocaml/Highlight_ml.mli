@@ -24,6 +24,8 @@ val categorize : Token_ml.t list -> (Token_ml.t * Highlight_code.category) list
 (* [src] lexed, categorized and cut into lines, ready to draw *)
 val lines : string -> Highlight_code.span list array
 
-(* claude: the same, and where the names bound in a function are (their
-   parameters and locals: Highlight_code.occurrence), from one parse *)
+(* claude: the same, and where the names bound in the file are (the
+   parameters and locals, and the top-level values, types and
+   constructors, the latest before a use: Highlight_code.occurrence),
+   from one parse *)
 val analyze : string -> Highlight_code.span list array * Highlight_code.occurrence list

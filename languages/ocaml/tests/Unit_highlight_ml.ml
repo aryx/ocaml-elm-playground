@@ -67,10 +67,14 @@ let tests =
           check "fun inside, and a label" "let f l = List.map (fun v ~k -> v + k) l"
             "let:Keyword f:Def_function l:Parameter List:Module map:Global fun:Keyword_control v:Parameter ~k:Label v:Parameter k:Parameter l:Parameter");
       Testo.create "bindings" (fun () ->
-          Alcotest.(check string) "a parameter, a case's name" "6: 6 16 45, 28: 28 33"
+          Alcotest.(check string) "a parameter, a case's name (and f, defined)" "4: 4, 6: 6 16 45, 28: 28 33"
             (bindings "let f x = match x with Some y -> y | None -> x");
-          Alcotest.(check string) "a punned label and field; a let's name in its body only" "6: 6 47, 12: 12 62, 25: 25 43 58, 39: 39 53"
+          Alcotest.(check string) "a punned label and field; a let's name in its body only" "4: 4, 6: 6 47, 12: 12 62, 25: 25 43 58, 39: 39 53"
             (bindings "let f ~dx { z; _ } = let x = 1 in (let x = x + dx in x) + x + z"));
+      Testo.create "top-level bindings" (fun () ->
+          Alcotest.(check string) "the latest definition before the use" "4: 4 22, 6: 6 10, 16: 16, 18: 18 24, 30: 30 46, 32: 32 36, 42: 42"
+            (bindings "let g x = x let f y = g y let g z = z let h = g 1");
+          Alcotest.(check string) "types and constructors" "5: 5 26, 9: 9 44, 13: 13 49, 19: 19, 22: 22 37, 53: 53 58" (bindings "type t = A | B let f (x : t) = match x with A -> B | b -> b"));
       Testo.create "capabilities" (fun () ->
           check "Cap and caps" "let f (caps : < Cap.stdout ; .. >) = Cap.x caps"
             "let:Keyword f:Def_function caps:Capability Cap:Capability stdout:Capability Cap:Capability x:Capability caps:Capability");

@@ -63,11 +63,12 @@ val emphasis : category -> float
    spans), its column where it starts, in bytes. *)
 type span = { col : int; text : string; category : category }
 
-(* claude: a name bound in a function (a parameter, a local), where it
-   is: its line (from 0), column and length, and where its binding is
-   (line, column), its own place at the binding. The uses of a name are
-   the occurrences of one binding (plan_codemap_naming.md, level 1: the
-   language's scopes, exact) *)
+(* claude: a name bound in its file (a parameter, a local, a top-level
+   definition), where it is: its line (from 0), column and length, and
+   where its binding is (line, column), its own place at the binding.
+   The uses of a name are the occurrences of one binding
+   (plan_codemap_naming.md, levels 1 and 2: the language's scopes, and a
+   file's top level) *)
 type occurrence = { line : int; col : int; len : int; bound_at : int * int }
 
 (* [occurrences tokens binds]: from a language's tokens (their line from

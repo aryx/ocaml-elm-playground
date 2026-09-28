@@ -253,6 +253,29 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
     if n.tok >= 0 then Hashtbl.replace binds n.tok n.tok;
     (n.text, (c, n.tok))
   in
+  (* claude: the top-level names defined so far (plan_codemap_naming.md,
+   * level 2), the latest first: values, types, constructors, each its
+   * own namespace as in OCaml. A name no local binds is bound to the
+   * latest of its kind; a module's struct keeps its own to itself *)
+  let top_values : env ref = ref [] and top_types : env ref = ref [] and top_constrs : env ref = ref [] in
+  let define (r : env ref) (n : name) (c : category) =
+    if n.tok >= 0 then begin
+      Hashtbl.replace binds n.tok n.tok;
+      r := (n.text, (c, n.tok)) :: !r
+    end
+  in
+  let refer (r : env ref) (l : longid) =
+    match l with
+    | [ n ] -> ( match List.assoc_opt n.text !r with Some (_, b) when n.tok >= 0 && b >= 0 -> Hashtbl.replace binds n.tok b | _ -> ())
+    | _ -> ()
+  in
+  let scoped (f : unit -> unit) =
+    let v, t, c = (!top_values, !top_types, !top_constrs) in
+    f ();
+    top_values := v;
+    top_types := t;
+    top_constrs := c
+  in
   (* M.N.x: the modules, then the last as [last] *)
   let path (l : longid) (last : category) =
     List.iteri (fun i (n : name) -> mark n (if i = List.length l - 1 then last else Module)) l
@@ -263,7 +286,7 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
     | Tvar n -> mark n Type_var
     | Tarrow (a, b) -> ty a; ty b
     | Ttuple ts -> List.iter ty ts
-    | Tconstr (l, ts) -> path l Type; List.iter ty ts
+    | Tconstr (l, ts) -> path l Type; refer top_types l; List.iter ty ts
     | Tobject ms -> List.iter (fun (m, t) -> mark m Field; ty t) ms
     | Tvariant (tags, others) -> List.iter (fun (n, ts) -> mark n Constructor; List.iter ty ts) tags; List.iter ty others
     | Tpoly (ns, t) -> List.iter (fun n -> mark n Type_var) ns; ty t
@@ -275,7 +298,7 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
     | Pany | Pconst -> []
     | Pvar n -> [ bind n c ]
     | Ptuple ps | Plist ps -> List.concat_map (pat c) ps
-    | Pconstr (l, arg) -> path l Constructor; (match arg with Some p -> pat c p | None -> [])
+    | Pconstr (l, arg) -> path l Constructor; refer top_constrs l; (match arg with Some p -> pat c p | None -> [])
     | Pvariant (n, arg) -> mark n Constructor; (match arg with Some p -> pat c p | None -> [])
     | Precord fields ->
         List.concat_map
@@ -309,9 +332,11 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
         | Some (c, b) ->
             mark n c;
             if n.tok >= 0 && b >= 0 then Hashtbl.replace binds n.tok b
-        | None -> mark n Normal)
+        | None ->
+            mark n Normal;
+            refer top_values [ n ])
     | Eident l -> path l Global
-    | Econstr (l, arg) -> path l Constructor; Option.iter (expr env) arg
+    | Econstr (l, arg) -> path l Constructor; refer top_constrs l; Option.iter (expr env) arg
     | Evariant (n, arg) -> mark n Constructor; Option.iter (expr env) arg
     | Etuple es | Elist es | Eseq es | Emisc es -> List.iter (expr env) es
     | Erecord (base, fields) ->
@@ -358,7 +383,7 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
   and modexpr (m : modexpr) =
     match m with
     | Mident l -> path l Module
-    | Mstruct is -> List.iter item is
+    | Mstruct is -> scoped (fun () -> List.iter item is)
     | Mfunctor (ps, m) -> List.iter (fun (n, t) -> mark n Module; Option.iter modtype t) ps; modexpr m
     | Mapply (a, b) -> modexpr a; modexpr b
     | Mconstraint (m, t) -> modexpr m; modtype t
@@ -366,7 +391,7 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
   and modtype (t : modtype) =
     match t with
     | MTident l -> path l Module
-    | MTsig is -> List.iter item is
+    | MTsig is -> scoped (fun () -> List.iter item is)
     | MTfunctor (ps, t) -> List.iter (fun (n, t) -> mark n Module; Option.iter modtype t) ps; modtype t
     | MTwith (t, cs) -> modtype t; List.iter (fun (l, u) -> path l Type; ty u) cs
     | MTtypeof m -> modexpr m
@@ -387,9 +412,20 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
   and item (it : item) =
     match it with
     | Ilet (recursive, bs) ->
-        ignore recursive;
-        List.iter top_binding bs
+        (* its names seen by its bodies if rec, after them if not *)
+        let names () =
+          List.iter
+            (fun b -> match b.bpat with Pvar n -> define top_values n Def_value | p -> top_values := pat Def_value p @ !top_values)
+            bs
+        in
+        if recursive then (names (); List.iter top_binding bs) else (List.iter top_binding bs; names ())
     | Itype ds ->
+        (* recursive: all its types and constructors seen by all *)
+        List.iter
+          (fun d ->
+            define top_types d.tname Def_type;
+            match d.tkind with Kvariant cs -> List.iter (fun c -> define top_constrs c.cname Constructor) cs | _ -> ())
+          ds;
         List.iter
           (fun d ->
             mark d.tname Def_type;
@@ -400,9 +436,9 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
             | Kvariant cs -> List.iter constr cs
             | Krecord fs -> List.iter field fs)
           ds
-    | Iexception c -> constr c; mark c.cname Def_type
-    | Iexternal (n, t) -> mark n Def_function; ty t
-    | Ival (n, t) -> mark n (match t with Tarrow _ -> Def_function | _ -> Def_value); ty t
+    | Iexception c -> constr c; mark c.cname Def_type; define top_constrs c.cname Def_type
+    | Iexternal (n, t) -> mark n Def_function; ty t; define top_values n Def_function
+    | Ival (n, t) -> mark n (match t with Tarrow _ -> Def_function | _ -> Def_value); ty t; define top_values n Def_value
     | Imodule (n, m) -> mark n Def_module; modexpr m
     | Imodsig (n, t) -> mark n Def_module; modtype t
     | Imodtype (n, t) -> mark n Def_module; Option.iter modtype t

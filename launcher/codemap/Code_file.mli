@@ -11,7 +11,7 @@ type t = {
   chars : Bytes.t; (* the same cells' characters, code page 437 (Vga_font) *)
   defs : (int * string * Highlight_code.category) list; (* line (from 0), name, category: the top-level ones *)
   marks : int list; (* claude: the lines (from 0) saying [trick] *)
-  names : Highlight_code.occurrence list array; (* claude: a line's names bound in a function (parameters, locals) *)
+  names : Highlight_code.occurrence list array; (* claude: a line's names bound in the file (parameters, locals, top-level definitions) *)
   uses : (int * int, Highlight_code.occurrence list) Hashtbl.t; (* ... by their binding's place *)
 }
 
@@ -34,8 +34,8 @@ val nlines : t -> int
 (* the category at a line and a column, None for a space *)
 val at : t -> int -> int -> Highlight_code.category option
 
-(* claude: the name bound in a function at a line and a column, if any
-   (plan_codemap_naming.md, level 1), and all the places of its binding:
+(* claude: the name bound in the file at a line and a column, if any
+   (plan_codemap_naming.md, levels 1 and 2), and all the places of its binding:
    the binding itself and its uses *)
 val name_at : t -> int -> int -> Highlight_code.occurrence option
 val uses : t -> Highlight_code.occurrence -> Highlight_code.occurrence list

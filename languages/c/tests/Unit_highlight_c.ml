@@ -67,8 +67,13 @@ let tests =
             "void:Type f:Def_function void:Type for:Keyword_control int:Type i:Local i:Local i:Local goto:Keyword_control out:Label out:Label");
       Testo.create "bindings" (fun () ->
           check bindings "a parameter, a local, a block's own a" "int f(int a) { int b = a; { int a = b; return a; } return a; }"
-            "10: 10 23 58, 19: 19 36, 32: 32 46";
-          check bindings "a #define's parameters" "#define MAX(a, b) ((a) > (b) ? (a) : c)" "12: 12 20 32, 15: 15 26");
+            "4: 4, 10: 10 23 58, 19: 19 36, 32: 32 46";
+          check bindings "a #define's parameters" "#define MAX(a, b) ((a) > (b) ? (a) : c)" "8: 8, 12: 12 20 32, 15: 15 26");
+      Testo.create "top-level bindings" (fun () ->
+          check bindings "the definition, not the prototype"
+            "static int g(int); int f(void) { return g(1); } static int g(int a) { return a; }" "23: 23, 59: 11 40 59, 65: 65 77";
+          check bindings "struct tags and typedefs, apart" "struct P { int x; }; typedef struct P P; P *new(struct P *p) { return p; }"
+            "7: 7 36 55, 38: 38 41, 44: 44, 58: 58 70");
       Testo.create "fields" (fun () ->
           check names "read, written, designated" "void f(S *s) { s->a.b = 1; S t = { .c = 2 }; }"
             "void:Type f:Def_function S:Type s:Parameter s:Parameter a:Field b:Field S:Type t:Local c:Field");

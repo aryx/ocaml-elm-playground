@@ -66,15 +66,50 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
     (n.text, (c, n.tok)) :: env
   in
   let use (n : name) (b : int) = if n.tok >= 0 && b >= 0 then Hashtbl.replace binds n.tok b in
+  (* claude: the file's top-level names (plan_codemap_naming.md, level
+   * 2), in C's namespaces: values (functions, globals, enum constants,
+   * macros), typedefs, struct and enum tags. C does not care in which
+   * order, so all of them first; of several of a name, the best: a
+   * definition (a function's body, a global) over a prototype over a
+   * macro, and every declaration of the name bound to it *)
+  let values = Hashtbl.create 64 and types = Hashtbl.create 16 and tags = Hashtbl.create 16 in
+  let declared = ref [] in
+  let declare tbl (n : name) (rank : int) =
+    if n.tok >= 0 then begin
+      declared := (tbl, n) :: !declared;
+      match Hashtbl.find_opt tbl n.text with Some (r, _) when r >= rank -> () | _ -> Hashtbl.replace tbl n.text (rank, n.tok)
+    end
+  in
+  let declare_base (t : ty) =
+    match t with
+    | Tstruct (Some tag, Some _) -> declare tags tag 3
+    | Tenum (tag, Some cs) -> Option.iter (fun n -> declare tags n 3) tag; List.iter (fun (n, _) -> declare values n 3) cs
+    | _ -> ()
+  in
+  List.iter (fun d -> declare values d.mname 1) file.defines;
+  List.iter
+    (function
+      | Ifunc (sp, d, _, _) -> declare_base sp.base; Option.iter (fun n -> declare values n 3) d.dname
+      | Idecl (sp, ds) ->
+          declare_base sp.base;
+          List.iter
+            (fun d ->
+              Option.iter (fun n -> if sp.typedef then declare types n 3 else declare values n (match d.dty with Tfunc _ -> 2 | _ -> 3)) d.dname)
+            ds
+      | Imacro _ -> ())
+    file.items;
+  List.iter (fun (tbl, (n : name)) -> match Hashtbl.find_opt tbl n.text with Some (_, b) -> Hashtbl.replace binds n.tok b | None -> ()) !declared;
+  let refer tbl (n : name) = match Hashtbl.find_opt tbl n.text with Some (_, b) when n.tok >= 0 -> Hashtbl.replace binds n.tok b | _ -> () in
   (* the file's constants: its enums', its #defines' without parameters *)
   let constants = Hashtbl.create 64 in
   List.iter (fun d -> if d.mparams = None then Hashtbl.replace constants d.mname.text ()) file.defines;
   let rec ty (env : env) (t : ty) =
     match t with
     | Tbase -> ()
-    | Tname n -> mark n Type
+    | Tname n -> mark n Type; refer types n
     | Tstruct (tag, fields) ->
         Option.iter (fun n -> mark n (if fields = None then Type else Def_type)) tag;
+        if fields = None then Option.iter (refer tags) tag;
         Option.iter (List.iter (decl env Field)) fields
     | Tenum (tag, cs) ->
         Option.iter (fun n -> mark n (if cs = None then Type else Def_type)) tag;
@@ -110,7 +145,9 @@ let resolve (file : file) : (int, category) Hashtbl.t * (int, int) Hashtbl.t =
         | Some (c, b) ->
             mark n c;
             use n b
-        | None -> mark n (if Hashtbl.mem constants n.text || Token_c.is_constant n.text then Constructor else Normal))
+        | None ->
+            mark n (if Hashtbl.mem constants n.text || Token_c.is_constant n.text then Constructor else Normal);
+            refer values n)
     | Efield (e, n) -> expr env e; mark n Field
     | Ecall (f, args) -> expr env f; List.iter (expr env) args
     | Ecast (t, e) -> ty env t; expr env e
