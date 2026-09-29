@@ -1344,7 +1344,12 @@ let query_hits (t : t) (q : string) : Code_search.hit list =
              (e.path, refs, text_of e))
            t.entries)
         name
-  | None, None -> if String.length q > 0 && (q.[0] = '"' || q.[0] = '@') then [] else Code_search.matches (search_all t) q
+  | None, None ->
+      if String.length q > 0 && (q.[0] = '"' || q.[0] = '@') then []
+      else
+        let top = t.placed.(t.focus).path in
+        let near p = top <> "" && (p = top || Code_search.starts p (top ^ "/")) in
+        Code_search.matches ~near (search_all t) q
 
 let search_hits (t : t) : Code_search.hit list =
   match t.search with

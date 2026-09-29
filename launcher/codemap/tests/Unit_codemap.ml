@@ -396,4 +396,10 @@ let tests =
           Alcotest.(check (list int)) "Cap.fork: the code's, once a line" [ 0 ] (lines "Cap.fork");
           Alcotest.(check (list int)) "fork: any path ending so" [ 0; 2 ] (lines "fork");
           Alcotest.(check (option string)) "the query" (Some "Cap.fork") (Code_search.ref_query "@Cap.fork"));
+      (* claude: one hit for a definition and its .mli's; the near first *)
+      Testo.create "search: an .mli's twin, the near first" (fun () ->
+          let all = Code_search.candidates ~dirs:[] ~files:[] ~defs:[ ("b/B.ml", 1, "step"); ("b/B.mli", 1, "step"); ("a/A.ml", 1, "step"); ("c/C.mli", 1, "step") ] () in
+          let paths ?near q = List.map (fun (h : Code_search.hit) -> h.path) (Code_search.matches ?near all q) in
+          Alcotest.(check (list string)) "B.mli left out, C.mli kept" [ "a/A.ml"; "b/B.ml"; "c/C.mli" ] (paths "step");
+          Alcotest.(check (list string)) "b near" [ "b/B.ml"; "a/A.ml"; "c/C.mli" ] (paths ~near:(fun p -> Code_search.starts p "b/") "step"));
     ]

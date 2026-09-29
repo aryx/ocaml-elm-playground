@@ -72,12 +72,18 @@ let score (h : hit) (name : string) : int option =
 let depth (p : string) = List.length (String.split_on_char '/' p)
 let rank_kind = function View | Tour -> 0 | Dir -> 1 | File -> 2 | Def -> 3 | Text -> 4
 
-let matches (all : hit array) (q : string) : hit list =
+let matches ?(near = fun _ -> false) (all : hit array) (q : string) : hit list =
   let text, slashes = parse (String.lowercase_ascii (String.trim q)) in
   let pre, name = split text in
   if name = "" then []
   else
+    (* claude: a definition in an .mli whose .ml defines it too: the .ml's
+     * only, one hit for one definition *)
+    let in_ml = Hashtbl.create 64 in
+    Array.iter (fun h -> if h.kind = Def && Filename.check_suffix h.path ".ml" then Hashtbl.replace in_ml (h.path, h.name) ()) all;
+    let twin h = h.kind = Def && Filename.check_suffix h.path ".mli" && Hashtbl.mem in_ml (Filename.chop_suffix h.path ".mli" ^ ".ml", h.name) in
     Array.to_list all
+    |> List.filter (fun h -> not (twin h))
     |> List.filter_map (fun h ->
            if slashes > 0 && h.kind <> Dir then None
            else if pre <> "" && not (contains (under h) pre) then None
@@ -86,8 +92,9 @@ let matches (all : hit array) (q : string) : hit list =
              (* two slashes or more: the directories of that very name *)
              | Some s when slashes < 2 || s = 0 -> Some (s, h)
              | _ -> None)
+    (* claude: as good a match, the one near (in the unit looked at) first *)
     |> List.stable_sort (fun (s, h) (s', h') ->
-           compare (s, rank_kind h.kind, depth h.path, h.path, h.line) (s', rank_kind h'.kind, depth h'.path, h'.path, h'.line))
+           compare (s, not (near h.path), rank_kind h.kind, depth h.path, h.path, h.line) (s', not (near h'.path), rank_kind h'.kind, depth h'.path, h'.path, h'.line))
     |> List.map snd
 
 let all_named (all : hit array) (q : string) : string list =

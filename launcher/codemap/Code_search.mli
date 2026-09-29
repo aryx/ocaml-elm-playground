@@ -43,8 +43,10 @@ val candidates : ?views:string list -> ?tours:string list -> dirs:string list ->
 (* the query without its final slashes, and how many there were *)
 val parse : string -> string * int
 
-(* the hits of a query, the best first *)
-val matches : hit array -> string -> hit list
+(* the hits of a query, the best first; as good, those [near] says are
+   first (the unit looked at); a definition in an .mli that its .ml
+   defines too left out, the .ml's standing for it *)
+val matches : ?near:(string -> bool) -> hit array -> string -> hit list
 
 (* the directories a query ending in two slashes or more takes
    together: those named exactly as it says, under its path's part *)
