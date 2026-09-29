@@ -360,6 +360,25 @@ let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string
             | _ -> if is_file then None else Code_units.toward t.placed i u v)
       else None
 
+(* claude: a search's hit gone to (Enter, or a click on a match): a
+ * directory or file framed; a definition's or a line's file, and its
+ * definition peeked at *)
+let search_go (t : t) (h : Code_search.hit) : camera option =
+  let found = ref None in
+  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = h.path then found := Some i) t.placed;
+  match !found with
+  | None -> None
+  | Some i ->
+      t.focus <- i;
+      t.jumped <- None;
+      t.choices <- None;
+      t.peek <- None;
+      t.peek_stack <- [];
+      (if h.kind = Def || h.kind = Text then
+         let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
+         open_peek t file_of (h.path, h.line));
+      Some (fit t.target.a t.placed.(i).rect)
+
 let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
   let a = t.target.a in
@@ -471,6 +490,12 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     end
     else clicked
   in
+  (* claude: a click on a match (a search's, a layer's): its file, and
+   * its definition peeked at, as Enter in the search *)
+  let jumped_to, clicked =
+    if clicked && units then match Map_v2.hovered_match t t.cam with Some (h, _, _) -> (search_go t h, false) | None -> (None, clicked) else (None, clicked)
+  in
+  let target = match jumped_to with Some c -> c | None -> target in
   let moved = if units then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
   let target, clicked =
     match moved with
@@ -581,22 +606,6 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
  * directories so named, together (Select). The map goes on under it,
  * the mouse too, but not the keys. *)
 let searching (t : t) : bool = t.search <> None
-
-let search_go (t : t) (h : Code_search.hit) : camera option =
-  let found = ref None in
-  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = h.path then found := Some i) t.placed;
-  match !found with
-  | None -> None
-  | Some i ->
-      t.focus <- i;
-      t.jumped <- None;
-      t.choices <- None;
-      t.peek <- None;
-      t.peek_stack <- [];
-      (if h.kind = Def || h.kind = Text then
-         let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
-         open_peek t file_of (h.path, h.line));
-      Some (fit t.target.a t.placed.(i).rect)
 
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   match t.search with

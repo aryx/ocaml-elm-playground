@@ -66,6 +66,10 @@ val search_set : Code_map_base.t -> string list
    in the search), then each config's, their names *)
 val layer_groups : Code_map_base.t -> (string * Code_map_base.layer list) list
 
+(* claude: the match (a search's, a layer's) under the mouse, if any:
+   its hit, colour and meaning; a click on it peeks at its definition *)
+val hovered_match : Code_map_base.t -> Code_map_base.camera -> (Code_search.hit * Playground.color * string option) option
+
 (* claude: the layers' colours, one each, in turn *)
 val layer_colours : (int * int * int) list
 

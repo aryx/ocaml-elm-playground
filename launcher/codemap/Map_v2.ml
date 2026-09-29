@@ -574,6 +574,49 @@ let line_lit (t : t) (c : camera) (e : entry) : shape list =
  * peeks at all of it *)
 let preview_cache : (string * int * float, Rgba_image.t) Hashtbl.t = Hashtbl.create 16
 
+(* claude: a card of code beside the mouse: [path]'s lines [first] to
+ * [lastl], readable, painted once (preview_cache), [lit] a line tinted
+ * in a colour (a match's) *)
+let code_card ?lit (t : t) (c : camera) (path : string) (first : int) (lastl : int) (title : string) (mx : float) (my : float) : shape list =
+  match List.find_opt (fun (x : entry) -> x.path = path) (t.entries @ t.beyond) with
+  | None -> []
+  | Some x ->
+      let a = c.a in
+      let g = Lazy.force x.file in
+      let n = Code_file.nlines g in
+      let first = max 0 first and lastl = min (n - 1) lastl in
+      let lines = lastl - first + 1 in
+      let iw = 560. and ih = float_of_int lines *. 15. in
+      let q = Playground_platform.pixel_ratio () in
+      let img =
+        match Hashtbl.find_opt preview_cache (path, first, q) with
+        | Some img when img.height = int_of_float (ih *. q) -> img
+        | _ ->
+            let weights = Array.init n (fun k -> if k >= first && k <= lastl then 1. else 0.) in
+            let lay = Code_ground.layout weights ~pw:(int_of_float iw) ~ph:(int_of_float ih) in
+            let img = Rgba_image.create ~width:(int_of_float (iw *. q)) ~height:(int_of_float (ih *. q)) in
+            let bg = (22, 20, 38) in
+            fill img 0 0 img.width img.height bg;
+            Code_ground.paint img g (Code_ground.scale lay q) ~bg ~aa:true;
+            Hashtbl.replace preview_cache (path, first, q) img;
+            img
+      in
+      let bw = iw +. 16. and bh = ih +. 34. in
+      let x0 = Float.min (mx +. 20.) (float_of_int a.pw -. bw -. 6.) and y0 = Float.min (my +. 20.) (float_of_int a.ph -. bh -. 6.) in
+      let rr, gg, bb = archi t.colours path in
+      [ rectangle (rgb 22 20 38) bw bh |> move (sx a (x0 +. (bw /. 2.))) (sy a (y0 +. (bh /. 2.))) |> fade 0.97 ]
+      @ frame a (lighter (rr, gg, bb)) x0 y0 (x0 +. bw) (y0 +. bh) 1.5
+      @ [
+          label a (lighter (rr, gg, bb)) 13. (x0 +. 8. +. (text_width 13. title /. 2.)) (y0 +. 13.) title;
+          bitmap iw ih img |> move (sx a (x0 +. 8. +. (iw /. 2.))) (sy a (y0 +. 26. +. (ih /. 2.)));
+        ]
+      @
+      match lit with
+      | Some (l, colour) when l >= first && l <= lastl ->
+          let y = y0 +. 26. +. (float_of_int (l - first) *. 15.) +. 7.5 in
+          [ rectangle colour iw 15. |> move (sx a (x0 +. 8. +. (iw /. 2.))) (sy a y) |> fade 0.25 ]
+      | _ -> []
+
 let preview (t : t) (c : camera) (path : string) (f : Code_file.t) (l : int) (col : int) (mx : float) (my : float) : shape list =
   match Code_file.ref_at f l col with
   | None -> []
@@ -583,38 +626,11 @@ let preview (t : t) (c : camera) (path : string) (f : Code_file.t) (l : int) (co
           match List.find_opt (fun (x : entry) -> x.path = cand.path) (t.entries @ t.beyond) with
           | None -> []
           | Some x ->
-              let a = c.a in
               let g = Lazy.force x.file in
               let n = Code_file.nlines g in
               (* its first lines, to a blank line, eight at most *)
               let rec last k = if k >= n - 1 || k - cand.line >= 7 then k else if Bytes.for_all (fun ch -> ch = '\000' || ch = ' ') (Bytes.sub g.chars ((k + 1) * Code_file.cols) Code_file.cols) then k else last (k + 1) in
-              let first = cand.line and lastl = last cand.line in
-              let lines = lastl - first + 1 in
-              let iw = 560. and ih = float_of_int lines *. 15. in
-              let q = Playground_platform.pixel_ratio () in
-              let img =
-                match Hashtbl.find_opt preview_cache (cand.path, first, q) with
-                | Some img -> img
-                | None ->
-                    let weights = Array.init n (fun k -> if k >= first && k <= lastl then 1. else 0.) in
-                    let lay = Code_ground.layout weights ~pw:(int_of_float iw) ~ph:(int_of_float ih) in
-                    let img = Rgba_image.create ~width:(int_of_float (iw *. q)) ~height:(int_of_float (ih *. q)) in
-                    let bg = (22, 20, 38) in
-                    fill img 0 0 img.width img.height bg;
-                    Code_ground.paint img g (Code_ground.scale lay q) ~bg ~aa:true;
-                    Hashtbl.replace preview_cache (cand.path, first, q) img;
-                    img
-              in
-              let bw = iw +. 16. and bh = ih +. 34. in
-              let x0 = Float.min (mx +. 20.) (float_of_int a.pw -. bw -. 6.) and y0 = Float.min (my +. 20.) (float_of_int a.ph -. bh -. 6.) in
-              let title = Printf.sprintf "%s:%d   (click: all of it)" cand.path (first + 1) in
-              let rr, gg, bb = archi t.colours cand.path in
-              [ rectangle (rgb 22 20 38) bw bh |> move (sx a (x0 +. (bw /. 2.))) (sy a (y0 +. (bh /. 2.))) |> fade 0.97 ]
-              @ frame a (lighter (rr, gg, bb)) x0 y0 (x0 +. bw) (y0 +. bh) 1.5
-              @ [
-                  label a (lighter (rr, gg, bb)) 13. (x0 +. 8. +. (0.25 *. 13. *. float_of_int (String.length title))) (y0 +. 13.) title;
-                  bitmap iw ih img |> move (sx a (x0 +. 8. +. (iw /. 2.))) (sy a (y0 +. 26. +. (ih /. 2.)));
-                ])
+              code_card t c cand.path cand.line (last cand.line) (Printf.sprintf "%s:%d   (click: all of it)" cand.path (cand.line + 1)) mx my)
       | [], _ -> [])
 
 let names_glow (t : t) (c : camera) (e : entry) : shape list =
@@ -1477,6 +1493,64 @@ let layers_shapes (t : t) (c : camera) : shape list =
              [ circle (rgb r g b) 5. |> move (sx a (x0 +. 12.)) (sy a y); label a ink 14. (x0 +. 22. +. (text_width 14. str /. 2.)) y str ])
            layers)
 
+(* claude: a match under the mouse (a search's, a layer's), its line and
+ * the code around it beside the mouse (the author: "when you hover a
+ * match, we peek preview the content of the match and the code
+ * around"); the lit hits' places found by an index of the layout, not
+ * spot's scan, there being thousands *)
+let hovered_match (t : t) (c : camera) : (Code_search.hit * color * string option) option =
+  match t.pointer with
+  | None -> None
+  | Some _ when t.peek <> None -> None
+  | Some (u, v) -> (
+      let mx = to_px c u and my = to_py c v in
+      let lit =
+        (match t.search with Some _ -> List.map (fun h -> (h, rgb 255 225 90, None)) (search_hits t) | None -> [])
+        @ (if t.layer_group < 0 then []
+           else
+             match List.nth_opt (layer_groups t) t.layer_group with
+             | Some (_, ls) -> List.concat_map (fun (l : layer) -> let r, g, b = l.lcolour in List.map (fun h -> (h, rgb r g b, l.lsay)) (layer_hits t l)) ls
+             | None -> [])
+      in
+      let lines = List.filter (fun ((h : Code_search.hit), _, _) -> h.kind = Def || h.kind = Text) lit in
+      if lines = [] then None
+      else
+        let index = Hashtbl.create 256 in
+        Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File _ -> Hashtbl.replace index p.path i | Dir _ -> ()) t.placed;
+        let ground = at_ground t c <> None in
+        let where (h : Code_search.hit) =
+          if ground then Option.map (fun (x, y, xe) -> (x, y, Float.max xe (x +. 30.))) (spot t c h.path h.line)
+          else
+            match Hashtbl.find_opt index h.path with
+            | Some i -> (
+                match t.geometry.(i) with
+                | Some g ->
+                    let x, y = line_pos t.placed.(i).rect g h.line in
+                    let px = to_px c x and py = to_py c (y +. (g.cell_h /. 2.)) in
+                    Some (px, py, px)
+                | None -> None)
+            | None -> None
+        in
+        let best = ref None in
+        List.iter
+          (fun ((h : Code_search.hit), col, say) ->
+            match where h with
+            | Some (x, y, xe) ->
+                let dx = if mx < x then x -. mx else if mx > xe then mx -. xe else 0. in
+                let d = Float.hypot dx (y -. my) in
+                if d < 9. && (match !best with Some (d', _) -> d < d' | None -> true) then best := Some (d, (h, col, say))
+            | None -> ())
+          (List.filteri (fun i _ -> i < 5000) lines);
+        Option.map snd !best)
+
+let match_preview (t : t) (c : camera) : shape list =
+  match (hovered_match t c, t.pointer) with
+  | Some (h, col, say), Some (u, v) ->
+            let mx = to_px c u and my = to_py c v in
+            let title = Printf.sprintf "%s:%d%s   (click: its definition)" h.path (h.line + 1) (match say with Some s -> "   " ^ s | None -> "") in
+            code_card ~lit:(h.line, col) t c h.path (h.line - 3) (h.line + 3) title mx my
+  | _ -> []
+
 let search_shapes (t : t) (c : camera) : shape list =
   match t.search with
   | None -> []
@@ -1498,6 +1572,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ peek_glow t c
   @ layers_shapes t c
   @ search_shapes t c
+  @ match_preview t c
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,
  * not the treemap's): what Enter opens, what the status line says *)
