@@ -12,3 +12,5 @@
 #/gamekits
 
 tests/
+
+*.bc.js
