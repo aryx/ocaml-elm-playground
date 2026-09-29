@@ -159,6 +159,20 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyDoom.ml:def:render', to: 'TinyDoom.ml:def:draw_column', say: 'each seg seen' },
       ],
     },
+    // the 2.5D games' hearts, and their 3D namesakes', are in the picture: reached from view
+    skeletons.mvu('TinyDoom3d.ml') + { name: 'Model-View-Update, and its heart: world', bones+: [{ at: 'TinyDoom3d.ml:def:world', role: 'the level as polygons, once, to a z-buffer' }], joints+: [{ from: 'TinyDoom3d.ml:def:view', to: 'TinyDoom3d.ml:def:world', say: 'the whole level' }] },
+    skeletons.mvu('TinyWolfenstein.ml') + { name: 'Model-View-Update, and its heart: cast', bones+: [{ at: 'TinyWolfenstein.ml:def:cast', role: 'the raycaster: a ray through the grid (DDA)' }], joints+: [{ from: 'TinyWolfenstein.ml:def:view', to: 'TinyWolfenstein.ml:def:cast', say: 'each column' }] },
+    skeletons.mvu('TinyWolfenstein3d.ml') + { name: 'Model-View-Update, and its heart: world', bones+: [{ at: 'TinyWolfenstein3d.ml:def:world', role: 'each wall cell a box, built once' }], joints+: [{ from: 'TinyWolfenstein3d.ml:def:view', to: 'TinyWolfenstein3d.ml:def:world', say: 'the walls' }] },
+    skeletons.mvu('TinyBattlezone.ml') + { name: 'Model-View-Update, and its heart: to_eye', bones+: [{ at: 'TinyBattlezone.ml:def:to_eye', role: "the world taken into the eye's coordinates" }], joints+: [{ from: 'TinyBattlezone.ml:def:view', to: 'TinyBattlezone.ml:def:to_eye', say: 'each line' }] },
+    skeletons.mvu('TinyBattlezone3d.ml') + { name: 'Model-View-Update, and its heart: world', bones+: [{ at: 'TinyBattlezone3d.ml:def:world', role: 'the plain as solid faces, to a z-buffer' }], joints+: [{ from: 'TinyBattlezone3d.ml:def:view', to: 'TinyBattlezone3d.ml:def:world', say: 'the plain' }] },
+    skeletons.mvu('TinyMazeWar.ml') + { name: 'Model-View-Update, and its heart: frame', bones+: [{ at: 'TinyMazeWar.ml:def:frame', role: 'nested frames: a cell at a time, in lines' }], joints+: [{ from: 'TinyMazeWar.ml:def:view', to: 'TinyMazeWar.ml:def:frame', say: 'each cell deeper' }] },
+    skeletons.mvu('TinyQuake.ml') + { name: 'Model-View-Update, and its heart: pvs', bones+: [{ at: 'TinyQuake.ml:def:pvs', role: 'vis: which leaves can see which' }], joints+: [{ from: 'TinyQuake.ml:def:view', to: 'TinyQuake.ml:def:pvs', say: 'the leaves drawn' }] },
+    skeletons.game('TinyCyberSled.ml', 'def:treads', 'two sticks read as speed, turn and slide', say='the sticks'),
+    // TinyFortnite's first state is written in its app
+    skeletons.game('TinyFortnite.ml', 'def:supported', 'structural integrity: held by ground or piece', say='what stands', init='def:app'),
+    skeletons.game('TinyHalfLife2.ml', 'def:gun', 'the gravity gun: grab, drop, launch', say='the gun'),
+    skeletons.game('TinyMinecraft.ml', 'def:chunk_shape', 'a chunk of blocks as one shape, cached', say='chunks rebuilt'),
+    skeletons.game('TinyTeardown.ml', 'def:loose', 'what stands and what falls: a flood fill', say='what falls'),
   ],
   tours: [
     {

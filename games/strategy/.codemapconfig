@@ -98,6 +98,13 @@ local skeletons = import '../../skeletons.libsonnet';
   },
   skeletons: [
     skeletons.game('TinySimCity.ml', 'def:month', 'the simulation, a month', say='every few frames'),
+    skeletons.game('TinyCivilization.ml', 'def:end_turn', 'a turn: every city, the research, the rival', say='the turn ended'),
+    skeletons.game('TinyDune2.ml', 'def:order', 'a click on the map made an A* path', say='a click'),
+    skeletons.game('TinyHamurabi.ml', 'def:harvest', 'a year: three answers and dice', say='the answers'),
+    skeletons.game('TinyTowerDefense.ml', 'def:can_build', 'the search as a referee: never close the way', say='a tower placed'),
+    skeletons.game('TinyWarcraft2.ml', 'def:follow', 'one flow field for a whole crowd', say='each unit'),
+    skeletons.game('TinyWorms.ml', 'def:carve', 'an explosion: a circle cut from the terrain', say='an explosion'),
+    skeletons.game('TinyXCOM.ml', 'def:hit_chance', 'the chance to hit, shown before shooting', say='a shot'),
   ],
   tours: [
     {

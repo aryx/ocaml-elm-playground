@@ -1,5 +1,6 @@
 // apps/devtools/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'The programming tools: an editor, a language and its environment, BASIC to Smalltalk, vi to Scratch.',
@@ -161,6 +162,80 @@
         { from: 'Scratch_ide.ml:def:update', to: 'Scratch_ide.ml:def:release', say: 'a drop' },
         { from: 'Scratch_ide.ml:def:update', to: 'Scratch_ide.ml:def:step_stage', say: 'each other frame' },
         { from: 'Scratch_ide.ml:def:view', to: 'Scratch_look.ml:def:pieces_shapes', say: 'the scripts' },
+      ],
+    },
+    skeletons.game('TinySmalltalk80.ml', 'def:evaluate', 'do it: the selection compiled, a process spawned', say='do it', init='def:initial'),
+    skeletons.game('TinyDrScheme.ml', 'def:work', 'the machine run a budget of steps a frame', say='each frame'),
+    {
+      name: 'Vi: a Tui program, run by the Textmode way',
+      bones: [
+        { at: 'TinyVi.ml:def:app', role: "Tui_vi's program, in a phosphor" },
+        { at: '../../appkits/editor/Tui_vi.ml:type:model', role: "the lines, the cursor, the mode" },
+        { at: '../../appkits/editor/Tui_vi.ml:def:update', role: 'a key: model -> model' },
+        { at: '../../appkits/editor/Tui_vi.ml:def:view', role: 'a screen of characters' },
+        { at: '../../playground/ways/Textmode.ml:def:textmode', role: 'the characters fed to a VT100, drawn' },
+      ],
+      joints: [
+        { from: 'TinyVi.ml:def:app', to: '../../playground/ways/Textmode.ml:def:textmode', say: 'the program' },
+        { from: '../../playground/ways/Textmode.ml:def:textmode', to: '../../appkits/editor/Tui_vi.ml:def:update', say: 'each key' },
+        { from: '../../appkits/editor/Tui_vi.ml:type:model', to: '../../appkits/editor/Tui_vi.ml:def:update', say: 'stepped' },
+        { from: '../../appkits/editor/Tui_vi.ml:def:update', to: '../../appkits/editor/Tui_vi.ml:type:model', say: 'the next state' },
+        { from: '../../appkits/editor/Tui_vi.ml:type:model', to: '../../appkits/editor/Tui_vi.ml:def:view', say: 'drawn' },
+        { from: '../../appkits/editor/Tui_vi.ml:def:view', to: '../../playground/ways/Textmode.ml:def:textmode', say: 'the Curses bytes' },
+      ],
+    },
+    {
+      name: 'Emacs: a Tui program, run by the Textmode way',
+      bones: [
+        { at: 'TinyEmacs.ml:def:app', role: "Tui_emacs's program, in a phosphor" },
+        { at: '../../appkits/editor/Tui_emacs.ml:type:model', role: "the Lisp state, a prefix, the minibuffer" },
+        { at: '../../appkits/editor/Tui_emacs.ml:def:update', role: 'a key: model -> model' },
+        { at: '../../appkits/editor/Tui_emacs.ml:def:view', role: 'a screen of characters' },
+        { at: '../../playground/ways/Textmode.ml:def:textmode', role: 'the characters fed to a VT100, drawn' },
+      ],
+      joints: [
+        { from: 'TinyEmacs.ml:def:app', to: '../../playground/ways/Textmode.ml:def:textmode', say: 'the program' },
+        { from: '../../playground/ways/Textmode.ml:def:textmode', to: '../../appkits/editor/Tui_emacs.ml:def:update', say: 'each key' },
+        { from: '../../appkits/editor/Tui_emacs.ml:type:model', to: '../../appkits/editor/Tui_emacs.ml:def:update', say: 'stepped' },
+        { from: '../../appkits/editor/Tui_emacs.ml:def:update', to: '../../appkits/editor/Tui_emacs.ml:type:model', say: 'the next state' },
+        { from: '../../appkits/editor/Tui_emacs.ml:type:model', to: '../../appkits/editor/Tui_emacs.ml:def:view', say: 'drawn' },
+        { from: '../../appkits/editor/Tui_emacs.ml:def:view', to: '../../playground/ways/Textmode.ml:def:textmode', say: 'the Curses bytes' },
+      ],
+    },
+    {
+      name: 'TurboPascal: a Tui program, run by the Textmode way',
+      bones: [
+        { at: 'TinyTurboPascal.ml:def:app', role: "Tui_turbo's program, the PC's colours" },
+        { at: '../../appkits/editor/Tui_turbo.ml:type:model', role: "the text, its code, the debugging session" },
+        { at: '../../appkits/editor/Tui_turbo.ml:def:update', role: 'a key: model -> model' },
+        { at: '../../appkits/editor/Tui_turbo.ml:def:view', role: 'a screen of characters' },
+        { at: '../../playground/ways/Textmode.ml:def:textmode', role: 'the characters fed to a VT100, drawn' },
+      ],
+      joints: [
+        { from: 'TinyTurboPascal.ml:def:app', to: '../../playground/ways/Textmode.ml:def:textmode', say: 'the program' },
+        { from: '../../playground/ways/Textmode.ml:def:textmode', to: '../../appkits/editor/Tui_turbo.ml:def:update', say: 'each key' },
+        { from: '../../appkits/editor/Tui_turbo.ml:type:model', to: '../../appkits/editor/Tui_turbo.ml:def:update', say: 'stepped' },
+        { from: '../../appkits/editor/Tui_turbo.ml:def:update', to: '../../appkits/editor/Tui_turbo.ml:type:model', say: 'the next state' },
+        { from: '../../appkits/editor/Tui_turbo.ml:type:model', to: '../../appkits/editor/Tui_turbo.ml:def:view', say: 'drawn' },
+        { from: '../../appkits/editor/Tui_turbo.ml:def:view', to: '../../playground/ways/Textmode.ml:def:textmode', say: 'the Curses bytes' },
+      ],
+    },
+    {
+      name: 'BASIC: a Talk program, played by the Teletype way',
+      bones: [
+        { at: 'TinyBasic.ml:def:guess', role: 'the program in memory at start' },
+        { at: '../../languages/basic/Basic_session.ml:def:session', role: 'the prompt: lines typed, LIST, RUN, CATALOG' },
+        { at: '../../languages/basic/Basic_run.ml:def:run', role: 'RUN: a Talk step a statement' },
+        { at: 'TinyBasic.ml:def:app', role: 'the prompt, 24 by 40' },
+        { at: '../../playground/ways/Teletype.ml:def:teletype', role: 'a program that asks and waits, as an app' },
+        { at: 'TinyBasic.ml:def:view', role: "the screen in a monitor's frame" },
+      ],
+      joints: [
+        { from: 'TinyBasic.ml:def:guess', to: '../../languages/basic/Basic_session.ml:def:session', say: 'typed in' },
+        { from: '../../languages/basic/Basic_session.ml:def:session', to: '../../languages/basic/Basic_run.ml:def:run', say: 'RUN' },
+        { from: '../../languages/basic/Basic_session.ml:def:session', to: 'TinyBasic.ml:def:app', say: 'the program' },
+        { from: 'TinyBasic.ml:def:app', to: '../../playground/ways/Teletype.ml:def:teletype', say: 'played by' },
+        { from: '../../playground/ways/Teletype.ml:def:teletype', to: 'TinyBasic.ml:def:view', say: 'the screen' },
       ],
     },
   ],

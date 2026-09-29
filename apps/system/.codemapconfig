@@ -1,5 +1,6 @@
 // apps/system/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'The system programs: a terminal and the shell behind it, what a computer is used through.',
@@ -24,6 +25,26 @@
       related: ['web/TinyTerminal.html', '../../tests/2d/golden/TinyTerminal.png'],
     },
   },
+  skeletons: [
+    {
+      name: 'The terminal: a shell as a Talk program, played by the Teletype way',
+      bones: [
+        { at: 'TinyTerminal.ml:def:session', role: 'the login banner, then the shell' },
+        { at: 'TinyTerminal.ml:def:shell', role: 'a line, its words, a command or a program' },
+        { at: 'TinyTerminal.ml:def:programs', role: 'the programs: Talk values, each spawned' },
+        { at: 'TinyTerminal.ml:def:app', role: 'the session as an app' },
+        { at: '../../playground/ways/Teletype.ml:def:teletype', role: 'a program that asks and waits, as an app' },
+        { at: 'TinyTerminal.ml:def:view', role: "the VT100's screen in its case" },
+      ],
+      joints: [
+        { from: 'TinyTerminal.ml:def:session', to: 'TinyTerminal.ml:def:shell', say: 'logged in' },
+        { from: 'TinyTerminal.ml:def:shell', to: 'TinyTerminal.ml:def:programs', say: 'spawned, Control-C stops it' },
+        { from: 'TinyTerminal.ml:def:session', to: 'TinyTerminal.ml:def:app', say: 'the program' },
+        { from: 'TinyTerminal.ml:def:app', to: '../../playground/ways/Teletype.ml:def:teletype', say: 'played by' },
+        { from: '../../playground/ways/Teletype.ml:def:teletype', to: 'TinyTerminal.ml:def:view', say: 'the screen' },
+      ],
+    },
+  ],
   dirs: {
     software: { summary: 'The same program on the software rasterizer, for the golden frames.' },
     web: { summary: 'The program compiled to JavaScript, and its page.' },

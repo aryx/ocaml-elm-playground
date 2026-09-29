@@ -1,0 +1,227 @@
+// playground/apis/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Evan's style over our from-scratch libraries: sounds, bodies, widgets, juice, AI, players as a game's values and verbs.",
+  // claude: each API is an adapter: the .mli the verbs a game calls, the
+  // .ml their translation onto a library of libs/ (audio, physics, gui,
+  // juice, ai, networking); Audio and Gui are hubs of the whole project
+  files: {
+    'Audio.mli': {
+      summary: 'Sounds for games: a sound is a value like a shape, made, shaped by verbs, and played when something happens.',
+      digest: '0d190a3865d3',
+      capitals: [
+        { at: 'def:play', say: 'a sound played now: what 56 programs call from update' },
+        { at: 'type:sound', say: 'a sound as a value: made, shaped, combined' },
+        { at: 'def:keep_playing', say: 'a named loop kept going: the music, an engine' },
+      ],
+      important: [
+        { at: 'def:square', say: 'a sound from a note: the chiptune voices', weight: 2 },
+        { at: 'def:lasting', say: 'the verbs that shape a sound', weight: 2 },
+        { at: 'def:hit', say: 'the ready-made sounds: blip, coin, laser, hit...', weight: 2 },
+        { at: 'def:abc', say: 'a tune written as text', weight: 1 },
+        { at: 'def:sfx', say: 'a bfxr-style effect, from its parameters', weight: 1 },
+        { at: 'type:instrument', say: 'played live: note_on, note_off, knobs', weight: 2 },
+      ],
+    },
+    'Audio.ml': {
+      summary: "The sound API made: a sound is audio's Synth, rendered and handed to one Mixer the platform pulls from.",
+      digest: '1466625756ff',
+      capitals: [
+        { at: 'def:play', say: 'rendered to samples, into the mixer' },
+      ],
+      important: [
+        { at: 'type:sound', say: "a sound is the synthesizer's description", weight: 3 },
+        { at: 'def:mixer', say: 'the one mixer every game plays into', weight: 3 },
+        { at: 'def:pull', say: 'what the platform asks for, a buffer at a time', weight: 2 },
+        { at: 'def:keep_playing', weight: 1 },
+      ],
+      links: [
+        { from: 'def:play', to: 'def:mixer' },
+        { from: 'def:pull', to: 'def:mixer' },
+      ],
+    },
+    'Gui.mli': {
+      summary: 'Buttons, sliders, menus in immediate mode: asked for in update, drawn in view; no callback, no widget object.',
+      digest: '919017b3abd9',
+      capitals: [
+        { at: 'def:button', say: 'true the frame it is clicked: a widget lives as long as its if' },
+        { at: 'def:draw', say: 'the shapes the widgets drew, for view: ends the frame' },
+        { at: 'def:menu_in', say: 'the _in widgets: placed in a box, for layouts' },
+      ],
+      important: [
+        { at: 'comment:That is {i immediate mode}', say: 'why immediate mode fits Elm-style update', weight: 3 },
+        { at: 'def:slider', say: 'the value after this frame', weight: 2 },
+        { at: 'def:modal', say: 'a menu is open: the game should not act', weight: 2 },
+        { at: 'def:theme', say: 'the look: Mac, Windows, Amiga...', weight: 1 },
+        { at: 'def:area', say: 'the whole screen as a box, to lay out', weight: 1 },
+      ],
+    },
+    'Gui.ml': {
+      summary: "The adapter between gui/'s widgets (rectangles and paint) and the playground (a computer and shapes).",
+      digest: 'a775048dd742',
+      capitals: [{ at: 'def:draw', say: 'the paint of this frame as shapes' }],
+      important: [
+        { at: 'def:ui', say: 'the one global: update asks, view draws', weight: 3 },
+        { at: 'def:widget', say: 'every widget: the frame started, Immediate asked', weight: 2 },
+        { at: 'def:input_of', say: "the computer's mouse and keys as gui/'s input", weight: 2 },
+        { at: 'def:shapes', say: 'paint (rectangles, text) turned into shapes', weight: 2 },
+      ],
+      links: [
+        { from: 'def:widget', to: 'def:input_of' },
+        { from: 'def:draw', to: 'def:shapes' },
+      ],
+    },
+    'Physics.mli': {
+      summary: 'Things that move by themselves: a body is a shape with a velocity, and every force a verb on bodies.',
+      digest: '4ebb32a7c8f5',
+      capitals: [
+        { at: 'type:body', say: 'a shape that moves: where, how fast, which way' },
+        { at: 'def:step', say: 'a tick: the pushes used up, the body moved' },
+        { at: 'def:body', say: 'a body made from a shape' },
+      ],
+      important: [
+        { at: 'def:fall', say: 'the verbs: fall, push, thrust; they add up', weight: 2 },
+        { at: 'def:bounce', say: 'two bodies collide: both change', weight: 2 },
+        { at: 'def:bounce_all', say: 'a pile: every pair, found by the broad phase', weight: 2 },
+        { at: 'def:simulate', say: 'a world stepped by the solver: stacks, joints', weight: 2 },
+        { at: 'def:draw', say: 'a body drawn where it is', weight: 1 },
+      ],
+    },
+    'Physics.ml': {
+      summary: "The physics API made over physics/2d: a body's pushes accumulated, spent by one semi-implicit Euler step.",
+      digest: '2ea8a0435c21',
+      capitals: [{ at: 'def:step', say: "the engine's integrator, the pushes as one acceleration" }],
+      important: [
+        { at: 'type:body', say: 'the accumulator: every push adds an acceleration', weight: 3 },
+        { at: 'def:accelerate', say: 'what every force verb comes down to', weight: 2 },
+        { at: 'def:bounce', say: 'collision found and resolved by the engine', weight: 2 },
+        { at: 'def:simulate', say: 'the sequential-impulse solver, warm started', weight: 2 },
+      ],
+      links: [
+        { from: 'def:fall', to: 'def:accelerate' },
+        { from: 'def:push', to: 'def:accelerate' },
+      ],
+    },
+    'Physics3d.mli': {
+      summary: 'Physics in 3D, deliberately the same API: a body is a shape3d that moves, and verbs on bodies.',
+      digest: 'b05530c32c85',
+      capitals: [
+        { at: 'type:body', say: 'a shape3d that moves and turns' },
+        { at: 'def:simulate', say: 'a world stepped: contacts, stacks, joints, sleep' },
+      ],
+      important: [
+        { at: 'def:body', weight: 2 },
+        { at: 'def:step', say: 'one body alone, a tick', weight: 2 },
+        { at: 'type:world', say: 'every body at once, for the solver', weight: 2 },
+        { at: 'def:bounce', weight: 1 },
+      ],
+    },
+    'Physics3d.ml': {
+      summary: "The 3D physics made over physics/3d: bodies measured from their shape's points, a world solved each tick.",
+      digest: 'b333f764e00e',
+      capitals: [{ at: 'def:simulate', say: 'the 3D solver over a world of bodies' }],
+      important: [
+        { at: 'type:body', weight: 3 },
+        { at: 'def:step', weight: 2 },
+        { at: 'def:bounce_all', say: 'sweep and prune, then every pair', weight: 2 },
+      ],
+    },
+    'Juice.mli': {
+      summary: 'What makes a game feel alive without changing it: shake, flash, freeze, tweens, particles; off with juice=off.',
+      digest: 'cfb3d48c9387',
+      capitals: [
+        { at: 'type:t', say: "the effects under way, kept in the game's model" },
+        { at: 'def:view', say: 'the picture shaken, flashed, with its particles' },
+      ],
+      important: [
+        { at: 'comment:"Juice it or lose it"', say: 'the talk the idea comes from', weight: 2 },
+        { at: 'def:step', say: 'the effects advanced, a frame', weight: 2 },
+        { at: 'def:shake', say: 'trauma added: the screen shakes', weight: 2 },
+        { at: 'def:burst', say: 'particles thrown where it happened', weight: 1 },
+        { at: 'def:tween', say: 'a value eased over time', weight: 1 },
+      ],
+    },
+    'Juice.ml': {
+      summary: "The juice made over juice/: a clock counted in frames, trauma, emitters, tweens, and the view that applies them.",
+      digest: 'd96ec1e1698b',
+      capitals: [{ at: 'def:view', say: 'the effects applied to the picture' }],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'def:step', weight: 2 },
+        { at: 'def:clock', say: 'frames, not seconds: no drift', weight: 2 },
+      ],
+    },
+    'Juice3d.mli': {
+      summary: 'Juice for 3D games: the camera shakes, and particles fly in the world, falling to its ground.',
+      digest: '7fa7af55deee',
+      capitals: [{ at: 'def:camera', say: 'the camera shaken, instead of the picture' }],
+    },
+    'Juice3d.ml': { summary: 'Juice3d made: particles in the world, the camera shaken, on the same clock as Juice.', digest: 'fc46ae33018e' },
+    'Ai.mli': {
+      summary: 'Game AI in verbs: steering, ways through a map, an opponent for a turn game, modes, bots that play like players.',
+      digest: 'ea297b18f581',
+      capitals: [
+        { at: 'def:seek', say: 'steering: a force on a Physics body, composed with |>' },
+        { at: 'def:way', say: 'a path through a map' },
+      ],
+      important: [
+        { at: 'def:flocking', say: 'Reynolds: a school in one line', weight: 2 },
+        { at: 'type:opponent', say: 'a turn game played by search', weight: 2 },
+        { at: 'type:mind', say: 'what a character is doing: a state machine', weight: 2 },
+        { at: 'type:bot', say: 'a mind playing through the same inputs', weight: 2 },
+      ],
+    },
+    'Ai.ml': { summary: "The AI verbs made over ai/: steering, pathfinding, minimax and MCTS, state machines and bots.", digest: '43b901a4fb82' },
+    'Ai_debug.mli': { summary: "Seeing what an AI thinks: its way, the flow field, its opponent's moves, its mode, drawn as shapes.", digest: '370e99ec2902' },
+    'Ai_debug.ml': { summary: "The AI's thoughts drawn: segments, arrows and labels over the game.", digest: '74a6783ff59d' },
+    'Audio3d.mli': { summary: 'Sound in a 3D world, heard from the camera: panned by its angle, quieter with distance.', digest: '0b6f6fd7fb2c' },
+    'Audio3d.ml': { summary: "The camera as listener: its right ear from ahead crossed with up.", digest: '4db13d747cba' },
+    'Audio_debug.mli': { summary: 'Seeing the sound: an oscilloscope and a spectrum over the frame, for the debug keys.', digest: '6b5788d328f8' },
+    'Audio_debug.ml': { summary: 'The last samples kept, drawn as a triggered wave or as bars of a spectrum.', digest: 'a08e437168dc' },
+    'Multiplayer.mli': {
+      summary: "A game for several players: update gets everyone's keyboard; the network carries inputs, never the game.",
+      digest: '71fd15bbfded',
+      capitals: [
+        { at: 'def:game', say: 'a game of several players: local, simulated, over the network' },
+        { at: 'type:player', say: "a player's keyboard, where computer is yours" },
+      ],
+    },
+    'Multiplayer.ml': {
+      summary: 'The modes (local, simulate, host, join, relay) and netcodes (lockstep, rollback) behind one game.',
+      digest: 'd1f8fd121eba',
+      capitals: [{ at: 'def:game', say: 'the flags pick the mode and the netcode' }],
+      important: [
+        { at: 'type:player', weight: 2 },
+        { at: 'type:peer', say: 'a peer: its netcode and its copy of the game', weight: 3 },
+        { at: 'type:state', weight: 2 },
+      ],
+    },
+    'Multiplayer3d.mli': { summary: "Multiplayer for 3D games: the same modes, each player's camera in its part of the window.", digest: '951d34453213' },
+    'Multiplayer3d.ml': { summary: "Multiplayer's views split for 3D, with the network's status strip.", digest: 'ec68a5afdf32' },
+  },
+  // claude: how a game meets a library: the verbs, their translation, the
+  // library, and the platform that pulls or draws the result
+  skeletons: [
+    {
+      name: 'An API over a library: sound, bodies, widgets',
+      bones: [
+        { at: 'Audio.mli:def:play', role: 'a game plays a sound' },
+        { at: 'Audio.ml:def:mixer', role: 'the one mixer' },
+        { at: '../../libs/audio/Mixer.ml', role: 'mixing, pulled by the platform' },
+        { at: 'Physics.mli:def:step', role: 'a body moved a tick' },
+        { at: '../../libs/physics/2d/Integrate.ml', role: 'the integrator' },
+        { at: 'Gui.mli:def:button', role: 'a widget asked in update' },
+        { at: 'Gui.ml:def:ui', role: 'remembered till view' },
+        { at: '../../libs/gui/Immediate.ml', role: 'immediate-mode widgets' },
+      ],
+      joints: [
+        { from: 'Audio.mli:def:play', to: 'Audio.ml:def:mixer', say: 'rendered samples' },
+        { from: 'Audio.ml:def:mixer', to: '../../libs/audio/Mixer.ml', say: 'mixed' },
+        { from: 'Physics.mli:def:step', to: '../../libs/physics/2d/Integrate.ml', say: 'position, velocity' },
+        { from: 'Gui.mli:def:button', to: 'Gui.ml:def:ui', say: 'the input' },
+        { from: 'Gui.ml:def:ui', to: '../../libs/gui/Immediate.ml', say: 'widgets, paint' },
+      ],
+    },
+  ],
+}

@@ -209,5 +209,14 @@ local skeletons = import '../../skeletons.libsonnet';
     skeletons.game('Snake.ml', 'def:compute_new_head', 'the next head'),
     skeletons.game('TinyPang.ml', 'def:burst', 'a balloon split'),
     skeletons.game('TinySpacewar.ml', 'def:fly', 'gravity and thrust'),
+    skeletons.game('TinyBoomerangFu.ml', 'def:curve', "the boomerang's arc, and its way back", say='the boomerangs'),
+    skeletons.game('TinyCameltry.ml', 'def:gravity', 'down, wherever the turned maze puts it', say='the maze turned'),
+    skeletons.game('TinyMarbleMadness.ml', 'def:step', 'the marble pushed, rolling, falling', say='the marble'),
+    skeletons.game('TinyPong.ml', 'def:update_game', 'the ball given to the physics engine', say='the physics'),
+    skeletons.game('TinySoldat.ml', 'def:ragdoll', 'a soldier falling as a ragdoll', say='the dead'),
+    skeletons.game('TinyTron.ml', 'def:rules', "the rules: the lightcycles kit's"),
+    // TinyTron3d's first state is written in its app: the kit's, a view, no camera yet
+    skeletons.game('TinyTron3d.ml', 'def:camera_for', 'the views: behind, inside, above', say='the camera wanted', init='def:app'),
+    skeletons.game('TinyTronscroll.ml', 'def:advance', 'a rider a cell ahead: walls, pieces, teleports', say='the riders'),
   ],
 }

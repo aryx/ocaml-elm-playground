@@ -1,5 +1,6 @@
 // apps/office/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'The office, from NLS (1968) to today: text, sheets, slides, stacks, and documents made of parts.',
@@ -255,5 +256,16 @@
         { from: '../../appkits/embed/Component.mli', to: 'TinyOffice.ml', say: 'held by' },
       ],
     },
+    skeletons.game('TinyNLS.ml', 'def:execute', 'a command, verb then noun, done to the tree', say='a command complete', init='def:initial'),
+    skeletons.game('TinyBravo.ml', 'def:key', 'a key through the modes: command, or text', say='each key', init='def:initial'),
+    skeletons.game('TinyWord.ml', 'def:keyboard', 'no modes: a letter unless Control is down', say='each key', init='def:initial'),
+    skeletons.game('TinyFrameMaker.ml', 'def:layout', 'one text through a chain of columns', say='the text changed', init='def:initial'),
+    skeletons.game('TinyVisiCalc.ml', 'def:of_1979', "1979's formulas into the engine's", say='a formula typed', init='def:initial'),
+    skeletons.game('TinyLotus123.ml', 'def:run_macro', 'a macro: keys kept in the sheet, pressed again', say='Alt and a letter', init='def:initial'),
+    skeletons.game('TinyExcel.ml', 'def:fill', 'Fill Down: a formula shifted', say='a command', init='def:initial'),
+    skeletons.game('TinyPowerPoint.ml', 'def:blocks', "a slide's blocks, placed by the master", say='the outline', init='def:initial'),
+    skeletons.game('TinyHyperCard.ml', 'def:send', 'the message path: button, card, background, stack', say='a click, a message', init='def:initial'),
+    skeletons.game('TinyOpenDoc.ml', 'def:put_down', 'editing in place ends: one undoable edit', say='a click outside', init='def:initial'),
+    skeletons.game('TinyOffice.ml', 'def:text_around', 'the text wrapped round the objects', say='a thing placed', init='def:initial'),
   ],
 }

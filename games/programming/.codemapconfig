@@ -42,6 +42,7 @@ local skeletons = import '../../skeletons.libsonnet';
   },
   skeletons: [
     skeletons.game('TinyCoreWar.ml', 'def:step', 'MARS: one instruction a turn', say='the battle run'),
+    skeletons.game('TinyKarel.ml', 'def:parse', "the program typed, in Karel's language", say='Run pressed'),
   ],
   tours: [
     {

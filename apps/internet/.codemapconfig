@@ -1,5 +1,6 @@
 // apps/internet/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'The programs that talk to other computers: the browsers from Mosaic to Chrome, IRC, mail.',
@@ -152,6 +153,14 @@
       ],
     },
   },
+  skeletons: [
+    skeletons.game('TinyMosaic.ml', 'def:page_of', 'bytes, tokens, tree, boxes, shapes', say='a page arrived', init='def:init'),
+    skeletons.game('TinyNetscape.ml', 'def:config', 'the tab set up: four connections, no scripts', say='each load', init='def:init'),
+    skeletons.game('TinyFirefox.ml', 'def:task', "a task of the page's scripts, then a relayout", say='the clock, an event', init='def:init'),
+    skeletons.game('TinyChrome.ml', 'def:on_tab', 'each tab its own, answers routed by number', say='a message', init='def:init'),
+    skeletons.game('TinyIRC.ml', 'def:heard', "the server's lines, one case a command", say='lines arrived', init='def:initial'),
+    skeletons.game('TinyEudora.ml', 'def:session_step', 'the POP3 or SMTP machine, fed its lines', say='lines arrived', init='def:initial'),
+  ],
   dirs: {
     site: { summary: "The built-in site the browsers show with no network, and tiny_httpd serves." },
     mail: { summary: "TinyEudora's built-in mailboxes as mbox files, and its nicknames as vCards." },

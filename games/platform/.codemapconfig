@@ -217,5 +217,13 @@ local skeletons = import '../../skeletons.libsonnet';
     skeletons.game('TinyCeleste.ml', 'def:step', 'run, jump, dash'),
     skeletons.game('TinyMarioGalaxy2D.ml', 'def:snap_to_ground', 'glued to a round ground'),
     skeletons.game('TinyVVVVVV.ml', 'def:step', 'gravity flipped'),
+    skeletons.game('TinyMario64.ml', 'def:step_mario', 'Mario in 3D: run, jump, land', say='Mario'),
+    skeletons.game('TinyMarioGalaxy.ml', 'def:gravity_at', 'down, here: the strongest zone pulling', say='the pull'),
+    skeletons.game('TinyPrinceOfPersia.ml', 'def:anims', "the animation tables: the moves' distances", say='the moves'),
+    skeletons.game('TinySuperMeatBoy.ml', 'def:replay_step', 'all the tries at once, the ghosts of the deaths', say='the replays'),
+    skeletons.game('TinyRick.ml', 'def:step_rick', 'Rick: running, jumping, ladders', say='Rick'),
+    skeletons.game('TinyTurrican.ml', 'def:beam_length', 'the beam: a ray stepped until the rock', say='the beam'),
+    skeletons.game('TinyVikings.ml', 'def:act', "each viking's one skill", say='the skills'),
+    skeletons.game('TinyMarioWorld.ml', 'def:step_mario', 'Mario: walking, running, the cape', say='Mario'),
   ],
 }

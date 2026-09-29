@@ -1,0 +1,141 @@
+// playground/layers/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'What games build on, over the shapes alone: scenes, a camera, sprites, tile maps, and their 3D kin.',
+  // claude: layers on top of Playground and Playground3d, reading only
+  // the computer and giving only shapes; Scene2d is named by 160 files,
+  // nearly every game, Tilemap and Sprite by the pixel-art ones
+  files: {
+    'Scene2d.mli': {
+      summary: 'Title, play, game over: the scene a game is in, the time spent in it, and keys pressed rather than held.',
+      digest: 'a4bf3ace6e4e',
+      capitals: [
+        { at: 'type:t', say: "the game's own scene, wrapped: what 160 games' model is" },
+        { at: 'def:pressed', say: 'a key going down, not held: the rising edge' },
+        { at: 'def:go', say: 'to another scene: its clock restarts' },
+      ],
+      important: [
+        { at: 'def:update', say: 'first in every update: the time, the keyboards', weight: 2 },
+        { at: 'def:blink', say: 'PRESS SPACE, blinking', weight: 1 },
+        { at: 'comment:"Making Impossible States Impossible"', say: 'why a variant in the model', weight: 2 },
+      ],
+    },
+    'Scene2d.ml': {
+      summary: "The scene's clock and the last two keyboards, kept round the game's own variant.",
+      digest: '2c9948bddbeb',
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'def:pressed', say: 'down now, not at the last update', weight: 2 },
+        { at: 'def:go', say: 'what is down now counts as already down', weight: 2 },
+      ],
+    },
+    'Tilemap.mli': {
+      summary: 'Worlds as grids of tiles, typed as strings: cells, their centres, drawing, and colliding with them.',
+      digest: 'e28974a8d558',
+      capitals: [
+        { at: 'def:of_strings', say: 'a level typed as text, a character per tile' },
+        { at: 'type:t', say: 'a grid of characters and a tile size' },
+      ],
+      important: [
+        { at: 'def:tile_at', say: 'the tile under a point: collisions', weight: 2 },
+        { at: 'def:find', say: 'where the @ and the $ are: the level places things', weight: 2 },
+        { at: 'def:center', say: 'a cell to world coordinates', weight: 1 },
+        { at: 'def:view_visible', say: 'only the tiles the camera sees', weight: 2 },
+        { at: 'def:hits', say: 'a box against the solid tiles', weight: 2 },
+      ],
+    },
+    'Tilemap.ml': {
+      summary: 'The grid made: rows of characters, the world coordinates of cells, the tiles drawn and hit.',
+      digest: '4eb917abec08',
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'def:of_strings', weight: 2 },
+        { at: 'def:hits', weight: 2 },
+      ],
+    },
+    'Sprite.mli': {
+      summary: 'Pixel art typed as strings, a character per pixel; frames that cycle; XPM files; the artwork flag.',
+      digest: '7ac1e2b4291c',
+      capitals: [
+        { at: 'def:pixels', say: 'a picture from strings and a palette: 39 games draw so' },
+        { at: 'def:artwork', say: 'sprites or shapes: the medium the original used' },
+      ],
+      important: [
+        { at: 'def:cycle', say: 'the frame of an animation at a time', weight: 2 },
+        { at: 'def:flip', say: 'facing the other way', weight: 1 },
+        { at: 'def:of_xpm', say: "an XPM file, TinyAseprite's", weight: 2 },
+      ],
+    },
+    'Sprite.ml': {
+      summary: 'Pixel art drawn as runs of same-coloured pixels, one rectangle each; XPM read and written.',
+      digest: 'df32b08bf8f9',
+      important: [
+        { at: 'def:runs', say: 'a row as runs: far fewer rectangles', weight: 3 },
+        { at: 'def:pixels', weight: 2 },
+      ],
+    },
+    'Camera2d.mli': {
+      summary: 'A camera for 2D worlds bigger than the screen: following, clamped to the level, rooms, parallax.',
+      digest: '1da23754c187',
+      capitals: [
+        { at: 'def:view', say: 'the world seen through the camera: one shape' },
+        { at: 'type:t', say: 'where the camera is, its zoom and angle' },
+      ],
+      important: [
+        { at: 'def:look_at', weight: 2 },
+        { at: 'def:follow', say: 'catching up with the player, smoothly', weight: 2 },
+        { at: 'def:clamp', say: "never past the level's edges", weight: 2 },
+        { at: 'def:visible', say: 'the part of the world on screen', weight: 1 },
+        { at: 'def:flip', say: "Zelda's rooms: the screen flips", weight: 1 },
+        { at: 'def:parallax', say: 'far layers move less', weight: 1 },
+      ],
+    },
+    'Camera2d.ml': { summary: 'The camera made: the world moved, turned and scaled the other way.', digest: '40642715f2c7' },
+    'Camera3d.mli': {
+      summary: "Where a 3D game's eye goes, given what it follows: behind, cockpit, orbit, from far; the floor and the sky.",
+      digest: '8275c42c7985',
+      capitals: [
+        { at: 'def:behind', say: 'the chase camera: behind, above, looking ahead' },
+        { at: 'def:orbit', say: "turning round a place: a title's scene" },
+      ],
+      important: [
+        { at: 'type:pose', say: 'what is followed: a place and a heading', weight: 2 },
+        { at: 'def:follow', say: 'smoothing: the eye catching up', weight: 2 },
+        { at: 'def:floor', say: 'the world around: a floor, a sky', weight: 1 },
+      ],
+    },
+    'Camera3d.ml': { summary: 'The cameras made: poses to eyes and targets, smoothed; the floor and the sky around.', digest: '01d2d8aee288' },
+    'Character3d.mli': {
+      summary: "A player that walks: a capsule that never turns, moved by Quake's slide-along-the-walls loop.",
+      digest: '618976508c97',
+      capitals: [{ at: 'def:walk', say: 'a tick: move, hit, slide along, step up' }],
+      important: [{ at: 'comment:SV_FlyMove', say: 'the loop Quake wrote down first', weight: 2 }],
+    },
+    'Character3d.ml': { summary: 'The character controller made: traces against the bodies, sliding, steps and slopes.', digest: '4c19b347c3de' },
+    'Ragdoll3d.mli': { summary: 'A ragdoll: boxes held by joints, falling like a body because built like one (Half-Life 2).', digest: '50e2f307cdc2' },
+    'Ragdoll3d.ml': { summary: "The ragdoll's parts, their boxes and masses, and the joints and their limits.", digest: 'a141064738a8' },
+    'Portal3d.mli': { summary: 'Portals: one rigid motion carrying what goes in one out the other, and the view drawn through.', digest: '4b9cb7972a37' },
+    'Portal3d.ml': { summary: "A point, a direction, a body carried through a portal pair; the view clipped to the portal.", digest: '4c27d20ce448' },
+  },
+  // claude: how a 2D game uses the layers each frame
+  skeletons: [
+    {
+      name: 'A 2D game on the layers',
+      bones: [
+        { at: 'Scene2d.mli:type:t', role: 'the scene the game is in' },
+        { at: 'Scene2d.mli:def:pressed', role: 'a key pressed: change scene' },
+        { at: 'Tilemap.mli:def:of_strings', role: 'the level, typed' },
+        { at: 'Sprite.mli:def:pixels', role: 'the characters, typed' },
+        { at: 'Camera2d.mli:def:follow', role: 'the camera follows the player' },
+        { at: 'Camera2d.mli:def:view', role: 'the world drawn through it' },
+      ],
+      joints: [
+        { from: 'Scene2d.mli:def:pressed', to: 'Scene2d.mli:type:t', say: 'the next scene' },
+        { from: 'Tilemap.mli:def:of_strings', to: 'Camera2d.mli:def:view', say: 'tiles' },
+        { from: 'Sprite.mli:def:pixels', to: 'Camera2d.mli:def:view', say: 'sprites' },
+        { from: 'Camera2d.mli:def:follow', to: 'Camera2d.mli:def:view', say: 'where from' },
+      ],
+    },
+  ],
+}

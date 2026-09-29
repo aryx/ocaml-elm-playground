@@ -1,0 +1,80 @@
+// playground/platforms/native_common/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "What the native platforms share: SDL's frame loops for 2D and 3D, commands performed, scripted input, the store.",
+  // claude: a backend supplies only how a picture becomes pixels; the
+  // loop here drains SDL's events into the app, runs its update and
+  // view, paces the frames, feeds the sound card
+  files: {
+    'Native_loop_2d.mli': {
+      summary: 'The SDL loop of the native 2D platforms: window, command line, events, pacing, the sound card.',
+      digest: '604d038d814f',
+      capitals: [{ at: 'def:run', say: 'the 2D frame loop: events to msgs, update, view, draw' }],
+      important: [
+        { at: 'def:create_window', say: "a window whose pixels are a plain array", weight: 2 },
+        { at: 'def:scale', say: "the program's screen fitted in the window", weight: 2 },
+        { at: 'def:app_args', say: "the program's own flags, after the platform's", weight: 1 },
+      ],
+    },
+    'Native_loop_2d.ml': {
+      summary: "SDL's events drained into the app's subscriptions, its commands performed, 60 frames a second, the samples queued.",
+      digest: '8d2d49af0380',
+      capitals: [{ at: 'def:run', say: 'every native 2D frame: events, msgs, update, view, draw' }],
+      important: [
+        { at: 'def:parsed_cli', say: '-debug-keys, -script, -dump-frame, -size...', weight: 2 },
+        { at: 'def:queue_samples', say: "the frame's sound, to the card", weight: 2 },
+        { at: 'def:scale', weight: 1 },
+        { at: 'def:write_frame', say: 'a frame dumped: the golden tests', weight: 1 },
+      ],
+    },
+    'Native_loop_3d.mli': {
+      summary: 'The SDL loop the native 3D platforms share: the computer kept up to date, update3d and view3d each frame.',
+      digest: '800a735c88af',
+      capitals: [{ at: 'def:run', say: 'the 3D frame loop, for OpenGL and the rasterizer' }],
+    },
+    'Native_loop_3d.ml': {
+      summary: "The 3D loop: keys and mouse to the computer, frames made deterministic for the golden tests.",
+      digest: '113f09228b17',
+      capitals: [{ at: 'def:run', say: 'the computer, update, view, draw, present' }],
+      important: [{ at: 'def:fixed_time', say: 'a frozen clock: the same pixels every run', weight: 2 }],
+    },
+    'Commands.mli': {
+      summary: "An app's commands performed while frames go on: HTTP stepped each frame, https on a thread.",
+      digest: '6a12bde3aaeb',
+    },
+    'Commands.ml': {
+      summary: 'Requests in flight, stepped once a frame, their answers given back as messages.',
+      digest: 'fac836aaabc6',
+      important: [
+        { at: 'def:perform', say: "a Cmd.t started", weight: 2 },
+        { at: 'def:step', say: 'what finished this frame, as msgs', weight: 2 },
+      ],
+    },
+    'Input_script.mli': {
+      summary: 'Scripted inputs, keys held over frames (-script): reproducible runs, the golden frames of a game in play.',
+      digest: '2ae855c3af3b',
+    },
+    'Input_script.ml': { summary: "A script parsed, and each frame's key and mouse changes it says.", digest: 'b07b3c2c4126' },
+    'Store.mli': { summary: "The native store of documents: one directory's files, names never paths.", digest: 'f33ff5aa1723' },
+    'Store.ml': { summary: 'Documents as files of a directory, a name checked to be no path.', digest: '986f16083209' },
+  },
+  skeletons: [
+    {
+      name: 'A native frame',
+      bones: [
+        { at: 'Native_loop_2d.ml:def:run', role: 'the loop of a 2D app' },
+        { at: 'Input_script.ml:def:changes', role: 'scripted keys, or none' },
+        { at: 'Commands.ml:def:step', role: 'answers of the commands' },
+        { at: '../../Playground.ml:def:game_update', role: 'an event becomes the computer' },
+        { at: 'Native_loop_2d.ml:def:queue_samples', role: 'the sound of the frame' },
+      ],
+      joints: [
+        { from: 'Input_script.ml:def:changes', to: 'Native_loop_2d.ml:def:run', say: 'keys held' },
+        { from: 'Commands.ml:def:step', to: 'Native_loop_2d.ml:def:run', say: 'msgs' },
+        { from: 'Native_loop_2d.ml:def:run', to: '../../Playground.ml:def:game_update', say: 'each event, each tick' },
+        { from: 'Native_loop_2d.ml:def:run', to: 'Native_loop_2d.ml:def:queue_samples', say: 'samples' },
+      ],
+    },
+  ],
+}

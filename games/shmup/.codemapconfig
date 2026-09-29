@@ -56,6 +56,16 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyInvaders.ml:def:update_game', to: '../../gamekits/shmup/Shots.ml:def:advance', say: 'the shots' },
       ],
     },
+    skeletons.game('Asteroid.ml', 'def:collide', 'hits: rocks split, the ship crashed', say='what touched'),
+    skeletons.game('TinyDefender.ml', 'def:near', 'the cylinder: the copy nearest the camera', say='the planet wraps'),
+    skeletons.game('TinyGalaga.ml', 'def:fly', 'an enemy flown along its path', say='the flights'),
+    skeletons.game('TinyGradius.ml', 'def:take', 'the power-up the bar points at, taken', say='the bar'),
+    skeletons.game('TinyMissileCommand.ml', 'def:radius', "an explosion's circle, growing then shrinking", say='the explosions'),
+    skeletons.game('TinyRobotron.ml', 'def:shoot', 'shooting one way, running another', say='the second stick'),
+    skeletons.game('TinyRType.ml', 'def:step_force', 'the Force: a pod of five states', say='the Force'),
+    skeletons.game('TinyStarFox.ml', 'def:step_ship', 'on rails: across the canyon, not along it', say='the arwing'),
+    // TinyZaxxon's first [view] is the projection's: the picture is the second, by its line
+    skeletons.mvu('TinyZaxxon.ml', view='line:466') + { name: 'Model-View-Update, and its heart: project', bones+: [{ at: 'TinyZaxxon.ml:def:project', role: 'the projection: two lines, the trick of this game' }], joints+: [{ from: 'TinyZaxxon.ml:line:466', to: 'TinyZaxxon.ml:def:project', say: 'drawn in 2.5D' }] },
   ],
   tours: [
     {

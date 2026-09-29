@@ -1,0 +1,129 @@
+// playground/ways/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Borrowed ways of programming, each building the app for you: Logo's turtle, HtDP's worlds, Karel, PuzzleScript, POV-Ray, the terminal.",
+  // claude: a program written on a way has no update and no view of its
+  // own: it gives commands, a world and handlers, rules, a scene, a Talk
+  // or Tui program, and the way makes the Playground app
+  files: {
+    'Povray.mli': {
+      summary: "POV-Ray's way: a scene of solids, surfaces, lights and a camera, ray traced pixel after pixel.",
+      digest: 'c8433889663b',
+      capitals: [
+        { at: 'def:scene', say: 'solids, lights, a camera: the whole picture as data' },
+        { at: 'def:still', say: 'the app: the scene ray traced progressively' },
+      ],
+      important: [
+        { at: 'def:sphere', say: 'exact solids, no triangles', weight: 2 },
+        { at: 'def:glassy', say: 'surfaces: mirrors and glass', weight: 2 },
+        { at: 'def:lamp', say: 'the lights', weight: 1 },
+        { at: 'def:orbit', say: 'the camera turning round the scene', weight: 1 },
+        { at: 'def:raytrace_scene', say: "the ray tracer's own scene, beneath", weight: 2 },
+      ],
+    },
+    'Povray.ml': {
+      summary: "The scene turned into graphics/3d/raytrace's solids and lights, and an app that traces a few rows a frame.",
+      digest: 'a14918b162f4',
+      capitals: [{ at: 'def:scene', say: 'the scene gathered, for the tracer' }],
+    },
+    'Teletype.mli': {
+      summary: "The teletype's programs (Talk) on the Playground: the keyboard as bytes, a Vt screen drawn, the app.",
+      digest: '95634f17586d',
+      capitals: [
+        { at: 'def:teletype', say: 'a Talk program as an app: print, read a line, carry on' },
+        { at: 'def:draw_screen', say: 'a grid of characters drawn: phosphor or paper' },
+      ],
+      important: [{ at: 'def:keyboard_bytes', say: 'keys held and pressed to the bytes a tty reads', weight: 2 }],
+    },
+    'Teletype.ml': { summary: "The keys as a terminal's bytes, the VT100's screen drawn in its colours, the machine run a frame at a time.", digest: 'a8100e9db0b3' },
+    'Textmode.mli': {
+      summary: "A Tui program (Model-View-Update in characters) run as a terminal would: curses' bytes fed to a VT100.",
+      digest: 'adee45bbf2be',
+      capitals: [{ at: 'def:textmode', say: "a Tui program as an app: TinyVi's and TinyEmacs's" }],
+    },
+    'Textmode.ml': { summary: "Each frame, the program's screen turned into bytes by Curses and fed to a Vt, which is drawn.", digest: '69052a2c6342' },
+    'Bigbang.mli': {
+      summary: "How to Design Programs' world programs: images that compose, and big-bang with its handlers.",
+      digest: 'a4e4fffe7339',
+      capitals: [
+        { at: 'def:big_bang', say: 'a world and its handlers: on-tick, on-key, to-draw' },
+        { at: 'type:image', say: '2htdp/image: a circle beside a square, above a text' },
+      ],
+      important: [
+        { at: 'def:place_image', weight: 2 },
+        { at: 'def:empty_scene', weight: 1 },
+        { at: 'def:key_events', say: "the Playground's keyboard as HtDP's key events", weight: 2 },
+      ],
+    },
+    'Bigbang.ml': { summary: "HtDP's images as a tree turned into shapes, and big-bang's handlers as a Playground game.", digest: '9496cdc525b9' },
+    'Universe.mli': {
+      summary: "HtDP's worlds with a mailbox: a handler returns a package, a world and messages for the universe.",
+      digest: '14ca80487f47',
+      capitals: [{ at: 'def:big_bang', say: 'a world that talks to a Universe_server' }],
+    },
+    'Universe.ml': { summary: "Big-bang again, its packages' messages sent over a Transport and the replies received.", digest: 'b2f623ac78a9' },
+    'Karel.mli': {
+      summary: "Pattis's Karel the Robot (1981): walls and beepers, five commands, a program stepped a primitive at a time.",
+      digest: '50aa5b28a968',
+      capitals: [
+        { at: 'def:animation', say: 'a program run, one primitive a step, watched' },
+        { at: 'type:command', say: 'move, turn_left, pick, put, and the control' },
+      ],
+      important: [
+        { at: 'type:world', say: 'the city as strings: walls, beepers, the robot', weight: 2 },
+        { at: 'def:step', say: 'one primitive: the program as a paused run', weight: 2 },
+        { at: 'def:execute', weight: 1 },
+      ],
+    },
+    'Karel.ml': { summary: "Karel's world, a program run as a stack of what is left to do, and the city drawn.", digest: '4c3845682f16' },
+    'Puzzlescript.mli': {
+      summary: 'PuzzleScript: a game as a map and rewrite rules; no update, no view, the module plays it.',
+      digest: '7b5aaf3930cb',
+      capitals: [
+        { at: 'def:rule', say: 'a rewrite rule: the whole of Sokoban is one' },
+        { at: 'def:play', say: 'the game as an app' },
+      ],
+      important: [
+        { at: 'def:turn', say: 'a move: the rules applied till none matches', weight: 2 },
+        { at: 'def:all_on', say: 'what winning means', weight: 1 },
+      ],
+    },
+    'Puzzlescript.ml': { summary: 'Rules matched on the board and applied, the movements resolved, a turn, winning, the drawing.', digest: '86176f2f0883' },
+    'Logo.mli': {
+      summary: "Papert's turtle (1967): commands from its own point of view, forward and right, a program drawn.",
+      digest: '199e86b816c3',
+      capitals: [{ at: 'def:animation', say: 'a program drawn as the turtle walks it' }],
+      important: [
+        { at: 'type:command', say: 'a program is a list of commands', weight: 2 },
+        { at: 'def:forward', weight: 1 },
+        { at: 'def:repeat', weight: 1 },
+      ],
+    },
+    'Logo.ml': { summary: 'The turtle running a program: its place, heading and pen, and the lines it leaves.', digest: '8495ffc149f4' },
+    'Logo3d.mli': { summary: "The turtle flying in 3D: heading, left and up, turned by yaw, pitch and roll (L-systems' turtle).", digest: 'ff3110762cb8' },
+    'Logo3d.ml': { summary: "The 3D turtle's frame turned, its trail as tubes in space, a camera round it.", digest: 'eac6dd506da1' },
+  },
+  // claude: a way is a function from what its programs give to an app of
+  // the Playground's
+  skeletons: [
+    {
+      name: 'A way builds the app',
+      bones: [
+        { at: 'Bigbang.mli:def:big_bang', role: "HtDP's world and handlers" },
+        { at: 'Puzzlescript.mli:def:play', role: 'a map and its rules' },
+        { at: 'Karel.mli:def:animation', role: 'a robot and its program' },
+        { at: 'Teletype.mli:def:teletype', role: 'a program that asks and waits' },
+        { at: 'Povray.mli:def:still', role: 'a scene, ray traced' },
+        { at: '../Playground.mli:def:game', role: 'the app they all make' },
+      ],
+      joints: [
+        { from: 'Bigbang.mli:def:big_bang', to: '../Playground.mli:def:game', say: 'an app' },
+        { from: 'Puzzlescript.mli:def:play', to: '../Playground.mli:def:game', say: 'an app' },
+        { from: 'Karel.mli:def:animation', to: '../Playground.mli:def:game', say: 'an app' },
+        { from: 'Teletype.mli:def:teletype', to: '../Playground.mli:def:game', say: 'an app' },
+        { from: 'Povray.mli:def:still', to: '../Playground.mli:def:game', say: 'an app' },
+      ],
+    },
+  ],
+}

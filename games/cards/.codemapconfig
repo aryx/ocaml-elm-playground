@@ -39,6 +39,7 @@ local skeletons = import '../../skeletons.libsonnet';
       bones+: [{ at: '../../gamekits/cards/Cards.ml:def:deal', role: "Microsoft's numbered deal (the kit)" }],
       joints+: [{ from: '../../gamekits/cards/Cards.ml:def:deal', to: 'TinyFreeCell.ml:def:initial_model', say: 'the 52 cards' }],
     },
+    skeletons.game('TinySolitaire.ml', 'def:uncover', 'a face-down card turned when freed', say='a move'),
   ],
   views: [
     { name: 'The patiences and their cards', files: ['TinyFreeCell.ml', 'TinySolitaire.ml', '../../gamekits/cards/'] },

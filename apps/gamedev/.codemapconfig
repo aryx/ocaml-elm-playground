@@ -55,6 +55,7 @@ local skeletons = import '../../skeletons.libsonnet';
     skeletons.game('TinyAseprite.ml', 'def:paint', 'a pixel painted: a character in a row', say='a key or a click') + {
       name: 'Aseprite: Model-View-Update, a pixel painted',
     },
+    skeletons.game('TinyTiled.ml', 'def:paint', 'a cell painted: a character in a row', say='a key or a click'),
   ],
   views: [
     { name: 'The editors and what reads their files', files: ['TinyAseprite.ml', 'TinyTiled.ml', '../../playground/layers/Sprite.ml', '../../playground/layers/Tilemap.ml'] },

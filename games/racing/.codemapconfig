@@ -153,6 +153,25 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyOutRun.ml:def:view_road', to: 'TinyOutRun.ml:def:project', say: 'each point' },
       ],
     },
+    skeletons.game('TinyBigRedRacing.ml', 'def:build', 'a course painted and carved into the ground', say='a new race'),
+    skeletons.game('TinyGranTrak10.ml', 'def:shift', 'a four-speed gearbox, heard in the pitch', say='the gear keys'),
+    skeletons.game('TinyIgnition.ml', 'def:ground', 'the ground: a function made from the road', say='under each car'),
+    skeletons.mvu('TinyMarioKart.ml') + {
+      name: 'Model-View-Update, and its trick: Mode 7',
+      bones+: [{ at: 'TinyMarioKart.ml:def:view_ground', role: 'the trick: the floor drawn row by row' }],
+      joints+: [{ from: 'TinyMarioKart.ml:def:view', to: 'TinyMarioKart.ml:def:view_ground', say: 'each player' }],
+    },
+    skeletons.mvu('TinyMarioKart64.ml') + {
+      name: 'Model-View-Update, and its trick: billboard',
+      bones+: [{ at: 'TinyMarioKart64.ml:def:billboard', role: 'the trick: sprites in a polygon world' }],
+      joints+: [{ from: 'TinyMarioKart64.ml:def:view', to: 'TinyMarioKart64.ml:def:billboard', say: 'each kart' }],
+    },
+    skeletons.game('TinyMicroMachines.ml', 'def:drive', 'drift: the velocity turning to the heading', say='the keys'),
+    skeletons.game('TinySSX.ml', 'def:touch_down', 'the landing: angles checked, scored', say='back on the snow'),
+    skeletons.game('TinySupercars.ml', 'def:shop', 'prize money into repairs and upgrades', say='between races'),
+    skeletons.game('TinySuperOffRoad.ml', 'def:move_truck', 'slower up, faster down, off a crest', say='each truck'),
+    skeletons.game('TinySuperSprint.ml', 'def:on_bridge', 'a track crossing itself: which level', say='each car'),
+    skeletons.game('TinyVirtuaRacing.ml', 'def:drive', "the road's rules: wheel, grass, rail, spins", say='the keys'),
   ],
   tours: [
     {

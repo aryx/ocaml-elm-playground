@@ -109,6 +109,17 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyKickOff2.ml:def:update', to: '../../gamekits/sports/Formation.ml', say: 'where to stand' },
       ],
     },
+    skeletons.game('TinyPinball.ml', 'def:surface_velocity', 'the flipper carries the ball: w r', say='a flipper hit'),
+    skeletons.game('TinyPinball3d.ml', 'def:build', 'the table as bodies, rebuilt round the ball', say='each frame'),
+    skeletons.game('TinySensibleSoccer.ml', 'def:fly', 'the ball on the grass, and its height', say='the ball'),
+    skeletons.mvu('TinyShufflePuck.ml') + {
+      name: 'Model-View-Update, and its trick: project',
+      bones+: [{ at: 'TinyShufflePuck.ml:def:project', role: 'the trick: one division of perspective' }],
+      joints+: [{ from: 'TinyShufflePuck.ml:def:view', to: 'TinyShufflePuck.ml:def:project', say: 'each point' }],
+    },
+    skeletons.game('TinySpeedball2.ml', 'def:hit_fixtures', 'the arena pays, like a pinball table', say='each player'),
+    skeletons.game('TinyTennisForTwo.ml', 'def:fly', 'a ballistic flight, the net, the bounces', say='the ball'),
+    skeletons.game('TinyTonyHawk.ml', 'def:combo_score', 'the sum times the length, a repeat half', say='a combo landed'),
   ],
   tours: [
     {

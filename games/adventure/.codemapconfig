@@ -166,6 +166,38 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'TinyZork.ml:def:rules', to: '../../gamekits/adventure/Adventure.ml:def:run', say: 'tried in order' },
       ],
     },
+    skeletons.game('TinyAdventure.ml', 'def:cross', 'an edge crossed: another room', say='you walk'),
+    skeletons.game('TinyAloneInTheDark.ml', 'def:zone_of', 'which camera: the zone you stand in', say='where you stand'),
+    skeletons.mvu('TinyGTA.ml') + {
+      name: 'Model-View-Update, and its trick: building',
+      bones+: [{ at: 'TinyGTA.ml:def:building', role: 'the trick: roofs leaning out of the screen' }],
+      joints+: [{ from: 'TinyGTA.ml:def:view', to: 'TinyGTA.ml:def:building', say: 'each block' }],
+    },
+    skeletons.game('TinyIco.ml', 'def:step_yorda', 'Yorda: a companion with limits', say='her hand held'),
+    skeletons.game('TinyJourney.ml', 'def:chirp', 'a chirp: cooperation without words', say='a call'),
+    skeletons.game('TinyManiacMansion.ml', 'def:route', 'a path through the walkboxes', say='a click'),
+    skeletons.game('TinyMetalGearSolid.ml', 'def:machine', 'the guards: a state machine as data', say='the guards think'),
+    skeletons.game('TinyMyst.ml', 'def:target', 'a click: a ray through the pixel', say='a click', init='def:initial'),
+    skeletons.game('TinyTombRaider.ml', 'def:edge_ahead', "her hands: the grid's edges", say='a grab', init='def:app'),
+    skeletons.game('TinyZelda.ml', 'def:slide', 'the next screen slides in', say='an edge reached'),
+    skeletons.game('TinyZeldaLinkPast.ml', 'type:standing', 'the three-quarter view: a base line', say='where each stands'),
+    skeletons.game('TinyZeldaOcarina.ml', 'def:lock_on', 'Z-targeting: an enemy held', say='Z held'),
+    // the Teletype way: no update or view of its own, a program that asks
+    // and waits, made an app by the way
+    {
+      name: 'The Teletype way: a program that asks and waits',
+      bones: [
+        { at: '../../appkits/teletype/Tty_wumpus.ml:def:program', role: 'the game: a Talk value' },
+        { at: '../../appkits/teletype/Tty_wumpus.ml:def:play', role: 'a turn: warnings, move or shoot' },
+        { at: 'TinyWumpus.ml:def:app', role: 'the program given a screen' },
+        { at: '../../playground/ways/Teletype.ml:def:teletype', role: 'the way: its Model-View-Update' },
+      ],
+      joints: [
+        { from: '../../appkits/teletype/Tty_wumpus.ml:def:program', to: '../../appkits/teletype/Tty_wumpus.ml:def:play', say: 'each game' },
+        { from: '../../appkits/teletype/Tty_wumpus.ml:def:program', to: 'TinyWumpus.ml:def:app', say: 'the program' },
+        { from: 'TinyWumpus.ml:def:app', to: '../../playground/ways/Teletype.ml:def:teletype', say: 'run by the way' },
+      ],
+    },
   ],
   tours: [
     {

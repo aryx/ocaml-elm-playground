@@ -1,5 +1,6 @@
 // apps/cad/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'Drawings that are models: Sketchpad (1963), AutoCAD (1982), SketchUp (2000), a lineage of ideas.',
@@ -100,6 +101,9 @@
         { from: 'TinySketchup.ml', to: '../../appkits/pushpull/', say: 'stands on' },
       ],
     },
+    skeletons.game('TinySketchpad.ml', 'def:point_at', 'the pen aims: a point on what it touches', say='the pen', init='def:initial'),
+    skeletons.game('TinyAutoCAD.ml', 'def:submit', 'a click or a line: an answer to the session', say='a click, a line typed', init='def:initial'),
+    skeletons.game('TinySketchup.ml', 'def:preview', 'the model as the click would make it', say='the mouse', init='def:initial'),
   ],
   dirs: {
     software: { summary: 'The same programs on the software rasterizer, for the golden frames.' },

@@ -1,5 +1,6 @@
 // apps/education/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'Programs made for a learner of a subject: the sky of a place and time, a physics lab that measures.',
@@ -53,6 +54,14 @@
       related: ['web/TinyInteractivePhysics.html', '../../tests/2d/golden/TinyInteractivePhysics.png', '../../playground/apis/Physics.mli'],
     },
   },
+  skeletons: [
+    skeletons.game('TinyInteractivePhysics.ml', 'def:measure', 'the meters: energies and momentum', say='each frame'),
+    skeletons.mvu('TinyStellarium.ml') + {
+      name: 'Model-View-Update, and the sky at an instant',
+      bones+: [{ at: 'TinyStellarium.ml:def:bodies', role: 'the sky: catalogued, precessed, turned, tilted' }],
+      joints+: [{ from: 'TinyStellarium.ml:def:bodies', to: 'TinyStellarium.ml:def:view', say: 'where each body is' }],
+    },
+  ],
   dirs: {
     software: { summary: 'The same programs on the software rasterizer, for the golden frames.' },
     web: { summary: 'The programs compiled to JavaScript, and their pages.' },

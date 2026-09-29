@@ -242,6 +242,58 @@ local skeletons = import '../../skeletons.libsonnet';
       bones+: [{ at: 'TinyBabaIsYou.ml:def:turn', role: 'a move: pushing words rewrites the rules' }],
       joints+: [{ from: 'TinyBabaIsYou.ml:def:update', to: 'TinyBabaIsYou.ml:def:turn', say: 'an arrow' }],
     },
+    skeletons.game('AiChess.ml', 'def:search', 'alpha-beta, with quiescence', say='its turn'),
+    skeletons.game('AiConnect4.ml', 'def:think', 'the search, deepening', say='its turn'),
+    skeletons.game('AiGo.ml', 'def:playout', 'a position judged by playing it out', say='its turn'),
+    skeletons.game('AiOthello.ml', 'def:othello', 'the rules as the search wants them', say='its turn'),
+    skeletons.game('Tetris.ml', 'def:clear_lines', 'full lines removed', say='a piece landed'),
+    skeletons.game('TinyBlockout.ml', 'def:turn_y', 'a quarter turn of a polycube', say='a key', init='def:app'),
+    skeletons.mvu('TinyCrush.ml') + {
+      name: 'Model-View-Update, its kit, and its trick: lean',
+      bones+: [
+        { at: '../../gamekits/crush/Crush.ml:def:frame', role: 'the rules of a frame (the kit)' },
+        { at: 'TinyCrush.ml:def:lean', role: 'the trick: depth drawn up and to the right' },
+      ],
+      joints+: [
+        { from: 'TinyCrush.ml:def:update', to: '../../gamekits/crush/Crush.ml:def:frame', say: 'the keys' },
+        { from: 'TinyCrush.ml:def:view', to: 'TinyCrush.ml:def:lean', say: 'each cube' },
+      ],
+    },
+    skeletons.mvu('TinyCrush3d.ml') + {
+      name: 'Model-View-Update, and its kit: Crush',
+      bones+: [
+        { at: '../../gamekits/crush/Crush.ml:def:frame', role: 'the rules of a frame (the kit)' },
+        { at: '../../gamekits/crush/Crush.ml:def:crush', role: 'the slices crushed into their union' },
+        { at: 'TinyCrush3d.ml:def:depth_z', role: 'a slice at its depth, squashed' },
+      ],
+      joints+: [
+        { from: 'TinyCrush3d.ml:def:update', to: '../../gamekits/crush/Crush.ml:def:frame', say: 'the keys' },
+        { from: '../../gamekits/crush/Crush.ml:def:frame', to: '../../gamekits/crush/Crush.ml:def:crush', say: 'the crush key' },
+        { from: 'TinyCrush3d.ml:def:view', to: 'TinyCrush3d.ml:def:depth_z', say: 'each cube' },
+      ],
+    },
+    skeletons.mvu('TinyFez.ml') + {
+      name: 'Model-View-Update, and its trick: faces',
+      bones+: [{ at: 'TinyFez.ml:def:faces', role: "the trick: each cube's faces squashed in the turn" }],
+      joints+: [{ from: 'TinyFez.ml:def:view', to: 'TinyFez.ml:def:faces', say: 'each cube' }],
+    },
+    skeletons.game('TinyIncredibleMachine.ml', 'def:build', 'the parts made a world of bodies', say='Start pressed'),
+    skeletons.game('TinyLemmings.ml', 'def:step', 'a lemming: a state machine reading pixels', say='each lemming'),
+    skeletons.game('TinyMonumentValley.ml', 'def:connected', 'the picture says they touch, so they do', say='a path sought'),
+    skeletons.game('TinyPerspective.ml', 'def:picture_map', 'the picture as a world of silhouettes', say='stepping in'),
+    skeletons.game('TinyPortal.ml', 'def:through_me', 'you through a portal: moved and turned', say='each step'),
+    skeletons.game('TinyPortal2D.ml', 'def:go_through', 'a rigid transform: rotated, never scaled', say='a body crossing'),
+    skeletons.game('TinyPuzzleBobble.ml', 'def:flood', 'flood fills: the pop, then the fall', say='a bubble stuck'),
+    skeletons.game('TinySlingshot.ml', 'def:simulate', "the 2D engine's solver", say='each frame'),
+    skeletons.mvu('TinySokoban.ml') + {
+      name: 'Model-View-Update, and its kit: Sokoban',
+      bones+: [{ at: '../../gamekits/puzzle/Sokoban.ml:def:step', role: 'a step, pushing a box (the kit)' }],
+      joints+: [{ from: 'TinySokoban.ml:def:update', to: '../../gamekits/puzzle/Sokoban.ml:def:step', say: 'an arrow' }],
+    },
+    skeletons.game('TinySokobanEd.ml', 'def:solve', "a level proved by the kit's solver", say='each edit'),
+    skeletons.game('TinyStoneAge.ml', 'def:step', 'a step, or a ride on a stone begun', say='an arrow'),
+    skeletons.game('TinyTetris.ml', 'def:juiced', 'the juice, watching the rules from outside', say='the rules done'),
+    skeletons.game('TinyWitness.ml', 'def:check', 'a rule: a check on each region', say='the line ended'),
   ],
   tours: [
     {

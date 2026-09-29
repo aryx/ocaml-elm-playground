@@ -78,6 +78,14 @@ local skeletons = import '../../skeletons.libsonnet';
       bones+: [{ at: 'TinyRogue.ml:def:generate', role: 'a level from a seed' }],
       joints+: [{ from: 'TinyRogue.ml:def:generate', to: 'TinyRogue.ml:def:initial_model', say: 'the dungeon' }],
     },
+    skeletons.game('TinyDiablo.ml', 'def:path_to', 'a click: the projection inverted, then A*', say='a click'),
+    skeletons.mvu('TinyDungeonMaster.ml') + {
+      name: 'Model-View-Update, and its trick: the slots',
+      bones+: [{ at: 'TinyDungeonMaster.ml:def:at', role: 'the trick: where a cell goes on the screen' }],
+      joints+: [{ from: 'TinyDungeonMaster.ml:def:view', to: 'TinyDungeonMaster.ml:def:at', say: 'each cell' }],
+    },
+    skeletons.game('TinyGauntlet2.ml', 'def:step_generators', 'monsters as a flow, not a set', say='the generators'),
+    skeletons.game('TinyHades.ml', 'def:take_boon', 'a boon: numbers changed for a run', say='a boon chosen'),
   ],
   tours: [
     {

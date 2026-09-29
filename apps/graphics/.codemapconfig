@@ -1,5 +1,6 @@
 // apps/graphics/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'The picture programs: paint against draw, dots to layers, a page as a program, a 3D scene ray traced.',
@@ -121,6 +122,19 @@
       related: ['web/TinyBlender.html'],
     },
   },
+  skeletons: [
+    skeletons.game('TinyMacPaint.ml', 'def:lift', 'a selection picked up: only dots', say='a press', init='def:initial'),
+    skeletons.game('TinyMacDraw.ml', 'def:press', 'a handle grabbed, or the front object hit', say='a click', init='def:initial'),
+    skeletons.game('TinyPhotoshop.ml', 'def:through', 'an operation kept where the selection says', say='an operation', init='def:initial'),
+    skeletons.game('TinyPostScript.ml', 'def:per_frame', "objects a frame: a LaserWriter's minute", say='each frame', init='def:initial'),
+    skeletons.game('TinyVisio.ml', 'def:release', "a connector's end glued to another shape", say='a drop', init='def:initial'),
+    skeletons.game('TinyBlender.ml', 'def:start_modal', "G, R, S: Blender's modal transforms", say='a key', init='def:initial'),
+    skeletons.mvu('TinyDeluxePaint.ml', init='def:initial') + {
+      name: 'Model-View-Update, and the palette turned',
+      bones+: [{ at: 'TinyDeluxePaint.ml:def:shown_palette', role: 'colour cycling: the palette turned by the clock' }],
+      joints+: [{ from: 'TinyDeluxePaint.ml:def:shown_palette', to: 'TinyDeluxePaint.ml:def:view', say: 'the colours of this instant' }],
+    },
+  ],
   dirs: {
     software: { summary: 'The same apps on the software rasterizer, for the golden frames.' },
     web: { summary: 'The same apps in the browser, and their pages.' },

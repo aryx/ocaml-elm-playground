@@ -1,5 +1,6 @@
 // apps/media/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'The media players: every format the repository reads, recognized by its bytes, and played.',
@@ -105,6 +106,10 @@
       ],
     },
   },
+  skeletons: [
+    skeletons.game('TinyMediaPlayer.ml', 'def:deck', 'what plays, on the sound side: the mixer pulls it', say='play, pause, seek'),
+    skeletons.game('TinyWinamp.ml', 'def:analyze', 'the spectrum as 19 bars, falling slower than they rise', say='each frame'),
+  ],
   dirs: {
     tests: { summary: 'Media and Our_media, Id3 and the equalizer tested; our media dumped as files, the clip as Y4M.' },
     software: { summary: 'The players built on the software rasterizer, for the golden frames.' },

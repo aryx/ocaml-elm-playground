@@ -1,0 +1,92 @@
+// playground/platforms/software/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Where an app runs on our own rasterizers: every pixel computed by graphics/, SDL only showing them; the golden frames.',
+  // claude: thin adapters: shapes to graphics/2d's fills, shape3d scenes
+  // to graphics/3d's triangles and z-buffer (or the ray tracer), with
+  // debug keys to switch each algorithm on and off
+  files: {
+    'Playground_platform.ml': {
+      summary: "The software run_app: the window's pixels are a framebuffer, the shapes rasterized into it by our code.",
+      digest: '0ba5988f4348',
+      capitals: [{ at: 'def:run_app', say: 'a 2D program on our rasterizer: the golden frames' }],
+      important: [
+        { at: 'comment:The trick that makes this simple', say: "SDL's pixels are the framebuffer", weight: 3 },
+        { at: 'section:Debug keys', say: 'each algorithm switched while it runs', weight: 2 },
+        { at: 'def:magnifier', say: 'the pixels looked at closely', weight: 1 },
+        { at: 'def:audio_view', say: 'oscilloscope and spectrum, "v"', weight: 1 },
+      ],
+    },
+    'Playground3d_platform.ml': {
+      summary: 'The software run_app3d: triangles, z-buffer and perspective by hand (graphics/3d), or ray traced with "y".',
+      digest: 'ff79d7ceb757',
+      capitals: [{ at: 'def:run_app3d', say: 'a 3D program on our own rasterizer' }],
+      important: [
+        { at: 'section:Debug keys', say: 'shading, culling, wireframe, clipping, side by side', weight: 2 },
+        { at: 'def:renderers', say: 'rasterizer or ray tracer', weight: 2 },
+        { at: 'def:split', say: 'two renderers side by side', weight: 1 },
+      ],
+    },
+    'Shape_render_software.mli': {
+      summary: "Playground shapes drawn into a framebuffer with graphics/'s algorithms only: Cairo's job done by hand.",
+      digest: '38584709af65',
+      capitals: [{ at: 'def:render', say: 'shapes to pixels, our code only' }],
+      important: [{ at: 'type:options', say: 'the algorithms chosen: antialiasing, fills...', weight: 2 }],
+    },
+    'Shape_render_software.ml': {
+      summary: 'From shapes to pixels: local coordinates, the shape transform, the screen transform, then fill or line.',
+      digest: 'cf03b88144e3',
+      capitals: [{ at: 'def:render', say: 'the pipeline, drawn in the header' }],
+      important: [
+        { at: 'comment:From Playground shapes to pixels', say: 'the pipeline, step by step', weight: 3 },
+        { at: 'def:render_shape', weight: 2 },
+        { at: 'def:render_form', say: 'a form as polygons, circles, boxes', weight: 2 },
+        { at: 'def:shape_transform', weight: 1 },
+        { at: 'def:screen_transform', say: 'Elm y up to pixel rows down', weight: 1 },
+      ],
+      links: [
+        { from: 'def:render', to: 'def:render_shape' },
+        { from: 'def:render_shape', to: 'def:render_form' },
+      ],
+    },
+    'Shape3d_render_software.mli': {
+      summary: "A 3D scene drawn with graphics/3d's rasterizer: shape3d tree and camera to faces and Camera.t.",
+      digest: '8f09e0d797cc',
+    },
+    'Shape3d_render_software.ml': {
+      summary: "A shape3d tree turned into Render's faces with textures, or into the ray tracer's solids.",
+      digest: '0aa583abccd0',
+      capitals: [{ at: 'def:render', say: "the scene into graphics/3d's Render" }],
+      important: [
+        { at: 'def:faces', weight: 2 },
+        { at: 'def:raytrace', say: 'the same scene, ray traced', weight: 2 },
+      ],
+    },
+    'Help_overlay.mli': { summary: 'The debug keys\' help ("h"): a translucent panel, a line per key and its state.', digest: '31de3ec8d610' },
+    'Help_overlay.ml': { summary: "The help's lines drawn in Hershey's strokes over a dark panel.", digest: '7920e052601c' },
+  },
+  skeletons: [
+    {
+      name: 'A software frame, 2D and 3D',
+      bones: [
+        { at: 'Playground_platform.ml:def:run_app', role: '2D: a framebuffer in the window' },
+        { at: '../native_common/Native_loop_2d.ml:def:run', role: 'the shared 2D loop' },
+        { at: 'Shape_render_software.ml:def:render', role: 'shapes rasterized' },
+        { at: 'Playground3d_platform.ml:def:run_app3d', role: '3D: a framebuffer and a z-buffer' },
+        { at: '../native_common/Native_loop_3d.ml:def:run', role: 'the shared 3D loop' },
+        { at: 'Shape3d_render_software.ml:def:render', role: 'triangles rasterized' },
+        { at: '../../../libs/graphics/2d/', role: 'the 2D algorithms' },
+        { at: '../../../libs/graphics/3d/', role: 'the 3D algorithms' },
+      ],
+      joints: [
+        { from: 'Playground_platform.ml:def:run_app', to: '../native_common/Native_loop_2d.ml:def:run', say: 'the app' },
+        { from: '../native_common/Native_loop_2d.ml:def:run', to: 'Shape_render_software.ml:def:render', say: 'shapes' },
+        { from: 'Shape_render_software.ml:def:render', to: '../../../libs/graphics/2d/', say: 'fills, lines' },
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: '../native_common/Native_loop_3d.ml:def:run', say: 'the app' },
+        { from: '../native_common/Native_loop_3d.ml:def:run', to: 'Shape3d_render_software.ml:def:render', say: 'a scene' },
+        { from: 'Shape3d_render_software.ml:def:render', to: '../../../libs/graphics/3d/', say: 'faces, camera' },
+      ],
+    },
+  ],
+}

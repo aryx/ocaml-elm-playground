@@ -31,6 +31,26 @@
     'make_stills_ml.ml': { digest: '53546b63ad32',
       summary: 'A build-time script: the JPEGs made into one OCaml list, Myst_stills.' },
   },
+  // the two programs here are build tools, not games: no Model-View-Update,
+  // a pipeline, the island's cards to the game's stills
+  skeletons: [
+    {
+      name: 'How the stills are made: once, then embedded',
+      bones: [
+        { at: 'Myst_island.ml:def:stills', role: 'every card in every state it can show' },
+        { at: 'Myst_island.ml:def:scene', role: 'what the ray tracer draws for a card' },
+        { at: 'make_stills.ml', role: 'each ray traced once, a JPEG in stills/' },
+        { at: 'make_stills_ml.ml', role: 'the JPEGs as one OCaml list, at build time' },
+        { at: '../TinyMyst.ml', role: 'the game: a still shown per card' },
+      ],
+      joints: [
+        { from: 'Myst_island.ml:def:stills', to: 'make_stills.ml', say: 'each card and state' },
+        { from: 'Myst_island.ml:def:scene', to: 'make_stills.ml', say: 'its scene' },
+        { from: 'make_stills.ml', to: 'make_stills_ml.ml', say: 'the JPEGs' },
+        { from: 'make_stills_ml.ml', to: '../TinyMyst.ml', say: 'Myst_stills' },
+      ],
+    },
+  ],
   dirs: {
     tests: { summary: 'The stills checked against the scene they were rendered from.' },
     stills: { summary: 'The JPEGs, one per card and state.' },

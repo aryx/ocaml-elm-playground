@@ -58,6 +58,8 @@ local skeletons = import '../../skeletons.libsonnet';
       bones+: [{ at: '../../gamekits/brawler/Frame_data.ml', role: "the moves' frames (the kit)" }],
       joints+: [{ from: 'TinyStreetFighter.ml:def:update', to: '../../gamekits/brawler/Frame_data.ml', say: 'the move now' }],
     },
+    skeletons.game('TinyFinalFight.ml', 'def:same_line', 'the belt: blows land only near the same depth', say='who can be hit'),
+    skeletons.game('TinyVirtuaFighter.ml', 'def:poses_of', 'a move as keyframed poses of a skeleton', say='the pose now'),
   ],
   tours: [
     {

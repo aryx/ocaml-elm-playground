@@ -1,0 +1,28 @@
+// playground/platforms/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Where an app runs: each directory implements run_app (and run_app3d) for one platform, the programs unchanged.',
+  // claude: dune's virtual modules: a program names Playground_platform,
+  // and the library it is linked with decides which of these it gets
+  skeletons: [
+    {
+      name: 'One run_app per platform',
+      bones: [
+        { at: '../Playground_platform.mli:def:run_app', role: 'the virtual module: one function' },
+        { at: 'native/Playground_platform.ml:def:run_app', role: 'SDL and Cairo' },
+        { at: 'software/Playground_platform.ml:def:run_app', role: 'SDL and our rasterizer' },
+        { at: 'web/Playground_platform.ml:def:run_app', role: 'the browser, SVG' },
+        { at: 'native_common/', role: 'the SDL loops both natives share' },
+        { at: '../Playground3d_platform.mli:def:run_app3d', role: 'the 3D one: OpenGL, software, WebGL, SVG' },
+      ],
+      joints: [
+        { from: 'native/Playground_platform.ml:def:run_app', to: '../Playground_platform.mli:def:run_app', say: 'implements' },
+        { from: 'software/Playground_platform.ml:def:run_app', to: '../Playground_platform.mli:def:run_app', say: 'implements' },
+        { from: 'web/Playground_platform.ml:def:run_app', to: '../Playground_platform.mli:def:run_app', say: 'implements' },
+        { from: 'native/Playground_platform.ml:def:run_app', to: 'native_common/', say: 'runs in' },
+        { from: 'software/Playground_platform.ml:def:run_app', to: 'native_common/', say: 'runs in' },
+      ],
+    },
+  ],
+}

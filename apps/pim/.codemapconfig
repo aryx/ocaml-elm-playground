@@ -1,5 +1,6 @@
 // apps/pim/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'Personal information managers: the clock, the calendar, the checkbook, the Palm Pilot.',
@@ -154,5 +155,9 @@
         { from: 'Palm.mli', to: '../../appkits/pim/', say: 'its data' },
       ],
     },
+    skeletons.game('TinyClock.ml', 'def:ringing', 'the alarm: local minutes compared', say='each frame'),
+    skeletons.game('TinyCalendar.ml', 'def:move_event', 'an event dragged: its end and rule turn with it', say='a drag', init='def:initial'),
+    skeletons.game('TinyQuicken.ml', 'def:quickfill', 'a payee completed, the line filled from last time', say='a payee typed', init='def:initial'),
+    skeletons.game('TinyPalmPilot.ml', 'def:hard_buttons', 'the four buttons: an application each', say='a button pressed', init='def:initial'),
   ],
 }

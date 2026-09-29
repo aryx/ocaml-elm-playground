@@ -46,6 +46,12 @@ local skeletons = import '../../skeletons.libsonnet';
       bones+: [{ at: '../../gamekits/rhythm/Rhythm.ml:def:play', role: "the kit: a chart played through" }],
       joints+: [{ from: 'TinyDDR.ml:def:dance_step', to: '../../gamekits/rhythm/Rhythm.ml:def:play', say: 'is the kit' }],
     },
+    skeletons.mvu('TinyGuitarHero.ml') + {
+      name: 'Model-View-Update, and its trick: the highway',
+      bones+: [{ at: 'TinyGuitarHero.ml:def:project', role: "the trick: Out Run's road, straightened" }],
+      joints+: [{ from: 'TinyGuitarHero.ml:def:view', to: 'TinyGuitarHero.ml:def:project', say: 'each note' }],
+    },
+    skeletons.game('TinyRockBand.ml', 'def:band', 'four parts from four voices', say='the song chosen'),
   ],
   views: [
     { name: 'The rhythm games and their kit', files: ['TinyDDR.ml', 'TinyGuitarHero.ml', 'TinyRockBand.ml', '../../gamekits/rhythm/'] },

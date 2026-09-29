@@ -79,6 +79,13 @@ local skeletons = import '../../skeletons.libsonnet';
   },
   skeletons: [
     skeletons.game('TinyElite.ml', 'def:turn_world', 'the universe turned round the ship', say='each frame'),
+    // the 2.5D games' hearts, and their 3D namesakes', are in the picture: reached from view
+    skeletons.mvu('TinyComanche.ml') + { name: 'Model-View-Update, and its heart: view_terrain', bones+: [{ at: 'TinyComanche.ml:def:view_terrain', role: "Voxel Space: Macke's loop, nearest first" }], joints+: [{ from: 'TinyComanche.ml:def:view', to: 'TinyComanche.ml:def:view_terrain', say: 'each column' }] },
+    skeletons.mvu('TinyComanche3d.ml') + { name: 'Model-View-Update, and its heart: mesh', bones+: [{ at: 'TinyComanche3d.ml:def:mesh', role: 'the height map made into triangles, once' }], joints+: [{ from: 'TinyComanche3d.ml:def:view', to: 'TinyComanche3d.ml:def:mesh', say: 'the island' }] },
+    skeletons.mvu('TinyDescent.ml') + { name: 'Model-View-Update, and its heart: render', bones+: [{ at: 'TinyDescent.ml:def:render', role: 'through the portals, farthest first' }], joints+: [{ from: 'TinyDescent.ml:def:view', to: 'TinyDescent.ml:def:render', say: 'the cells seen' }] },
+    skeletons.mvu('TinyDescent3d.ml') + { name: 'Model-View-Update, and its heart: mine', bones+: [{ at: 'TinyDescent3d.ml:def:mine', role: 'every wall of the mine, to a z-buffer' }], joints+: [{ from: 'TinyDescent3d.ml:def:view', to: 'TinyDescent3d.ml:def:mine', say: 'the whole mine' }] },
+    skeletons.mvu('TinyElite3d.ml') + { name: 'Model-View-Update, and its heart: solid', bones+: [{ at: 'TinyElite3d.ml:def:solid', role: 'a hull as faces wound for culling' }], joints+: [{ from: 'TinyElite3d.ml:def:view', to: 'TinyElite3d.ml:def:solid', say: 'the ships' }] },
+    skeletons.game('TinyXpilot.ml', 'def:rope_pull', "Newton's third law by hand: a rope", say='the rope'),
   ],
   tours: [
     {

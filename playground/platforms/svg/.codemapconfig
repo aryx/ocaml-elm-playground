@@ -1,0 +1,14 @@
+// playground/platforms/svg/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: '3D in the browser without a GPU: the scene compiled to 2D shapes each frame, drawn as SVG by the web run_app.',
+  files: {
+    'Playground3d_platform.ml': {
+      summary: "The SVG run_app3d: backface culling and a painter's sort to 2D shapes, a game handed to the web run_app.",
+      digest: '54699233ed34',
+      capitals: [{ at: 'def:run_app3d', say: '3D as 2D shapes: no rendering of its own' }],
+      important: [{ at: 'def:clip', say: 'triangles behind the eye cut off', weight: 2 }],
+    },
+  },
+}

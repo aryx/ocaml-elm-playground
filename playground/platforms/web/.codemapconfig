@@ -1,0 +1,63 @@
+// playground/platforms/web/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Where an app runs in the browser (js_of_ocaml): shapes as SVG patched each animation frame, 3D by WebGL.",
+  // claude: the same programs' sources, copied and compiled to JavaScript;
+  // these two files are then their run_app and run_app3d
+  files: {
+    'Playground_platform.ml': {
+      summary: 'The web run_app: a requestAnimationFrame loop, shapes rendered to SVG by a mini virtual DOM, Web Audio, phones.',
+      digest: '711365a53ee4',
+      capitals: [{ at: 'def:run_app', say: 'every program in a browser: the frame loop, the SVG, the sound' }],
+      important: [
+        { at: 'comment:ocaml-vdom', say: "why our own mini virtual DOM, not Vdom's", weight: 3 },
+        { at: 'def:render', say: 'shapes to an SVG tree', weight: 2 },
+        { at: 'def:render_shape', weight: 1 },
+        { at: 'def:js_event_to_event', say: "the browser's events as the Playground's", weight: 2 },
+        { at: 'def:play_audio', say: 'the mixer pulled, scheduled ahead in Web Audio', weight: 2 },
+        { at: 'def:fetch_response', say: "Http.get's commands, an XMLHttpRequest", weight: 1 },
+        { at: 'section:Phones', say: 'a touch keyboard, fingers as the mouse', weight: 1 },
+      ],
+      links: [
+        { from: 'def:run_app', to: 'def:render' },
+        { from: 'def:run_app', to: 'def:js_event_to_event' },
+        { from: 'def:run_app', to: 'def:play_audio' },
+      ],
+    },
+    'Playground3d_platform.ml': {
+      summary: 'The WebGL run_app3d: the scene batched for the GPU in a canvas under the SVG, over the 2D run_app.',
+      digest: '9178f9cd18ac',
+      capitals: [{ at: 'def:run_app3d', say: 'a 3D program in a browser: a game given to run_app' }],
+      important: [
+        { at: 'section:Shaders', weight: 2 },
+        { at: 'type:gl_state', say: "WebGL's state, kept across frames", weight: 2 },
+        { at: 'def:use_cache', say: 'cached3d meshes stay on the GPU', weight: 1 },
+      ],
+    },
+    'Web_connect.mli': { summary: "A browser's transport: net=relay over the page's WebSocket; no UDP in a page.", digest: '4f8390f682e3' },
+    'Web_connect.ml': { summary: 'The relay reached by a WebSocket, packets as ArrayBuffers, the first saying which player.', digest: 'ec217a09a93b' },
+    'Web_store.mli': { summary: "The web store of documents: the browser's localStorage, base64 under a prefix.", digest: '270ae306604d' },
+    'Web_store.ml': { summary: "Bytes kept base64 in localStorage: Marshal's bytes would not survive a JavaScript string.", digest: '52e9be118116' },
+  },
+  skeletons: [
+    {
+      name: 'A frame in the browser',
+      bones: [
+        { at: 'Playground_platform.ml:def:run_app', role: 'the animation-frame loop' },
+        { at: 'Playground_platform.ml:def:js_event_to_event', role: 'a DOM event, a Playground one' },
+        { at: '../../Playground.ml:def:game_update', role: 'the computer, the update' },
+        { at: 'Playground_platform.ml:def:render', role: 'shapes to SVG' },
+        { at: 'Playground_platform.ml:def:play_audio', role: 'the frame sound, Web Audio' },
+        { at: 'Playground3d_platform.ml:def:run_app3d', role: '3D: WebGL under the SVG' },
+      ],
+      joints: [
+        { from: 'Playground_platform.ml:def:js_event_to_event', to: 'Playground_platform.ml:def:run_app', say: 'events' },
+        { from: 'Playground_platform.ml:def:run_app', to: '../../Playground.ml:def:game_update', say: 'msgs, ticks' },
+        { from: 'Playground_platform.ml:def:run_app', to: 'Playground_platform.ml:def:render', say: 'shapes' },
+        { from: 'Playground_platform.ml:def:run_app', to: 'Playground_platform.ml:def:play_audio', say: 'ticks' },
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: 'Playground_platform.ml:def:run_app', say: 'a 2D game' },
+      ],
+    },
+  ],
+}

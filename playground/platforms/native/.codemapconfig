@@ -1,0 +1,66 @@
+// playground/platforms/native/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Where an app runs natively by default: SDL for the window, Cairo for 2D shapes, OpenGL for 3D scenes.',
+  // claude: the two hubs, each program's run_app and run_app3d when
+  // built natively (259 and 59 files name them); the loops themselves are
+  // native_common's, shared with the software platform
+  files: {
+    'Playground_platform.ml': {
+      summary: 'The native run_app: an SDL window whose pixels Cairo draws the shapes on, scaled to fit, each frame.',
+      digest: '78aeb6fdd0e2',
+      capitals: [{ at: 'def:run_app', say: 'every native 2D program ends here: the window, the loop, Cairo' }],
+      important: [
+        { at: 'comment:history:', say: 'Graphics, then ocaml-SDL, then tsdl and Cairo', weight: 1 },
+        { at: 'def:fetch_file', say: 'what Audio.loop_from reads', weight: 1 },
+        { at: 'def:store', say: "the documents: a directory, the caller's capability", weight: 1 },
+        { at: 'def:flags', say: 'the command line as the app sees it', weight: 1 },
+      ],
+      links: [{ from: 'def:run_app', to: 'def:fetch_file' }],
+    },
+    'Playground3d_platform.ml': {
+      summary: 'The OpenGL run_app3d: the scene batched by material into vertex buffers, Phong in a shader, the HUD blended over.',
+      digest: 'e547373ae3c4',
+      capitals: [{ at: 'def:run_app3d', say: 'every native 3D program: a GL context in the shared loop' }],
+      important: [
+        { at: 'section:Shaders', say: 'per-pixel Phong, the same light as the rasterizer', weight: 2 },
+        { at: 'def:compile_shader', weight: 1 },
+        { at: 'def:upload_texture', say: 'textures kept on the GPU', weight: 1 },
+        { at: 'def:use_cache', say: 'cached3d meshes stay on the GPU', weight: 2 },
+      ],
+    },
+    'Shape_render_native.mli': {
+      summary: "Playground shapes drawn on a Cairo context, the centre the origin and y up, Elm's way.",
+      digest: '4ef40ed66cc6',
+    },
+    'Shape_render_native.ml': {
+      summary: 'Each shape a Cairo path: y flipped, moved, turned, scaled; words, images and groups.',
+      digest: 'e425b02f4425',
+      capitals: [{ at: 'def:render', say: 'shapes to Cairo paths' }],
+      important: [
+        { at: 'comment:Cairo (0,0) is at the top left', say: "why every y is flipped: Elm's is up", weight: 2 },
+        { at: 'def:render_shape', weight: 2 },
+        { at: 'def:render_transform', weight: 1 },
+      ],
+    },
+    'Image_native.mli': { summary: 'Images by URL as Cairo surfaces, decoded by our own code, cached, preloaded.', digest: '82bd1027eca7' },
+    'Image_native.ml': { summary: 'Decoded pictures converted to Cairo surfaces, cached by URL, animations frame by frame.', digest: '85b9fe542919' },
+  },
+  skeletons: [
+    {
+      name: 'A native 2D frame',
+      bones: [
+        { at: 'Playground_platform.ml:def:run_app', role: 'the window made, the loop started' },
+        { at: '../native_common/Native_loop_2d.ml:def:run', role: 'events, update, view, each frame' },
+        { at: 'Shape_render_native.ml:def:render', role: 'shapes drawn by Cairo' },
+        { at: 'Image_native.ml:def:surface_of_url', role: 'pictures as surfaces' },
+      ],
+      joints: [
+        { from: 'Playground_platform.ml:def:run_app', to: '../native_common/Native_loop_2d.ml:def:run', say: "the app's init, update, view" },
+        { from: '../native_common/Native_loop_2d.ml:def:run', to: 'Shape_render_native.ml:def:render', say: 'the shapes of a frame' },
+        { from: 'Shape_render_native.ml:def:render', to: 'Image_native.ml:def:surface_of_url', say: 'an image shape' },
+      ],
+    },
+  ],
+}

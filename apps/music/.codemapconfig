@@ -1,5 +1,6 @@
 // apps/music/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'The instruments that made music history, rebuilt to be played and read: synthesizers, organs, drum machines, studios.',
@@ -778,6 +779,19 @@
         { from: 'Voice.mli', to: '../../libs/audio/', say: 'built of' },
       ],
     },
+    skeletons.game('TinyHammond.ml', 'def:organ', 'the voice: 91 tonewheels', say='the keys played'),
+    skeletons.game('TinyTB303.ml', 'def:voice', 'the voice and its sequencer, one value', say='the keys played'),
+    skeletons.game('TinyTR808.ml', 'def:tr808', 'the drums and their sequencer', say='the pads hit'),
+    skeletons.game('TinyDX7.ml', 'def:dx7', 'the voice: six operators a key', say='the keys played'),
+    skeletons.game('TinyRhodes.ml', 'def:piano', 'the voice: tines, reeds, strings', say='the keys played'),
+    skeletons.game('TinyCS80.ml', 'def:cs80', 'the voice: two synthesizers a key', say='the keys played'),
+    skeletons.game('TinyJuno.ml', 'def:juno', 'the voice: six keys and the chorus', say='the keys played'),
+    skeletons.game('TinyReface.ml', 'type:face', "a voice behind an original's panel", say='the face chosen'),
+    skeletons.game('TinyReBirth.ml', 'def:rebirth', 'the studio: four machines, one clock', say='the song played'),
+    skeletons.game('TinyOp1.ml', 'def:encoders', 'four encoders, any four numbers', say='the encoders turned'),
+    skeletons.game('TinyOpxy.ml', 'def:apply', 'knobs: the track, or the held step locked', say='a knob turned'),
+    skeletons.game('TinyReason.ml', 'def:studio', 'the rack as a graph, one sound', say='the rack changed'),
+    skeletons.game('TinySoundtracker.ml', 'def:keys', 'the keyboard as two octaves, and hex digits', say='each key'),
   ],
   tours: [
     {
