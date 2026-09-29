@@ -288,11 +288,14 @@ let role (name : string) : (int * int * int) option =
 let archi (colours : (string * (int * int * int)) list) (path : string) : int * int * int =
   let under (p : string) = path = p || (String.length path > String.length p && String.sub path 0 (String.length p + 1) = p ^ "/") in
   let given = List.fold_left (fun best (p, c) -> if under p && (match best with Some (q, _) -> String.length p > String.length q | None -> true) then Some (p, c) else best) None colours in
+  (* claude: a top folder itself (games, no slash) is coloured as what
+   * it holds (the author: at the top, the matrix's folders all grey);
+   * the root alone grey *)
   match (given, String.index_opt path '/') with
   | Some (_, c), _ -> c
-  | None, None -> (120, 120, 120)
-  | None, Some i -> (
-  let first = String.sub path 0 i in
+  | None, _ when path = "" -> (120, 120, 120)
+  | None, i -> (
+  let first = match i with Some i -> String.sub path 0 i | None -> path in
   match first with
   | "games" -> (70, 100, 220)
   | "apps" -> (170, 80, 210)
