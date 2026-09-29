@@ -23,7 +23,7 @@ open Playground
  * were apart (plan_codemap_google_maps.md, step 0) *)
 include Code_map_base
 
-type action = Stay | Open of Code_file.t * int | Close | Select of string * string list | Up | Tied of string * string list * string list
+type action = Stay | Open of Code_file.t * int | Close | Select of string * string list | Up | Tied of string * string list * string list | Graph of string * string list
 
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
@@ -460,6 +460,17 @@ let view_set (t : t) (v : Code_guide.view) : string list =
       in
       f :: List.sort_uniq compare others @ v.files
 
+(* claude: back from the matrix (Map_graph): a unit flown to, a
+ * definition peeked at *)
+let go_back_to (t : t) (path : string) (line : int option) : t =
+  let is_file = List.exists (fun (e : entry) -> e.path = path) (t.entries @ t.beyond) in
+  let hit : Code_search.hit =
+    match line with
+    | Some l -> { kind = Def; path; line = l; name = "" }
+    | None -> { kind = (if is_file then File else Dir); path; line = 0; name = "" }
+  in
+  match search_go t hit with Some c -> { t with target = c } | None -> t
+
 let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
   let a = t.target.a in
@@ -497,6 +508,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
   if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
   (* claude: l, the layers hidden, shown (Map_v2) *)
+  (* claude: h, every key explained, again to close *)
+  if pressed "h" && t.search = None then t.help <- not t.help;
   (* claude: l, the layers lit: those kept (ctrl+Enter), then each
    * config's, then none, in turn (Map_v2.layer_groups) *)
   if pressed "l" then begin
@@ -584,6 +597,12 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     | _ -> clicked
   in
   let with_ties = if clicked && units && Set_.mem "Shift" computer.keyboard.keys then Map_v2.unit_with_ties t t.cam else None in
+  (* claude: ctrl+click on a unit's name, or g over it: its ties in
+   * codegraph's matrix (Map_graph) *)
+  let to_graph =
+    if units && ((clicked && Set_.mem "Control" computer.keyboard.keys) || (pressed "g" && t.search = None)) then Map_v2.unit_with_ties t t.cam else None
+  in
+  let with_ties = if to_graph <> None then None else with_ties in
   let clicked = if with_ties <> None then false else clicked in
   (* claude: a click on a match (a search's, a layer's): its file, and
    * its definition peeked at, as Enter in the search *)
@@ -644,7 +663,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
    * lit (plan_codemap_naming.md); Enter opens the file view *)
   let choice = match t.choices with Some cs -> List.find_opt (fun k -> k <= List.length cs && pressed (string_of_int k)) [ 1; 2; 3; 4; 5; 6; 7; 8; 9 ] | None -> None in
   let target, action =
-    if pressed "Escape" && t.peek <> None then (close_peek t; (target, Stay))
+    if pressed "Escape" && t.help then (t.help <- false; (target, Stay))
+    else if pressed "Escape" && t.peek <> None then (close_peek t; (target, Stay))
     else if pressed "Escape" && t.choices <> None then (t.choices <- None; (target, Stay))
     else if pressed "Escape" then (target, Close)
     else if choice <> None then (go_to t target (List.nth (Option.get t.choices) (Option.get choice - 1)), Stay)
@@ -733,6 +753,9 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: the folder laid out anew, or back up from the top *)
   let action =
     match (with_ties, zoom, action) with
+    | _, _, Stay when to_graph <> None ->
+        let h, users, uses = Option.get to_graph in
+        Graph (h, h :: List.sort_uniq compare (users @ uses))
     | Some (h, users, uses), _, Stay -> Tied (h, users, uses)
     | None, Some p, Stay -> Select (p, [ p ])
     | None, None, Stay when up_from_top -> Up
@@ -940,6 +963,53 @@ let where_to (computer : computer) (t : t) : string option =
   in
   match hover with Some s -> Some s | None -> if t.note <> "" then Some t.note else None
 
+(* claude: every key, explained (h): the author, "all keys should be
+ * explained at the bottom or in a hover card" *)
+let keys_help = [
+  ("Moving", "");
+  ("click, wheel forward, +", "in: a folder, a file, a unit at a time");
+  ("right click, wheel back, -, Backspace", "out: the unit around");
+  ("arrows", "beside: the next unit left, right, up, down");
+  ("0, Home", "the whole map");
+  ("Seeing more", "");
+  ("hover a name", "its card: what the configs say of it; a folder's or file's ties drawn");
+  ("click a name in the code", "a peek at its definition; the wheel scrolls it; Escape closes");
+  ("a", "at a file: its neighbours, what it uses, what uses it (a again: the next)");
+  ("x", "the X-ray: the skeleton; x again, the next one; 1-6 the plates (hover the legend)");
+  ("l", "the layers: patterns lit everywhere (the configs', and those kept)");
+  ("Searching", "");
+  ("/", "search: a name, or file: dir: def: type: view: tour: bone: text: ref:");
+  ("  in the search", "Tab complete, up/down choose, Enter go, shift+Enter all found together, ctrl+Enter a layer");
+  ("Dependencies", "");
+  ("shift+click a name", "it and the units tied to it, together (d: users, uses, both, alone)");
+  ("g, ctrl+click a name", "codegraph's matrix of it and its ties");
+  ("Tours and views", "");
+  ("n, p", "the tour: the next stop, the one before");
+  ("w", "a program's map: its own code, with what it uses, the whole repository");
+  ("Enter", "the file view, the file read whole");
+  ("b", "back, after a jump to a definition");
+  ("m", "another style of map (v2, classic, atlas, streets)");
+  ("h", "this help; Escape, back");
+]
+
+let help_shapes (computer : computer) : shape list =
+  let screen = computer.screen in
+  let w = 980. and row = 22. in
+  let h = 40. +. (row *. float_of_int (List.length keys_help)) in
+  let top = h /. 2. in
+  ignore screen;
+  [ rectangle yellow (w +. 4.) (h +. 4.) |> fade 0.5; rectangle (rgb 16 14 34) w h |> fade 0.97 ]
+  @ List.concat
+      (List.mapi
+         (fun i (k, what) ->
+           let y = top -. 30. -. (float_of_int i *. row) in
+           let x0 = -.(w /. 2.) +. 24. in
+           if what = "" then [ words yellow k |> scale (15. /. words_font_size) |> move (x0 +. (text_width 15. k /. 2.)) y ]
+           else
+             [ words ink k |> scale (14. /. words_font_size) |> move (x0 +. 20. +. (text_width 14. k /. 2.)) y;
+               words dim what |> scale (14. /. words_font_size) |> move (x0 +. 330. +. (text_width 14. what /. 2.)) y ])
+         keys_help)
+
 let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let c = t.cam in
   let a = c.a in
@@ -1022,6 +1092,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   if not chrome then []
   else
     hover @ names_lit computer t
+    @ (if t.help then help_shapes computer else [])
     @ [
         (* claude: flown into a unit (v2), its summary, not the project's
          * (the author: "at earth level it's the summary of the project,
@@ -1041,7 +1112,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
           (if t.style.units then
-             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   / search   l layers   a what a file uses   x skeleton   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
+             "h every key   click in   right click out   / search   a a file's neighbours   x skeleton   l layers   g the matrix   esc back"
            else
            Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)

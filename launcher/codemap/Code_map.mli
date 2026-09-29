@@ -24,7 +24,7 @@
 
 type entry = { path : string; nlines : int; file : Code_file.t Lazy.t }
 
-type t
+type t = Code_map_base.t
 
 (* [make ~area ~title ~marked entries]: the map of [entries] in [area],
    its top left corner (in the playground's coordinates) and its width and
@@ -56,6 +56,10 @@ val make :
    where [old] shows them (a folder laid out anew, or back) *)
 val morph_from : old:t -> t -> now:float -> unit
 
+(* claude: a unit flown to, a definition (its line) peeked at: back from
+   the matrix *)
+val go_back_to : t -> string -> int option -> t
+
 (* claude: whether a directory or file (its path) is on the map *)
 val has : t -> string -> bool
 
@@ -68,6 +72,7 @@ type action =
   | Select of string * string list (* claude: directories and files to see together (a search's name//, or shift+Enter; a folder flown into, laid out anew), and what to call them *)
   | Up (* claude: up from the map's top: back to the map it was taken from *)
   | Tied of string * string list * string list (* claude: a unit, its users, what it uses: shift+click's view *)
+  | Graph of string * string list (* claude: a unit and the units tied to it, in codegraph's matrix: ctrl+click's, g's *)
 
 (* keys as Code_view's; the mouse; Escape closes. claude: / opens the
    search (Map_v2's), which takes the keys while open *)

@@ -35,6 +35,7 @@ and t = {
   area : float * float * int * int;
   map : Code_map.t;
   file : Code_view.t option; (* a file open over the map *)
+  graph : Map_graph.t option; (* claude: codegraph's matrix over the map (ctrl+click, g) *)
   tour : (int * int) option; (* claude: the tour's stop: a file (its place in the map's entries), a stop in it *)
   own : string -> bool; (* claude: its own code's files *)
   guide : Code_guide.t option; (* claude: what the configs among its sources say *)
@@ -134,14 +135,14 @@ let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sourc
   (* claude: in v2, opened on the program's file, at the ground: its kits
    * a (the street) or the wheel away (plan_codemap_v2.md) *)
   let map = if Code_map.style_name () = "v2" then Code_map.focus_on map path else map in
-  { program; path; sources; scope = Own; area; map; file = None; tour = None; own; guide }
+  { program; path; sources; scope = Own; area; map; file = None; graph = None; tour = None; own; guide }
 
 let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) ~area ~sources ~program ~path
 
 let of_directory ?guide ?(colours = []) ?(roots = []) ~(area : float * float * int * int) ~(name : string) ~(sources : (string * string) list) () : t =
   let scope = Directory name in
   let own _ = true in
-  { program = name; path = ""; sources; scope; area; map = map_of ~style:None ~guide ~roots ~colours ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own; guide }
+  { program = name; path = ""; sources; scope; area; map = map_of ~style:None ~guide ~roots ~colours ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; graph = None; tour = None; own; guide }
 
 let preview ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : Code_map.t =
   let sources, guide = guide_of sources in
@@ -187,11 +188,16 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
   if pressed "n" && not (Code_map.searching t.map) then Some (go t (next_stop t))
   else if pressed "p" && t.tour <> None && not (Code_map.searching t.map) then Some (go t (prev_stop t))
   else
-  match t.file with
-  | Some v ->
+  match (t.graph, t.file) with
+  | Some g, _ -> (
+      match Map_graph.update computer ~pressed g with
+      | g, Map_graph.Stay -> Some { t with graph = Some g }
+      | _, Back -> Some { t with graph = None }
+      | _, Go (p, line) -> Some { t with graph = None; map = Code_map.go_back_to t.map p line })
+  | None, Some v ->
       if pressed "Escape" || pressed "Backspace" then Some { t with file = None }
       else Some { t with file = Some (Code_view.update computer ~pressed ~arrow v) }
-  | None ->
+  | None, None ->
       (* claude: d, the tied view's next mode *)
       match t.scope with
       | Tied r when pressed "d" && not (Code_map.searching t.map) ->
@@ -222,6 +228,8 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
             | Selection (_, _, before) -> Some before
             | Tied r -> Some r.tbefore
             | _ -> Some { t with map })
+        | map, Graph (unit, units) ->
+            Some { t with map; graph = Some (Map_graph.make map ~title:(Printf.sprintf "%s and what it is tied to, codegraph's matrix" unit) units) }
         | map, Tied (unit, users, uses) ->
             let scope = Tied { unit; users; uses; tmode = 0; tbefore = { t with map } } in
             let next = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope in
@@ -241,6 +249,9 @@ let file_open (t : t) : bool = t.file <> None
 let program (t : t) : string = t.program
 
 let view (computer : Playground.computer) (t : t) : Playground.shape list =
+  match t.graph with
+  | Some g -> Map_graph.view computer g
+  | None ->
   match t.file with
   | Some v ->
       Code_view.view computer v

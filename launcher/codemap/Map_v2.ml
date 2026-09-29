@@ -179,7 +179,7 @@ let paint_street ~(aa : bool) (t : t) (c : camera) (e : entry) : Rgba_image.t =
   Code_ground.paint img (Lazy.force e.file) s.focus ~bg ~aa;
   List.iter
     (fun (p : Code_street.panel) ->
-      match List.find_opt (fun (x : entry) -> x.path = p.path) t.entries with
+      match List.find_opt (fun (x : entry) -> x.path = p.path) (t.entries @ t.beyond) with
       | None -> ()
       | Some x ->
           let pbg = file_background t p.path in
@@ -709,7 +709,7 @@ let street_labels (t : t) (c : camera) (e : entry) : shape list =
   (* claude: the configs' notes, the focus's and the panels' *)
   @ notes_on t c e s.focus
   @ List.concat_map
-      (fun (p : Code_street.panel) -> match List.find_opt (fun (x : entry) -> x.path = p.path) t.entries with Some x -> notes_on t c x p.ground | None -> [])
+      (fun (p : Code_street.panel) -> match List.find_opt (fun (x : entry) -> x.path = p.path) (t.entries @ t.beyond) with Some x -> notes_on t c x p.ground | None -> [])
       (Code_street.panels s)
   @ List.map
       (fun (p : Code_street.panel) ->
@@ -830,7 +830,7 @@ let names_glow (t : t) (c : camera) (e : entry) : shape list =
   | Some (u, v) -> (
       let a = c.a in
       let mx = to_px c u and my = to_py c v in
-      let file p = List.find_map (fun (x : entry) -> if x.path = p then Some (Lazy.force x.file) else None) t.entries in
+      let file p = List.find_map (fun (x : entry) -> if x.path = p then Some (Lazy.force x.file) else None) (t.entries @ t.beyond) in
       let grounds =
         if t.street then
           let s = street_of t e in
