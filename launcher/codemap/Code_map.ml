@@ -120,6 +120,16 @@ let def_extent (f : Code_file.t) (line : int) : int * int =
   let rec trim l = if l > first && trailer l then trim (l - 1) else l in
   (first, max first (trim last))
 
+(* claude: a section: its title's line, to the line before the next
+ * section's banner *)
+let section_extent (f : Code_file.t) (line : int) : int * int =
+  let titles =
+    List.filter_map (fun (l, _, (cat : Highlight_code.category)) -> if cat = Comment_section && l > line + 1 then Some l else None) f.defs
+    |> List.sort_uniq compare
+  in
+  let next = match titles with l :: _ -> l - 2 | [] -> Code_file.nlines f - 1 in
+  (line, max line next)
+
 let entries (t : t) : entry list = t.entries
 let number (t : t) (path : string) : int option = Hashtbl.find_opt t.order path
 
@@ -221,7 +231,7 @@ let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string
   let u = to_u t.cam mpx and v = to_v t.cam mpy in
   let on_map = on a mpx mpy in
   let wheel =
-    if mouse.mwheel = 0. || not on_map then 0
+    if mouse.mwheel = 0. || not on_map || t.peek <> None then 0
     else if now -. t.wheel_at < 0.3 then (t.wheel_at <- now; t.wheel_debt <- 0.; 0)
     else begin
       t.wheel_debt <- t.wheel_debt +. mouse.mwheel;
@@ -249,7 +259,11 @@ let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string
       else if clicked then
         match t.style.unit_at t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
         | Some j -> Some j
-        | None -> if is_file then None else Code_units.toward t.placed i u v
+        | None -> (
+            (* a section's title (Map_v2's, column -1) is peeked at, not flown into *)
+            match t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
+            | Some (_, _, c) when c < 0 -> None
+            | _ -> if is_file then None else Code_units.toward t.placed i u v)
       else None
 
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
@@ -332,6 +346,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   let clicked = (mouse.mclick || mouse.mdouble) && on_map && not t.dragged in
   let t = if not mouse.mdown then { t with drag = None; dragged = (if mouse.mclick then false else t.dragged) } else t in
   (* claude: by units, a move taken, the click with it *)
+  (* claude: the wheel with a peek open scrolls it *)
+  if t.peek <> None && mouse.mwheel <> 0. then t.peek_scroll <- max 0 (t.peek_scroll - int_of_float (Float.round (3. *. mouse.mwheel)));
   (* claude: a click with a definition shown (t.peek) only closes it *)
   let clicked = if clicked && t.peek <> None then (t.peek <- None; false) else clicked in
   let moved = if units then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
@@ -385,6 +401,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
                * definition the line is in *)
               let index_of_path p = let r = ref None in Array.iteri (fun i (q : entry Treemap.placed) -> if q.path = p then r := Some i) t.placed; !r in
               let where =
+                if col < 0 then None
+                else
                 match Code_file.name_at f line col with
                 | Some o -> Some (path, fst o.bound_at)
                 | None -> (
@@ -402,9 +420,17 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
                   match file_of p with
                   | Some g ->
                       let first, last = def_extent g l in
-                      t.peek <- Some (p, first, min last (first + 80))
+                      t.peek <- Some (p, first, last);
+                      t.peek_scroll <- 0
                   | None -> ())
                 where;
+              (* a section's title (col -1, Map_v2's table of contents): the
+               * whole section *)
+              if col < 0 then begin
+                let first, last = section_extent f line in
+                t.peek <- Some (path, first, last);
+                t.peek_scroll <- 0
+              end;
               (target, Stay)
           | None -> (target, Stay))
       | None, None ->
@@ -610,6 +636,8 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let on_a_file = t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false in
   let hover, status =
     match (picked, hovered) with
+    (* claude: a peek open (Map_v2's) is what is under the mouse *)
+    | _ when t.peek <> None -> ([], "")
     | Some (path, line, _), _ -> ([], match List.find_opt (fun (e : entry) -> e.path = path) t.entries with Some e -> where e line | None -> "")
     | None, _ when on_a_file -> ([], "")
     | None, Some i -> (

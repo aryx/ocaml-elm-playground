@@ -237,7 +237,7 @@ let wrap (width : int) (text : string) : string list =
   in
   List.rev (if last = "" then lines else last :: lines)
 
-type name = { node : int; nbox : float * float * float * float; nrank : float; draw : shape; said : string list option }
+type name = { node : int; nbox : float * float * float * float; nrank : float; draw : shape; said : string list option; sect : (string * int) option }
 
 (* claude: the capitals the configs name (Code_guide.capitals): where
  * each is in its file, found once (its file lexed then) *)
@@ -278,7 +278,7 @@ let capitals (t : t) (c : camera) : name list =
                   let text = words yellow label |> scale (size /. words_font_size) |> move (sx a (px +. 10. +. (tw /. 2.))) (sy a py) in
                   let shadow = words black label |> scale (size /. words_font_size) |> move (sx a (px +. 11.5 +. (tw /. 2.))) (sy a (py +. 1.5)) |> fade 0.8 in
                   let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ [ "click: to its file" ] in
-                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805.; draw = group [ ring; dot; shadow; text ]; said = Some said }
+                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805.; draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None }
               | None -> None)
           | _ -> None)
       | _ -> None)
@@ -306,7 +306,7 @@ let names (t : t) (c : camera) : name list =
           let box, shape = tab a ~alpha:0.9 (lighter (archi t.colours p.path)) 16. !x 6. text in
           let _, _, x1, _ = box in
           x := x1 +. 4.;
-          { node = i; nbox = box; nrank = 10000.; draw = shape; said = None })
+          { node = i; nbox = box; nrank = 10000.; draw = shape; said = None; sect = None })
         above
   in
   (* at the ground, the file is the map: only the breadcrumb *)
@@ -333,7 +333,7 @@ let names (t : t) (c : camera) : name list =
               let col = archi t.colours p.path in
               let fx0 = float_of_int x0 and fy0 = float_of_int y0 in
               let box, shape = tab a (lighter col) 15. (fx0 +. 3.) (fy0 +. 3.) name in
-              cands := { node = i; nbox = box; nrank = 700.; draw = shape; said = None } :: !cands;
+              cands := { node = i; nbox = box; nrank = 700.; draw = shape; said = None; sect = None } :: !cands;
               (* the card, under the tab, wrapped to the block *)
               (match Option.bind (Code_guide.file_note t.guide e.path) (fun n -> n.summary) with
               | Some said ->
@@ -354,7 +354,7 @@ let names (t : t) (c : camera) : name list =
                              words ink l |> scale (size /. words_font_size) |> move (sx a (fx0 +. 8. +. (tw /. 2.))) (sy a (top +. ((float_of_int k +. 0.5) *. (size +. 3.)))))
                            lines)
                   in
-                  cands := { node = i; nbox = (fx0 +. 4., top -. 3., fx0 +. 12. +. lw, top +. bh +. 3.); nrank = 820.; draw; said = None } :: !cands
+                  cands := { node = i; nbox = (fx0 +. 4., top -. 3., fx0 +. 12. +. lw, top +. bh +. 3.); nrank = 820.; draw; said = None; sect = None } :: !cands
               | None -> ());
               (* the sections, each where it is in the columns *)
               (match t.geometry.(i) with
@@ -377,7 +377,7 @@ let names (t : t) (c : camera) : name list =
                               words (rgb r gg b) text |> scale (size /. words_font_size) |> move (sx a (px +. (tw /. 2.) +. 2.)) (sy a py);
                             ]
                         in
-                        if px +. tw < float_of_int x1 then cands := { node = i; nbox = (px, py -. (size /. 2.) -. 2., px +. tw +. 6., py +. (size /. 2.) +. 2.); nrank = 400.; draw; said = None } :: !cands
+                        if px +. tw < float_of_int x1 then cands := { node = i; nbox = (px, py -. (size /. 2.) -. 2., px +. tw +. 6., py +. (size /. 2.) +. 2.); nrank = 400.; draw; said = None; sect = Some (e.path, l) } :: !cands
                       end)
                     f.defs
               | None -> ())
@@ -400,7 +400,7 @@ let names (t : t) (c : camera) : name list =
               else text 0. 0. (lighter (r, g, b)) 0.85
             in
             let nrank = if is_dir then 1000. -. (100. *. float_of_int p.depth) +. size else size in
-            cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw; said = None } :: !cands
+            cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw; said = None; sect = None } :: !cands
           end)
       | _ -> ())
     t.placed;
@@ -414,7 +414,8 @@ let names (t : t) (c : camera) : name list =
 let within (x0, y0, x1, y1) x y = x >= x0 && x < x1 && y >= y0 && y < y1
 
 let unit_at (t : t) (c : camera) (_ : float) (px : float) (py : float) : int option =
-  Option.map (fun n -> n.node) (List.find_opt (fun n -> within n.nbox px py) (names t c))
+  (* a section's title is not a unit: a click on it peeks (pick) *)
+  Option.map (fun n -> n.node) (List.find_opt (fun n -> n.sect = None && within n.nbox px py) (names t c))
 
 (* a directory's or a file's card: its path, what its config says of it
  * (Code_guide), and what it holds *)
@@ -574,6 +575,7 @@ let line_lit (t : t) (c : camera) (e : entry) : shape list =
 let names_glow (t : t) (c : camera) (e : entry) : shape list =
   match t.pointer with
   | None -> []
+  | Some _ when t.peek <> None -> []
   | Some (u, v) -> (
       let a = c.a in
       let mx = to_px c u and my = to_py c v in
@@ -1068,47 +1070,132 @@ let legend (c : camera) : shape list =
  * painted once, at the window's resolution *)
 let peek_cache : ((string * int * int * float) * Rgba_image.t) option ref = ref None
 
-let peek_shapes (t : t) (c : camera) (q : float) : shape list =
+(* the peek on the map: its entry and file, its lines' layout (from the
+ * box's inner corner, the window the scroll shows: 17 pixels a line),
+ * the box and its inner corner, the lines asked for and those shown *)
+type peek = {
+  pe : entry;
+  pf : Code_file.t;
+  pg : Code_ground.t;
+  bx : float;
+  by : float;
+  bw : float;
+  bh : float;
+  ix : float;
+  iy : float;
+  iw : float;
+  ih : float;
+  first : int;
+  last : int;
+  shown_first : int;
+  shown_last : int;
+}
+
+let peek_geom (t : t) (c : camera) : peek option =
   match t.peek with
-  | None -> []
+  | None -> None
   | Some (path, first, last) -> (
       match entry_of t path with
-      | None -> []
+      | None -> None
       | Some e ->
           let a = c.a in
           let f = Lazy.force e.file in
           let n = Code_file.nlines f in
           let first = max 0 first and last = min (n - 1) last in
           let lines = last - first + 1 in
-          let bw = Float.min (float_of_int a.pw -. 80.) 820. and bh = Float.min (float_of_int a.ph -. 60.) ((float_of_int lines *. 19.) +. 56.) in
+          let bw = Float.min (float_of_int a.pw -. 80.) 820. and bh = Float.min (float_of_int a.ph -. 60.) ((float_of_int lines *. 17.) +. 56.) in
           let iw = bw -. 24. and ih = bh -. 48. in
-          let img =
-            match !peek_cache with
-            | Some (k, img) when k = (path, first, last, q) -> img
-            | _ ->
-                let weights = Array.init n (fun l -> if l >= first && l <= last then 1. else 0.) in
-                let g = Code_ground.layout weights ~pw:(int_of_float iw) ~ph:(int_of_float ih) in
-                let img = Rgba_image.create ~width:(int_of_float (iw *. q)) ~height:(int_of_float (ih *. q)) in
-                let bg = (22, 20, 38) in
-                fill img 0 0 img.width img.height bg;
-                Code_ground.paint img f (Code_ground.scale g q) ~bg ~aa:true;
-                peek_cache := Some ((path, first, last, q), img);
-                img
-          in
+          (* the window: as many lines as fit at 17 pixels, from the scroll *)
+          let cap = max 1 (int_of_float (ih /. 17.)) in
+          let shown_first = first + max 0 (min t.peek_scroll (lines - cap)) in
+          let shown_last = min last (shown_first + cap - 1) in
+          let weights = Array.init n (fun l -> if l >= shown_first && l <= shown_last then 1. else 0.) in
+          let pg = Code_ground.layout weights ~pw:(int_of_float iw) ~ph:(int_of_float ih) in
           let cx = float_of_int a.pw /. 2. and cy = float_of_int a.ph /. 2. in
-          let x0 = cx -. (bw /. 2.) and y0 = cy -. (bh /. 2.) in
-          let name = List.fold_left (fun acc (l, nm, _) -> if l = first then Some nm else acc) None f.defs in
-          let title = Printf.sprintf "%s:%d%s   (click or Escape: close; Enter: the file)" path (first + 1) (match name with Some nm -> "  " ^ nm | None -> "") in
-          let r, g, b = archi t.colours path in
-          [
-            rectangle (rgb 0 0 0) (float_of_int a.pw) (float_of_int a.ph) |> move (sx a cx) (sy a cy) |> fade 0.45;
-            rectangle (rgb 22 20 38) bw bh |> move (sx a cx) (sy a cy);
-          ]
-          @ frame a (lighter (r, g, b)) x0 y0 (x0 +. bw) (y0 +. bh) 2.
-          @ [
-              label a (lighter (r, g, b)) 15. (x0 +. 12. +. (0.25 *. 15. *. float_of_int (String.length title))) (y0 +. 18.) title;
-              bitmap iw ih img |> move (sx a (x0 +. 12. +. (iw /. 2.))) (sy a (y0 +. 36. +. (ih /. 2.)));
-            ])
+          let bx = cx -. (bw /. 2.) and by = cy -. (bh /. 2.) in
+          Some { pe = e; pf = f; pg; bx; by; bw; bh; ix = bx +. 12.; iy = by +. 36.; iw; ih; first; last; shown_first; shown_last })
+
+let inside_peek (pk : peek) (x : float) (y : float) = x >= pk.bx && x < pk.bx +. pk.bw && y >= pk.by && y < pk.by +. pk.bh
+
+(* a name's occurrences glowing in a layout moved by (dx, dy): the binding
+ * pulsing cyan, the uses yellow, on the lines [shown] *)
+let glows (t : t) (a : area) (g : Code_ground.t) ((dx, dy) : float * float) (f : Code_file.t) (o : Highlight_code.occurrence) ~(shown : int -> bool) :
+    shape list =
+  List.concat_map
+    (fun (w : Highlight_code.occurrence) ->
+      if w.line >= Array.length g.places || not (shown w.line) || g.places.(w.line).h < 0.5 then []
+      else
+        let x, y, _, h = Code_ground.box g w.line in
+        let cw = Code_ground.cell_w g w.line in
+        let ww = float_of_int w.len *. cw and hh = Float.max 3. h in
+        let px = dx +. x +. (float_of_int w.col *. cw) +. (ww /. 2.) and py = dy +. y +. (h /. 2.) in
+        let binding = (w.line, w.col) = o.bound_at in
+        List.map (move (sx a px) (sy a py)) (Code_view.glow_at t.clock (if binding then rgb 0 225 255 else yellow) ww hh))
+    (Code_file.uses f o)
+
+let peek_shapes (t : t) (c : camera) (q : float) : shape list =
+  match peek_geom t c with
+  | None -> []
+  | Some pk ->
+      let a = c.a in
+      let path = pk.pe.path in
+      let img =
+        match !peek_cache with
+        | Some (k, img) when k = (path, pk.shown_first, pk.shown_last, q) -> img
+        | _ ->
+            let img = Rgba_image.create ~width:(int_of_float (pk.iw *. q)) ~height:(int_of_float (pk.ih *. q)) in
+            let bg = (22, 20, 38) in
+            fill img 0 0 img.width img.height bg;
+            Code_ground.paint img pk.pf (Code_ground.scale pk.pg q) ~bg ~aa:true;
+            peek_cache := Some ((path, pk.shown_first, pk.shown_last, q), img);
+            img
+      in
+      let cx = pk.bx +. (pk.bw /. 2.) and cy = pk.by +. (pk.bh /. 2.) in
+      let name = List.fold_left (fun acc (l, nm, _) -> if l = pk.first then Some nm else acc) None pk.pf.defs in
+      let more = pk.shown_first > pk.first || pk.shown_last < pk.last in
+      let title =
+        Printf.sprintf "%s:%d%s   (%sclick or Escape: close; Enter: the file)" path (pk.first + 1)
+          (match name with Some nm -> "  " ^ nm | None -> "")
+          (if more then Printf.sprintf "lines %d-%d of %d, the wheel scrolls; " (pk.shown_first - pk.first + 1) (pk.shown_last - pk.first + 1) (pk.last - pk.first + 1) else "")
+      in
+      let r, g, b = archi t.colours path in
+      let full_w = float_of_int a.pw and full_h = float_of_int a.ph in
+      [
+        rectangle (rgb 0 0 0) full_w full_h |> move (sx a (full_w /. 2.)) (sy a (full_h /. 2.)) |> fade 0.45;
+        rectangle (rgb 22 20 38) pk.bw pk.bh |> move (sx a cx) (sy a cy);
+      ]
+      @ frame a (lighter (r, g, b)) pk.bx pk.by (pk.bx +. pk.bw) (pk.by +. pk.bh) 2.
+      @ [
+          label a (lighter (r, g, b)) 14. (pk.bx +. 12. +. (0.25 *. 14. *. float_of_int (String.length title))) (pk.by +. 18.) title;
+          bitmap pk.iw pk.ih img |> move (sx a (pk.ix +. (pk.iw /. 2.))) (sy a (pk.iy +. (pk.ih /. 2.)));
+        ]
+
+(* claude: a name hovered in the peek: its binding and uses glowing in
+ * the peek, and outside it on the map, where the same file is laid out *)
+let peek_glow (t : t) (c : camera) : shape list =
+  match (peek_geom t c, t.pointer) with
+  | Some pk, Some (u, v) -> (
+      let a = c.a in
+      let mx = to_px c u and my = to_py c v in
+      if not (inside_peek pk mx my) then []
+      else
+        match Code_ground.line_at pk.pg (mx -. pk.ix) (my -. pk.iy) with
+        | None -> []
+        | Some l -> (
+            let x0, _, _, _ = Code_ground.box pk.pg l in
+            let col = int_of_float ((mx -. pk.ix -. x0) /. Code_ground.cell_w pk.pg l) in
+            match Code_file.name_at pk.pf l col with
+            | None -> []
+            | Some o ->
+                let outside =
+                  match at_ground t c with
+                  | Some e ->
+                      let gs = if t.street then let s = street_of t e in (e.path, s.focus) :: List.map (fun (p : Code_street.panel) -> (p.path, p.ground)) (Code_street.panels s) else [ (e.path, ground_of t e) ] in
+                      List.concat_map (fun (p, g) -> if p = pk.pe.path then glows t a g (0., 0.) pk.pf o ~shown:(fun _ -> true) else []) gs
+                  | None -> []
+                in
+                outside @ glows t a pk.pg (pk.ix, pk.iy) pk.pf o ~shown:(fun l -> l >= pk.shown_first && l <= pk.shown_last)))
+  | _ -> []
 
 let labels (t : t) (c : camera) (q : float) : shape list =
   let kept = names t c in
@@ -1121,6 +1208,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ (if t.xray then skeleton_shapes t c @ anatomy_shapes t c @ (if List.exists (fun s -> s <> Code_anatomy.Skeleton) !Code_anatomy.shown then legend c else []) else [])
   @ hover_card t c kept
   @ peek_shapes t c q
+  @ peek_glow t c
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,
  * not the treemap's): what Enter opens, what the status line says *)
@@ -1134,6 +1222,9 @@ let pick (t : t) (c : camera) (_ : float) (px : float) (py : float) : (string * 
       | Some (p, l) -> ( match Code_street.ground_of s p with Some g -> Some (p, l, col g l) | None -> None)
       | None -> None)
   | Some e -> let g = ground_of t e in Option.map (fun l -> (e.path, l, col g l)) (Code_ground.line_at g px py)
-  | None -> None
+  | None ->
+      (* a section's title in a file's table of contents: the whole
+       * section, the column -1 saying so (Code_map) *)
+      Option.map (fun (p, l) -> (p, l, -1)) (List.find_map (fun n -> if within n.nbox px py then n.sect else None) (names t c))
 
 let style : style = { sname = "v2"; paint; labels; pick; unit_at; units = true }
