@@ -92,51 +92,6 @@ let ground_of (t : t) (e : entry) : Code_ground.t =
       ground_cache := Some (e.path, a.pw, a.ph, g);
       g
 
-(* claude: the region level (the author: "could we try to render a la
- * street view the content? at least the important functions and types"):
- * the unit looked at a directory, each file whose block is big enough is
- * laid out as a street's panel -- the config's important lines and
- * capitals tall, the other definitions' headers small, the rest thin
- * bars keeping the file's shape; a block too small keeps its columns *)
-let region_weights_cache : (string, float array) Hashtbl.t = Hashtbl.create 32
-
-let region_weights (t : t) (e : entry) : float array =
-  match Hashtbl.find_opt region_weights_cache e.path with
-  | Some w -> w
-  | None ->
-      let f = Lazy.force e.file in
-      let imp = List.map (fun (l, _, _) -> l) (important t e) in
-      (* the headers of the types and of the definitions of six lines or
-       * more: a file's constants (let pixel = 5.) would share the room *)
-      let heads =
-        List.filter_map (fun (l, _, (cat : Highlight_code.category)) -> match cat with Def_function | Def_value | Def_type | Def_module -> Some (l, cat) | _ -> None) f.defs
-        |> List.sort_uniq compare
-      in
-      let n = Code_file.nlines f in
-      let rec substantial = function
-        | (l, cat) :: ((l', _) :: _ as rest) -> (if cat = Highlight_code.Def_type || l' - l >= 6 then [ l ] else []) @ substantial rest
-        | [ (l, _) ] -> if n - l >= 6 then [ l ] else []
-        | [] -> []
-      in
-      let big = substantial heads in
-      let w = Array.init n (fun l -> if List.mem l imp then 4. else if List.mem l big then 1.6 else 0.05) in
-      Hashtbl.replace region_weights_cache e.path w;
-      w
-
-(* a file's panel at the region level, on the window's map (its pixels),
- * if the unit looked at is a directory and the block is big enough *)
-let region_ground (t : t) (i : int) (e : entry) : Code_ground.t option =
-  let c = t.cam in
-  match t.placed.(t.focus).node with
-  | File _ -> None
-  | Dir _ -> (
-      if outside t t.placed.(i) then None
-      else
-        match clip c t.placed.(i).rect with
-        | Some (x0, y0, x1, y1) when x1 - x0 >= 140 && y1 - y0 >= 110 ->
-            Some (Code_ground.layout ~x0:(float_of_int x0 +. 4.) ~y0:(float_of_int y0 +. 24.) (region_weights t e) ~pw:(x1 - x0 - 8) ~ph:(y1 - y0 - 28))
-        | _ -> None)
-
 let paint_ground ~(aa : bool) (t : t) (c : camera) (e : entry) : Rgba_image.t =
   let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
   let bg = file_background t e.path in
@@ -257,17 +212,11 @@ let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
                * good part of the map, and near enough to be read (a file of five
                * lines is readable from afar, specks among the columns);
                * the plan's ground level is to come, step 5 *)
-              (match region_ground t i e with
-              | Some rg when not shade ->
-                  fill img x0 y0 x1 y1 bg;
-                  let q = float_of_int c.a.pw /. float_of_int t.cam.a.pw in
-                  Code_ground.paint img (Lazy.force e.file) (Code_ground.scale rg q) ~bg ~aa
-              | _ ->
               if readable c g && p.rect.w *. p.rect.h *. c.z *. c.z >= 0.08 *. float_of_int (c.a.pw * c.a.ph) then paint_code ~aa img c p.rect g (Lazy.force e.file) box bg
               else begin
                 fill img x0 y0 x1 y1 bg;
                 paint_columns img c p.rect g e.nlines box (mix (archi t.colours p.path) 0.55 bg)
-              end)
+              end
           | File _, None -> ()))
     t.placed;
   img
@@ -313,7 +262,7 @@ let capitals (t : t) (c : camera) : name list =
   List.filter_map
     (fun (path, (it : Code_guide.item)) ->
       match Hashtbl.find_opt where path with
-      | Some (i, e) when (not (outside t t.placed.(i))) && region_ground t i e = None -> (
+      | Some (i, e) when not (outside t t.placed.(i)) -> (
           match (clip c t.placed.(i).rect, t.geometry.(i)) with
           | Some _, Some g -> (
               match capital_line e it.at with
@@ -370,14 +319,7 @@ let names (t : t) (c : camera) : name list =
           let w = float_of_int (x1 - x0) and h = float_of_int (y1 - y0) in
           let cx = (float_of_int x0 +. float_of_int x1) /. 2. and cy = (float_of_int y0 +. float_of_int y1) /. 2. in
           let is_dir, name = match p.node with Dir (n, _) -> (true, n) | File (n, _, _) -> (false, n) in
-          (* a file laid out at the region level: its name on a tab at its
-           * top, not over its code *)
-          let panel = match p.node with File (_, _, e) -> region_ground t i e <> None | Dir _ -> false in
-          if panel then begin
-            let box, shape = tab a (lighter (archi t.colours p.path)) 14. (float_of_int x0 +. 3.) (float_of_int y0 +. 2.) name in
-            cands := { node = i; nbox = box; nrank = 500.; draw = shape; said = None } :: !cands
-          end
-          else
+
           let len = float_of_int (max 1 (String.length name)) in
           let cap = if not is_dir then 16. else match p.depth with 1 -> 64. | 2 -> 36. | _ -> 24. in
           let across = Float.min (w /. (0.55 *. len)) (Float.min (h /. 2.5) cap) in
@@ -677,15 +619,6 @@ let spot (t : t) (c : camera) (path : string) (line : int) : (float * float * fl
       let found = ref None in
       Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, x) when x.path = path -> found := Some i | _ -> ()) t.placed;
       match !found with
-      | Some i when (match t.placed.(i).node with File (_, _, e) -> region_ground t i e <> None | Dir _ -> false) -> (
-          match t.placed.(i).node with
-          | File (_, _, e) -> (
-              match region_ground t i e with
-              | Some g when line < Array.length g.places ->
-                  let x, y, _, h = Code_ground.box g line in
-                  Some (x, y +. (h /. 2.), x)
-              | _ -> None)
-          | Dir _ -> None)
       | Some i -> (
           match (clip c t.placed.(i).rect, t.geometry.(i)) with
           | Some _, Some g ->
@@ -1139,19 +1072,6 @@ let pick (t : t) (c : camera) (_ : float) (px : float) (py : float) : (string * 
       | Some (p, l) -> ( match Code_street.ground_of s p with Some g -> Some (p, l, col g l) | None -> None)
       | None -> None)
   | Some e -> let g = ground_of t e in Option.map (fun l -> (e.path, l, col g l)) (Code_ground.line_at g px py)
-  | None ->
-      (* the region level: a file's panel under the pixel *)
-      let found = ref None in
-      Array.iteri
-        (fun i (p : entry Treemap.placed) ->
-          if !found = None then
-            match p.node with
-            | File (_, _, e) -> (
-                match region_ground t i e with
-                | Some g -> ( match Code_ground.line_at g px py with Some l -> found := Some (e.path, l, col g l) | None -> ())
-                | None -> ())
-            | Dir _ -> ())
-        t.placed;
-      !found
+  | None -> None
 
 let style : style = { sname = "v2"; paint; labels; pick; unit_at; units = true }
