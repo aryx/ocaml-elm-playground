@@ -1,0 +1,7 @@
+; claude: a directory's code read from the disk (Code_walk), for its code
+; map: tinybox codemap <dir> (../../native) and make_codemap_data
+; (../../codegen), which bundles it for a web page (../web)
+(library
+ (name tinybox_codewalk)
+ (wrapped false)
+ (libraries tinybox_codedeps unix))

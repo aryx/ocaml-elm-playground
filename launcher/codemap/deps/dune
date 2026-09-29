@@ -1,6 +1,8 @@
 ; claude: which files are a program's code (Code_deps), pure: no
 ; Playground, so that the build-time generator (../../codegen) can count
-; every program's lines, as well as the code map
+; every program's lines, as well as the code map; and Code_config, which
+; files a directory's map leaves out (.codemapignore), pure too, for the
+; walk (../walk) and the configs' colours (Code_guide)
 (library
  (name tinybox_codedeps)
  (wrapped false)

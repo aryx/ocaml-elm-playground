@@ -1,0 +1,34 @@
+// launcher/codemap/web/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "A directory's code map on a web page, for a project's site: its code fetched, the URL saying where to open.",
+  files: {
+    'Codemap_web.ml': { digest: 'a55d1cd9d1a5',
+      summary: 'The page\'s program, the same for every project: codemap_data.txt fetched, read, the map run; focus=, line=, def= in the URL.',
+      important: [{ at: 'def:get', say: 'the bundle read the first time the map asks', weight: 3 }],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A code map on a web page',
+      bones: [
+        { at: 'Codemap_web.ml:def:main', role: 'the page: the bundle asked for, the map started' },
+        { at: '../../web/Fetch_bytes.ml:def:get', role: 'codemap_data.txt, as bytes' },
+        { at: 'Codemap_web.ml:def:get', role: 'read once it came' },
+        { at: '../deps/Code_bundle.ml:def:of_string', role: 'its sources and configs' },
+        { at: '../Code_guide.ml:def:load', role: 'the configs, jsonnet imports read from the bundle' },
+        { at: '../Codemap.ml:def:run_loading', role: 'the map, waiting until then' },
+        { at: '../Codemap.ml:def:opened_at', role: 'where the URL says' },
+      ],
+      joints: [
+        { from: 'Codemap_web.ml:def:main', to: '../../web/Fetch_bytes.ml:def:get', say: 'asks' },
+        { from: 'Codemap_web.ml:def:main', to: '../Codemap.ml:def:run_loading', say: 'runs' },
+        { from: '../Codemap.ml:def:run_loading', to: 'Codemap_web.ml:def:get', say: 'each frame, until' },
+        { from: 'Codemap_web.ml:def:get', to: '../deps/Code_bundle.ml:def:of_string', say: 'the bytes' },
+        { from: 'Codemap_web.ml:def:get', to: '../Code_guide.ml:def:load', say: 'the configs' },
+        { from: '../Codemap.ml:def:run_loading', to: '../Codemap.ml:def:opened_at', say: 'the map made' },
+      ],
+    },
+  ],
+}

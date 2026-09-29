@@ -2,8 +2,21 @@
 // docs/claude_notes/codemapconfig_guidelines.md)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "Which files are a program's own code, found by the modules it names; and its budget.",
+  summary: "Pure, for build time and the browser too: which files are a program's own code and its budget; which files a map leaves out; a directory's code as one file.",
   files: {
+    'Code_bundle.mli': { digest: 'dbb30094ab61',
+      summary: "A directory's code as one file, for a code map's web page: tinybox_sources.txt's format, a name and the projects' tops.",
+      capitals: [{ at: 'type:t', say: 'what a web page is given of a directory' }],
+    },
+    'Code_bundle.ml': { digest: '89a6af215ec7',
+      summary: 'Entries written and read back; configs and what they import told apart by their names.',
+    },
+    'Code_config.mli': { digest: 'ff08fd021ba2',
+      summary: "Which files a map leaves out, .codemapignore read gitignore's way.",
+    },
+    'Code_config.ml': { digest: '767b1c2106f0',
+      summary: 'Patterns matched on names or from the root, a directory only when ending with a slash.',
+    },
     'Code_deps.mli': { digest: 'ffd8e0271a9e',
       summary: "A program's code from its main file, over the sources as (path, contents); pure, used at build time too.",
       important: [
@@ -22,4 +35,19 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'What a map is given: whose code, what is left out, carried as one file',
+      bones: [
+        { at: 'Code_deps.ml:def:own', role: "a program's own code, from its main file" },
+        { at: 'Code_config.ml:def:ignored', role: 'a directory: what its .codemapignore leaves out' },
+        { at: 'Code_bundle.ml:def:to_string', role: 'the directory written as one file' },
+        { at: 'Code_bundle.ml:def:of_string', role: 'and read back, in the browser' },
+      ],
+      joints: [
+        { from: 'Code_config.ml:def:ignored', to: 'Code_bundle.ml:def:to_string', say: 'what is kept (Code_walk)' },
+        { from: 'Code_bundle.ml:def:to_string', to: 'Code_bundle.ml:def:of_string', say: 'codemap_data.txt' },
+      ],
+    },
+  ],
 }

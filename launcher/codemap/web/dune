@@ -1,0 +1,15 @@
+; claude: a directory's code map on a web page (Codemap_web): the
+; program, the same for every project, whose code it fetches, a file
+; written by make_codemap_data (../../codegen). make codemap-web builds
+; it with --profile=release-js and puts it beside the page and the data.
+(executable
+ (name Codemap_web)
+ (modules Codemap_web)
+ (libraries
+   elm_core elm_playground
+   tinybox_codemap tinybox_codedeps
+   web_fetch ; the bundle's request
+   elm_playground_web ; implem of virtual elm_playground
+ )
+ (modes js)
+ (link_flags -no-check-prims))

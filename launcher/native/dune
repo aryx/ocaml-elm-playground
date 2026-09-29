@@ -180,6 +180,7 @@
    caps
    unix ; the menu's child process
    tinybox_menu ; the menu, this host's (Tinybox_native)
+   tinybox_codewalk ; a directory's code read, tinybox codemap <dir>
    catalogue graphics_png graphics_rgba ; the menu's data
    golden_scenes elm_playground_native_common ; the previews: the scenes' scripts, Input_script
    graphics_core graphics_3d graphics_3d_geometry graphics_raytrace graphics_images ; the 3D previews' renderer (Preview3d_render)

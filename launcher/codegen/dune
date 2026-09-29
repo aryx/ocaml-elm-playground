@@ -7,4 +7,12 @@
 ; and ../menu/dune's and ../native/dune's rules
 (executable
  (name make_tinybox_data)
+ (modules make_tinybox_data)
  (libraries catalogue golden_scenes graphics_rgba graphics_png graphics_imaging tinybox_codedeps))
+
+; claude: a directory's code as one file (Code_bundle), for its code
+; map on a web page (../codemap/web); make codemap-web
+(executable
+ (name make_codemap_data)
+ (modules make_codemap_data)
+ (libraries tinybox_codedeps tinybox_codewalk))

@@ -294,16 +294,56 @@ type alone = { code : t option; before : string Set_.t; repeat : (string * float
 
 let area_of (screen : Playground.screen) = (screen.left +. 20., screen.top -. 92., int_of_float screen.width - 40, int_of_float screen.height - 162)
 
-let run_directory ?guide ?colours ?roots ~(name : string) ~(sources : (string * string) list) () : unit =
+(* claude: the map opened where the command line or the page's URL says
+ * (a link to a part of the code, Codemap_web):
+ *   focus=<path>   a folder, or a file (flown to)
+ *   line=<n>       with a file, its definition there peeked at (from 1)
+ *   def=<name>     a top-level definition so named, the first found
+ *                  (under focus if given), peeked at *)
+let opened_at (c : t) (flags : (string * string) list) : t =
+  let focus = List.assoc_opt "focus" flags in
+  let is_file p = List.exists (fun (e : Code_map.entry) -> e.path = p) (Code_map.entries c.map) in
+  let c = match focus with Some p when not (is_file p) -> { c with map = Code_map.focus_on c.map p } | _ -> c in
+  let def_named name =
+    let under p = match focus with None -> true | Some d -> p = d || String.starts_with ~prefix:(d ^ "/") p in
+    List.find_map
+      (fun (e : Code_map.entry) ->
+        if not (under e.path) then None
+        (* claude: a section's title (* diff *) is among the defs, for
+         * the map's labels: not what def=diff means *)
+        else List.find_map (fun (l, n, cat) -> if n = name && cat <> Highlight_code.Comment_section then Some (e.path, l) else None) (Lazy.force e.file).defs)
+      (Code_map.entries c.map)
+  in
+  let line = Option.bind (List.assoc_opt "line" flags) int_of_string_opt in
+  match (List.assoc_opt "def" flags, focus, line) with
+  | Some name, _, _ -> ( match def_named name with Some (p, l) -> { c with map = Code_map.go_back_to c.map p (Some l) } | None -> c)
+  | None, Some p, Some n when is_file p -> { c with map = Code_map.go_back_to c.map p (Some (n - 1)) }
+  | None, Some p, None when is_file p -> { c with map = Code_map.go_back_to c.map p None }
+  | _ -> c
+
+type directory = { guide : Code_guide.t option; colours : (string * (int * int * int)) list option; roots : string list option; name : string; sources : (string * string) list }
+
+(* claude: the map, its directory given by [get] once it has it (a web
+ * page's, fetched; Error, why not, said on the screen) *)
+let run_loading ~(get : unit -> (directory, string) result option) : unit =
+  let status = ref "its code: on its way..." in
   let update (computer : Playground.computer) (m : alone) : alone =
-    let code =
+    let made =
       match m.code with
-      | Some c -> c
-      | None ->
-          let c = of_directory ?guide ?colours ?roots ~area:(area_of computer.screen) ~name ~sources () in
-          (* claude: focus=<path>, the map opened on that unit *)
-          match List.assoc_opt "focus" (Playground_platform.flags ()) with Some p -> { c with map = Code_map.focus_on c.map p } | None -> c
+      | Some c -> Some c
+      | None -> (
+          match get () with
+          | None -> None
+          | Some (Error why) ->
+              status := "its code: " ^ why;
+              None
+          | Some (Ok d) ->
+          let c = of_directory ?guide:d.guide ?colours:d.colours ?roots:d.roots ~area:(area_of computer.screen) ~name:d.name ~sources:d.sources () in
+          Some (opened_at c (Playground_platform.flags ())))
     in
+    match made with
+    | None -> m
+    | Some code ->
     let keys = computer.keyboard.keys in
     let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
     let (Time now) = computer.time in
@@ -317,10 +357,18 @@ let run_directory ?guide ?colours ?roots ~(name : string) ~(sources : (string * 
     in
     { code = Some (Option.value (update computer ~pressed ~arrow code) ~default:code); before = keys; repeat }
   in
-  let view (computer : Playground.computer) (m : alone) = match m.code with Some c -> view computer c | None -> [] in
+  let view (computer : Playground.computer) (m : alone) =
+    match m.code with
+    | Some c -> view computer c
+    | None -> [ Playground.words (Playground.rgb 200 200 200) !status |> Playground.scale (20. /. Playground.words_font_size) ]
+  in
   let flags = Playground_platform.flags () in
   (* claude: style=streets, the map's style (Code_map); a directory's
    * map is drawn by default in the new one, Map_v2 *)
   Code_map.choose_style (Option.value (List.assoc_opt "style" flags) ~default:"v2");
   Playground_platform.run_app ~screen:(1778, 1000) ~flags
     (Playground.game view update { code = None; before = Set_.empty; repeat = None })
+
+let run_directory ?guide ?colours ?roots ~(name : string) ~(sources : (string * string) list) () : unit =
+  let d = Some (Ok { guide; colours; roots; name; sources }) in
+  run_loading ~get:(fun () -> d)

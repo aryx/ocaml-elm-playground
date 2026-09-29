@@ -4,7 +4,14 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "tinybox's menu in a browser: no program linked in, one started by loading its own page.",
   files: {
-    'Tinybox_web.ml': { digest: '21efd9c8fc96',
+    'Fetch_bytes.mli': { digest: '577d3c07bfcb',
+      summary: "A big file of the site fetched as bytes: tinybox's sources, a code map's bundle.",
+    },
+    'Fetch_bytes.ml': { digest: '68a4b5600767',
+      summary: 'An XMLHttpRequest for an array buffer, made a string 32 KB at a time by the browser.',
+      important: [{ at: 'def:bytes_of_response', say: 'a byte at a time froze the page 1.4 s', weight: 2 }],
+    },
+    'Tinybox_web.ml': { digest: '3f4191261675',
       summary: "The web host: a program's page loaded, thumbnails and sources fetched from the assets repository.",
       important: [
         { at: 'def:go', say: 'the child process is the page: Back returns', weight: 3 },

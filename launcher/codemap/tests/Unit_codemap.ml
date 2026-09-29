@@ -161,6 +161,12 @@ let tests =
               Code_config.ignored c "kernel/gitlog.txt" ~dir:false;
               Code_config.ignored c "lib/io_tests.c" ~dir:false;
             ]);
+      (* claude: Code_bundle.mli's worked example *)
+      Testo.create "a directory's code as one file, and back" (fun () ->
+          let b : Code_bundle.t =
+            { name = "ix"; roots = [ "" ]; sources = [ ("a.ml", "let x = 1") ]; configs = [ ".codemapconfig" ]; jsonnet = [ (".codemapconfig", "{}") ] }
+          in
+          Alcotest.(check bool) "the same" true (Code_bundle.of_string (Code_bundle.to_string b) = b));
       (* claude: Code_guide: configs in jsonnet, one per directory, what
        * they say, their anchors found, and the checker's findings *)
       Testo.create "the configs, read and checked" (fun () ->

@@ -8,9 +8,19 @@
  (libraries
    caps elm_core elm_playground catalogue
    tinybox_menu
-   ojs ; the page's location, the sources' request
-   js_of_ocaml ; Js.to_bytestring, the sources' bytes
+   ojs ; the page's location
+   web_fetch ; the sources' request
+   tinybox_codedeps ; Code_bundle, the sources' format
    elm_playground_web ; implem of virtual elm_playground
  )
  (modes js)
  (link_flags -no-check-prims))
+
+; claude: a file of the site fetched as bytes, for the pages reading a
+; big one: tinybox's sources, a directory's code map's bundle
+(library
+ (name web_fetch)
+ (wrapped false)
+ (modules Fetch_bytes)
+ (modes byte) ; js_of_ocaml only: ojs has no native code
+ (libraries ojs js_of_ocaml))

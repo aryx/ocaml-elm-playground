@@ -59,6 +59,18 @@ val run_directory :
   ?guide:Code_guide.t ->
   ?colours:(string * (int * int * int)) list -> ?roots:string list -> name:string -> sources:(string * string) list -> unit -> unit
 
+(* claude: the same, its directory given by [get] once it has it: None,
+   not yet (a web page's, being fetched: Codemap_web), Error, why not *)
+type directory = {
+  guide : Code_guide.t option;
+  colours : (string * (int * int * int)) list option;
+  roots : string list option;
+  name : string;
+  sources : (string * string) list;
+}
+
+val run_loading : get:(unit -> (directory, string) result option) -> unit
+
 (* the map of the program's own code alone, for a glance (tinybox's
    panel: Code_map.view ~chrome:false) *)
 val preview : area:float * float * int * int -> sources:(string * string) list -> program:string -> path:string -> Code_map.t

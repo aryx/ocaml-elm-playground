@@ -2,8 +2,11 @@
 // docs/claude_notes/codemapconfig_guidelines.md)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
-  summary: "Build time: what tinybox's menu shows, the catalogue and the thumbnails, made OCaml.",
+  summary: "Build time: what tinybox's menu shows, the catalogue and the thumbnails, made OCaml; and a directory's code bundled for a code map's web page.",
   files: {
+    'make_codemap_data.ml': { digest: '3bf131216bcb',
+      summary: 'A directory read as tinybox codemap reads it, written as one file for its web page (make codemap-web).',
+    },
     'make_tinybox_data.ml': { digest: '4aba2dd185f7',
       summary: 'CATALOG.md and the golden frames, halved into thumbnails, written as one module for the menu.',
       important: [
@@ -13,6 +16,18 @@
     },
   },
   skeletons: [
+    {
+      name: "A directory's code bundled for its web page",
+      bones: [
+        { at: 'make_codemap_data.ml', role: 'the program: a directory, its name' },
+        { at: '../codemap/walk/Code_walk.ml:def:walk', role: 'its sources, configs and projects, from the disk' },
+        { at: '../codemap/deps/Code_bundle.ml:def:to_string', role: 'one file, the path, the length, the text' },
+      ],
+      joints: [
+        { from: 'make_codemap_data.ml', to: '../codemap/walk/Code_walk.ml:def:walk', say: 'the directory' },
+        { from: '../codemap/walk/Code_walk.ml:def:walk', to: '../codemap/deps/Code_bundle.ml:def:to_string', say: 'printed' },
+      ],
+    },
     {
       name: 'The menu made at build time: a subcommand per generated module',
       bones: [

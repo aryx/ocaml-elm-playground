@@ -49,62 +49,15 @@ let go (url : string) : unit = Ojs.set_prop_ascii (Ojs.get_prop_ascii Ojs.global
  * for them -- on the same site as this page, and gzipped on the way *)
 let sources_url () = assets () ^ "/js/launcher/tinybox_sources.txt"
 
-(* each file its path, a newline, its length, a newline, its text *)
-let parse (s : string) : (string * string) list =
-  let rec go i acc =
-    if i >= String.length s then List.rev acc
-    else
-      let nl1 = String.index_from s i '\n' in
-      let nl2 = String.index_from s (nl1 + 1) '\n' in
-      let path = String.sub s i (nl1 - i) in
-      let n = int_of_string (String.sub s (nl1 + 1) (nl2 - nl1 - 1)) in
-      go (nl2 + 1 + n) ((path, String.sub s (nl2 + 1) n) :: acc)
-  in
-  go 0 []
-
+(* each file its path, a newline, its length, a newline, its text
+ * (Code_bundle's format) *)
 let sources : Tinybox_menu.sources option ref = ref None
 
-(* claude: the response's bytes as an OCaml string, built by the browser
- * a slice at a time (String.fromCharCode of 32 KB), then taken as it is
- * (Js.to_bytestring, a byte a character). The platform's fetch_web does
- * it a byte at a time (String.init over the Uint8Array): for 10 MB, 1.4 s
- * of the page frozen, most of it the garbage collector; this, a few
- * dozen ms.
- *
- *   old: String.init n (fun i -> Char.chr (Ojs.int_of_js (Ojs.array_get bytes i)))
- *)
-let bytes_of_response (response : Ojs.t) : string =
-  let bytes = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "Uint8Array") [| response |] in
-  let n = Ojs.int_of_js (Ojs.get_prop_ascii bytes "length") in
-  let from_char_code = Ojs.get_prop_ascii (Ojs.get_prop_ascii Ojs.global "String") "fromCharCode" in
-  let chunk = 32768 in
-  let parts =
-    List.init ((n + chunk - 1) / chunk) (fun k ->
-        let slice = Ojs.call bytes "subarray" [| Ojs.int_to_js (k * chunk); Ojs.int_to_js (min n ((k + 1) * chunk)) |] in
-        Ojs.call from_char_code "apply" [| Ojs.null; slice |])
-  in
-  let whole = Ojs.call (Ojs.list_to_js (fun x -> x) parts) "join" [| Ojs.string_to_js "" |] in
-  (* claude: an Ojs.t is a JavaScript value as it is, as a Js.t is:
-   * the two libraries' types for the same thing *)
-  Js_of_ocaml.Js.to_bytestring (Obj.magic whole : Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t)
-
-(* an XMLHttpRequest for bytes, as the web platform's fetch_web *)
 let fetch_sources () : unit =
   sources := Some Tinybox_menu.Loading;
-  let xhr = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "XMLHttpRequest") [||] in
-  ignore (Ojs.call xhr "open" [| Ojs.string_to_js "GET"; Ojs.string_to_js (sources_url ()) |]);
-  Ojs.set_prop_ascii xhr "responseType" (Ojs.string_to_js "arraybuffer");
-  let failed why = sources := Some (Tinybox_menu.No_sources why) in
-  Ojs.set_prop_ascii xhr "onload"
-    (Ojs.fun_to_js 1 (fun _ ->
-         let status = Ojs.int_of_js (Ojs.get_prop_ascii xhr "status") in
-         if status >= 200 && status < 300 then
-           match parse (bytes_of_response (Ojs.get_prop_ascii xhr "response")) with
-           | files -> sources := Some (Tinybox_menu.Sources files)
-           | exception _ -> failed "not read"
-         else failed (Printf.sprintf "not found (%d)" status)));
-  Ojs.set_prop_ascii xhr "onerror" (Ojs.fun_to_js 1 (fun _ -> failed "no answer"));
-  ignore (Ojs.call xhr "send" [||])
+  Fetch_bytes.get (sources_url ())
+    ~ok:(fun s -> sources := Some (match Code_bundle.entries s with files -> Tinybox_menu.Sources files | exception Failure _ -> Tinybox_menu.No_sources "not read"))
+    ~failed:(fun why -> sources := Some (Tinybox_menu.No_sources why))
 
 let get_sources () : Tinybox_menu.sources =
   match !sources with

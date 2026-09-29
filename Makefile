@@ -252,6 +252,22 @@ js:
 	dune build examples/svg --profile=release-js
 	dune build launcher/web --profile=release-js
 
+# claude: a directory's code map as a web page, for a project's site (the
+# author's ix, xix, principia): make codemap-web DIR=~/github/ix
+# OUT=~/github/ix/docs writes there codemap.html, codemap.bc.js (the map,
+# the same for every project, launcher/codemap/web) and codemap_data.txt
+# (the directory's code, make_codemap_data); a link to
+# codemap.html?focus=<path>, &line=<n> or ?def=<name> opens the map there
+CODEMAP_NAME=$(notdir $(abspath $(DIR)))
+codemap-web:
+	@test -n "$(DIR)" -a -n "$(OUT)" || (echo "usage: make codemap-web DIR=<project> OUT=<site dir>"; exit 2)
+	dune build launcher/codemap/web/Codemap_web.bc.js launcher/codegen/make_codemap_data.exe --profile=release-js
+	mkdir -p $(OUT)
+	install -m 644 _build/default/launcher/codemap/web/Codemap_web.bc.js $(OUT)/codemap.bc.js
+	./_build/default/launcher/codegen/make_codemap_data.exe $(DIR) > $(OUT)/codemap_data.txt
+	printf '<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset="utf-8">\n    <title>%s: code map</title>\n    <style>body { margin: 0; background: #0e0c1c; }</style>\n    <script src="codemap.bc.js"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
+	  $(CODEMAP_NAME) > $(OUT)/codemap.html
+
 ###############################################################################
 # Developer targets
 ###############################################################################

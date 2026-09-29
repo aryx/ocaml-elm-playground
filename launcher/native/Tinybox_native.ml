@@ -334,41 +334,12 @@ let host (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string lis
 (* A directory's code *)
 (*****************************************************************************)
 
-(* the files the code map colours: OCaml's (Highlight_ml), C's (Highlight_c) *)
-let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h"; ".s"; ".S"; ".asm" ]
-
-(* claude: the capabilities as proof that we may, the Stdlib and Unix
- * doing the reading, as File_menu and Tty_unix do *)
+(* claude: the capabilities as proof that we may, Code_walk doing the
+ * reading (shared with make_codemap_data, which bundles it for a web
+ * page) *)
 type directory = { roots : string list; sources : (string * string) list; guide : Code_guide.t; mistakes : string list }
 
 let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string) : directory =
-  let read path = match In_channel.with_open_bin path In_channel.input_all with s -> Some s | exception Sys_error _ -> None in
-  let config = Code_config.make ~ignore:(read (Filename.concat dir ".codemapignore")) in
-  let out = ref [] and roots = ref [] and configs = ref [] in
-  let rec walk (rel : string) =
-    let entries = try Sys.readdir (if rel = "" then dir else Filename.concat dir rel) with Sys_error _ -> [||] in
-    Array.sort compare entries;
-    (* claude: a project's top: a .git or a dune-project in it (not an
-     * mkfile: Plan 9 has one per program, the libraries' too) *)
-    if Array.exists (fun e -> e = ".git" || e = "dune-project") entries then roots := rel :: !roots;
-    (* claude: its config, if any (Code_guide) *)
-    if Array.mem ".codemapconfig" entries then configs := (if rel = "" then ".codemapconfig" else Filename.concat rel ".codemapconfig") :: !configs;
-    Array.iter
-      (fun e ->
-        (* claude: a directory starting with _ is a build's (_build,
-         * _opam); a file may (Linux 0.01's lib/_exit.c) *)
-        if e <> "" && e.[0] <> '.' then begin
-          let r = if rel = "" then e else Filename.concat rel e in
-          let path = Filename.concat dir r in
-          match (Unix.lstat path).st_kind with
-          | S_DIR -> if e.[0] <> '_' && not (Code_config.ignored config r ~dir:true) then walk r
-          | S_REG when List.exists (Filename.check_suffix e) source_extensions && not (Code_config.ignored config r ~dir:false) -> (
-              match read path with Some src -> out := (r, src) :: !out | None -> ())
-          | _ -> ()
-          | exception Unix.Unix_error _ -> ()
-        end)
-      entries
-  in
-  walk "";
-  let guide, mistakes = Code_guide.load ~read:(fun p -> read (Filename.concat dir p)) (List.rev !configs) in
-  { roots = List.rev !roots; sources = List.rev !out; guide; mistakes }
+  let w = Code_walk.walk dir in
+  let guide, mistakes = Code_guide.load ~read:(fun p -> Code_walk.read (Filename.concat dir p)) w.configs in
+  { roots = w.roots; sources = w.sources; guide; mistakes }

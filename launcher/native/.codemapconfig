@@ -26,7 +26,7 @@
         { at: 'def:directory_sources', weight: 1 },
       ],
     },
-    'Tinybox_native.ml': { digest: '6558f37d9540',
+    'Tinybox_native.ml': { digest: 'f67ea01e2391',
       summary: 'Thumbnails decoded when first shown, the child process waited for, the chosen one previewed live.',
       capitals: [{ at: 'def:start_preview', say: "a program's app captured and run in the panel" }],
       important: [
