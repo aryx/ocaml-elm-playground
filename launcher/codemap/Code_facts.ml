@@ -21,7 +21,7 @@ let header ?(max = 24) (src : string) : string list =
   let lines = List.filteri (fun i _ -> i < 60) (String.split_on_char '\n' src) in
   let opens t = String.length t >= 2 && (String.sub t 0 2 = "(*" || String.sub t 0 2 = "/*") in
   (* claude: C's // lines, a run of them one comment (~/ix's tiny-os) *)
-  let slashes t = String.length t >= 2 && String.sub t 0 2 = "//" in
+  let slashes t = (String.length t >= 2 && String.sub t 0 2 = "//") || (String.length t >= 1 && t.[0] = '|') in
   let closes t = contains t "*)" || contains t "*/" in
   let rec comments acc cur = function
     | [] -> List.rev (match cur with Some c -> List.rev c :: acc | None -> acc)
@@ -29,10 +29,10 @@ let header ?(max = 24) (src : string) : string list =
         let t = String.trim l in
         match cur with
         | None ->
-            if t = "//" then comments acc None rest
+            if t = "//" || t = "|" then comments acc None rest
             else if slashes t then
               (* a bare // ends a paragraph: the copyright's apart from the design's *)
-              let rec run acc' = function r :: rest' when slashes (String.trim r) && String.trim r <> "//" -> run (r :: acc') rest' | _ :: rest' when acc' <> [] && false -> (List.rev acc', rest') | rest' -> (List.rev acc', rest') in
+              let rec run acc' = function r :: rest' when slashes (String.trim r) && String.trim r <> "//" && String.trim r <> "|" -> run (r :: acc') rest' | _ :: rest' when acc' <> [] && false -> (List.rev acc', rest') | rest' -> (List.rev acc', rest') in
               let block, rest = run [ l ] rest in
               comments (block :: acc) None rest
             else if opens t then if closes t then comments ([ l ] :: acc) None rest else comments acc (Some [ l ]) rest
@@ -56,7 +56,7 @@ let is_program (src : string) : bool =
   || contains src "\nmain(" || contains src "\nint main(" || contains src "\nvoid main("
 
 (* a source the brief reads: OCaml's and C's *)
-let is_source (p : string) : bool = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".c"; ".h" ]
+let is_source (p : string) : bool = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".c"; ".h"; ".s"; ".S"; ".asm" ]
 
 let buf_add = Buffer.add_string
 
@@ -305,7 +305,7 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
   let modules =
     List.filter_map
       (fun (p, src) ->
-        if (Filename.check_suffix p ".ml" || Filename.check_suffix p ".c") && lines src >= 150 && (not (is_program src)) && not (List.exists (mine p) skeletons) then
+        if (Filename.check_suffix p ".ml" || Filename.check_suffix p ".c" || Filename.check_suffix p ".s") && lines src >= 150 && (not (is_program src)) && not (List.exists (mine p) skeletons) then
           Some (p ^ ": a module with no skeleton of its own (the map derives one; write it: its parts, who uses whom)")
         else None)
       sources

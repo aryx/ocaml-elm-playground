@@ -23,7 +23,7 @@
         { at: 'def:trick', say: '"the trick of this game", marked', weight: 1 },
       ],
     },
-    'Code_file.ml': { digest: 'a815e6e35576',
+    'Code_file.ml': { digest: '03a06756c09a',
       summary: "OCaml's or C's highlighter run (plain text if it fails), its spans laid into the grid a byte a cell, the tricks marked.",
     },
     'Codemap.mli': { digest: 'd16de88ffb6e',
@@ -126,7 +126,7 @@
     'Map_graph.mli': { digest: '7b04ecaa22fb',
       summary: "codegraph's matrix over the map (g): a DSM whose rows expand and cells zoom, cycles in magenta.",
     },
-    'Map_graph.ml': { digest: 'bd949bae7142',
+    'Map_graph.ml': { digest: '5d0572a5944e',
       summary: "The DSM's rows, cells and cards drawn, clicks expanding a row or zooming into a cell, back to the map.",
       important: [
         { at: 'def:update', say: 'expand, zoom into a cell, or go back to the map', weight: 2 },
@@ -189,7 +189,7 @@
         { at: 'def:score', say: "codemap's weight by kind, times a log of uses" },
       ],
     },
-    'Code_rank.ml': { digest: '41c3fb7750a8',
+    'Code_rank.ml': { digest: 'fdb7fd16dd77',
       summary: "Every name resolved once over the map's files, the sure answers counted, own uses a third.",
       important: [
         { at: 'def:compute', say: 'only sure resolutions count: a guess is no use', weight: 2 },
@@ -201,7 +201,7 @@
         { at: 'def:find_in', say: 'a reference to its definitions, and whether sure' },
       ],
     },
-    'Code_names.ml': { digest: 'ef563d2bce2c',
+    'Code_names.ml': { digest: '53e149f8bf4d',
       summary: "Modules found by file name, opens tried last first; C's definitions before declarations, nearest first.",
       important: [
         { at: 'def:find_ml', say: "OCaml's rule: M.x, then the opens", weight: 2 },
@@ -292,7 +292,7 @@
         { at: 'def:brief', say: 'tinybox codemap -facts: a directory in Markdown' },
       ],
     },
-    'Code_facts.ml': { digest: 'bf69d0db6cc6',
+    'Code_facts.ml': { digest: '938b35e3a508',
       summary: "Each file's digest, header, sections, definitions with their uses and callers, fan-in and hubs, written out.",
       important: [
         { at: 'def:is_program', say: 'a main: a driver, not the core', weight: 2 },

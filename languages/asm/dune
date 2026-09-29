@@ -1,0 +1,10 @@
+; claude: assembly read, not run, for the code map (Highlight_asm): an
+; operating system's entry points are in it (a boot sector, the system
+; call's and the page fault's handlers), called from C and calling it.
+; Pure OCaml, no Playground (languages/README.md). A private library,
+; installed as part of elm_playground.
+(library
+ (name lang_asm)
+ (package elm_playground)
+ (wrapped false)
+ (libraries highlight_code))

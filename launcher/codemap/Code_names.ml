@@ -14,7 +14,8 @@ type candidate = { path : string; line : int; col : int; len : int; near : int *
 
 let has_ext exts p = List.exists (Filename.check_suffix p) exts
 let is_ml = has_ext [ ".ml"; ".mli"; ".mll"; ".mly" ]
-let is_c = has_ext [ ".c"; ".h" ]
+(* claude: assembly with C: one namespace, a.out's _ dropped (Highlight_asm) *)
+let is_c = has_ext [ ".c"; ".h"; ".s"; ".S"; ".asm" ]
 let module_of (p : string) = String.capitalize_ascii (Filename.remove_extension (Filename.basename p))
 
 (* how many directories two paths share from the top *)

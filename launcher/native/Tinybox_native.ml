@@ -335,7 +335,7 @@ let host (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string lis
 (*****************************************************************************)
 
 (* the files the code map colours: OCaml's (Highlight_ml), C's (Highlight_c) *)
-let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h" ]
+let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h"; ".s"; ".S"; ".asm" ]
 
 (* claude: the capabilities as proof that we may, the Stdlib and Unix
  * doing the reading, as File_menu and Tty_unix do *)

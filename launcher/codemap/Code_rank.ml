@@ -22,6 +22,14 @@ type t = {
 
 let last_name (s : string) : string = match String.rindex_opt s '.' with Some i -> String.sub s (i + 1) (String.length s - i - 1) | None -> s
 
+(* claude: an assembly label as written (_system_call) and as used from C
+ * (system_call, Highlight_asm's dname): the lookups try both *)
+let find_either tbl path line name =
+  match Hashtbl.find_opt tbl (path, line, last_name name) with
+  | Some v -> Some v
+  | None when String.length name > 1 && name.[0] = '_' -> Hashtbl.find_opt tbl (path, line, String.sub name 1 (String.length name - 1))
+  | None -> None
+
 let compute ?roots (files : (string * Code_file.t Lazy.t) list) : t =
   let ix = Code_names.index files in
   let h = Hashtbl.create 4096 and users = Hashtbl.create 4096 and links = Hashtbl.create 1024 in
@@ -63,12 +71,12 @@ let compute ?roots (files : (string * Code_file.t Lazy.t) list) : t =
 let links (t : t) : (string * string * int) list = Hashtbl.fold (fun (a, b) n acc -> (a, b, n) :: acc) t.links [] |> List.sort compare
 
 let users (t : t) (path : string) (line : int) (name : string) : (string * int) list =
-  match Hashtbl.find_opt t.users (path, line, last_name name) with
+  match find_either t.users path line name with
   | Some by -> List.sort (fun (a, n) (b, m) -> compare (m, a) (n, b)) (Hashtbl.fold (fun p n acc -> (p, n) :: acc) by [])
   | None -> []
 
 let uses (t : t) (path : string) (line : int) (name : string) : use =
-  Option.value (Hashtbl.find_opt t.uses (path, line, last_name name)) ~default:{ own = 0; others = 0; files = 0 }
+  Option.value (find_either t.uses path line name) ~default:{ own = 0; others = 0; files = 0 }
 
 (* codemap's multiplier_use: NoUse to HugeUse *)
 let bucket (n : int) : float = if n <= 0 then 0.9 else if n = 1 then 1.3 else if n < 5 then 1.7 else if n < 20 then 2.1 else if n < 100 then 2.7 else 3.3

@@ -1,0 +1,3 @@
+(test
+ (name Test_asm)
+ (libraries alcotest testo lang_asm highlight_code))

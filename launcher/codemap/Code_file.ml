@@ -36,13 +36,40 @@ let make (path : string) (src : string) : t =
    * OCaml's lexer gives up on it *)
   let ocaml = List.exists (Filename.check_suffix path) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
   let c = List.exists (Filename.check_suffix path) [ ".c"; ".h" ] in
+  (* claude: and assembly (Highlight_asm): an OS's entry points *)
+  let asm = List.exists (Filename.check_suffix path) [ ".s"; ".S"; ".asm" ] in
   let plainly () : Highlight_code.analysis =
     { spans = plain src; occurrences = []; definitions = []; references = []; opens = []; includes = [] }
   in
   let an =
     if ocaml then (try Highlight_ml.analyze src with _ -> plainly ())
     else if c then (try Highlight_c.analyze src with _ -> plainly ())
+    else if asm then (try Highlight_asm.analyze src with _ -> plainly ())
     else plainly ()
+  in
+  (* claude: a use bound to a prototype of the file (C's extern int
+   * system_call(void);) whose body is elsewhere: a reference too, found
+   * across the files (Linux 0.01's C calling its assembly; ~/ix's lesson:
+   * a prototype counted as the definition hid the real one) *)
+  let an =
+    let bodies = List.filter_map (fun (d : Highlight_code.definition) -> if d.drank >= 3 then Some d.dname else None) an.definitions in
+    let protos = List.filter (fun (d : Highlight_code.definition) -> d.drank = 2 && not (List.mem d.dname bodies)) an.definitions in
+    if protos = [] then an
+    else
+      let extra =
+        List.filter_map
+          (fun (o : Highlight_code.occurrence) ->
+            if (o.line, o.col) = o.bound_at then None
+            else
+              List.find_map
+                (fun (d : Highlight_code.definition) ->
+                  if (d.dline, d.dcol) = o.bound_at then
+                    Some ({ rline = o.line; rcol = o.col; rlen = o.len; rpath = []; rname = d.dname; rspace = d.dspace; ropens = [] } : Highlight_code.reference)
+                  else None)
+                protos)
+          an.occurrences
+      in
+      { an with references = an.references @ extra }
   in
   let lines = an.spans and occurrences = an.occurrences in
   let n = Array.length lines in
