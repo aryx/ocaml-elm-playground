@@ -251,7 +251,7 @@ let wrap (width : int) (text : string) : string list =
   in
   List.rev (if last = "" then lines else last :: lines)
 
-type name = { node : int; nbox : float * float * float * float; nrank : float; draw : shape; said : string list option; sect : (string * int) option }
+type name = { node : int; nbox : float * float * float * float; nrank : float; draw : shape; said : string list option; sect : (string * int) option; cap : (string * int * string) option (* claude: a capital's file, line, name *) }
 
 (* claude: the capitals the configs name (Code_guide.capitals): where
  * each is in its file, found once (its file lexed then) *)
@@ -361,7 +361,7 @@ let capitals (t : t) (c : camera) : name list =
                   in
                   let central = match fan path with 0 -> [] | n -> [ Printf.sprintf "its module named by %d files%s" n (if n >= 30 then ": the core" else "") ] in
                   let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ central @ used @ [ "click: to its file" ] in
-                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805. +. float_of_int (min 14 (fan path / 10)); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None }
+                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805. +. float_of_int (min 14 (fan path / 10)); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None; cap = Some (path, line, label) }
               | None -> None)
           | _ -> None)
       | _ -> None)
@@ -389,7 +389,7 @@ let names (t : t) (c : camera) : name list =
           let box, shape = tab a ~alpha:0.9 (lighter (archi t.colours p.path)) 16. !x 6. text in
           let _, _, x1, _ = box in
           x := x1 +. 4.;
-          { node = i; nbox = box; nrank = 10000.; draw = shape; said = None; sect = None })
+          { node = i; nbox = box; nrank = 10000.; draw = shape; said = None; sect = None; cap = None })
         above
   in
   (* at the ground, the file is the map: only the breadcrumb *)
@@ -416,7 +416,7 @@ let names (t : t) (c : camera) : name list =
               let col = archi t.colours p.path in
               let fx0 = float_of_int x0 and fy0 = float_of_int y0 in
               let box, shape = tab a (lighter col) 15. (fx0 +. 3.) (fy0 +. 3.) name in
-              cands := { node = i; nbox = box; nrank = 700.; draw = shape; said = None; sect = None } :: !cands;
+              cands := { node = i; nbox = box; nrank = 700.; draw = shape; said = None; sect = None; cap = None } :: !cands;
               (* the card, under the tab, wrapped to the block *)
               (match Option.bind (Code_guide.file_note t.guide e.path) (fun n -> n.summary) with
               | Some said ->
@@ -437,7 +437,7 @@ let names (t : t) (c : camera) : name list =
                              words ink l |> scale (size /. words_font_size) |> move (sx a (fx0 +. 8. +. (tw /. 2.))) (sy a (top +. ((float_of_int k +. 0.5) *. (size +. 3.)))))
                            lines)
                   in
-                  cands := { node = i; nbox = (fx0 +. 4., top -. 3., fx0 +. 12. +. lw, top +. bh +. 3.); nrank = 820.; draw; said = None; sect = None } :: !cands
+                  cands := { node = i; nbox = (fx0 +. 4., top -. 3., fx0 +. 12. +. lw, top +. bh +. 3.); nrank = 820.; draw; said = None; sect = None; cap = None } :: !cands
               | None -> ());
               (* the sections, each where it is in the columns *)
               (match t.geometry.(i) with
@@ -460,7 +460,7 @@ let names (t : t) (c : camera) : name list =
                               words (rgb r gg b) text |> scale (size /. words_font_size) |> move (sx a (px +. (tw /. 2.) +. 2.)) (sy a py);
                             ]
                         in
-                        if px +. tw < float_of_int x1 then cands := { node = i; nbox = (px, py -. (size /. 2.) -. 2., px +. tw +. 6., py +. (size /. 2.) +. 2.); nrank = 400.; draw; said = None; sect = Some (e.path, l) } :: !cands
+                        if px +. tw < float_of_int x1 then cands := { node = i; nbox = (px, py -. (size /. 2.) -. 2., px +. tw +. 6., py +. (size /. 2.) +. 2.); nrank = 400.; draw; said = None; sect = Some (e.path, l); cap = None } :: !cands
                       end)
                     f.defs
               | None -> ())
@@ -487,7 +487,7 @@ let names (t : t) (c : camera) : name list =
              * and drawn large at its centre it hid its subfolders (the
              * author, at launcher: codemap) *)
             if not (t.top_kept && is_dir && p.depth = 1 && t.focus = 0) then
-            cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw; said = None; sect = None } :: !cands
+            cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw; said = None; sect = None; cap = None } :: !cands
           end)
       | _ -> ())
     t.placed;
@@ -565,7 +565,9 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
   | None -> []
   | Some (u, v) -> (
       let mx = to_px c u and my = to_py c v in
-      match List.find_opt (fun n -> within n.nbox mx my && n.said = None) kept with
+      (* claude: a unit's name, or a capital: the definition's own ties
+       * (the author: "hovering over a capital can also show its deps") *)
+      match List.find_opt (fun n -> within n.nbox mx my && (n.said = None || n.cap <> None)) kept with
       | None -> []
       | Some n ->
           let h = t.placed.(n.node).path in
@@ -587,11 +589,36 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
             let side q = if t.top_kept && Hashtbl.mem index q then q else side q in
             let add tbl k n = Hashtbl.replace tbl k (n + Option.value (Hashtbl.find_opt tbl k) ~default:0) in
             let users = Hashtbl.create 16 and uses = Hashtbl.create 16 in
-            List.iter
-              (fun (src, dst, n) ->
-                if inside dst && not (inside src) then add users (side src) n
-                else if inside src && not (inside dst) then add uses (side dst) n)
-              (Code_rank.links (rank_of t));
+            (match n.cap with
+            | None ->
+                List.iter
+                  (fun (src, dst, n) ->
+                    if inside dst && not (inside src) then add users (side src) n
+                    else if inside src && not (inside dst) then add uses (side dst) n)
+                  (Code_rank.links (rank_of t))
+            | Some (p, line, name) ->
+                (* the definition's users, file by file; and its body's
+                 * uses of other files' names *)
+                let short = match String.rindex_opt name '.' with Some i -> String.sub name (i + 1) (String.length name - i - 1) | None -> name in
+                (* an .mli's declaration: its .ml's definition's users *)
+                let rp, rl =
+                  if Filename.check_suffix p ".mli" then
+                    let impl = Filename.remove_extension p ^ ".ml" in
+                    match List.find_opt (fun (x : entry) -> x.path = impl) (t.entries @ t.beyond) with
+                    | Some x -> (match List.find_opt (fun (_, nm, _) -> nm = short) (Lazy.force x.file).defs with Some (l', _, _) -> (impl, l') | None -> (p, line))
+                    | None -> (p, line)
+                  else (p, line)
+                in
+                List.iter (fun (q, k) -> if q <> p && q <> rp then add users (side q) k) (Code_rank.users (rank_of t) rp rl short);
+                (match List.find_opt (fun (x : entry) -> x.path = p) (t.entries @ t.beyond) with
+                | Some e ->
+                    let f = Lazy.force e.file in
+                    (* its body: to the next top-level definition *)
+                    let last = List.fold_left (fun acc (l, _, (cat : Highlight_code.category)) -> if l > line && l < acc && cat <> Comment_section then l - 1 else acc) (Code_file.nlines f - 1) f.defs in
+                    List.iter
+                      (fun (ed : Code_street.edge) -> if ed.from_line >= line && ed.from_line <= last && not (inside ed.target) then add uses (side ed.target) 1)
+                      (Code_street.uses ~index:(index_of t) ~roots:t.roots ~path:p f)
+                | None -> ()));
             let top tbl = Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl [] |> List.sort (fun (_, x) (_, y) -> compare y x) |> List.filteri (fun i _ -> i < (if t.top_kept then 30 else 12)) in
             let x0, y0, x1, y1 = n.nbox in
             let hx = (x0 +. x1) /. 2. and hy = (y0 +. y1) /. 2. in
