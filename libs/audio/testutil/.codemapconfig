@@ -3,6 +3,17 @@
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'What the tests of sound share: WAVs written and compared with golden ones.',
+  files: {
+    'Testutil_wav.mli': { digest: '545051287378',
+      summary: 'A golden WAV test in one call: samples written to actual/, compared with golden/ as 16 bits.',
+      capitals: [
+        { at: 'def:check', say: "a sound test's one call" },
+      ],
+    },
+    'Testutil_wav.ml': { digest: '24c3f6f283e6',
+      summary: 'Written with Wav, both files read back as 16-bit samples, the first difference said.',
+    },
+  },
   skeletons: [
     {
       name: 'A golden WAV: written, read back, compared',

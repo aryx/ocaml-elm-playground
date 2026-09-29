@@ -1,0 +1,19 @@
+// docs/toy-native-example/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The README's smallest native program, as a project of its own: a square moved by the arrows.",
+  files: {
+    'Toy.ml': { digest: '9cb76c10cd06',
+      summary: "The README's example: a blue square moved by the keyboard, Model-View-Update in twenty lines.",
+      important: [
+        { at: 'def:update', say: 'the arrows as -1, 0 or 1 on each axis', weight: 2 },
+        { at: 'def:app', say: 'game: view, update, the first state', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.mvu('Toy.ml', init='def:initial_state'),
+  ],
+}

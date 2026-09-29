@@ -46,7 +46,8 @@ type data = {
 type t
 
 (* [make data units]: the matrix of [units] (a unit a folder, or a file
-   when it is one of [data.files]) *)
+   when it is one of [data.files]); one unit alone, expanded at once: its
+   inside *)
 val make : data -> string list -> t
 
 (* the rows, in order: each node, its depth, whether it can expand, and

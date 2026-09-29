@@ -756,6 +756,16 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     | _, _, Stay when to_graph <> None ->
         let h, users, uses = Option.get to_graph in
         Graph (h, h :: List.sort_uniq compare (users @ uses))
+    (* claude: g over nothing: where one is, its parts against each other
+     * (the earth: the whole project; games/: the genres; a file: its
+     * definitions) *)
+    | _, _, Stay when pressed "g" && units && t.search = None ->
+        let here = t.placed.(t.focus).path in
+        let kids = List.map (fun i -> t.placed.(i).path) (Code_units.children t.placed t.focus) in
+        (match (here, kids) with
+         | "", [ one ] -> Graph ("", [ one ])
+         | "", kids -> Graph ("", kids)
+         | here, _ -> Graph (here, [ here ]))
     | Some (h, users, uses), _, Stay -> Tied (h, users, uses)
     | None, Some p, Stay -> Select (p, [ p ])
     | None, None, Stay when up_from_top -> Up
@@ -983,6 +993,7 @@ let keys_help = [
   ("Dependencies", "");
   ("shift+click a name", "it and the units tied to it, together (d: users, uses, both, alone)");
   ("g, ctrl+click a name", "codegraph's matrix of it and its ties");
+  ("g over nothing", "the matrix of where one is: its parts against each other");
   ("Tours and views", "");
   ("n, p", "the tour: the next stop, the one before");
   ("w", "a program's map: its own code, with what it uses, the whole repository");

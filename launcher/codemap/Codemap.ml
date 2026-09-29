@@ -229,7 +229,13 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
             | Tied r -> Some r.tbefore
             | _ -> Some { t with map })
         | map, Graph (unit, units) ->
-            Some { t with map; graph = Some (Map_graph.make map ~title:(Printf.sprintf "%s and what it is tied to, codegraph's matrix" unit) units) }
+            let title =
+              match units with
+              | [ one ] -> Printf.sprintf "inside %s: its parts' dependencies, codegraph's matrix" one
+              | _ when unit = "" -> "the whole: its parts' dependencies, codegraph's matrix"
+              | _ -> Printf.sprintf "%s and what it is tied to, codegraph's matrix" unit
+            in
+            Some { t with map; graph = Some (Map_graph.make map ~title units) }
         | map, Tied (unit, users, uses) ->
             let scope = Tied { unit; users; uses; tmode = 0; tbefore = { t with map } } in
             let next = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope in

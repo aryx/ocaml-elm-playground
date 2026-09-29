@@ -127,7 +127,11 @@ let expandable (d : data) (n : node) = match n with Def _ -> false | File p -> d
 
 let make (d : data) (units : string list) : t =
   let nodes = List.map (fun u -> if List.mem u d.files then File u else Dir u) units in
-  { data = d; top = List.map (fun n -> Node (n, None)) (partition (weight d) nodes); cache = None }
+  (* claude: one unit alone, its inside: expanded at once (g where one
+   * is, a file's definitions) *)
+  match nodes with
+  | [ n ] -> { data = d; top = [ Node (n, Some (List.map (fun p -> Node (p, None)) (partition (weight d) (parts d n)))) ]; cache = None }
+  | _ -> { data = d; top = List.map (fun n -> Node (n, None)) (partition (weight d) nodes); cache = None }
 
 let toggle (t : t) (target : node) : t =
   let rec go = function

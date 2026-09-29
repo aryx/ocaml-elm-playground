@@ -3,6 +3,55 @@
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "Core Animation's ideas from scratch: timing curves as cubic Béziers, values on their way, a layout's rectangles moving to another.",
+  files: {
+    'Timing.mli': { digest: 'd1c398b57bfa',
+      summary: "How an animation's time becomes its progress: a cubic Bézier, CSS's and Core Animation's.",
+      capitals: [
+        { at: 'def:at', say: "the way at a time: the curve solved for x" },
+      ],
+      important: [
+        { at: 'type:t', say: 'the two middle control points', weight: 3 },
+        { at: 'def:bezier', weight: 2 },
+      ],
+    },
+    'Timing.ml': { digest: '8afd0183c86d',
+      summary: "The curve's x solved for the time by Newton's method, else bisection, then its y read.",
+      important: [
+        { at: 'def:solve', say: 'Newton from s = t, bisection if it strays', weight: 3 },
+        { at: 'def:coord', say: "a coordinate, Horner's way", weight: 1 },
+      ],
+    },
+    'Animation.mli': { digest: '279d8878947a',
+      summary: 'A value on its way, a formula of the time now; implicit animations: a new target, no jump.',
+      capitals: [
+        { at: 'def:value', say: 'where it is now: nothing stepped' },
+        { at: 'def:set', say: 'a new target, from where it is now' },
+      ],
+      important: [
+        { at: 'type:t', say: 'from, to, start, duration, timing: only numbers', weight: 3 },
+        { at: 'type:keyed', say: 'an animation per key', weight: 2 },
+      ],
+    },
+    'Animation.ml': { digest: '17c88f8301f2',
+      summary: 'The value through the timing curve until done; set starts from the presentation value.',
+      important: [
+        { at: 'def:set', say: 'interrupted: the next starts where it was', weight: 3 },
+      ],
+    },
+    'Transition.mli': { digest: '90770ee8674e',
+      summary: "A layout's rectangles moving to another by key, Keynote's Magic Move: kept ones move, new ones grow in.",
+      capitals: [
+        { at: 'def:make', say: 'two layouts matched by key' },
+        { at: 'def:at', say: 'the frame at a progress p' },
+      ],
+      important: [
+        { at: 'type:frame', say: 'a rectangle and its opacity', weight: 2 },
+      ],
+    },
+    'Transition.ml': { digest: 'e3a7a46cfa29',
+      summary: 'Each key sorted into moved, entering or leaving, then every rectangle interpolated at p.',
+    },
+  },
   skeletons: [
     {
       name: 'Time into progress into places',
