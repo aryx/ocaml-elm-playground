@@ -329,13 +329,20 @@ let opened_at (c : t) (flags : (string * string) list) : t =
   let c = match focus with Some p when not (is_file p) -> { c with map = Code_map.focus_on c.map p } | _ -> c in
   let def_named name =
     let under p = match focus with None -> true | Some d -> p = d || String.starts_with ~prefix:(d ^ "/") p in
-    List.find_map
+    (* claude: a function first, then a type or a module, then a value
+     * (principia's def=sched: the kernel's sched(), not portfns.c's
+     * pointer so named); a section's title (* diff *), among the defs
+     * for the map's labels, never *)
+    let rank (cat : Highlight_code.category) =
+      match cat with Def_function -> 0 | Def_type | Def_module -> 1 | Def_value -> 2 | Comment_section -> 9 | _ -> 3
+    in
+    List.concat_map
       (fun (e : Code_map.entry) ->
-        if not (under e.path) then None
-        (* claude: a section's title (* diff *) is among the defs, for
-         * the map's labels: not what def=diff means *)
-        else List.find_map (fun (l, n, cat) -> if n = name && cat <> Highlight_code.Comment_section then Some (e.path, l) else None) (Lazy.force e.file).defs)
+        if not (under e.path) then []
+        else List.filter_map (fun (l, n, cat) -> if n = name && rank cat < 9 then Some (rank cat, e.path, l) else None) (Lazy.force e.file).defs)
       (Code_map.entries c.map)
+    |> List.stable_sort (fun (a, _, _) (b, _, _) -> compare a b)
+    |> function (_, p, l) :: _ -> Some (p, l) | [] -> None
   in
   let line = Option.bind (List.assoc_opt "line" flags) int_of_string_opt in
   match (List.assoc_opt "def" flags, focus, line) with
