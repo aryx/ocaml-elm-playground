@@ -41,6 +41,7 @@ val make :
   ?roots:string list ->
   ?guide:Code_guide.t ->
   ?beyond:entry list ->
+  ?style:Code_map_base.style ->
   area:float * float * int * int ->
   title:string ->
   marked:string list ->
@@ -84,12 +85,14 @@ val lines_text : int -> string
    under the mouse, to read whole lines; or none, at first. o (in update, or
    cycle_glass) goes from one to the next, one setting for every map.
    Nothing when the mouse is elsewhere. *)
-val glass : Playground.computer -> t -> Playground.shape list
+(* claude: [panel], the menu's panel's glass, its own setting (round at
+   first), the map's being none at first *)
+val glass : ?panel:bool -> Playground.computer -> t -> Playground.shape list
 
-val cycle_glass : unit -> unit
+val cycle_glass : ?panel:bool -> unit -> unit
 
 (* the glass now, for a hint: "round", "wide" or "none" *)
-val glass_name : unit -> string
+val glass_name : ?panel:bool -> unit -> string
 
 (* claude: the map's style (Code_map_base.style: Map_classic, today's;
    Map_streets, plan_codemap_google_maps.md's; Map_atlas, the street

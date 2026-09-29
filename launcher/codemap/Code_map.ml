@@ -46,8 +46,8 @@ let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
   { t with style; algo; placed; geometry; painted = None; lens = None; focus = 0 }
 
 (* a map in the chosen style *)
-let make ?numbered ?colours ?roots ?guide ?beyond ~area ~title ~marked entries : t =
-  let t = Code_map_base.make ?numbered ?colours ?roots ?guide ?beyond ~style:!chosen ~area ~title ~marked entries in
+let make ?numbered ?colours ?roots ?guide ?beyond ?style ~area ~title ~marked entries : t =
+  let t = Code_map_base.make ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries in
   if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
 
 (* claude: the map framing a unit by its path (a directory's or a
@@ -240,8 +240,13 @@ let readable_at (t : t) (u : float) (v : float) : bool =
 type glass = Round | Reading | No_glass
 
 let glass_shape = ref No_glass
-let cycle_glass () = glass_shape := match !glass_shape with Round -> Reading | Reading -> No_glass | No_glass -> Round
-let glass_name () = match !glass_shape with Round -> "round" | Reading -> "wide" | No_glass -> "none"
+
+(* claude: the menu's panel its own glass, round at first: there the map
+ * is a tease, the whole program in miniature, the glass roaming over it *)
+let panel_glass_shape = ref Round
+let shape_of ~panel = if panel then panel_glass_shape else glass_shape
+let cycle_glass ?(panel = false) () = let g = shape_of ~panel in g := match !g with Round -> Reading | Reading -> No_glass | No_glass -> Round
+let glass_name ?(panel = false) () = match !(shape_of ~panel) with Round -> "round" | Reading -> "wide" | No_glass -> "none"
 
 (* claude: moving by units (Code_units, a style's [units]: Map_v2's):
  * where a key, the wheel or a click takes the map, a directory or file at
@@ -866,10 +871,11 @@ let reading_glass (computer : computer) (t : t) : shape list =
  * the map's camera, so it would be painted anew every frame, as much
  * again as the map's own (on the web, half of a zoom's frame); it comes
  * back the frame the camera stops, as the map's sharp picture does *)
-let glass (computer : computer) (t : t) : shape list =
+let glass ?(panel = false) (computer : computer) (t : t) : shape list =
   (* claude: none over code read on the map itself, where the names under
    * the mouse are lit (names_lit) *)
   let a = t.cam.a in
   let mpx = px_of a computer.mouse.mx and mpy = py_of a computer.mouse.my in
-  if t.moving || readable_at t (to_u t.cam mpx) (to_v t.cam mpy) then []
-  else match !glass_shape with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []
+  (* claude: none in v2, whose hover previews and peeks show the code *)
+  if t.moving || t.style.units || readable_at t (to_u t.cam mpx) (to_v t.cam mpy) then []
+  else match !(shape_of ~panel) with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []

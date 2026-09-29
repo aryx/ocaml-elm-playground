@@ -506,7 +506,7 @@ let update (host : host) (computer : computer) (m : model) : model =
         else if pressed "s" then open_code host computer.screen m
         else if pressed "o" then (
           (* claude: the panel's magnifying glass: round, wide, none *)
-          Code_map.cycle_glass ();
+          Code_map.cycle_glass ~panel:true ();
           m)
         else
           match List.find_opt pressed [ "b"; "p"; "e"; "m"; "l"; "c"; "r" ] with
@@ -751,10 +751,10 @@ let code_panel (host : host) (computer : computer) (p : Catalogue.program) : sha
   (match code_of p with
   | Some c -> Code_map.view ~chrome:false computer c
   | None -> [ rectangle panel w h |> move cx cy; centred ~size:14. dim cx cy "its code..." ])
-  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) ("its code" ^ size ^ ": a click, or s, to read it   o: the glass (" ^ Code_map.glass_name () ^ ")") ]
+  @ [ frame cyan w h 2. |> move cx cy; text ~size:12. cyan x (y -. h -. 16.) ("its code" ^ size ^ ": a click, or s, to read it   o: the glass (" ^ Code_map.glass_name ~panel:true () ^ ")") ]
   (* claude: the mouse over it: a magnifying glass, the code under it
    * readable (Code_map.glass), over everything else *)
-  @ match code_of p with Some c -> Code_map.glass computer c | None -> []
+  @ match code_of p with Some c -> Code_map.glass ~panel:true computer c | None -> []
 
 (* the chosen one, large, and what the catalogue says of it *)
 let details (computer : computer) (host : host) (m : model) : shape list =

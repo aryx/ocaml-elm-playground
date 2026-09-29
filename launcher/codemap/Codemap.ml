@@ -59,7 +59,7 @@ let entry (path : string) (src : string) : Code_map.entry =
   in
   { path; nlines = Code_deps.count_lines src; file }
 
-let map_of ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (string * (int * int * int)) list) ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
+let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (string * (int * int * int)) list) ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
     ~(scope : scope) : Code_map.t =
   let paths =
     match scope with
@@ -92,12 +92,12 @@ let map_of ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (st
     | Own | Uses -> List.filter_map (fun (p, src) -> if List.mem p paths then None else Some (entry p src)) sources
     | Whole | Directory _ -> []
   in
-  Code_map.make ~numbered ~colours ~roots ?guide ~beyond ~area ~title ~marked:[ path ] entries
+  Code_map.make ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   let sources, guide = guide_of sources in
   let colours = match guide with Some g -> Code_guide.colours g | None -> [] in
-  let map = map_of ~guide ~roots:[] ~colours ~own ~area ~sources ~program ~path ~scope:Own in
+  let map = map_of ~style:None ~guide ~roots:[] ~colours ~own ~area ~sources ~program ~path ~scope:Own in
   (* claude: in v2, opened on the program's file, at the ground: its kits
    * a (the street) or the wheel away (plan_codemap_v2.md) *)
   let map = if Code_map.style_name () = "v2" then Code_map.focus_on map path else map in
@@ -108,11 +108,13 @@ let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) 
 let of_directory ?guide ?(colours = []) ?(roots = []) ~(area : float * float * int * int) ~(name : string) ~(sources : (string * string) list) () : t =
   let scope = Directory name in
   let own _ = true in
-  { program = name; path = ""; sources; scope; area; map = map_of ~guide ~roots ~colours ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own; guide }
+  { program = name; path = ""; sources; scope; area; map = map_of ~style:None ~guide ~roots ~colours ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own; guide }
 
 let preview ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : Code_map.t =
   let sources, guide = guide_of sources in
-  map_of ~guide ~roots:[] ~colours:[] ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
+  (* claude: the menu's glance, the classic picture: the game's code itself,
+   * its definitions larger, its kits beside it (the author's choice) *)
+  map_of ~style:(Some Map_classic.style) ~guide ~roots:[] ~colours:[] ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
 
 (*****************************************************************************)
 (* Update and view *)
@@ -158,7 +160,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
   | None ->
       if pressed "w" && (match t.scope with Directory _ -> false | _ -> true) then
         let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ -> Own in
-        Some { t with scope; map = map_of ~guide:t.guide ~roots:[] ~colours:[] ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
+        Some { t with scope; map = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:[] ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         | _, Close -> None
