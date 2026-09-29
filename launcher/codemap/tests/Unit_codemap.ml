@@ -312,7 +312,7 @@ let tests =
           let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
           Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");
           Alcotest.(check (list string)) "a misspelt field"
-            [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, skeletons, views, layers)" ]
+            [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, skeletons, views, layers, anatomy)" ]
             (load "{ summery: 'x' }");
           Alcotest.(check (list string)) "jsonnet's own" [ "d/.codemapconfig:1: expected ,, not b" ] (load "{ a: 1 b: 2 }"));
       (* claude: Code_layers' worked example *)
