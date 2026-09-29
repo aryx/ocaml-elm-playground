@@ -127,6 +127,7 @@ A sketch, `games/shmup/.codemapconfig`:
         { at: 'comment:"one alien per frame"', weight: 2 },
         { at: 'def:column_table', say: 'who drops a bomb, no randomness', weight: 1 },
       ],
+      related: ['TinyInvaders.html', '../../tests/2d/golden/TinyInvaders.png'],
       links: [
         { from: 'def:update', to: 'def:update_rules' },
         { from: 'def:view', to: 'def:view_game' },
@@ -189,6 +190,7 @@ The fields:
 | `important` | a file | drawn bigger near the ground; `weight` 1 to 3 |
 | `links` | a file | edges inside it the LLM or the human finds worth showing, bundled with the uses at street level |
 | `tours` | any | named walks, each stop an anchor and a sentence; paths relative to the config |
+| `related` | a file | files to see with it, which no analysis would link (a game and its level editor, its level file, its tests, its web page; a module and the plan that explains it): shown beside it at the street level, and in its views of dependencies and users, marked as linked by hand |
 | `views` | any | named sets of files and directories shown together, their own layout ("a game and its kits", "the renderer and its users"); paths relative to the config, or a unit and a relation (`{ of: 'Shots.ml', with: 'users' }`) |
 | `layers` | any | pattern rules, their colours and legend, for the directory and below |
 | `colors` | any | the parts' colours (today's field), paths relative to the config |
@@ -360,8 +362,17 @@ and its immediate users". So a unit is not only a node of the tree, and
   (`Codemap`'s own code, `Code_deps.closure`), and the street level's
   focus and its associations is one too.
 
+And by hand (the author, 2026-09-29): a file's `related` in the config,
+files to see together that no analysis links -- `TinySokoban.ml` with
+`TinySokobanEd.ml` and `TinySokoban.xsb`, a module with its tests, a
+game with its page; its views include them, drawn with a link of their
+own (not a use's colour). Written in the config by hand at first;
+later perhaps from the map itself (a key to relate the file looked at
+to the one under the mouse, the config's jsonnet appended to, which the
+checker then validates).
+
 Entering a view from a unit (keys to decide: its dependencies, its
-users, both), leaving it back to the unit it came from (the breadcrumb
+users, both, its related files), leaving it back to the unit it came from (the breadcrumb
 gets a step "> uses of Shots.ml"); the transition animated, each file
 moving from its place in the whole map to its place in the view, so the
 eye follows (the orientation that the smooth flights give). A view is a
