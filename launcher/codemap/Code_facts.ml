@@ -290,4 +290,30 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
         else None)
       sources
   in
-  programs @ hubs
+  (* claude: every module its skeleton, and every folder (the author:
+   * "ideally every file, every folder"): the map derives one where none
+   * is written (Map_v2.derived_file), but a written one is the judgement
+   * the derived one lacks. A module: its .ml or .c, 40 lines or more
+   * (smaller ones have little inside to connect); a folder: two
+   * sources or more *)
+  let lines src = List.length (String.split_on_char '\n' src) in
+  let mine p (s : Code_guide.skeleton) =
+    let n = List.length s.bones and here = List.length (List.filter (fun (b : Code_guide.bone) -> b.bpath = p) s.bones) in
+    here > 0 && 2 * here >= n
+  in
+  let skeletons = List.concat_map (fun (d : Code_guide.dir_note) -> d.skeletons) (Code_guide.dirs guide) in
+  let modules =
+    List.filter_map
+      (fun (p, src) ->
+        if (Filename.check_suffix p ".ml" || Filename.check_suffix p ".c") && lines src >= 40 && (not (is_program src)) && not (List.exists (mine p) skeletons) then
+          Some (p ^ ": a module with no skeleton of its own (the map derives one; write it: its parts, who uses whom)")
+        else None)
+      sources
+  in
+  let dirs =
+    List.sort_uniq compare (List.filter_map (fun (p, _) -> if is_source p then Some (match Filename.dirname p with "." -> "" | d -> d) else None) sources)
+    |> List.filter (fun d -> List.length (List.filter (fun (p, _) -> is_source p && (match Filename.dirname p with "." -> "" | x -> x) = d) sources) >= 2)
+    |> List.filter (fun d -> not (List.exists (fun (s : Code_guide.skeleton) -> s.sdir = d) skeletons))
+    |> List.map (fun d -> (if d = "" then "(the root)" else d) ^ ": a folder with no skeleton (its parts and how they connect)")
+  in
+  programs @ hubs @ dirs @ modules

@@ -81,6 +81,32 @@ project's own shapes go in its own `skeletons.libsonnet` (~/ix's
 for Playground programs, and the brief's template line shows only for
 them.
 
+### Every module and every folder its skeleton (the author, 2026-09-29)
+
+"Ideally every file, every folder (and enclosing folders)" has a
+skeleton: the X-ray at any unit shows that unit's own structure, never
+an enclosing folder's with its bones off the map. -check says what is
+missing: a module (an `.ml` or `.c` of 40 lines or more) or a folder
+(two sources or more) with no skeleton of its own. Until one is
+written, the map derives one from the code (its capitals and important
+lines, else its most used definitions; for a folder its most tied
+parts), marked "(derived)": a stand-in, not the judgement.
+
+- A module's skeleton: 3 to 7 of its definitions, the ones its reader
+  must hold to follow the rest: its main type, its entry points, the
+  one algorithm it is about; joints for who calls whom or what flows
+  where, each with its `say`. Most bones in the file itself (a bone in
+  the library it stands on is fine); named for what it shows ("A
+  mkfile read: lines, assignments, rules"), not "Model-View-Update" for
+  a module that is none.
+- A folder's skeleton: its parts (its files, or its subfolders), the
+  data or control between them: "the pipeline", "the layers", "the kit
+  and its users". Whole units as bones (a path, no anchor), their roles
+  the role each plays in the folder, not their own summaries.
+- An enclosing folder's shows the folders under it as bones: at the
+  root, the areas (games/, libs/, ...); at libs/, its libraries.
+- A tiny module (a type and two functions) needs 3 bones, not padding.
+
 ### What ~/ix taught (its first pass, 2026-09-29)
 
 Six agents wrote ~/ix's 69 configs; their reports, the lessons now in
