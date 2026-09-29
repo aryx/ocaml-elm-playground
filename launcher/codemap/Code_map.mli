@@ -60,6 +60,9 @@ val morph_from : old:t -> t -> now:float -> unit
    the matrix *)
 val go_back_to : t -> string -> int option -> t
 
+(* claude: whether the street is shown (a) *)
+val street_on : t -> bool
+
 (* claude: whether a directory or file (its path) is on the map *)
 val has : t -> string -> bool
 

@@ -2214,3 +2214,7 @@ let legend_row_at (t : t) (c : camera) (px : float) (py : float) : Code_anatomy.
     else
       let i = int_of_float (Float.floor ((py -. y0 -. 12.) /. 20.)) in
       if i < 0 then None else List.nth_opt Code_anatomy.all i
+
+(* claude: the street's files beside the focus (its panels), for g *)
+let street_files (t : t) : string list =
+  match at_ground t t.cam with Some e when t.street -> List.map (fun (p : Code_street.panel) -> p.path) (Code_street.panels (street_of t e)) | _ -> []

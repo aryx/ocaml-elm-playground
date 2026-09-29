@@ -33,7 +33,7 @@
         { at: 'def:make_own', say: "a program's map: its code and its kits" },
       ],
     },
-    'Codemap.ml': { digest: '9cf97a2ce40b',
+    'Codemap.ml': { digest: '6e4e073e7dc6',
       summary: "Which files a map shows (Code_deps), each lexed lazily, the configs loaded, the map and the file view switched.",
       important: [
         { at: 'def:guide_of', say: 'every .codemapconfig read once', weight: 2 },
@@ -58,7 +58,7 @@
         { at: 'def:archi', say: "a part's colour, codemap's archi", weight: 1 },
       ],
     },
-    'Code_map.mli': { digest: '44efc97a02e0',
+    'Code_map.mli': { digest: '976ebd1af731',
       summary: 'The map flown: a camera over a treemap laid out once, the zoom semantic down to code read on the map.',
       capitals: [
         { at: 'def:update', say: 'a frame: keys, wheel and clicks move the camera' },
@@ -69,7 +69,7 @@
         { at: 'def:morph_from', say: 'a new layout animated from the old', weight: 1 },
       ],
     },
-    'Code_map.ml': { digest: 'dca9a307f72e',
+    'Code_map.ml': { digest: 'bef96ad03c73',
       summary: "What every style shares: flights, the names lit and clicked, peeks, search, tours, the reading glass.",
       important: [
         { at: 'def:update_map', say: 'the keys and the mouse, a unit at a time', weight: 3 },
@@ -78,14 +78,14 @@
         { at: 'def:glass', say: 'the reading glass over the map', weight: 1 },
       ],
     },
-    'Map_v2.mli': { digest: '9206cba539ac',
+    'Map_v2.mli': { digest: 'a699b8bd04df',
       summary: "The default style: names from afar, a file's columns, the ground and the street, cards, search and the X-ray.",
       capitals: [
         { at: 'def:paint', say: "v2's picture: columns, the ground, the street" },
         { at: 'def:labels', say: "v2's names, notes, cards and the X-ray" },
       ],
     },
-    'Map_v2.ml': { digest: '9278440befd6',
+    'Map_v2.ml': { digest: 'c7440230b437',
       summary: "Each level painted and named: the configs' cards and notes, peeks, the skeletons and the anatomy's plates.",
       important: [
         { at: 'def:paint_ground', say: 'a file as the whole map, lines as high as they matter', weight: 3 },
@@ -123,10 +123,10 @@
         { at: 'def:heat_colour', say: 'dark, yellow, red: the foundations', weight: 1 },
       ],
     },
-    'Map_graph.mli': { digest: '128356483301',
+    'Map_graph.mli': { digest: '7b04ecaa22fb',
       summary: "codegraph's matrix over the map (g): a DSM whose rows expand and cells zoom, cycles in magenta.",
     },
-    'Map_graph.ml': { digest: '2be08d90b70d',
+    'Map_graph.ml': { digest: 'bd949bae7142',
       summary: "The DSM's rows, cells and cards drawn, clicks expanding a row or zooming into a cell, back to the map.",
       important: [
         { at: 'def:update', say: 'expand, zoom into a cell, or go back to the map', weight: 2 },
@@ -143,7 +143,7 @@
         { at: 'def:toggle', say: 'a row expanded into its parts', weight: 2 },
       ],
     },
-    'Code_dsm.ml': { digest: 'bef7ece39e15',
+    'Code_dsm.ml': { digest: 'be6704f8ecbc',
       summary: "The rows partitioned as codegraph does, the used before their users, a cycle's between; the matrix counted.",
       capitals: [
         { at: 'def:partition', say: 'the layers: a clean architecture lower-triangular' },

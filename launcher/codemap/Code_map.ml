@@ -92,6 +92,8 @@ let morphed (t : t) ~(now : float) : t =
       t
   | None -> t
 
+let street_on (t : t) : bool = t.street
+
 let has (t : t) (path : string) : bool = Array.exists (fun (p : entry Treemap.placed) -> p.path = path) t.placed
 
 let focus_on (t : t) (path : string) : t =
@@ -765,6 +767,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
         (match (here, kids) with
          | "", [ one ] -> Graph ("", [ one ])
          | "", kids -> Graph ("", kids)
+         (* at the street: the file and its neighbours, the file open *)
+         | here, _ when t.street && Map_v2.street_files t <> [] -> Graph (here, here :: Map_v2.street_files t)
          | here, _ -> Graph (here, [ here ]))
     | Some (h, users, uses), _, Stay -> Tied (h, users, uses)
     | None, Some p, Stay -> Select (p, [ p ])

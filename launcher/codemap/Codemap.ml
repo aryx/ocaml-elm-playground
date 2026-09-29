@@ -235,7 +235,8 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
               | _ when unit = "" -> "the whole: its parts' dependencies, codegraph's matrix"
               | _ -> Printf.sprintf "%s and what it is tied to, codegraph's matrix" unit
             in
-            Some { t with map; graph = Some (Map_graph.make map ~title units) }
+            let title = if Code_map.street_on map && List.length units > 1 then Printf.sprintf "%s and its street, codegraph's matrix" unit else title in
+            Some { t with map; graph = Some (Map_graph.make ~expand:unit map ~title units) }
         | map, Tied (unit, users, uses) ->
             let scope = Tied { unit; users; uses; tmode = 0; tbefore = { t with map } } in
             let next = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope in

@@ -84,6 +84,9 @@ val street_title_at : Code_map_base.t -> Code_map_base.camera -> float -> float 
 (* claude: the X-ray's legend row under a pixel (a click toggles it) *)
 val legend_row_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> Code_anatomy.system option
 
+(* claude: at the street, its panels' files *)
+val street_files : Code_map_base.t -> string list
+
 (* claude: the bone under the mouse, in the X-ray: a click peeks at it *)
 val hovered_bone : Code_map_base.t -> Code_map_base.camera -> Code_guide.bone option
 

@@ -22,9 +22,10 @@ type t
 
 type action = Stay | Back | Go of string * int option (* a path, a definition's line *)
 
-(* [make map ~title units]: the matrix of [units] (folders or files of
-   [map]'s sources, the map's and those beyond it) *)
-val make : Code_map_base.t -> title:string -> string list -> t
+(* [make ?expand map ~title units]: the matrix of [units] (folders or
+   files of [map]'s sources, the map's and those beyond it), [expand]
+   shown open at once *)
+val make : ?expand:string -> Code_map_base.t -> title:string -> string list -> t
 
 val update : Playground.computer -> pressed:(string -> bool) -> t -> t * action
 val view : Playground.computer -> t -> Playground.shape list

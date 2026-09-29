@@ -114,7 +114,7 @@ let parts (d : data) (n : node) : node list =
   | File p ->
       let tally = Hashtbl.create 32 in
       let add l = Hashtbl.replace tally l (1 + Option.value (Hashtbl.find_opt tally l) ~default:0) in
-      List.iter (fun (e : edge) -> Option.iter add e.sdef) (d.edges p);
+      List.iter (fun (e : edge) -> Option.iter add e.sdef; if e.dst = p then add e.ddef) (d.edges p);
       List.iter (fun (s, t, _) -> if t = p && s <> p then List.iter (fun (e : edge) -> if e.dst = p then add e.ddef) (d.edges s)) d.links;
       let defs = d.defs p in
       Hashtbl.fold (fun l k acc -> match List.find_opt (fun (l', _) -> l' = l) defs with Some (_, name) -> (k, l, name) :: acc | None -> acc) tally []

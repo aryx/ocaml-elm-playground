@@ -22,7 +22,7 @@ type action = Stay | Back | Go of string * int option
 
 let edges_cache : (string, Code_dsm.edge list) Hashtbl.t = Hashtbl.create 256
 
-let make (map : Code_map_base.t) ~(title : string) (units : string list) : t =
+let make ?expand (map : Code_map_base.t) ~(title : string) (units : string list) : t =
   let every = map.entries @ map.beyond in
   let file p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) every in
   let tops (f : Code_file.t) =
@@ -40,14 +40,41 @@ let make (map : Code_map_base.t) ~(title : string) (units : string list) : t =
           | Some f ->
               let ts = List.map fst (tops f) in
               let enclosing line = List.fold_left (fun acc l -> if l <= line then Some l else acc) None ts in
-              Code_street.uses ~index:(index_of map) ~roots:map.roots ~path:p f
-              |> List.map (fun (e : Code_street.edge) -> ({ sdef = enclosing e.from_line; dst = e.target; ddef = e.target_line; ename = e.name } : Code_dsm.edge))
+              let across =
+                Code_street.uses ~index:(index_of map) ~roots:map.roots ~path:p f
+                |> List.map (fun (e : Code_street.edge) -> ({ sdef = enclosing e.from_line; dst = e.target; ddef = e.target_line; ename = e.name } : Code_dsm.edge))
+              in
+              (* claude: and within the file: each top-level definition's
+               * uses (its binding's occurrences) from the others' bodies
+               * (the author: "the intrafile deps between entities") *)
+              let within =
+                List.concat_map
+                  (fun (l, name) ->
+                    let own =
+                      if l < Array.length f.names then
+                        List.find_opt (fun (o : Highlight_code.occurrence) -> o.bound_at = (o.line, o.col) && o.len = String.length name) f.names.(l)
+                      else None
+                    in
+                    match own with
+                    | None -> []
+                    | Some o ->
+                        Code_file.uses f o
+                        |> List.filter_map (fun (u : Highlight_code.occurrence) ->
+                               match enclosing u.line with
+                               | Some d when d <> l -> Some ({ sdef = Some d; dst = p; ddef = l; ename = name } : Code_dsm.edge)
+                               | _ -> None))
+                  (tops f)
+              in
+              across @ within
         in
         Hashtbl.replace edges_cache p e;
         e
   in
   let data : Code_dsm.data = { files = List.map (fun (e : entry) -> e.path) every; links = Code_rank.links (rank_of map); defs; edges } in
-  { map; dsm = Code_dsm.make data units; history = []; title }
+  let dsm = Code_dsm.make data units in
+  (* claude: a unit shown open at once (the street's file) *)
+  let dsm = match expand with Some p when List.length units > 1 -> Code_dsm.toggle dsm (if List.mem p data.files then File p else Dir p) | _ -> dsm in
+  { map; dsm; history = []; title }
 
 (*****************************************************************************)
 (* Layout *)
