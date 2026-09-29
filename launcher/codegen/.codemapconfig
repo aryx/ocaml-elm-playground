@@ -12,4 +12,25 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'The menu made at build time: a subcommand per generated module',
+      bones: [
+        { at: 'make_tinybox_data.ml', role: 'the program: CATALOG.md read, one module printed per subcommand' },
+        { at: '../catalogue/Catalogue.ml:def:parse', role: 'the catalogue: sections, a row per program' },
+        { at: 'make_tinybox_data.ml:def:frame', role: "a program's golden frame, its first scripted scene's" },
+        { at: 'make_tinybox_data.ml:def:thumbnail', role: 'the frame halved twice, a PNG again' },
+        { at: '../codemap/deps/Code_deps.ml:def:own_size', role: "a program's own code: files and lines, its budget" },
+        { at: '../codemap/deps/Code_deps.ml:def:repository_sources', role: "every source, for the code map's Tinybox_sources" },
+      ],
+      joints: [
+        { from: 'make_tinybox_data.ml', to: '../catalogue/Catalogue.ml:def:parse', say: 'CATALOG.md' },
+        { from: '../catalogue/Catalogue.ml:def:parse', to: 'make_tinybox_data.ml:def:frame', say: 'each program (thumbnails)' },
+        { from: 'make_tinybox_data.ml:def:frame', to: 'make_tinybox_data.ml:def:thumbnail', say: 'its golden PNG' },
+        { from: '../catalogue/Catalogue.ml:def:parse', to: '../codemap/deps/Code_deps.ml:def:own_size', say: 'each program (catalogue)' },
+        { from: '../codemap/deps/Code_deps.ml:def:repository_sources', to: '../codemap/deps/Code_deps.ml:def:own_size', say: 'the sources counted' },
+        { from: '../codemap/deps/Code_deps.ml:def:repository_sources', to: 'make_tinybox_data.ml', say: 'printed as strings (sources)' },
+      ],
+    },
+  ],
 }

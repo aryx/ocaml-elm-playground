@@ -6,6 +6,9 @@
   files: {
     'Token_c.mli': { digest: '43c837127d2a',
       summary: "C's tokens, every one kept with its text and place; a directive's marked, for the parser to read apart.",
+      capitals: [
+        { at: "type:t", say: "a token: its kind, text and place, what parser and highlighter read" },
+      ],
       important: [
         { at: 'type:kind', weight: 2 },
         { at: 'type:t', say: 'a token: its kind, text, place, in a directive or not', weight: 3 },

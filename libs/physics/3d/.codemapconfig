@@ -19,6 +19,10 @@
     'Quat.ml': { digest: '562a8a866025', summary: 'Quaternions: Hamilton products, rotation, the turn by a spin, renormalized.' },
     'Mat3.mli': { digest: '15c5578b630e',
       summary: 'Three by three matrices, for the inertia tensor: why L and w point different ways.',
+      capitals: [
+        { at: "type:t", say: "a 3 by 3 matrix: the inertia tensor" },
+        { at: "def:mul_vec", say: "a matrix on a vector: L = I w" },
+      ],
       important: [
         { at: 'comment:"L = I w"', say: 'the one line all of 3D spin follows from', weight: 3 },
         { at: 'def:conjugate', say: 'R I R^T: the tensor turned with the body', weight: 2 },

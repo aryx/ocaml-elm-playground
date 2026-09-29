@@ -7,6 +7,26 @@
     deps: { summary: "Which files are a program's own code, and its budget." },
     tests: { summary: "The map's tests, and the repository's configs checked." },
   },
+  // claude: the directory's hub (15 of its files name it), described
+  // for its capitals; the other files are still to describe
+  files: {
+    'Code_file.mli': { digest: '9c2641d90d99',
+      summary: 'A source file lexed and coloured once: its lines of spans, its SeeSoft grid, its definitions and names.',
+      capitals: [
+        { at: 'type:t', say: 'a file as the map draws it: what every view reads' },
+        { at: 'def:make', say: "a path and its text, highlighted by its language's lexer" },
+        { at: 'def:cols', say: "the grid's width: longer lines cut" },
+      ],
+      important: [
+        { at: 'def:name_at', say: 'the name under the mouse, and its binding', weight: 2 },
+        { at: 'def:ref_at', say: 'a name defined in another file', weight: 2 },
+        { at: 'def:trick', say: '"the trick of this game", marked', weight: 1 },
+      ],
+    },
+    'Code_file.ml': { digest: 'a815e6e35576',
+      summary: "OCaml's or C's highlighter run (plain text if it fails), its spans laid into the grid a byte a cell, the tricks marked.",
+    },
+  },
   skeletons: [
     {
       name: 'How the code map draws',

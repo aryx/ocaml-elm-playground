@@ -6,6 +6,9 @@
   files: {
     'Token_ml.mli': { digest: '15b86cb0b15f',
       summary: "A visualizer's tokens: comments kept, each token its text as written and its place.",
+      capitals: [
+        { at: "type:t", say: "a token: kind, text, place; highlighter, parser and code map read it" },
+      ],
       important: [
         { at: 'type:kind', say: 'coarse: Lident is any lowercase name', weight: 2 },
         { at: 'type:t', weight: 3 },

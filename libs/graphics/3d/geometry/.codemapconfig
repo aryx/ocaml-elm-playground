@@ -6,6 +6,11 @@
   files: {
     'Vec3.mli': { digest: '04f69c152b73',
       summary: 'Vectors and points as float triples: the handful of operations every 3D renderer is built from.',
+      capitals: [
+        { at: "type:t", say: "a point or a direction: what all of 3D is written in" },
+        { at: "def:scale", say: "a vector times a number, the most used" },
+        { at: "def:dot", say: "how much along: lighting, collisions, culling" },
+      ],
       important: [
         { at: 'type:t', weight: 2 },
         { at: 'def:dot', say: 'how much along: lighting, culling, the view', weight: 2 },

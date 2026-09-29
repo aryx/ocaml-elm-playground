@@ -26,6 +26,7 @@
    graphics_gpu
    graphics_imaging ; Lut, Mask, Brush... (Unit_imaging)
    graphics_ilbm ; the Amiga's pictures (Unit_ilbm)
+   graphics_animation ; Timing, Animation, Transition (Unit_animation)
  )
  (deps
    %{project_root}/examples/checker.png

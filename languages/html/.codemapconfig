@@ -61,6 +61,10 @@
     },
     'Dtd.mli': { digest: '19d8f3f3d682',
       summary: "What HTML says of its elements, as data (as MMM did): void, head, which end which, Netscape's extensions.",
+      capitals: [
+        { at: "type:origin", say: "whose element: HTML 3.2's or Netscape's" },
+        { at: "def:is_void", say: "an element with no end tag and no children" },
+      ],
       important: [
         { at: 'comment:"<!ELEMENT P  - O (%text)*>"', say: 'SGML: end tags a writer may omit', weight: 2 },
         { at: 'def:closes', say: 'which open elements a start tag ends', weight: 3 },
@@ -77,6 +81,11 @@
     },
     'Dom.mli': { digest: 'cad4adfaaec1',
       summary: 'A page as a tree of elements and text, what the rest of a browser works on; each element knows its origin.',
+      capitals: [
+        { at: "type:element", say: "a tag, its attributes, its children: what a browser works on" },
+        { at: "def:attribute", say: "an attribute's value, what layout and CSS ask" },
+        { at: "def:find_all", say: "the elements of a tag, in order" },
+      ],
       important: [
         { at: 'type:element', say: 'a tag, its attributes, its children', weight: 3 },
         { at: 'type:node', weight: 2 },

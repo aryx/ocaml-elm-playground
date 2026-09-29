@@ -188,7 +188,17 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
         match Code_map.update computer ~pressed ~arrow t.map with
         (* claude: from a selection, back to the map it was chosen from *)
         | _, Close -> ( match t.scope with Selection (_, _, before) -> Some before | _ -> None)
-        | map, Up -> ( match t.scope with Selection (_, _, before) -> Some before | _ -> Some { t with map })
+        (* claude: up from a folder laid out alone: the map it came from,
+         * on the folder's parent (not where one was before flying in,
+         * which may be deeper) *)
+        | map, Up -> (
+            match t.scope with
+            | Selection (_, [ p ], before) ->
+                let parent = match Filename.dirname p with "." -> "" | d -> d in
+                let rec up q = if q = "" then Code_map.focus_on before.map "" else if Code_map.has before.map q then Code_map.focus_on before.map q else up (match Filename.dirname q with "." -> "" | d -> d) in
+                Some { before with map = up parent }
+            | Selection (_, _, before) -> Some before
+            | _ -> Some { t with map })
         | map, Stay -> Some { t with map }
         | map, Select (what, set) ->
             let scope = Selection (what, set, { t with map }) in

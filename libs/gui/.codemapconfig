@@ -166,6 +166,11 @@
     'Focus.ml': { digest: '438abc0c2014', summary: "The widgets seen this frame, last frame's order, and who has the focus." },
     'Text.mli': { digest: '694730cac9f7',
       summary: 'A string as seen: characters, not bytes (UTF-8), in fixed-width cells so a click finds the caret.',
+      capitals: [
+        { at: "def:next_char", say: "a caret over a whole UTF-8 character" },
+        { at: "def:byte_of_column", say: "a click's column to the byte it lands on" },
+        { at: "def:edit", say: "a field typed in, one frame: the three GUIs' own" },
+      ],
       important: [
         { at: 'def:prev_char', say: 'backspace over a whole character', weight: 2 },
         { at: 'def:edit', say: 'one frame of typing in a field', weight: 2 },

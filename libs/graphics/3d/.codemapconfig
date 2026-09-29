@@ -66,6 +66,10 @@
     },
     'Project.mli': { digest: 'ca07f62217d7',
       summary: 'A 3D point to a screen vertex: view, perspective divide, viewport; with depth, uv and normal.',
+      capitals: [
+        { at: "type:vertex", say: "a screen vertex with depth, uv, normal: what triangles take" },
+        { at: "def:vertex", say: "a 3D point through camera and viewport" },
+      ],
       important: [
         { at: 'type:vertex', say: 'what the rasterizer interpolates', weight: 3 },
       ],

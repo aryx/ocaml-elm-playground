@@ -120,7 +120,11 @@ local skeletons = import '../../skeletons.libsonnet';
       related: ['web/TinyEudora.html', '../../tests/2d/golden/TinyEudora.png', 'Our_mail.mli', 'mail/'],
     },
     'Site.mli': { digest: 'b0ce5feddd3a',
-      summary: "The browsers' built-in site, the about: pages: site/*.html embedded, nothing fetched." },
+      summary: "The browsers' built-in site, the about: pages: site/*.html embedded, nothing fetched.",
+      capitals: [
+        { at: "def:about", say: "an about: page by its name: its bytes and content type" },
+      ],
+    },
     'Site.ml': { digest: 'e9064a95cd58',
       summary: 'An about: name to its bytes and content type, from the embedded pages and pictures.' },
     'Our_mail.mli': { digest: 'e45642779356',

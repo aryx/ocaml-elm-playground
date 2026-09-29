@@ -6,6 +6,11 @@
   files: {
     'Scheme.mli': { digest: 'f7f80f82271f',
       summary: 'The values, the code a closure holds, and the continuation as data; #f apart from the empty list, pairs immutable.',
+      capitals: [
+        { at: "type:t", say: "a value: what primitives take and the machine returns" },
+        { at: "type:expr", say: "the code a closure holds" },
+        { at: "type:kont", say: "the continuation as data: call/cc and the stepper" },
+      ],
       important: [
         { at: 'type:t', say: 'a value: closures, structures, images too', weight: 3 },
         { at: 'type:desc', say: 'the seven forms the machine knows', weight: 2 },

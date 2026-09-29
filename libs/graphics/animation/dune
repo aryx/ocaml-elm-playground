@@ -1,0 +1,9 @@
+; claude: animation, Core Animation's ideas (Apple, 2007) from scratch:
+; timing curves as cubic Beziers (Timing), a value on its way from one
+; place to another and implicit animations (Animation), a layout's
+; rectangles moving to another layout (Transition). Plain numbers and
+; rectangles, no Playground; pure OCaml, native and web.
+(library
+ (name graphics_animation)
+ (package elm_playground)
+ (wrapped false))

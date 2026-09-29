@@ -10,6 +10,9 @@
    is lib. *)
 
 (* the directory holding a unit (None: the root) *)
+(* claude: a directory's children, one level deeper *)
+val children : 'a Treemap.placed array -> int -> int list
+
 val parent : 'a Treemap.placed array -> int -> int option
 
 (* [child_toward placed i u v]: the child of [i] under the layout's

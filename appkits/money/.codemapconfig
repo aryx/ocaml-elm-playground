@@ -6,6 +6,10 @@
   files: {
     'Money.mli': { digest: 'a1914ae0b7b5',
       summary: 'Amounts in whole cents, never floats (a float cannot hold 0.10), and in words, as a check writes them.',
+      capitals: [
+        { at: "type:cents", say: "money as an int of cents: every sum exact" },
+        { at: "def:to_string", say: "cents printed, a comma every three digits" },
+      ],
       important: [
         { at: 'type:cents', say: 'an int: addition is exact', weight: 3 },
         { at: 'def:of_string', weight: 1 },

@@ -14,4 +14,27 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'The website written from the catalogue',
+      bones: [
+        { at: 'make_website.ml', role: 'the program: the assets URL in, four index pages out' },
+        { at: '../catalogue/Catalogue.ml:def:parse', role: 'CATALOG.md: sections, a row per program' },
+        { at: 'make_website.ml:def:index', role: 'games/ or apps/: a section per genre or category' },
+        { at: 'make_website.ml:def:by_size', role: 'by-size/: every program, the smallest first' },
+        { at: '../codemap/deps/Code_deps.ml:def:own_size', role: "a program's own lines, what its budget counts" },
+        { at: 'make_website.ml:def:card', role: 'a program: thumbnail, play, source, code map' },
+        { at: 'make_website.ml:def:page', role: 'the HTML around, written to docs/' },
+      ],
+      joints: [
+        { from: 'make_website.ml', to: '../catalogue/Catalogue.ml:def:parse', say: 'CATALOG.md' },
+        { from: '../catalogue/Catalogue.ml:def:parse', to: 'make_website.ml:def:index', say: 'the sections' },
+        { from: '../catalogue/Catalogue.ml:def:parse', to: 'make_website.ml:def:by_size', say: 'the programs' },
+        { from: '../codemap/deps/Code_deps.ml:def:own_size', to: 'make_website.ml:def:by_size', say: 'their sizes' },
+        { from: 'make_website.ml:def:index', to: 'make_website.ml:def:card', say: 'each program' },
+        { from: 'make_website.ml:def:by_size', to: 'make_website.ml:def:card', say: 'each program' },
+        { from: 'make_website.ml:def:card', to: 'make_website.ml:def:page', say: 'the cards, in a page' },
+      ],
+    },
+  ],
 }

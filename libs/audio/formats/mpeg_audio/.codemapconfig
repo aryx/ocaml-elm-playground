@@ -21,6 +21,10 @@
     },
     'Mpeg_audio_header.mli': { digest: 'd68881e03889',
       summary: "The 4 bytes before each frame: sync, version, layer, bitrate, rate, the stereo mode.",
+      capitals: [
+        { at: "type:t", say: "a frame's header: what both layers decode by" },
+        { at: "def:frames", say: "an MP2 or MP3 as its frames, walked by their lengths" },
+      ],
       important: [
         { at: 'type:t', weight: 3 },
         { at: 'def:first_frame', say: 'two alike in a row: not junk that looks like sync', weight: 2 },

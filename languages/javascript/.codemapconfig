@@ -20,6 +20,11 @@
     },
     'Js_ast.mli': { digest: '766746bdf72c',
       summary: "A program as a tree, its nodes after ESTree's; printed fully parenthesized, so a test shows the grouping.",
+      capitals: [
+        { at: "type:program", say: "what the parser gives and the evaluator runs" },
+        { at: "type:expr", say: "an expression, its nodes after ESTree's" },
+        { at: "type:stmt", say: "a statement" },
+      ],
       important: [
         { at: 'comment:"1 + 2 * 3            Binary"', say: 'the tree, by example', weight: 2 },
         { at: 'type:expr', weight: 3 },

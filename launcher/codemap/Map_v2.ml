@@ -914,7 +914,14 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
    * directory's above that has some. One at a time, x going to the next
    * and past the last turning the X-ray off; the deeper directories'
    * packed, a dot each, named: fly in to spread them *)
-  let here = t.placed.(t.focus).path in
+  (* claude: a folder laid out alone (top_kept): its root is the folder,
+   * not the repository's (the author, in ~/ix's builder: the root's
+   * skeletons came instead of builder's) *)
+  let here =
+    match (t.focus, Code_units.children t.placed 0) with
+    | 0, [ i ] when t.top_kept -> t.placed.(i).path
+    | _ -> t.placed.(t.focus).path
+  in
   let parent d = match String.rindex_opt d '/' with Some i -> String.sub d 0 i | None -> "" in
   let under d p = d = "" || p = d || (String.length p > String.length d && String.sub p 0 (String.length d + 1) = d ^ "/") in
   (* a skeleton inside one file is that file's: spread at its ground,

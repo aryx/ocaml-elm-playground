@@ -43,6 +43,11 @@
     },
     'Css_syntax.mli': { digest: '314278501087',
       summary: "CSS Syntax Level 3: tokens, then blocks by matching brackets, then rules; errors skipped, not fatal.",
+      capitals: [
+        { at: "type:component", say: "a token or a block: what values and selectors read" },
+        { at: "type:rule", say: "a selector's components and its declarations" },
+        { at: "type:declaration", say: "a property and its value's components" },
+      ],
       important: [
         { at: 'comment:"a:hover > .x { color: #f00 !important }"', say: 'a rule as tokens', weight: 2 },
         { at: 'comment:"**Errors are skipped,"', say: 'what lets old browsers read new sheets', weight: 2 },

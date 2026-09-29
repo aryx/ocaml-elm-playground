@@ -52,6 +52,8 @@ let make ?fan_in ?top_kept ?numbered ?colours ?roots ?guide ?beyond ?style ~area
 
 (* claude: the map framing a unit by its path (a directory's or a
  * file's), at once *)
+let has (t : t) (path : string) : bool = Array.exists (fun (p : entry Treemap.placed) -> p.path = path) t.placed
+
 let focus_on (t : t) (path : string) : t =
   let found = ref None in
   Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = path then found := Some i) t.placed;
@@ -566,7 +568,11 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
         r.w *. k *. r.h *. k /. float_of_int (a.pw * a.ph) < 0.65
     | _ -> false
   in
-  let zoom = match moved with Some i when wasteful i -> Some t.placed.(i).path | _ -> None in
+  (* only going in, never up: up from a file to a wasteful folder, laid
+   * out anew, then up again back to the file, was a loop (the author was
+   * stuck) *)
+  let going_in i = List.mem t.focus (Code_units.ancestors t.placed i) && i <> t.focus in
+  let zoom = match moved with Some i when wasteful i && going_in i -> Some t.placed.(i).path | _ -> None in
   let moved = if zoom <> None then None else moved in
   let target, clicked =
     match moved with

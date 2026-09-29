@@ -1,0 +1,55 @@
+// scripts/build/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+// claude: make_tomb_atlas.py, beside them, is no source the map reads:
+// it packs a game's tiles into one atlas picture, run by hand
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Build-time scripts run by `ocaml` from dune rules: a file made an OCaml module, so a program carries its data.',
+  files: {
+    'file_to_base64_ml.ml': { digest: '091813328d69',
+      summary: "Any file as a module holding it in base64, its own encoder: it runs before anything is built.",
+      important: [
+        { at: 'def:encode', say: 'three bytes to four characters, = for the rest', weight: 3 },
+        { at: 'comment:"Its own base64 encoder, not core/"', say: "core/'s Base64 is not built yet", weight: 2 },
+      ],
+    },
+    'files_to_string_ml.ml': { digest: '89b2098a16a2',
+      summary: 'Files as string literals, one value each, named after the file: no decoder, the string is the bytes.',
+      important: [
+        { at: 'def:name', say: 'demo_picture.png -> demo_picture_png', weight: 2 },
+        { at: 'comment:"never inside an escape: only just before one"', say: 'a line cut must not split \\137', weight: 3 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A file as base64 in a module',
+      bones: [
+        { at: 'file_to_base64_ml.ml', role: "the program: a path in, a module on stdout" },
+        { at: 'file_to_base64_ml.ml:def:read', role: "the file's bytes" },
+        { at: 'file_to_base64_ml.ml:def:encode', role: 'the bytes as base64 text' },
+        { at: 'file_to_base64_ml.ml:def:alphabet', role: 'the 64 characters a group of 6 bits picks' },
+      ],
+      joints: [
+        { from: 'file_to_base64_ml.ml', to: 'file_to_base64_ml.ml:def:read', say: 'argv' },
+        { from: 'file_to_base64_ml.ml:def:read', to: 'file_to_base64_ml.ml:def:encode', say: 'the bytes' },
+        { from: 'file_to_base64_ml.ml:def:alphabet', to: 'file_to_base64_ml.ml:def:encode', say: 'a character per 6 bits' },
+        { from: 'file_to_base64_ml.ml:def:encode', to: 'file_to_base64_ml.ml', say: 'printed as {|...|}, 76 a line' },
+      ],
+    },
+    {
+      name: 'Files as string literals in a module',
+      bones: [
+        { at: 'files_to_string_ml.ml', role: 'the program: paths in, a value per file out' },
+        { at: 'files_to_string_ml.ml:def:read', role: "a file's bytes" },
+        { at: 'files_to_string_ml.ml:def:name', role: "the value's name, from the file's" },
+        { at: 'files_to_string_ml.ml:comment:"never inside an escape: only just before one"', role: 'the escaped bytes cut into lines, never inside an escape' },
+      ],
+      joints: [
+        { from: 'files_to_string_ml.ml', to: 'files_to_string_ml.ml:def:read', say: 'each path' },
+        { from: 'files_to_string_ml.ml', to: 'files_to_string_ml.ml:def:name', say: 'each path' },
+        { from: 'files_to_string_ml.ml:def:read', to: 'files_to_string_ml.ml:comment:"never inside an escape: only just before one"', say: 'String.escaped' },
+      ],
+    },
+  ],
+}

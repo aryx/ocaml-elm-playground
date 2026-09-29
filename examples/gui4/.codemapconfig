@@ -6,6 +6,11 @@
   files: {
     'Gui4.mli': { digest: '1106b993cf38',
       summary: 'What the tasks share: the four ways, and a runner that steps any of them a frame at a time.',
+      capitals: [
+        { at: "type:runner", say: "one way running: input in, paint out" },
+        { at: "type:architecture", say: "the four ways a GUI can keep its state" },
+        { at: "def:retained", say: "a retained window made a runner: callbacks, then paint" },
+      ],
       important: [
         { at: 'type:architecture', say: 'the four ways', weight: 3 },
         { at: 'type:runner', say: 'input in, paint out, and what it believes', weight: 3 },

@@ -6,6 +6,10 @@
   files: {
     'Ease.mli': { digest: '017137adf23b',
       summary: "Penner's easing curves (Flash, 2002): Disney's slow in and slow out, as functions of [0, 1].",
+      capitals: [
+        { at: "type:t", say: "a curve: the time gone to the way gone, 0 to 1" },
+        { at: "def:out", say: "any curve turned round: fast first, then slowing" },
+      ],
       important: [
         { at: 'type:t', say: 'the time gone to the way gone, 0 to 1', weight: 3 },
         { at: 'def:out', say: 'a curve turned: fast first, then slowing', weight: 2 },
@@ -23,6 +27,10 @@
     },
     'Tween.mli': { digest: 'c0e1d2f1db89',
       summary: "A value between two numbers over a time, Elm's way: a formula of now, only its start kept.",
+      capitals: [
+        { at: "def:value", say: "a tween read now: where it is, from its start" },
+        { at: "def:lerp", say: "between two numbers: the kit's other files' blend" },
+      ],
       important: [
         { at: 'def:value', say: 'where it is now, from when it started', weight: 3 },
         { at: 'def:lerp', weight: 1 },

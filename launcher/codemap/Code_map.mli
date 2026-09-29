@@ -52,6 +52,9 @@ val make :
 
 (* claude: the map framing a unit by its path, a directory's or a
    file's, at once (tinybox codemap <dir> focus=<path>) *)
+(* claude: whether a directory or file (its path) is on the map *)
+val has : t -> string -> bool
+
 val focus_on : t -> string -> t
 
 type action =
