@@ -41,7 +41,7 @@ let cycle_style () =
 let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
   let links = if style.sname = "atlas" then Some (Code_rank.links (rank_of t)) else None in
   let placed, geometry = relayout ?links t.cam.a algo t.entries in
-  { t with style; algo; placed; geometry; painted = None; lens = None }
+  { t with style; algo; placed; geometry; painted = None; lens = None; focus = 0 }
 
 (* a map in the chosen style *)
 let make ?numbered ?colours ?roots ~area ~title ~marked entries : t =
@@ -167,6 +167,60 @@ let glass_shape = ref No_glass
 let cycle_glass () = glass_shape := match !glass_shape with Round -> Reading | Reading -> No_glass | No_glass -> Round
 let glass_name () = match !glass_shape with Round -> "round" | Reading -> "wide" | No_glass -> "none"
 
+(* claude: moving by units (Code_units, a style's [units]: Map_v2's):
+ * where a key, the wheel or a click takes the map, a directory or file at
+ * a time -- in, out, beside -- or None. A click on a name goes to it
+ * (style.unit_at); on a block, a level down at most; on the ground (a
+ * file looked at), the clicks are the names' (update). The wheel steps
+ * once a gesture: its notches add up to one, then it rests until the
+ * wheel has been still a moment (a trackpad's flick is many events) *)
+let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) ~(clicked : bool) (mpx : float) (mpy : float) : int option =
+  let mouse = computer.mouse in
+  let (Time now) = computer.time in
+  let a = t.target.a in
+  (* the camera moved some other way (a search, a jump): what it frames *)
+  let frames (r : Treemap.rect) =
+    let c = t.target and f = fit a r in
+    Float.abs (Float.log (f.z /. c.z)) < 0.15
+    && Float.abs (f.cx -. c.cx) *. c.z < 0.05 *. float_of_int a.pw
+    && Float.abs (f.cy -. c.cy) *. c.z < 0.05 *. float_of_int a.ph
+  in
+  if not (frames t.placed.(t.focus).rect) then t.focus <- Code_units.deepest t.placed (fun q -> frames q.rect);
+  let i = t.focus in
+  let u = to_u t.cam mpx and v = to_v t.cam mpy in
+  let on_map = on a mpx mpy in
+  let wheel =
+    if mouse.mwheel = 0. || not on_map then 0
+    else if now -. t.wheel_at < 0.3 then (t.wheel_at <- now; t.wheel_debt <- 0.; 0)
+    else begin
+      t.wheel_debt <- t.wheel_debt +. mouse.mwheel;
+      if Float.abs t.wheel_debt < 1. then 0
+      else begin
+        let step = if t.wheel_debt > 0. then 1 else -1 in
+        t.wheel_debt <- 0.;
+        t.wheel_at <- now;
+        step
+      end
+    end
+  in
+  let is_file = match t.placed.(i).node with File _ -> true | Dir _ -> false in
+  let side : Code_units.side option =
+    match arrow with Some "ArrowLeft" -> Some Left | Some "ArrowRight" -> Some Right | Some "ArrowUp" -> Some Up | Some "ArrowDown" -> Some Down | _ -> None
+  in
+  let centre () = (t.target.cx, t.target.cy) in
+  match side with
+  | Some side -> Code_units.sibling t.placed i side
+  | None ->
+      if pressed "Home" || pressed "0" then Some 0
+      else if pressed "Backspace" || (mouse.mrdown && not t.before_right) || pressed "-" || wheel < 0 then Code_units.parent t.placed i
+      else if pressed "=" || pressed "+" then (let cu, cv = centre () in Code_units.toward t.placed i cu cv)
+      else if wheel > 0 then Code_units.toward t.placed i u v
+      else if clicked then
+        match t.style.unit_at t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
+        | Some j -> Some j
+        | None -> if is_file then None else Code_units.toward t.placed i u v
+      else None
+
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
   let a = t.target.a in
@@ -177,6 +231,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   let pan dx dy = { target with cx = target.cx +. (dx /. target.z); cy = target.cy +. (dy /. target.z) } in
   let target =
     match arrow with
+    | _ when t.style.units -> target
     | Some "ArrowLeft" -> pan (-80.) 0.
     | Some "ArrowRight" -> pan 80. 0.
     | Some "ArrowUp" -> pan 0. (-80.)
@@ -201,12 +256,19 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
     else t
   in
   (* a new layout: back to the whole map *)
-  let target = if pressed "Home" || pressed "0" || t.placed != before then home a else target in
-  let target = if pressed "Backspace" || (mouse.mrdown && not t.before_right) then up { t with target } else target in
-  let target = if pressed "=" || pressed "+" then { target with z = target.z *. 1.5 } else if pressed "-" then { target with z = target.z /. 1.5 } else target in
+  let units = t.style.units in
+  let target = if ((not units) && (pressed "Home" || pressed "0")) || t.placed != before then home a else target in
+  if t.placed != before then t.focus <- 0;
+  let target = if (not units) && (pressed "Backspace" || (mouse.mrdown && not t.before_right)) then up { t with target } else target in
+  let target =
+    if units then target
+    else if pressed "=" || pressed "+" then { target with z = target.z *. 1.5 }
+    else if pressed "-" then { target with z = target.z /. 1.5 }
+    else target
+  in
   (* the wheel: zoom at the mouse, the point under it staying under it *)
   let target =
-    if mouse.mwheel <> 0. && on_map then
+    if mouse.mwheel <> 0. && on_map && not units then
       let u = to_u target mpx and v = to_v target mpy in
       let z = (clamp_cam { target with z = target.z *. (1.25 ** mouse.mwheel) }).z in
       { target with cx = u -. ((mpx -. (float_of_int a.pw /. 2.)) /. z); cy = v -. ((mpy -. (float_of_int a.ph /. 2.)) /. z); z }
@@ -220,11 +282,22 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
         let moved = t.dragged || Float.abs dx +. Float.abs dy > 5. in
         let c = if moved then { c0 with cx = c0.cx -. (dx /. c0.z); cy = c0.cy +. (dy /. c0.z) } else target in
         ({ t with dragged = moved }, c, moved)
-    | None when mouse.mdown && on_map -> ({ t with drag = Some (mouse.mx, mouse.my, target); dragged = false }, target, false)
+    | None when mouse.mdown && on_map && not units -> ({ t with drag = Some (mouse.mx, mouse.my, target); dragged = false }, target, false)
     | _ -> (t, target, false)
   in
   let clicked = (mouse.mclick || mouse.mdouble) && on_map && not t.dragged in
   let t = if not mouse.mdown then { t with drag = None; dragged = (if mouse.mclick then false else t.dragged) } else t in
+  (* claude: by units, a move taken, the click with it *)
+  let moved = if units then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
+  let target, clicked =
+    match moved with
+    | Some i ->
+        t.focus <- i;
+        t.jumped <- None;
+        t.choices <- None;
+        (fit a t.placed.(i).rect, false)
+    | None -> (target, clicked)
+  in
   (* a click: fly to what is under it. claude: a file stays in its
    * columns, on the map; there, a click on a name goes to its binding,
    * lit (plan_codemap_naming.md); Enter opens the file view *)
@@ -459,7 +532,10 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
-          (Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
+          (if t.style.units then
+             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
+           else
+           Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)
         |> move 0. (screen.bottom +. 18.);
       ]

@@ -78,6 +78,9 @@ type t = {
   mutable search : string option; (* claude: the query typed after /, while searching *)
   mutable flight : flight option; (* claude: a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* claude: the layout's point under the mouse, when on the map (view's) *)
+  mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
+  mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
+  mutable wheel_at : float;
 }
 
 (* claude: a flight from one camera to another, zooming out and back in
@@ -97,6 +100,9 @@ and style = {
   (* claude: the directory or file whose name is under a pixel of the map,
      if the style's names are clickable (Map_v2's): a click flies to it *)
   unit_at : t -> camera -> float -> float -> float -> int option;
+  (* claude: the camera moves a unit at a time (Code_units: Map_v2's), or
+     freely (the others') *)
+  units : bool;
 }
 
 (*****************************************************************************)
@@ -141,7 +147,8 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ~(style : style) ~(ar
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None }
+    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None;
+    focus = 0; wheel_debt = 0.; wheel_at = 0. }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries

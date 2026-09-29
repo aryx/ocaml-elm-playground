@@ -298,4 +298,4 @@ let roads (t : t) (c : camera) : shape list =
 
 let labels (t : t) (c : camera) (q : float) : shape list = roads t c @ Map_streets.labels t c q
 
-let style : style = { sname = "atlas"; paint; labels; pick = Map_streets.style.pick; unit_at = (fun _ _ _ _ _ -> None) }
+let style : style = { sname = "atlas"; paint; labels; pick = Map_streets.style.pick; unit_at = (fun _ _ _ _ _ -> None); units = false }

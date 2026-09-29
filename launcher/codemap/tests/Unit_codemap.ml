@@ -188,6 +188,23 @@ let tests =
           let top = List.fold_left (fun m (_, y) -> Float.max m y) 0. pts in
           Alcotest.(check bool) "the middle pulled towards (10, 10), short of it" true (top > 4. && top < 10.);
           Alcotest.(check (list int)) "the zooms' depths" [ 1; 2; max_int ] [ Map_atlas.depth_at 1.; Map_atlas.depth_at 4.; Map_atlas.depth_at 20. ]);
+      (* claude: Code_units' worked example *)
+      Testo.create "units: in, out, beside" (fun () ->
+          let placed =
+            Array.of_list
+              (Treemap.layout Ordered { x = 0.; y = 0.; w = 100.; h = 50. }
+                 (Treemap.of_paths [ ("kernel/a.ml", 30., ()); ("kernel/b.ml", 30., ()); ("lib/c.ml", 40., ()) ]))
+          in
+          let at path = let r = ref (-1) in Array.iteri (fun i (p : unit Treemap.placed) -> if p.path = path then r := i) placed; !r in
+          let kernel = at "kernel" and lib = at "lib" and a = at "kernel/a.ml" in
+          let ar = placed.(a).rect in
+          let u, v = (ar.x +. (ar.w /. 2.), ar.y +. (ar.h /. 2.)) in
+          Alcotest.(check (option int)) "kernel's parent, the root" (Some 0) (Code_units.parent placed kernel);
+          Alcotest.(check (option int)) "from the root toward a.ml: kernel" (Some kernel) (Code_units.toward placed 0 u v);
+          Alcotest.(check (option int)) "then a.ml" (Some a) (Code_units.toward placed kernel u v);
+          Alcotest.(check bool) "kernel beside lib" true
+            (Code_units.sibling placed kernel Right = Some lib || Code_units.sibling placed kernel Down = Some lib);
+          Alcotest.(check (list int)) "a.ml's ancestors" [ 0; kernel; a ] (Code_units.ancestors placed a));
       (* claude: Map_v2's names are clickable: a region's, at its centre,
        * is the region, not a file under it *)
       Testo.create "v2: a directory's name clicked" (fun () ->

@@ -36,11 +36,25 @@ let paint_columns (img : Rgba_image.t) (c : camera) (r : Treemap.rect) (g : geom
     if lines > 0 && sx1 > sx0 && sy1 > sy0 then fill img sx0 sy0 sx1 sy1 col
   done
 
+(* claude: outside the unit looked at (Code_units, t.focus), the map
+ * dimmed: the units are often tall and narrow, the screen wide, so the
+ * one framed shares the screen with its neighbours -- kept, for knowing
+ * where one is, but in the shade *)
+let outside (t : t) (p : entry Treemap.placed) : bool =
+  t.focus <> 0
+  &&
+  let f = t.placed.(t.focus).rect in
+  let u = p.rect.x +. (p.rect.w /. 2.) and v = p.rect.y +. (p.rect.h /. 2.) in
+  not (u >= f.x && u < f.x +. f.w && v >= f.y && v < f.y +. f.h)
+
 let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
   let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
   fill img 0 0 c.a.pw c.a.ph dark;
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
+      let shade = outside t p in
+      let fill img x0 y0 x1 y1 col = fill img x0 y0 x1 y1 (if shade then mix col 0.3 dark else col) in
+      let paint_columns img c r g n box col = paint_columns img c r g n box (if shade then mix col 0.3 dark else col) in
       match clip c p.rect with
       | None -> ()
       | Some ((x0, y0, x1, y1) as box) -> (
@@ -85,11 +99,29 @@ type name = { node : int; nbox : float * float * float * float; nrank : float; d
  * (Code_map_base.place's way, the boxes kept for the mouse) *)
 let names (t : t) (c : camera) : name list =
   let a = c.a in
-  let cands = ref [] in
+  (* claude: the unit looked at and those holding it: named on the
+   * breadcrumb, not over the map they fill (Code_units) *)
+  let above = Code_units.ancestors t.placed t.focus in
+  let crumbs =
+    if t.focus = 0 then []
+    else
+      let x = ref 6. in
+      List.mapi
+        (fun k i ->
+          let p = t.placed.(i) in
+          let name = if i = 0 then (match String.index_opt t.title ':' with Some j -> String.sub t.title 0 j | None -> t.title) else (match p.node with Dir (n, _) | File (n, _, _) -> n) in
+          let text = if k = 0 then name else "> " ^ name in
+          let box, shape = tab a ~alpha:0.9 (lighter (archi t.colours p.path)) 16. !x 6. text in
+          let _, _, x1, _ = box in
+          x := x1 +. 4.;
+          { node = i; nbox = box; nrank = 10000.; draw = shape })
+        above
+  in
+  let cands = ref crumbs in
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
       match clip c p.rect with
-      | Some (x0, y0, x1, y1) when p.depth > 0 ->
+      | Some (x0, y0, x1, y1) when p.depth > 0 && (not (List.mem i above)) && not (outside t p && (match p.node with File _ -> true | Dir _ -> false)) ->
           let w = float_of_int (x1 - x0) and h = float_of_int (y1 - y0) in
           let cx = (float_of_int x0 +. float_of_int x1) /. 2. and cy = (float_of_int y0 +. float_of_int y1) /. 2. in
           let is_dir, name = match p.node with Dir (n, _) -> (true, n) | File (n, _, _) -> (false, n) in
@@ -107,7 +139,7 @@ let names (t : t) (c : camera) : name list =
             let r, g, b = colour in
             let text dx dy col alpha = words col name |> scale (size /. words_font_size) |> (if stand then rotate 90. else Fun.id) |> move (sx a (cx +. dx)) (sy a (cy +. dy)) |> fade alpha in
             let draw =
-              if is_dir then group [ text 2. 2. black 0.75; text 0. 0. (rgb r g b) 1. ]
+              if is_dir then (if outside t p then text 0. 0. (rgb r g b) 0.4 else group [ text 2. 2. black 0.75; text 0. 0. (rgb r g b) 1. ])
               else text 0. 0. (lighter (r, g, b)) 0.85
             in
             let nrank = if is_dir then 1000. -. (100. *. float_of_int p.depth) +. size else size in
@@ -179,4 +211,4 @@ let labels (t : t) (c : camera) (_ : float) : shape list =
   let kept = names t c in
   List.rev_map (fun n -> n.draw) kept @ hover_card t c kept
 
-let style : style = { sname = "v2"; paint; labels; pick = (fun _ _ _ _ _ -> None); unit_at }
+let style : style = { sname = "v2"; paint; labels; pick = (fun _ _ _ _ _ -> None); unit_at; units = true }

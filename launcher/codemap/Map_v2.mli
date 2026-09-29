@@ -10,7 +10,14 @@
    clickable (the camera flies to it), and hovering it gives its card.
    The cards say the counts for now; their words will come from the
    directories' .codemapconfig, written by an LLM (the plan's step 4).
-   Near enough to be read, a file's code, as Map_classic's. *)
+   Near enough to be read, a file's code, as Map_classic's.
+
+   The camera moves a unit at a time (the plan's step 2, Code_units, in
+   Code_map.update): the wheel or a click one level in, the wheel back,
+   a right click or - one level out, the arrows to a neighbour. The unit
+   looked at and those holding it are named on a breadcrumb at the top
+   left (clickable too), not over the map; outside it, the map is in the
+   shade, the neighbours' names faint, their files' gone. *)
 
 (* the picture, and the names (Code_map_base.style's fields) *)
 val paint : aa:bool -> Code_map_base.t -> Code_map_base.camera -> Rgba_image.t

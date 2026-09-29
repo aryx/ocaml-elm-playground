@@ -335,7 +335,36 @@ file, splitting near the kit), coloured by direction (green what it
 uses, red who uses it, as codemap's); the same inside the focus, with the
 config's `links`. What the focus does not touch, dimmed.
 
-## Layers
+## Views: several units at once (later)
+
+The author (2026-09-29): "at some point we might want to zoom in
+multiple dirs at the same time or a 'view' of the codebase with
+selected files, like one game and its immediate deps, or one lib file
+and its immediate users". So a unit is not only a node of the tree, and
+`focus : int` will become a set. Two cases:
+
+- **Neighbours in the layout** (two sibling directories, a directory and
+  the one beside it): the same map, the camera framing their union,
+  the rest shaded -- today's step 2 with a set instead of one index.
+- **Scattered** (a game in `games/shmup/` and its kits in `gamekits/`
+  and `playground/layers/`; a file of `libs/` and its users all over):
+  their union is the whole map, so framing it says nothing. Instead a
+  *view*: a new treemap of just those files, each still in its
+  directories (their paths kept, the directories between them folded),
+  the focus the largest. tinybox's code map of a program already is one
+  (`Codemap`'s own code, `Code_deps.closure`), and the street level's
+  focus and its associations is one too.
+
+Entering a view from a unit (keys to decide: its dependencies, its
+users, both), leaving it back to the unit it came from (the breadcrumb
+gets a step "> uses of Shots.ml"); the transition animated, each file
+moving from its place in the whole map to its place in the view, so the
+eye follows (the orientation that the smooth flights give). A view is a
+list of paths, so the `.codemapconfig` can name some too (`views:`,
+beside `tours:`), written by the LLM ("the renderer and its users") or
+by hand; the same list is what a tour's stops pass through.
+
+
 
 A layer is rules, each a pattern and a colour (or `color-by` a
 metavariable), with a legend. Near the ground, the matched lines lit
@@ -366,7 +395,11 @@ The same patterns serve search (`/` with a pattern) and anchors
    Golden frame of a `~/ix`-like fixture.
 2. **Navigation by units**: click a name or block to fly into it, wheel
    one level up or down the tree, arrows to the sibling directories;
-   van Wijk's flights kept. Tested on the camera's targets (pure).
+   van Wijk's flights kept. Tested on the camera's targets (pure). (Done, 2026-09-29: `Code_units`; the
+   units being tall and narrow on a wide screen, the one framed shares it
+   with its neighbours, so outside it the map is shaded, and the unit and
+   its ancestors named on a breadcrumb. The camera still eases, van
+   Wijk's flight to come. Step 1 done too, the same day.)
 3. **jsonnet** (`languages/jsonnet/`): lexer, parser, desugaring,
    evaluator, the standard library's first functions, `import` through a
    host; tests from the jsonnet spec's examples and ojsonnet's.
@@ -389,7 +422,10 @@ The same patterns serve search (`/` with a pattern) and anchors
    tricks: those become the fallback).
 9. **Layers**: regexps, then token patterns (`libs/code/pattern`), the
    Caps layer of `~/ix`; the generic AST after.
-10. v2 the default of tinybox's own code map (`s`) too, the other styles
+10. **Views**: a set of units framed together; then views of scattered
+    files, their own layout, entered from a unit (dependencies, users),
+    named in the config; the animated transition.
+11. v2 the default of tinybox's own code map (`s`) too, the other styles
     kept as alternative views (`m`).
 
 ## Decisions (the author, 2026-09-29)

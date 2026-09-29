@@ -60,6 +60,9 @@ type t = {
   mutable search : string option; (* the query typed after /, while searching *)
   mutable flight : flight option; (* a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* the layout's point under the mouse, when on the map, for a style's labels *)
+  mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
+  mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
+  mutable wheel_at : float;
 }
 
 (* a flight from one camera to another, zooming out and back in (van Wijk
@@ -79,6 +82,9 @@ and style = {
   (* claude: the directory or file whose name is under a pixel of the map,
      if the style's names are clickable (Map_v2's): a click flies to it *)
   unit_at : t -> camera -> float -> float -> float -> int option;
+  (* claude: the camera moves a unit at a time (Code_units: Map_v2's), or
+     freely (the others') *)
+  units : bool;
 }
 
 (*****************************************************************************)
