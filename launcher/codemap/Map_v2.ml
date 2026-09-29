@@ -862,9 +862,17 @@ let unit_spot (t : t) (c : camera) (path : string) : (float * float * float) opt
   match !found with
   | Some i -> (
       match clip c t.placed.(i).rect with
-      | Some (x0, y0, x1, y1) when x1 - x0 > 30 && y1 - y0 > 30 ->
-          let x = float_of_int x0 +. 26. and y = float_of_int y0 +. 30. in
-          Some (x, y, x)
+      | Some (x0, y0, x1, y1) when x1 - x0 > 30 && y1 - y0 > 30 -> (
+          match t.placed.(i).node with
+          (* claude: a directory's bone under its name, at its centre: at
+           * its top left corner it seemed its first file's (the author) *)
+          | Dir _ ->
+              let x = float_of_int (x0 + x1) /. 2. and h = float_of_int (y1 - y0) in
+              let y = (float_of_int (y0 + y1) /. 2.) +. Float.min 45. (Float.max 16. (0.18 *. h)) in
+              Some (x, y, x)
+          | File _ ->
+              let x = float_of_int x0 +. 26. and y = float_of_int y0 +. 30. in
+              Some (x, y, x))
       | _ -> None)
   | None -> None
 
@@ -911,8 +919,15 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let under d p = d = "" || p = d || (String.length p > String.length d && String.sub p 0 (String.length d + 1) = d ^ "/") in
   (* a skeleton inside one file is that file's: spread at its ground,
    * a dot from afar; a region's are the ones spanning its files *)
+  (* claude: a program's: most of its bones definitions in one file (the
+   * others, the library it stands on: an example's Playground.game) *)
   let one_file (s : Code_guide.skeleton) =
-    match s.bones with b :: rest -> b.banchor <> "" && List.for_all (fun (x : Code_guide.bone) -> x.bpath = b.bpath && x.banchor <> "") rest | [] -> false
+    match s.bones with
+    | b :: _ ->
+        let n = List.length s.bones in
+        let here = List.length (List.filter (fun (x : Code_guide.bone) -> x.bpath = b.bpath && x.banchor <> "") s.bones) in
+        b.banchor <> "" && 2 * here > n
+    | [] -> false
   in
   let candidates =
     match ground with
@@ -940,7 +955,11 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
      * the map; flying in shows the next level's *)
     else
       List.filter
-        (fun (s : Code_guide.skeleton) -> (one_file s || s.sdir <> here) && (s.sdir = here || parent s.sdir = here) && under here s.sdir && not (List.memq s candidates))
+        (fun (s : Code_guide.skeleton) ->
+          (* a program's (inside one file) from its own directory only: a
+           * level up, the examples' 91 were a flood *)
+          ((one_file s && s.sdir = here) || ((not (one_file s)) && s.sdir <> here && parent s.sdir = here))
+          && under here s.sdir && not (List.memq s candidates))
         all
   in
   let banner =
@@ -1627,6 +1646,20 @@ let layers_shapes (t : t) (c : camera) : shape list =
              let str = line l in
              [ circle (rgb r g b) 5. |> move (sx a (x0 +. 12.)) (sy a y); label a ink 14. (x0 +. 22. +. (text_width 14. str /. 2.)) y str ])
            layers)
+
+(* claude: at the street, a panel's name under a pixel: a click there
+ * goes to that file (the author) *)
+let street_title_at (t : t) (c : camera) (px : float) (py : float) : string option =
+  match at_ground t c with
+  | Some e when t.street ->
+      let s = street_of t e in
+      List.find_map
+        (fun (p : Code_street.panel) ->
+          let text = Printf.sprintf "%s   (%d tie%s)" p.path p.count (if p.count = 1 then "" else "s") in
+          let tw = 0.5 *. 14. *. float_of_int (String.length text) in
+          if px >= p.ground.ox && px <= p.ground.ox +. 16. +. tw && py >= p.ground.oy -. 22. && py <= p.ground.oy then Some p.path else None)
+        (Code_street.panels s)
+  | _ -> None
 
 (* claude: a match under the mouse (a search's, a layer's), its line and
  * the code around it beside the mouse (the author: "when you hover a
