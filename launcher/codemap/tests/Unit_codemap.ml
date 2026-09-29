@@ -353,4 +353,20 @@ let tests =
           let cx = Code_map_base.to_px t.cam (r.x +. (r.w /. 2.)) and cy = Code_map_base.to_py t.cam (r.y +. (r.h /. 2.)) in
           Alcotest.(check (option int)) "kernel" (Some !at) (Map_v2.unit_at t t.cam 1. cx cy);
           Alcotest.(check (option int)) "nothing at a corner" None (Map_v2.unit_at t t.cam 1. 1. 1.));
+      (* claude: the search (/): names, paths, directories, name//, Tab *)
+      Testo.create "search: what a query finds" (fun () ->
+          let all =
+            Code_search.candidates ~dirs:[ "games"; "games/arm"; "libs"; "libs/arm"; "libs/armour" ]
+              ~files:[ "games/arm/Step.ml"; "libs/arm/Tiny_invaders.ml" ]
+              ~defs:[ ("games/arm/Step.ml", 3, "step"); ("games/arm/Step.ml", 9, "step_ball"); ("libs/arm/Tiny_invaders.ml", 1, "make_step") ]
+          in
+          let found q = List.map (fun (h : Code_search.hit) -> h.path ^ (if h.kind = Def then ":" ^ h.name else "")) (Code_search.matches all q) in
+          Alcotest.(check (list string)) "step: the file named so, then its definitions, a word's start last"
+            [ "games/arm/Step.ml"; "games/arm/Step.ml:step"; "games/arm/Step.ml:step_ball"; "libs/arm/Tiny_invaders.ml:make_step" ] (found "step");
+          Alcotest.(check (list string)) "invad: inside a word" [ "libs/arm/Tiny_invaders.ml" ] (found "invad");
+          Alcotest.(check (list string)) "libs/step: under libs" [ "libs/arm/Tiny_invaders.ml:make_step" ] (found "libs/step");
+          Alcotest.(check (list string)) "arm/: the directories" [ "games/arm"; "libs/arm"; "libs/armour" ] (found "arm/");
+          Alcotest.(check (list string)) "arm//: those named so, together" [ "games/arm"; "libs/arm" ] (Code_search.all_named all "arm//");
+          Alcotest.(check string) "Tab: as far as the hits agree" "step" (Code_search.complete (Code_search.matches all "ste") "ste");
+          Alcotest.(check string) "Tab: a directory's slash" "games/" (Code_search.complete (Code_search.matches all "gam") "gam"));
     ]

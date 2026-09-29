@@ -52,9 +52,14 @@ val make :
    file's, at once (tinybox codemap <dir> focus=<path>) *)
 val focus_on : t -> string -> t
 
-type action = Stay | Open of Code_file.t * int (* its line, from 0 *) | Close
+type action =
+  | Stay
+  | Open of Code_file.t * int (* its line, from 0 *)
+  | Close
+  | Select of string list (* claude: directories to see together (a search's name//) *)
 
-(* keys as Code_view's; the mouse; Escape closes *)
+(* keys as Code_view's; the mouse; Escape closes. claude: / opens the
+   search (Map_v2's), which takes the keys while open *)
 val update : Playground.computer -> pressed:(string -> bool) -> arrow:string option -> t -> t * action
 
 (* the map, and with [chrome] (the default) the screen round it: its
@@ -104,3 +109,6 @@ val glass_name : ?panel:bool -> unit -> string
 val cycle_style : unit -> unit
 val choose_style : string -> unit
 val style_name : unit -> string
+
+(* claude: the search box open: the keys are its (Codemap's n, p, w too) *)
+val searching : t -> bool

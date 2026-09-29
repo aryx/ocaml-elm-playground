@@ -436,6 +436,34 @@ codebase and glow/highlight where the match is at the earth level and
 region and street." The plan's step 9 (patterns, regexps first) and 10
 (views), the Cap.fork layer their first test.
 
+## Search (the author, 2026-09-29): done
+
+"typing '/' opens a peek dialog where one can type the name of a
+directory, file, or entity, with completion", "incremental search that
+would dynamically highlight matches on the current zoom level", "a
+search that is restricted to the current showed files", and "arm///
+... a multi-dir selection view with all the arm folders". Done
+(`Code_search`, pure and tested; the box and the lights in `Map_v2`;
+the keys in `Code_map.update`):
+
+- `/` opens a box under the title; the map goes on under it (the mouse
+  too), the keys are the box's. A name or a part of one; `shmup/step`
+  a name under a path; `arm/` directories only; Tab completes as far
+  as the best hits agree; up and down choose; Enter flies to a
+  directory or file, or to a definition's file with its peek open.
+- As one types, every hit is lit where it is, at the level one is at:
+  a directory or file framed and tinted, a definition a dot (above the
+  ground) or a bar on its line (at the ground and the street).
+- A `/` typed first: only the files shown (the unit looked at, and the
+  street's panels), again: everywhere.
+- `arm//` (two slashes or more): every directory named exactly so;
+  Enter opens a map of just them together (`Codemap`'s scope
+  `Selection`), Escape back to the map they were chosen from -- a
+  first view, made by a search rather than a config.
+
+Also, from the same day: a peek opens with the comment just above the
+definition ("it probably comment the entity").
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in

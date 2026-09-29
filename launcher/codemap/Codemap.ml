@@ -13,9 +13,16 @@
 (* which files: the program's own code, then with all it uses, then all;
  * or a directory's, read from the disk (tinybox codemap <dir>), no
  * program in it to start from *)
-type scope = Own | Uses | Whole | Directory of string
+type scope =
+  | Own
+  | Uses
+  | Whole
+  | Directory of string
+  (* claude: directories seen together (a search's name//), and the map
+   * they were chosen from, Escape's way back *)
+  | Selection of string list * t
 
-type t = {
+and t = {
   program : string;
   path : string;
   sources : (string * string) list;
@@ -66,6 +73,7 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Own -> Code_deps.closure ~keep:own sources path
     | Uses -> Code_deps.closure sources path
     | Whole | Directory _ -> List.map fst sources
+    | Selection (dirs, _) -> List.filter (fun p -> List.exists (fun d -> Code_search.starts p (d ^ "/")) dirs) (List.map fst sources)
   in
   let entries = List.filter_map (fun p -> Option.map (entry p) (List.assoc_opt p sources)) paths in
   let n = List.length entries in
@@ -81,15 +89,18 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
         (* or, for a directory inside a project, its summary *)
         let said = match guide with Some g -> ( match Code_guide.title g with Some s -> Some s | None -> Code_guide.dir_summary g "") | None -> None in
         match said with Some s -> Printf.sprintf "%s: %s   (%s)" name s files | None -> Printf.sprintf "%s: %s" name files)
+    | Selection (dirs, _) ->
+        let name = match dirs with d :: _ -> Filename.basename d | [] -> "" in
+        Printf.sprintf "the %d directories named %s: %s   (%s; esc back)" (List.length dirs) name (String.concat ", " dirs) files
   in
   (* claude: numbered in their reading order (Code_deps.closure's), but
    * the whole repository's and a directory's *)
-  let numbered = match scope with Own | Uses -> true | Whole | Directory _ -> false in
+  let numbered = match scope with Own | Uses -> true | Whole | Directory _ | Selection _ -> false in
   (* claude: a program's map resolves its names against every source, the
    * ones it does not draw too (a click on game peeks at Playground's) *)
   let beyond =
     match scope with
-    | Own | Uses -> List.filter_map (fun (p, src) -> if List.mem p paths then None else Some (entry p src)) sources
+    | Own | Uses | Selection _ -> List.filter_map (fun (p, src) -> if List.mem p paths then None else Some (entry p src)) sources
     | Whole | Directory _ -> []
   in
   Code_map.make ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
@@ -150,21 +161,25 @@ let go (t : t) (tour : (int * int) option) : t =
       { t with tour; file = Some (Code_view.make ~line ~lit:line (Lazy.force e.file)) }
 
 let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t option =
-  if pressed "n" then Some (go t (next_stop t))
-  else if pressed "p" && t.tour <> None then Some (go t (prev_stop t))
+  if pressed "n" && not (Code_map.searching t.map) then Some (go t (next_stop t))
+  else if pressed "p" && t.tour <> None && not (Code_map.searching t.map) then Some (go t (prev_stop t))
   else
   match t.file with
   | Some v ->
       if pressed "Escape" || pressed "Backspace" then Some { t with file = None }
       else Some { t with file = Some (Code_view.update computer ~pressed ~arrow v) }
   | None ->
-      if pressed "w" && (match t.scope with Directory _ -> false | _ -> true) then
-        let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ -> Own in
+      if pressed "w" && (not (Code_map.searching t.map)) && (match t.scope with Directory _ | Selection _ -> false | _ -> true) then
+        let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ | Selection _ -> Own in
         Some { t with scope; map = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:[] ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
-        | _, Close -> None
+        (* claude: from a selection, back to the map it was chosen from *)
+        | _, Close -> ( match t.scope with Selection (_, before) -> Some before | _ -> None)
         | map, Stay -> Some { t with map }
+        | map, Select dirs ->
+            let scope = Selection (dirs, { t with map }) in
+            Some { t with scope; map = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
         (* a file opened by hand: the tour, if any, left *)
         | map, Open (f, line) -> Some { t with map; file = Some (Code_view.make ~line f); tour = None })
 

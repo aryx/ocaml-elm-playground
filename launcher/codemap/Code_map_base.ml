@@ -75,7 +75,8 @@ type t = {
   style : style; (* claude: how the map is drawn (Map_classic, ...) *)
   mutable index : Code_names.index option; (* claude: its files indexed, once (index_of) *)
   mutable rank : Code_rank.t option; (* claude: its definitions' uses, once (rank_of) *)
-  mutable search : string option; (* claude: the query typed after /, while searching *)
+  mutable search : search option; (* claude: the search box (/, Map_v2), while open *)
+  mutable search_all : Code_search.hit array option; (* claude: what a search looks among, gathered once *)
   mutable flight : flight option; (* claude: a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* claude: the layout's point under the mouse, when on the map (view's) *)
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
@@ -95,6 +96,11 @@ type t = {
 
 (* claude: a flight from one camera to another, zooming out and back in
  * (van Wijk and Nuij), from a time on (nan: the next frame's) *)
+(* claude: the search box: what is typed, the hit chosen (up and down),
+   among the files shown only ([here], / typed first) or all; its hits,
+   kept for the query they are of *)
+and search = { mutable query : string; mutable sel : int; mutable here : bool; mutable hits : (string * bool) * Code_search.hit list }
+
 and flight = { from : camera; dest : camera; mutable start : float; duration : float }
 
 (* claude: a style: the map's picture (the directories, the files, their
@@ -157,7 +163,7 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None;
+    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; flight = None; pointer = None;
     focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond }
 
 (* claude: the map's files for Code_names and Code_rank *)

@@ -23,7 +23,7 @@ open Playground
  * were apart (plan_codemap_google_maps.md, step 0) *)
 include Code_map_base
 
-type action = Stay | Open of Code_file.t * int | Close
+type action = Stay | Open of Code_file.t * int | Close | Select of string list
 
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
@@ -152,6 +152,14 @@ let open_peek (t : t) (file_of : string -> Code_file.t option) ((p, l) : string 
   match file_of p with
   | Some g ->
       let first, last = def_extent g l in
+      (* claude: with the comment just above it, which likely says what it
+       * is (the author); not a section's banner, nor past a blank line *)
+      let comment l =
+        let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
+        match first_cat 0 with Some Comment -> true | _ -> false
+      in
+      let rec up l = if l > 0 && comment (l - 1) then up (l - 1) else l in
+      let first = up first in
       (match t.peek with Some top -> t.peek_stack <- (top, t.peek_scroll) :: t.peek_stack | None -> ());
       t.peek <- Some (p, first, last);
       t.peek_scroll <- 0
@@ -306,7 +314,7 @@ let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string
             | _ -> if is_file then None else Code_units.toward t.placed i u v)
       else None
 
-let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
+let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
   let a = t.target.a in
   let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
@@ -508,6 +516,69 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   let cam = if cam_now then target else ease t.cam target in
   ({ t with target; cam; before_right = mouse.mrdown }, action)
 
+(* claude: the search (/, Code_search, drawn by Map_v2): typed letters
+ * the query, a / first where it looks (the files shown, or all), Tab
+ * completing, up and down the hit, Enter going there -- a directory or
+ * file flown to, a definition's file and its peek; name// the
+ * directories so named, together (Select). The map goes on under it,
+ * the mouse too, but not the keys. *)
+let searching (t : t) : bool = t.search <> None
+
+let search_go (t : t) (h : Code_search.hit) : camera option =
+  let found = ref None in
+  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = h.path then found := Some i) t.placed;
+  match !found with
+  | None -> None
+  | Some i ->
+      t.focus <- i;
+      t.jumped <- None;
+      t.choices <- None;
+      t.peek <- None;
+      t.peek_stack <- [];
+      (if h.kind = Def then
+         let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
+         open_peek t file_of (h.path, h.line));
+      Some (fit t.target.a t.placed.(i).rect)
+
+let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
+  match t.search with
+  | None when pressed "/" && t.style.units ->
+      t.search <- Some { query = ""; sel = 0; here = false; hits = (("", false), []) };
+      update_map computer ~pressed:(fun _ -> false) ~arrow:None t
+  | None -> update_map computer ~pressed ~arrow t
+  | Some s ->
+      let hits = Map_v2.search_hits t in
+      let n = List.length hits in
+      let t, action =
+        if pressed "Escape" then (t.search <- None; (t, Stay))
+        else if pressed "Enter" then begin
+          match Map_v2.search_named t with
+          | _ :: _ :: _ as dirs -> t.search <- None; (t, Select dirs)
+          | _ -> (
+              match List.nth_opt hits s.sel with
+              | Some h ->
+                  t.search <- None;
+                  (match search_go t h with Some c -> ({ t with target = c }, Stay) | None -> (t, Stay))
+              | None -> (t, Stay))
+        end
+        else begin
+          if pressed "Backspace" && s.query <> "" then begin s.query <- String.sub s.query 0 (String.length s.query - 1); s.sel <- 0 end;
+          if pressed "Tab" then begin s.query <- Code_search.complete hits s.query; s.sel <- 0 end;
+          (match arrow with
+          | Some "ArrowDown" -> s.sel <- min (max 0 (min n 8 - 1)) (s.sel + 1)
+          | Some "ArrowUp" -> s.sel <- max 0 (s.sel - 1)
+          | _ -> ());
+          String.iter
+            (fun ch ->
+              if ch = '/' && s.query = "" then s.here <- not s.here
+              else if ch >= ' ' && ch <> '\127' then begin s.query <- s.query ^ String.make 1 ch; s.sel <- 0 end)
+            computer.keyboard.typed;
+          (t, Stay)
+        end
+      in
+      let t, a = update_map computer ~pressed:(fun _ -> false) ~arrow:None t in
+      (t, if action <> Stay then action else a)
+
 (*****************************************************************************)
 (* View *)
 (*****************************************************************************)
@@ -694,7 +765,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
           (if t.style.units then
-             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   a what a file uses   x skeleton   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
+             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   / search   a what a file uses   x skeleton   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
            else
            Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)

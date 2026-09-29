@@ -52,4 +52,10 @@ val labels : Code_map_base.t -> Code_map_base.camera -> float -> Playground.shap
    px, py): its index in [placed] *)
 val unit_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> float -> int option
 
+(* claude: the search (/, Code_search): its hits now (the files shown
+   only if asked), and the directories a query ending in // takes
+   together *)
+val search_hits : Code_map_base.t -> Code_search.hit list
+val search_named : Code_map_base.t -> string list
+
 val style : Code_map_base.style
