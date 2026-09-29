@@ -433,8 +433,12 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   if pressed "o" then cycle_glass ();
   (* claude: at the ground, the file with what it uses (Map_v2) *)
   (* claude: a: what it uses, then what uses it, then both, then off *)
+  (* claude: the first press, the mode that fits the file (uses and
+   * users, its uses only, its users only: Map_v2.best_street_mode); then
+   * the others in turn, then off *)
   if pressed "a" then begin
-    t.street_mode <- (t.street_mode + 1) mod 4;
+    let best = Map_v2.best_street_mode t in
+    t.street_mode <- (if t.street_mode = 0 then best else let next = (t.street_mode mod 3) + 1 in if next = best then 0 else next);
     t.street <- t.street_mode <> 0;
     t.painted <- None
   end;
@@ -924,7 +928,21 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   else
     hover @ names_lit computer t
     @ [
-        words yellow t.title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.);
+        (* claude: flown into a unit (v2), its summary, not the project's
+         * (the author: "at earth level it's the summary of the project,
+         * but at appkit level the summary of what appkit is") *)
+        (let title =
+           if t.style.units && t.focus <> 0 then
+             let p = t.placed.(t.focus) in
+             let said =
+               match p.node with
+               | File _ -> Option.bind (Code_guide.file_note t.guide p.path) (fun n -> n.summary)
+               | Dir _ -> Code_guide.dir_summary t.guide p.path
+             in
+             match said with Some s -> p.path ^ ": " ^ s | None -> p.path
+           else t.title
+         in
+         words yellow title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.));
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
           (if t.style.units then

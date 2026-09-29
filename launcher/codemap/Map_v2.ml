@@ -144,6 +144,19 @@ let street_of (t : t) (e : entry) : Code_street.t =
       street_cache := Some (e.path, a.pw, a.ph, t.street_mode, s);
       s
 
+(* claude: the street that fits the file looked at (the author: "if the
+ * file is not used by anything but uses some files, go in the fan-out
+ * view; if it's using and is used, the view with the left and right
+ * files around"): 3 both, 1 its uses, 2 its users *)
+let best_street_mode (t : t) : int =
+  match t.placed.(t.focus).node with
+  | File (_, _, e) ->
+      let links = Code_rank.links (rank_of t) in
+      let uses = List.exists (fun (src, dst, _) -> src = e.path && dst <> e.path) links in
+      let used = List.exists (fun (src, dst, _) -> dst = e.path && src <> e.path) links in
+      (match (uses, used) with true, true -> 3 | false, true -> 2 | _ -> 1)
+  | Dir _ -> 1
+
 let paint_street ~(aa : bool) (t : t) (c : camera) (e : entry) : Rgba_image.t =
   let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
   let bg = file_background t e.path in
@@ -322,11 +335,31 @@ let capitals (t : t) (c : camera) : name list =
                   let size = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> 15. in
                   let tw = 0.5 *. size *. float_of_int (String.length label) in
                   let x0 = px -. 6. and x1 = px +. 10. +. tw +. 4. in
-                  let dot = circle yellow (size /. 3.) |> move (sx a px) (sy a py) in
+                  (* claude: a definition many use is red, the map's colour of
+                   * a definition used (the street's marks: green where
+                   * used, red where defined); the others yellow *)
+                  let colour = if fan path >= 30 then rgb 250 80 70 else yellow in
+                  let dot = circle colour (size /. 3.) |> move (sx a px) (sy a py) in
                   let ring = circle black ((size /. 3.) +. 2.) |> move (sx a px) (sy a py) in
-                  let text = words yellow label |> scale (size /. words_font_size) |> move (sx a (px +. 10. +. (tw /. 2.))) (sy a py) in
+                  let text = words colour label |> scale (size /. words_font_size) |> move (sx a (px +. 10. +. (tw /. 2.))) (sy a py) in
                   let shadow = words black label |> scale (size /. words_font_size) |> move (sx a (px +. 11.5 +. (tw /. 2.))) (sy a (py +. 1.5)) |> fade 0.8 in
-                  let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ [ "click: to its file" ] in
+                  (* claude: how central, in the card (the author: "give an idea
+                   * of how often it is used"): its module named by N files;
+                   * its own uses once counted (Code_rank, by the search or
+                   * the street), the .ml's for an .mli's *)
+                  let used =
+                    match t.rank with
+                    | Some rank ->
+                        let name = match String.rindex_opt label '.' with Some k -> String.sub label (k + 1) (String.length label - k - 1) | None -> label in
+                        let impl = Filename.remove_extension path ^ ".ml" in
+                        let at_impl = if Filename.check_suffix path ".mli" then (match Hashtbl.find_opt where impl with Some (_, ei) -> Option.map (fun l -> (impl, l)) (capital_line ei it.at) | None -> None) else None in
+                        let q, l = match at_impl with Some x -> x | None -> (path, line) in
+                        let u = Code_rank.uses rank q l name in
+                        if u.others > 0 then [ Printf.sprintf "used %d times in %d other files" u.others u.files ] else []
+                    | None -> []
+                  in
+                  let central = match fan path with 0 -> [] | n -> [ Printf.sprintf "its module named by %d files%s" n (if n >= 30 then ": the core" else "") ] in
+                  let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ central @ used @ [ "click: to its file" ] in
                   Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805. +. float_of_int (min 14 (fan path / 10)); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None }
               | None -> None)
           | _ -> None)
