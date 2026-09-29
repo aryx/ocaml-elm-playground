@@ -99,11 +99,16 @@ let layout (g : t) : layout =
   { n; cell; lx; mx0 = lx +. label_w; my0; label_w }
 
 (* the row or cell under a pixel *)
-type spot = Label of int | Cell of int * int | Nowhere
+type spot = Label of int | Column of int | Cell of int * int | Nowhere
 
 let spot_at (l : layout) (px : float) (py : float) : spot =
   let i = int_of_float (Float.floor ((py -. l.my0) /. l.cell)) in
-  if i < 0 || i >= l.n || py < l.my0 then Nowhere
+  (* claude: above the matrix, a slanted column name: back along its 45
+   * degrees to the column it starts from *)
+  if py < l.my0 && py > 20. then
+    let j = int_of_float (Float.floor ((px -. (l.my0 -. py) -. l.mx0) /. l.cell)) in
+    if j >= 0 && j < l.n then Column j else Nowhere
+  else if i < 0 || i >= l.n || py < l.my0 then Nowhere
   else if px >= l.lx && px < l.mx0 then Label i
   else
     let j = int_of_float (Float.floor ((px -. l.mx0) /. l.cell)) in
@@ -130,7 +135,8 @@ let update (computer : computer) ~(pressed : string -> bool) (g : t) : t * actio
   else if pressed "Backspace" then match g.history with (d, title) :: rest -> ({ g with dsm = d; title; history = rest }, Stay) | [] -> (g, Back)
   else if mouse.mclick then
     let shift = Set_.mem "Shift" computer.keyboard.keys in
-    match spot_at l px py with
+    (* claude: a column's name clicked as its row's *)
+    match (match spot_at l px py with Column j -> Label j | s -> s) with
     | Label i when shift -> (g, go rows.(i).node)
     | Label i -> ( match rows.(i).node with Def _ -> (g, go rows.(i).node) | _ -> (expand g [ rows.(i) ], Stay))
     | Cell (i, j) when i = j -> (expand g [ rows.(i) ], Stay)
@@ -138,7 +144,7 @@ let update (computer : computer) ~(pressed : string -> bool) (g : t) : t * actio
         let title = Printf.sprintf "%s uses %s: what, part by part" (Code_dsm.path_of rows.(i).node) (Code_dsm.path_of rows.(j).node) in
         ({ g with dsm = Code_dsm.focus g.dsm rows.(i).node rows.(j).node; title; history = (g.dsm, g.title) :: g.history }, Stay)
     | Cell _ -> (g, Stay)
-    | Nowhere -> (g, Stay)
+    | Nowhere | Column _ -> (g, Stay)
   else (g, Stay)
 
 (*****************************************************************************)
@@ -159,11 +165,15 @@ let colour_of (g : t) (n : Code_dsm.node) : color =
   | _ -> lighter (archi g.map.colours (Code_dsm.path_of n))
 
 (* a card of lines beside a pixel, kept on the area *)
-let card (a : area) (x : float) (y : float) (title : string) (col : color) (lines : string list) : shape list =
+(* claude: beside the matrix, at the hovered row's height, never over
+ * the cells (the author); below it when there is no room on its right *)
+let card ?(beside = 0.) (a : area) (_ : float) (y : float) (title : string) (col : color) (lines : string list) : shape list =
   let lines = List.filteri (fun i _ -> i < 14) lines in
+  let lines = List.map (fun s -> if String.length s > 70 then String.sub s 0 70 ^ "..." else s) lines in
   let w = 24. +. List.fold_left (fun m s -> Float.max m (text_width 14. s)) (text_width 15. title) lines in
   let h = 30. +. (19. *. float_of_int (List.length lines)) in
-  let x0 = Float.min (x +. 18.) (float_of_int a.pw -. w -. 4.) and y0 = Float.min (y +. 18.) (float_of_int a.ph -. h -. 4.) in
+  let x0 = if beside +. 16. +. w <= float_of_int a.pw then beside +. 16. else float_of_int a.pw -. w -. 4. in
+  let y0 = Float.max 4. (Float.min (y -. 12.) (float_of_int a.ph -. h -. 4.)) in
   [ rectangle (rgb 18 16 36) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.96 ]
   @ frame a col x0 y0 (x0 +. w) (y0 +. h) 1.5
   @ [ label a col 15. (x0 +. 12. +. (text_width 15. title /. 2.)) (y0 +. 14.) title ]
@@ -197,7 +207,7 @@ let view (computer : computer) (g : t) : shape list =
    * used. A row hovered: what it uses red, its users green; a cell
    * hovered: its row green, its column red *)
   let role k =
-    match hover with
+    match (match hover with Column j -> Label j | h -> h) with
     | Label i when k <> i -> if m.(i).(k) > 0 then Some `Used else if m.(k).(i) > 0 then Some `User else None
     | Cell (i, j) when i <> j -> if k = i then Some `User else if k = j then Some `Used else None
     | _ -> None
@@ -242,7 +252,7 @@ let view (computer : computer) (g : t) : shape list =
                     let strength = 0.25 +. (0.75 *. Float.sqrt (float_of_int v /. float_of_int biggest)) in
                     (* below the diagonal, down the layers; above, a cycle *)
                     let col =
-                      match hover with
+                      match (match hover with Column c -> Label c | h -> h) with
                       | Label h when h = i -> red (* what the hovered uses *)
                       | Label h when h = j -> green (* who uses the hovered *)
                       | _ -> if j < i then rgb 80 150 230 else rgb 220 70 220
@@ -272,7 +282,7 @@ let view (computer : computer) (g : t) : shape list =
   let band i = rect l.lx (l.my0 +. (float_of_int i *. l.cell)) (l.label_w +. side) l.cell (rgb 255 255 255) 0.07 in
   let column j = rect (l.mx0 +. (float_of_int j *. l.cell)) l.my0 l.cell side (rgb 255 255 255) 0.07 in
   let hovered =
-    match hover with
+    match (match hover with Column j -> Label j | h -> h) with
     | Label i ->
         let r = rows.(i) in
         let p = Code_dsm.path_of r.node in
@@ -285,13 +295,13 @@ let view (computer : computer) (g : t) : shape list =
         let uses = Array.fold_left ( + ) 0 m.(i) and used = Array.fold_left (fun acc row -> acc + row.(i)) 0 m in
         let how = match r.node with Def _ -> "click: to the map, its definition" | _ when r.expandable -> "click: its parts   shift+click: to the map" | _ -> "shift+click: to the map" in
         [ band i; column i ]
-        @ card a px py p (colour_of g r.node) (said @ [ Printf.sprintf "uses %d here, used %d" uses used; how ])
+        @ card ~beside:(l.mx0 +. side) a px py p (colour_of g r.node) (said @ [ Printf.sprintf "uses %d here, used %d" uses used; how ])
     | Cell (i, j) when i <> j ->
         let ri = rows.(i) and rj = rows.(j) in
         let why = Code_dsm.explain g.dsm ri.node rj.node |> List.filteri (fun k _ -> k < 12) |> List.map (fun (f, t, k) -> Printf.sprintf "%s -> %s   %d" f t k) in
         let against = if j > i && m.(i).(j) > 0 then [ "above the diagonal: a use against the layers (a cycle)" ] else [] in
         [ band i; column j ]
-        @ card a px py
+        @ card ~beside:(l.mx0 +. side) a px py
             (Printf.sprintf "%s uses %s: %d" (Code_dsm.name_of ri.node) (Code_dsm.name_of rj.node) m.(i).(j))
             (if j < i then rgb 80 150 230 else rgb 220 70 220)
             (against @ why @ [ "click: this cell alone, its row's parts against its column's" ])
