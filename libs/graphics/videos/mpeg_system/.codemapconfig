@@ -24,4 +24,24 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Packs and packets to streams',
+      bones: [
+        { at: 'Mpeg_system.ml:type:stream', role: 'an id, its bytes joined, its first PTS' },
+        { at: 'Mpeg_system.ml:def:of_string', role: 'start codes walked: packs, packets, the end' },
+        { at: 'Mpeg_system.ml:def:payload', role: "past a packet's stuffing and timestamps" },
+        { at: 'Mpeg_system.ml:def:pts', role: '33 bits, 90 kHz, spread over five bytes' },
+        { at: 'Mpeg_system.ml:def:video', role: 'the stream E0-EF' },
+        { at: 'Mpeg_system.ml:def:audio', role: 'the stream C0-DF' },
+      ],
+      joints: [
+        { from: 'Mpeg_system.ml:def:of_string', to: 'Mpeg_system.ml:def:payload', say: 'each packet' },
+        { from: 'Mpeg_system.ml:def:payload', to: 'Mpeg_system.ml:def:pts', say: '0010 or 0011' },
+        { from: 'Mpeg_system.ml:def:of_string', to: 'Mpeg_system.ml:type:stream', say: 'by id, in order' },
+        { from: 'Mpeg_system.ml:type:stream', to: 'Mpeg_system.ml:def:video', say: 'found' },
+        { from: 'Mpeg_system.ml:type:stream', to: 'Mpeg_system.ml:def:audio', say: 'found' },
+      ],
+    },
+  ],
 }

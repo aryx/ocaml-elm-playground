@@ -109,6 +109,41 @@ local skeletons = import '../../skeletons.libsonnet';
   skeletons: [
     skeletons.game('TinyMediaPlayer.ml', 'def:deck', 'what plays, on the sound side: the mixer pulls it', say='play, pause, seek'),
     skeletons.game('TinyWinamp.ml', 'def:analyze', 'the spectrum as 19 bars, falling slower than they rise', say='each frame'),
+    {
+      name: "Media: a file recognized by its bytes, opened as what it holds",
+      bones: [
+        { at: "Media.ml:type:kind", role: "every format the repository reads" },
+        { at: "Media.ml:def:by_bytes", role: "its magic numbers: RIFF, MThd, PNG, GIF, MPEG start codes..." },
+        { at: "Media.ml:def:sniff", role: "the bytes first, the name only when they say nothing" },
+        { at: "Media.ml:type:media", role: "a sound, a module, a picture, or a movie with its sound" },
+        { at: "Media.ml:def:open_", role: "the decoder for its kind, from libs/" },
+        { at: "Media.ml:def:mpg", role: "an MPEG program stream: video and audio, their start times" },
+        { at: "Media.ml:def:duration", role: "how long it plays" },
+      ],
+      joints: [
+        { from: "Media.ml:def:open_", to: "Media.ml:def:sniff", say: "the kind" },
+        { from: "Media.ml:def:sniff", to: "Media.ml:def:by_bytes", say: "first" },
+        { from: "Media.ml:def:by_bytes", to: "Media.ml:type:kind", say: "says" },
+        { from: "Media.ml:def:open_", to: "Media.ml:def:mpg", say: ".mpg" },
+        { from: "Media.ml:def:open_", to: "Media.ml:type:media", say: "made" },
+      ],
+    },
+    {
+      name: "Our_media: the playlist, every file made by our own writers",
+      bones: [
+        { at: "Our_media.ml:def:playlist", role: "name and bytes, each made lazily when first played" },
+        { at: "Our_media.ml:def:frere_jacques", role: "a tune in ABC, also written as MIDI" },
+        { at: "Our_media.ml:def:clip_frame", role: "a frame drawn by the 2D rasterizer: a ball, a square" },
+        { at: "Our_media.ml:def:clip", role: "fifty frames: written as Y4M, FLC, AVI, MPEG-1" },
+        { at: "Our_media.ml:def:clip_sound", role: "the AVI's sound: a blip at each bounce" },
+      ],
+      joints: [
+        { from: "Our_media.ml:def:playlist", to: "Our_media.ml:def:frere_jacques", say: ".abc, .mid" },
+        { from: "Our_media.ml:def:playlist", to: "Our_media.ml:def:clip", say: "the movies" },
+        { from: "Our_media.ml:def:clip", to: "Our_media.ml:def:clip_frame", say: "each frame" },
+        { from: "Our_media.ml:def:playlist", to: "Our_media.ml:def:clip_sound", say: ".avi" },
+      ],
+    },
   ],
   dirs: {
     tests: { summary: 'Media and Our_media, Id3 and the equalizer tested; our media dumped as files, the clip as Y4M.' },

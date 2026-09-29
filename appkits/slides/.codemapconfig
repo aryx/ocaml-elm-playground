@@ -25,4 +25,35 @@
       related: ['../tests/Unit_slides.ml'],
     },
   },
+  skeletons: [
+    {
+      name: "Slides: the outline typed, the slides made",
+      bones: [
+        { at: "Outline.ml", role: "the outline as text: a title a slide, indented points under it" },
+        { at: "../richtext/", role: "the slide's text laid out" },
+        { at: "../../apps/office/TinyPowerPoint.ml", role: "PowerPoint: the outline pane beside the slide" },
+      ],
+      joints: [
+        { from: "../../apps/office/TinyPowerPoint.ml", to: "Outline.ml", say: "parse, slide_at" },
+        { from: "../../apps/office/TinyPowerPoint.ml", to: "../richtext/", say: "layout" },
+      ],
+    },
+    {
+      name: "Outline: indented lines to slides, and the caret's slide",
+      bones: [
+        { at: "Outline.ml:type:slide", role: "a title and its points, each with a level" },
+        { at: "Outline.ml:def:indent", role: "a line's depth in columns, a tab two" },
+        { at: "Outline.ml:def:parse", role: "the text to slides: a title opens one" },
+        { at: "Outline.ml:def:slide_at", role: "the slide the caret is in" },
+        { at: "Outline.ml:def:start_of", role: "a slide's title line, where to put the caret" },
+        { at: "Outline.ml:def:to_text", role: "slides back to the outline" },
+      ],
+      joints: [
+        { from: "Outline.ml:def:parse", to: "Outline.ml:def:indent", say: "each line" },
+        { from: "Outline.ml:def:parse", to: "Outline.ml:type:slide", say: "made" },
+        { from: "Outline.ml:def:slide_at", to: "Outline.ml:def:indent", say: "titles before" },
+        { from: "Outline.ml:def:start_of", to: "Outline.ml:def:indent", say: "titles" },
+      ],
+    },
+  ],
 }

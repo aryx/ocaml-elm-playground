@@ -23,4 +23,37 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "Stroke_text: Hershey's strokes in a look, for the text apps",
+      bones: [
+        { at: "Stroke_text.ml", role: "a character in a look: its width, and its strokes as shapes" },
+        { at: "../../libs/graphics/font/", role: "Hershey's glyphs: pen strokes in font units" },
+        { at: "../richtext/", role: "the look: size, bold, italic" },
+        { at: "../browser/", role: "the browsers' letters" },
+        { at: "../../apps/office/", role: "Word, PowerPoint, Office: laid out and drawn with it" },
+      ],
+      joints: [
+        { from: "Stroke_text.ml", to: "../../libs/graphics/font/", say: "Hershey.glyph" },
+        { from: "Stroke_text.ml", to: "../richtext/", say: "Style.t" },
+        { from: "../browser/", to: "Stroke_text.ml", say: "metrics, glyph" },
+        { from: "../../apps/office/", to: "Stroke_text.ml", say: "metrics, glyph" },
+      ],
+    },
+    {
+      name: "Stroke_text: a glyph scaled and slanted",
+      bones: [
+        { at: "Stroke_text.ml:def:metrics", role: "the width the layout needs" },
+        { at: "Stroke_text.ml:def:glyph", role: "the strokes drawn: a thicker pen for bold, a slant for italic" },
+        { at: "Stroke_text.ml:def:scale_of", role: "font units to the look's size" },
+        { at: "Stroke_text.ml:def:char_of", role: "a character Hershey has, else its '?'" },
+      ],
+      joints: [
+        { from: "Stroke_text.ml:def:metrics", to: "Stroke_text.ml:def:scale_of", say: "scaled" },
+        { from: "Stroke_text.ml:def:glyph", to: "Stroke_text.ml:def:scale_of", say: "scaled" },
+        { from: "Stroke_text.ml:def:metrics", to: "Stroke_text.ml:def:char_of", say: "which" },
+        { from: "Stroke_text.ml:def:glyph", to: "Stroke_text.ml:def:char_of", say: "which" },
+      ],
+    },
+  ],
 }

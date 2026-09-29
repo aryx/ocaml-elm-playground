@@ -38,4 +38,22 @@
   dirs: {
     tests: { summary: "The kit's unit tests: shots aimed and advanced, paths measured." },
   },
+  skeletons: [
+    {
+      name: 'The shoot em up kit and its games',
+      bones: [
+        { at: 'Shots.ml', role: 'shots as values: fired, advanced, dropped' },
+        { at: 'Path.ml', role: 'curves enemies fly along' },
+        { at: '../../libs/graphics/2d/geometry/Curve.ml', role: 'the spline Path stands on' },
+        { at: '../../games/shmup/TinyInvaders.ml', role: 'Shots alone' },
+        { at: '../../games/shmup/TinyGalaga.ml', role: 'Shots, and Path for the dives' },
+      ],
+      joints: [
+        { from: 'Path.ml', to: '../../libs/graphics/2d/geometry/Curve.ml', say: 'through, measure' },
+        { from: '../../games/shmup/TinyInvaders.ml', to: 'Shots.ml', say: 'advance, near' },
+        { from: '../../games/shmup/TinyGalaga.ml', to: 'Shots.ml', say: 'aimed, advance' },
+        { from: '../../games/shmup/TinyGalaga.ml', to: 'Path.ml', say: 'where along the dive' },
+      ],
+    },
+  ],
 }

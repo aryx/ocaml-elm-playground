@@ -82,4 +82,86 @@
       related: ['../tests/Unit_recur.ml'],
     },
   },
+  skeletons: [
+    // claude: the folder: one day number, every calendar a way to name it
+    {
+      name: 'A day number, named by each calendar',
+      bones: [
+        { at: 'Civil.ml', role: 'the hub: a date to its day number and back' },
+        { at: 'Julian.ml', role: "Caesar's calendar, and the switch to Gregory's" },
+        { at: 'Clock.ml', role: 'an instant as a day and a time of day' },
+        { at: 'Recur.ml', role: 'repeating events expanded to day numbers' },
+      ],
+      joints: [
+        { from: 'Julian.ml', to: 'Civil.ml', say: 'after the switch' },
+        { from: 'Clock.ml', to: 'Civil.ml', say: 'the day' },
+        { from: 'Recur.ml', to: 'Civil.ml', say: 'weekdays, months' },
+      ],
+    },
+    {
+      name: "Hinnant's algorithm: eras of 400 years, years from March",
+      bones: [
+        { at: 'Civil.ml:type:date', role: 'year, month, day' },
+        { at: 'Civil.ml:def:days_per_era', role: '400 years: the calendar repeats' },
+        { at: 'Civil.ml:def:days_from_civil', role: 'a date to its day number' },
+        { at: 'Civil.ml:def:civil_from_days', role: 'and back, no table' },
+        { at: 'Civil.ml:def:weekday', role: 'the day number mod 7' },
+        { at: 'Civil.ml:def:add_months', role: "a month later, the day kept in the month" },
+      ],
+      joints: [
+        { from: 'Civil.ml:type:date', to: 'Civil.ml:def:days_from_civil', say: 'a date' },
+        { from: 'Civil.ml:def:days_per_era', to: 'Civil.ml:def:days_from_civil', say: 'eras' },
+        { from: 'Civil.ml:def:days_per_era', to: 'Civil.ml:def:civil_from_days', say: 'eras' },
+        { from: 'Civil.ml:def:civil_from_days', to: 'Civil.ml:type:date', say: 'a date' },
+      ],
+    },
+    {
+      name: 'An instant on the wall: floor division by a day',
+      bones: [
+        { at: 'Clock.ml:type:time_of_day', role: 'hours, minutes, seconds' },
+        { at: 'Clock.ml:def:split', role: 'seconds into a day and a time of day' },
+        { at: 'Clock.ml:def:local', role: 'an instant plus an offset' },
+        { at: 'Clock.ml:def:of_local', role: 'and back to an instant' },
+        { at: 'Clock.ml:def:to_string', role: 'HH:MM:SS' },
+      ],
+      joints: [
+        { from: 'Clock.ml:def:local', to: 'Clock.ml:def:split', say: 'shifted' },
+        { from: 'Clock.ml:def:split', to: 'Clock.ml:type:time_of_day', say: 'gives' },
+        { from: 'Clock.ml:def:of_local', to: 'Clock.ml:type:time_of_day', say: 'reads' },
+      ],
+    },
+    {
+      name: "Caesar's calendar, Civil's with eras of 4 years, and the switch",
+      bones: [
+        { at: 'Julian.ml:def:days_from_julian', role: "a Julian date to Civil's day number" },
+        { at: 'Julian.ml:def:julian_from_days', role: 'and back' },
+        { at: 'Julian.ml:type:switch', role: "the first Gregorian day" },
+        { at: 'Julian.ml:def:england', role: '1752: eleven days lost' },
+        { at: 'Julian.ml:def:of_days', role: 'a day named by the calendar in force' },
+        { at: 'Julian.ml:def:to_days', role: 'a date read both ways, the one that names itself' },
+      ],
+      joints: [
+        { from: 'Julian.ml:def:of_days', to: 'Julian.ml:type:switch', say: 'before or after' },
+        { from: 'Julian.ml:def:of_days', to: 'Julian.ml:def:julian_from_days', say: 'before' },
+        { from: 'Julian.ml:def:to_days', to: 'Julian.ml:def:days_from_julian', say: 'read as Julian' },
+        { from: 'Julian.ml:def:england', to: 'Julian.ml:type:switch', say: 'a switch' },
+      ],
+    },
+    {
+      name: 'A rule expanded period by period',
+      bones: [
+        { at: 'Recur.ml:type:freq', role: 'daily, weekly, monthly, yearly' },
+        { at: 'Recur.ml:type:rule', role: "iCalendar's RRULE: interval, by day, count, until" },
+        { at: 'Recur.ml:def:make', role: 'a rule with its defaults' },
+        { at: 'Recur.ml:def:period', role: "the kth period's first day and the days picked in it" },
+        { at: 'Recur.ml:def:occurrences', role: 'the dates in a window, never stored' },
+      ],
+      joints: [
+        { from: 'Recur.ml:def:make', to: 'Recur.ml:type:rule', say: 'builds' },
+        { from: 'Recur.ml:type:rule', to: 'Recur.ml:def:occurrences', say: 'expanded' },
+        { from: 'Recur.ml:def:occurrences', to: 'Recur.ml:def:period', say: 'k = 0, 1, ...' },
+        { from: 'Recur.ml:type:freq', to: 'Recur.ml:def:period', say: 'the shape of a period' },
+      ],
+    },
+  ],
 }

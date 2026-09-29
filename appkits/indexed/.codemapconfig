@@ -46,4 +46,40 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "Deluxe Paint's pictures: colour numbers, and the palette turning",
+      bones: [
+        { at: "Indexed.ml", role: "a picture of colour numbers, and the tools that paint them" },
+        { at: "Cycling.ml", role: "the palette turned over time: the picture never changes, its colours do" },
+        { at: "../../libs/graphics/images/ilbm/", role: "the Amiga's file: bitplanes and the cycling ranges" },
+        { at: "../../apps/graphics/TinyDeluxePaint.ml", role: "Deluxe Paint: the tools, the palette, the animation" },
+      ],
+      joints: [
+        { from: "../../apps/graphics/TinyDeluxePaint.ml", to: "Indexed.ml", say: "painted" },
+        { from: "../../apps/graphics/TinyDeluxePaint.ml", to: "Cycling.ml", say: "each frame" },
+        { from: "Cycling.ml", to: "../../libs/graphics/images/ilbm/", say: "its ranges" },
+        { from: "../../apps/graphics/TinyDeluxePaint.ml", to: "../../libs/graphics/images/ilbm/", say: "saved, loaded" },
+      ],
+    },
+    {
+      name: "Indexed: a picture of colour numbers, and its tools",
+      bones: [
+        { at: "Indexed.ml:type:t", role: "width, height, a colour number per pixel" },
+        { at: "Indexed.ml:def:dot", role: "one pixel set: what every tool comes down to" },
+        { at: "Indexed.ml:def:stamp", role: "a brush stamped: round, square, or a cut-out picture" },
+        { at: "Indexed.ml:def:line", role: "a line of stamps" },
+        { at: "Indexed.ml:def:ellipse_rows", role: "an ellipse's rows, for its fill and its frame" },
+        { at: "Indexed.ml:def:fill", role: "the flood fill: a stack of pixels of the target number" },
+        { at: "Indexed.ml:def:cut", role: "a rectangle cut out as a brush" },
+      ],
+      joints: [
+        { from: "Indexed.ml:def:line", to: "Indexed.ml:def:stamp", say: "each step" },
+        { from: "Indexed.ml:def:stamp", to: "Indexed.ml:def:dot", say: "each pixel of the brush" },
+        { from: "Indexed.ml:def:ellipse_rows", to: "Indexed.ml:def:dot", say: "fill_ellipse" },
+        { from: "Indexed.ml:def:fill", to: "Indexed.ml:def:dot", say: "the region" },
+        { from: "Indexed.ml:def:dot", to: "Indexed.ml:type:t", say: "written" },
+      ],
+    },
+  ],
 }

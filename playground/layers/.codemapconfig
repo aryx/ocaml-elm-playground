@@ -137,5 +137,137 @@
         { from: 'Camera2d.mli:def:follow', to: 'Camera2d.mli:def:view', say: 'where from' },
       ],
     },
+    // claude: a skeleton per module (the pass giving every module its own)
+    {
+      name: 'A 2D camera: the world scaled, turned and moved as one group',
+      bones: [
+        { at: 'Camera2d.ml:type:t', role: 'where it looks, its zoom and angle' },
+        { at: 'Camera2d.ml:def:view', role: 'the world as one group, transformed' },
+        { at: 'Camera2d.ml:def:to_world', role: 'a mouse on the screen, in the world' },
+        { at: 'Camera2d.ml:def:visible', role: 'the part of the world on screen' },
+        { at: 'Camera2d.ml:def:follow', role: 'the ways to move it: follow, window, clamp' },
+        { at: 'Camera2d.ml:def:push', role: 'a dead zone in one dimension' },
+      ],
+      joints: [
+        { from: 'Camera2d.ml:def:follow', to: 'Camera2d.ml:type:t', say: 'moves' },
+        { from: 'Camera2d.ml:def:push', to: 'Camera2d.ml:type:t', say: 'window' },
+        { from: 'Camera2d.ml:type:t', to: 'Camera2d.ml:def:view', say: 'draws through' },
+        { from: 'Camera2d.ml:type:t', to: 'Camera2d.ml:def:visible', say: 'culls' },
+      ],
+    },
+    {
+      name: 'A 3D camera from a pose: behind, above, around',
+      bones: [
+        { at: 'Camera3d.ml:type:pose', role: "what a game knows: a place and a heading" },
+        { at: 'Camera3d.ml:def:behind', role: 'eye behind and above, target ahead' },
+        { at: 'Camera3d.ml:def:chase', role: 'the presets: chase, cockpit' },
+        { at: 'Camera3d.ml:def:orbit', role: 'turning round a place' },
+        { at: 'Camera3d.ml:def:follow', role: 'eased toward the camera wanted' },
+        { at: 'Camera3d.ml:def:sky', role: 'a horizon for the camera' },
+      ],
+      joints: [
+        { from: 'Camera3d.ml:type:pose', to: 'Camera3d.ml:def:behind', say: 'follows' },
+        { from: 'Camera3d.ml:def:chase', to: 'Camera3d.ml:def:behind', say: 'set numbers' },
+        { from: 'Camera3d.ml:def:behind', to: 'Camera3d.ml:def:follow', say: 'wanted' },
+      ],
+    },
+    {
+      name: "A walking capsule, Quake's way: trace, slide, step up",
+      bones: [
+        { at: 'Character3d.ml:type:t', role: 'feet, vertical speed, grounded, step and slope' },
+        { at: 'Character3d.ml:def:trace_touch', role: 'how far a move goes before it touches' },
+        { at: 'Character3d.ml:def:slide', role: 'the rest of the move along what it hit, 4 times' },
+        { at: 'Character3d.ml:def:walk_across', role: 'plain, or lifted a step and set down: the farther wins' },
+        { at: 'Character3d.ml:def:unstick', role: 'out of what it started inside' },
+        { at: 'Character3d.ml:def:walk', role: 'a tick: across, up or down, the ground probed' },
+      ],
+      joints: [
+        { from: 'Character3d.ml:def:walk', to: 'Character3d.ml:def:unstick', say: 'first' },
+        { from: 'Character3d.ml:def:walk', to: 'Character3d.ml:def:walk_across', say: 'across' },
+        { from: 'Character3d.ml:def:walk_across', to: 'Character3d.ml:def:slide', say: 'twice' },
+        { from: 'Character3d.ml:def:slide', to: 'Character3d.ml:def:trace_touch', say: 'each leg' },
+        { from: 'Character3d.ml:def:walk', to: 'Character3d.ml:type:t', say: 'the next' },
+      ],
+    },
+    {
+      name: 'A portal: in at one frame, out of the other half-turned',
+      bones: [
+        { at: 'Portal3d.ml:type:t', role: 'a rectangle: centre, normal, up' },
+        { at: 'Portal3d.ml:def:local', role: "a vector in the portal's frame" },
+        { at: 'Portal3d.ml:def:direction', role: 'local, half a turn, global in the other' },
+        { at: 'Portal3d.ml:def:crossed', role: 'a path through the rectangle' },
+        { at: 'Portal3d.ml:def:carry', role: 'a body moved through: place, speed, orientation' },
+        { at: 'Portal3d.ml:def:clip', role: "the other side's world cut to the opening" },
+      ],
+      joints: [
+        { from: 'Portal3d.ml:def:direction', to: 'Portal3d.ml:def:local', say: 'first' },
+        { from: 'Portal3d.ml:def:crossed', to: 'Portal3d.ml:def:carry', say: 'then' },
+        { from: 'Portal3d.ml:def:carry', to: 'Portal3d.ml:def:direction', say: 'velocity, spin' },
+        { from: 'Portal3d.ml:type:t', to: 'Portal3d.ml:def:clip', say: 'the opening' },
+      ],
+    },
+    {
+      name: 'A ragdoll: ten boxes joined as a body',
+      bones: [
+        { at: 'Ragdoll3d.ml:def:parts', role: 'each box, where, how heavy' },
+        { at: 'Ragdoll3d.ml:def:bodies', role: 'Physics3d bodies of them' },
+        { at: 'Ragdoll3d.ml:def:join', role: 'shoulders and hips balls, elbows and knees hinges' },
+        { at: '../apis/Physics3d.ml:def:ball_joint', role: 'a joint that swings in a cone' },
+        { at: '../apis/Physics3d.ml:def:hinge', role: 'a joint that bends one way' },
+      ],
+      joints: [
+        { from: 'Ragdoll3d.ml:def:parts', to: 'Ragdoll3d.ml:def:bodies', say: 'boxes' },
+        { from: 'Ragdoll3d.ml:def:join', to: '../apis/Physics3d.ml:def:ball_joint', say: 'neck, shoulders, hips' },
+        { from: 'Ragdoll3d.ml:def:join', to: '../apis/Physics3d.ml:def:hinge', say: 'elbows, knees' },
+      ],
+    },
+    {
+      name: 'A scene: its time and the keys of the last frame',
+      bones: [
+        { at: 'Scene2d.ml:type:t', role: 'the scene, its time, the keys now and before' },
+        { at: 'Scene2d.ml:def:update', role: 'a frame: the time counted, the keys kept' },
+        { at: 'Scene2d.ml:def:pressed', role: 'a key down now, not before' },
+        { at: 'Scene2d.ml:def:go', role: 'the next scene, its time from 0' },
+        { at: 'Scene2d.ml:def:blink', role: 'shown half the time' },
+      ],
+      joints: [
+        { from: 'Scene2d.ml:def:update', to: 'Scene2d.ml:type:t', say: 'a frame on' },
+        { from: 'Scene2d.ml:def:pressed', to: 'Scene2d.ml:def:go', say: 'a key changes scene' },
+        { from: 'Scene2d.ml:def:go', to: 'Scene2d.ml:type:t', say: 'a new scene' },
+      ],
+    },
+    {
+      name: 'A sprite typed as rows of characters, drawn in runs',
+      bones: [
+        { at: 'Sprite.ml:def:runs', role: "a row cut where its character changes" },
+        { at: 'Sprite.ml:def:draw', role: 'a rectangle per run, coloured by the palette' },
+        { at: 'Sprite.ml:def:pixels', role: 'the sprite as a shape' },
+        { at: 'Sprite.ml:def:of_xpm', role: 'or read from an XPM file' },
+        { at: 'Sprite.ml:def:artwork', role: 'sprites or shapes, by flag' },
+        { at: 'Sprite.ml:def:frame', role: 'an animation: the frame for the time' },
+      ],
+      joints: [
+        { from: 'Sprite.ml:def:pixels', to: 'Sprite.ml:def:draw', say: 'runs' },
+        { from: 'Sprite.ml:def:draw', to: 'Sprite.ml:def:runs', say: 'each row' },
+        { from: 'Sprite.ml:def:of_xpm', to: 'Sprite.ml:def:pixels', say: 'palette and rows' },
+      ],
+    },
+    {
+      name: 'A tile map: rows of characters, cells and hits',
+      bones: [
+        { at: 'Tilemap.ml:type:t', role: 'the cells, a string a row' },
+        { at: 'Tilemap.ml:def:of_strings', role: 'the level typed' },
+        { at: 'Tilemap.ml:def:cell', role: 'a point in the world to its cell' },
+        { at: 'Tilemap.ml:def:view_cells', role: 'the tiles in a range, drawn' },
+        { at: 'Tilemap.ml:def:view_visible', role: "only what the camera sees" },
+        { at: 'Tilemap.ml:def:hits', role: 'a box against the solid cells it enters' },
+      ],
+      joints: [
+        { from: 'Tilemap.ml:def:of_strings', to: 'Tilemap.ml:type:t', say: 'builds' },
+        { from: 'Tilemap.ml:def:view_visible', to: 'Tilemap.ml:def:cell', say: 'the corners' },
+        { from: 'Tilemap.ml:def:view_visible', to: 'Tilemap.ml:def:view_cells', say: 'the range' },
+        { from: 'Tilemap.ml:type:t', to: 'Tilemap.ml:def:hits', say: 'solid?' },
+      ],
+    },
   ],
 }

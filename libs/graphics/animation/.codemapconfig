@@ -1,0 +1,56 @@
+// libs/graphics/animation/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Core Animation's ideas from scratch: timing curves as cubic Béziers, values on their way, a layout's rectangles moving to another.",
+  skeletons: [
+    {
+      name: 'Time into progress into places',
+      bones: [
+        { at: 'Timing.ml', role: "the curve: a time's fraction to the way's" },
+        { at: 'Animation.ml', role: 'a value on its way; implicit animations by key' },
+        { at: 'Transition.ml', role: "a layout's rectangles, before to after" },
+        { at: '../../../launcher/codemap/Code_map.ml:def:morphed', role: 'the user: the map relaid out, animated' },
+      ],
+      joints: [
+        { from: 'Animation.ml', to: 'Timing.ml', say: 'its progress' },
+        { from: '../../../launcher/codemap/Code_map.ml:def:morphed', to: 'Timing.ml', say: 'ease_in_out at' },
+        { from: '../../../launcher/codemap/Code_map.ml:def:morphed', to: 'Transition.ml', say: 'the frames at p' },
+      ],
+    },
+    {
+      name: 'A value on its way, interrupted without a jump',
+      bones: [
+        { at: 'Animation.ml:type:t', role: 'from, to, start, duration, timing: only numbers' },
+        { at: 'Animation.ml:def:value', role: 'a formula of now, nothing stepped' },
+        { at: 'Animation.ml:def:progress', role: 'through the timing curve' },
+        { at: 'Animation.ml:type:keyed', role: 'an animation per key' },
+        { at: 'Animation.ml:def:set', role: 'a new target, from where it is now' },
+        { at: 'Timing.ml:def:at', role: 'the curve' },
+      ],
+      joints: [
+        { from: 'Animation.ml:def:value', to: 'Animation.ml:def:progress', say: 'unless finished' },
+        { from: 'Animation.ml:def:progress', to: 'Timing.ml:def:at', say: "the time's fraction" },
+        { from: 'Animation.ml:def:set', to: 'Animation.ml:def:value', say: 'the presentation value' },
+        { from: 'Animation.ml:type:keyed', to: 'Animation.ml:def:set', say: 'replaced' },
+        { from: 'Animation.ml:def:set', to: 'Animation.ml:type:t', say: 'made, starting now' },
+      ],
+    },
+    {
+      name: 'A Bézier solved for x, read for y',
+      bones: [
+        { at: 'Timing.ml:type:t', role: 'the two middle control points' },
+        { at: 'Timing.ml:def:coord', role: "one coordinate at s, Horner's way" },
+        { at: 'Timing.ml:def:slope', role: 'its derivative, for Newton' },
+        { at: 'Timing.ml:def:solve', role: 'the s where x(s) = t: Newton, else bisection' },
+        { at: 'Timing.ml:def:at', role: 'y at that s' },
+      ],
+      joints: [
+        { from: 'Timing.ml:def:at', to: 'Timing.ml:def:solve', say: 't' },
+        { from: 'Timing.ml:def:solve', to: 'Timing.ml:def:coord', say: 'x(s) - t' },
+        { from: 'Timing.ml:def:solve', to: 'Timing.ml:def:slope', say: 'the Newton step' },
+        { from: 'Timing.ml:def:at', to: 'Timing.ml:def:coord', say: 'y(s)' },
+      ],
+    },
+  ],
+}

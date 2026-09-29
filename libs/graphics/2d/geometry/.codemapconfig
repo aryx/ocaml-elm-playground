@@ -48,4 +48,54 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'The maths under the 2D pictures',
+      bones: [
+        { at: 'Vec2.ml', role: 'points and vectors: what the others compute with' },
+        { at: 'Affine.ml', role: 'where a shape goes: moved, turned, scaled' },
+        { at: 'Curve.ml', role: 'curves made polylines, and walked' },
+        { at: '../Fill.ml', role: 'where the polylines end: filled' },
+        { at: '../../core/Blit.ml', role: 'an image drawn through an inverted transform' },
+      ],
+      joints: [
+        { from: 'Curve.ml', to: 'Vec2.ml', say: 'midpoints, distances' },
+        { from: 'Curve.ml', to: '../Fill.ml', say: 'a flattened outline (SVG)' },
+        { from: '../../core/Blit.ml', to: 'Affine.ml', say: 'invert, apply' },
+      ],
+    },
+    {
+      name: 'Transforms as six numbers',
+      bones: [
+        { at: 'Affine.ml:type:t', role: 'a 3x3 matrix, its six live entries' },
+        { at: 'Affine.ml:def:rotate', role: 'the columns: where the axes go' },
+        { at: 'Affine.ml:def:compose', role: 'one after another: a product' },
+        { at: 'Affine.ml:def:apply', role: 'a point moved' },
+        { at: 'Affine.ml:def:invert', role: 'undone: the determinant, then the translation' },
+      ],
+      joints: [
+        { from: 'Affine.ml:def:rotate', to: 'Affine.ml:def:compose', say: 'with translate, scale' },
+        { from: 'Affine.ml:def:compose', to: 'Affine.ml:def:apply', say: 'one matrix for a group' },
+        { from: 'Affine.ml:def:invert', to: 'Affine.ml:def:apply', say: 'screen back to image' },
+      ],
+    },
+    {
+      name: 'A curve drawn, a curve walked',
+      bones: [
+        { at: 'Curve.ml:def:cubic', role: 'a Bézier at t' },
+        { at: 'Curve.ml:def:catmull_rom', role: 'a spline through its points' },
+        { at: 'Curve.ml:def:flatten', role: 'de Casteljau halves until flat' },
+        { at: 'Curve.ml:def:distance_to_chord', role: 'the flatness test' },
+        { at: 'Curve.ml:def:through', role: 'a polyline through points' },
+        { at: 'Curve.ml:def:measure', role: 'lengths along the polyline' },
+        { at: 'Curve.ml:def:at', role: 's pixels along: a point and a heading' },
+      ],
+      joints: [
+        { from: 'Curve.ml:def:flatten', to: 'Curve.ml:def:distance_to_chord', say: 'flat enough?' },
+        { from: 'Curve.ml:def:through', to: 'Curve.ml:def:catmull_rom', say: 'steps per stretch' },
+        { from: 'Curve.ml:def:through', to: 'Curve.ml:def:measure', say: 'a polyline (Path.make)' },
+        { from: 'Curve.ml:def:measure', to: 'Curve.ml:def:at', say: 'cumulated lengths' },
+      ],
+    },
+  ],
 }

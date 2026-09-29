@@ -57,4 +57,66 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Samples, and what is done to them',
+      bones: [
+        { at: 'Signal.mli', role: 'what a sound is: floats at 44,100 a second' },
+        { at: 'Mix.mli', role: 'sounds at once: added, turned down, bent near the limits' },
+        { at: 'Resample.mli', role: 'a recording read between its samples' },
+        { at: 'Spectrum.mli', role: 'a sound taken apart into its frequencies' },
+      ],
+      joints: [
+        { from: 'Mix.mli', to: 'Signal.mli', say: 'sums arrays of' },
+        { from: 'Resample.mli', to: 'Signal.mli', say: 'reads at fractional positions' },
+        { from: 'Spectrum.mli', to: 'Signal.mli', say: 'transforms a window of' },
+      ],
+    },
+    {
+      name: 'Signal: a sound as an array at a rate',
+      bones: [
+        { at: 'Signal.ml:type:t', role: 'the samples, -1 to 1' },
+        { at: 'Signal.ml:def:rate', role: '44,100 a second' },
+        { at: 'Signal.ml:def:samples', role: 'seconds to a count of samples' },
+        { at: 'Signal.ml:def:alias', role: 'a frequency above Nyquist, folded back' },
+        { at: 'Signal.ml:def:to_int16', role: 'a sample for the sound card or a WAV' },
+      ],
+      joints: [
+        { from: 'Signal.ml:def:rate', to: 'Signal.ml:def:samples', say: 'times seconds' },
+        { from: 'Signal.ml:def:rate', to: 'Signal.ml:def:alias', say: 'the spectrum repeats every rate' },
+        { from: 'Signal.ml:type:t', to: 'Signal.ml:def:to_int16', say: 'each sample, rounded and clamped' },
+      ],
+    },
+    {
+      name: 'Resample: reading between the samples',
+      bones: [
+        { at: 'Resample.ml:type:kind', role: 'nearest, linear, cubic' },
+        { at: 'Resample.ml:def:read', role: 'one sample at a fractional position' },
+        { at: 'Resample.ml:def:faster', role: 'the whole sound read k times as fast' },
+        { at: 'Resample.ml:def:to_rate', role: "a file's rate brought to 44,100" },
+      ],
+      joints: [
+        { from: 'Resample.ml:type:kind', to: 'Resample.ml:def:read', say: 'chooses the curve' },
+        { from: 'Resample.ml:def:faster', to: 'Resample.ml:def:read', say: 'at i * k' },
+        { from: 'Resample.ml:def:to_rate', to: 'Resample.ml:def:faster', say: 'k = rate / 44,100' },
+      ],
+    },
+    {
+      name: 'Spectrum: a window, the FFT, the magnitudes',
+      bones: [
+        { at: 'Spectrum.ml:def:of_signal', role: 'a sound to its bars' },
+        { at: 'Spectrum.ml:def:hann', role: 'the edges faded' },
+        { at: 'Spectrum.ml:def:fft', role: 'even and odd halves, the butterfly' },
+        { at: 'Spectrum.ml:def:dft', role: 'the definition, N^2, that checks it' },
+        { at: 'Spectrum.ml:def:magnitudes', role: 'complex bins to amplitudes' },
+        { at: 'Spectrum.ml:def:bin_frequency', role: 'bin k in Hz' },
+      ],
+      joints: [
+        { from: 'Spectrum.ml:def:of_signal', to: 'Spectrum.ml:def:hann', say: 'a power of 2 of samples' },
+        { from: 'Spectrum.ml:def:hann', to: 'Spectrum.ml:def:fft', say: 'windowed' },
+        { from: 'Spectrum.ml:def:fft', to: 'Spectrum.ml:def:magnitudes', say: 'complex bins' },
+        { from: 'Spectrum.ml:def:dft', to: 'Spectrum.ml:def:fft', say: 'the same numbers, slowly' },
+      ],
+    },
+  ],
 }

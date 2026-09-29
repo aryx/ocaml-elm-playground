@@ -28,4 +28,26 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Chunks, inflate, unfilter; and back',
+      bones: [
+        { at: 'Png.ml:def:chunks', role: 'the file as typed chunks, CRCs checked' },
+        { at: 'Png.ml:def:parse_header', role: 'IHDR: size, depth, colour type' },
+        { at: 'Png.ml:def:decode', role: 'IDAT inflated, passes, rows unfiltered, to RGBA' },
+        { at: 'Png.ml:def:unfilter', role: 'a row back from its prediction' },
+        { at: 'Png.ml:def:predict', role: 'the five filters: left, up, average, Paeth' },
+        { at: 'Png.ml:def:encode', role: 'rows filtered (the cheapest each), deflated, chunked' },
+        { at: '../../../compression/Zlib.ml:def:decompress', role: 'the inflate' },
+      ],
+      joints: [
+        { from: 'Png.ml:def:decode', to: 'Png.ml:def:chunks', say: 'the bytes' },
+        { from: 'Png.ml:def:decode', to: 'Png.ml:def:parse_header', say: 'IHDR' },
+        { from: 'Png.ml:def:decode', to: '../../../compression/Zlib.ml:def:decompress', say: 'the IDATs joined' },
+        { from: 'Png.ml:def:decode', to: 'Png.ml:def:unfilter', say: 'each row, Adam7 or not' },
+        { from: 'Png.ml:def:unfilter', to: 'Png.ml:def:predict', say: 'a, b, c' },
+        { from: 'Png.ml:def:encode', to: 'Png.ml:def:predict', say: 'via filter_row' },
+      ],
+    },
+  ],
 }

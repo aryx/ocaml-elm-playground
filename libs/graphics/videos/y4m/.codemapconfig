@@ -21,4 +21,25 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'A header line, then FRAME and planes',
+      bones: [
+        { at: 'Y4m.ml:type:header', role: 'size, rate, chroma, range' },
+        { at: 'Y4m.ml:def:parse_header', role: "YUV4MPEG2's tagged words" },
+        { at: 'Y4m.ml:def:frame_bytes', role: 'a frame: Y, then Cb and Cr' },
+        { at: 'Y4m.ml:def:of_string', role: "the frames found, decoded when the movie asks" },
+        { at: 'Y4m.ml:def:to_string', role: 'pictures written raw' },
+        { at: '../yuv/Yuv.ml:def:to_image', role: 'planes to a picture' },
+        { at: '../yuv/Yuv.ml:def:of_image', role: 'a picture to planes' },
+      ],
+      joints: [
+        { from: 'Y4m.ml:def:of_string', to: 'Y4m.ml:def:parse_header', say: 'the first line' },
+        { from: 'Y4m.ml:def:of_string', to: 'Y4m.ml:def:frame_bytes', say: 'the stride' },
+        { from: 'Y4m.ml:def:of_string', to: '../yuv/Yuv.ml:def:to_image', say: 'frame i, on demand' },
+        { from: 'Y4m.ml:def:to_string', to: '../yuv/Yuv.ml:def:of_image', say: 'each picture' },
+        { from: 'Y4m.ml:def:parse_header', to: 'Y4m.ml:type:header', say: 'made' },
+      ],
+    },
+  ],
 }

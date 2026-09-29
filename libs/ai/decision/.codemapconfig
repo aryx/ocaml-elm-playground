@@ -63,4 +63,34 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Three ways to decide',
+      bones: [
+        { at: 'Fsm.mli', role: 'states and guarded transitions: what it is doing, and when to stop' },
+        { at: 'Behavior.mli', role: 'a tree of conditions, sequences and fallbacks, walked each frame' },
+        { at: 'Utility.mli', role: 'every option scored, the best taken, with inertia' },
+        { at: '../bots/', role: 'where a decision is called from' },
+      ],
+      joints: [
+        { from: '../bots/', to: 'Fsm.mli', say: 'decide, the explicit way' },
+        { from: '../bots/', to: 'Behavior.mli', say: 'decide, by priorities' },
+        { from: '../bots/', to: 'Utility.mli', say: 'decide, by scores' },
+      ],
+    },
+    {
+      name: 'A behaviour tree evaluated',
+      bones: [
+        { at: 'Behavior.ml:type:t', role: 'actions, conditions, sequences, selectors, not' },
+        { at: 'Behavior.ml:def:eval', role: 'success or not, the action, the nodes visited' },
+        { at: 'Behavior.ml:def:decide', role: "the action, what a game wants" },
+        { at: 'Behavior.ml:def:path', role: 'the nodes visited, what the debug view shows' },
+      ],
+      joints: [
+        { from: 'Behavior.ml:def:decide', to: 'Behavior.ml:def:eval', say: 'from the root' },
+        { from: 'Behavior.ml:def:path', to: 'Behavior.ml:def:eval', say: 'from the root' },
+        { from: 'Behavior.ml:def:eval', to: 'Behavior.ml:type:t', say: 'down the children, stopping early' },
+      ],
+    },
+  ],
 }

@@ -33,4 +33,42 @@
       related: ['../tests/Unit_sheet.ml'],
     },
   },
+  skeletons: [
+    {
+      name: "The spreadsheet engine and those who stand on it",
+      bones: [
+        { at: "Sheet.ml", role: "cells, their formulas and values, and the graph of who reads whom" },
+        { at: "../../languages/formula/", role: "a formula read, its cells named" },
+        { at: "../sheet_view/", role: "a sheet drawn and clicked" },
+        { at: "../diagram/", role: "Visio's ShapeSheet: a shape's cells in a sheet" },
+        { at: "../../apps/office/", role: "VisiCalc, Lotus, Excel, the office's sheet and chart parts" },
+      ],
+      joints: [
+        { from: "Sheet.ml", to: "../../languages/formula/", say: "content_of, refs" },
+        { from: "../sheet_view/", to: "Sheet.ml", say: "show" },
+        { from: "../diagram/", to: "Sheet.ml", say: "set, value" },
+        { from: "../../apps/office/", to: "Sheet.ml", say: "set, recalculate" },
+      ],
+    },
+    {
+      name: "Sheet: a change walks forwards through the graph",
+      bones: [
+        { at: "Sheet.ml:comment:\"the graph, both ways round\"", role: "the sheet: what was typed, values, reads and read_by" },
+        { at: "Sheet.ml:def:set", role: "a cell typed: stored, then everything downstream recomputed" },
+        { at: "Sheet.ml:def:store", role: "the content parsed, the reverse edges moved" },
+        { at: "Sheet.ml:def:downstream", role: "the cells reached from the change" },
+        { at: "Sheet.ml:def:recompute", role: "Kahn's order over them; what is left is a cycle" },
+        { at: "Sheet.ml:def:eval", role: "a formula evaluated over the values" },
+        { at: "Sheet.ml:def:recalculate", role: "1979's way: one pass by rows or columns, no graph" },
+      ],
+      joints: [
+        { from: "Sheet.ml:def:set", to: "Sheet.ml:def:store", say: "first" },
+        { from: "Sheet.ml:def:set", to: "Sheet.ml:def:downstream", say: "then" },
+        { from: "Sheet.ml:def:downstream", to: "Sheet.ml:def:recompute", say: "the dirty cells" },
+        { from: "Sheet.ml:def:recompute", to: "Sheet.ml:def:eval", say: "each ready cell" },
+        { from: "Sheet.ml:def:store", to: "Sheet.ml:comment:\"the graph, both ways round\"", say: "edges" },
+        { from: "Sheet.ml:def:recalculate", to: "Sheet.ml:def:eval", say: "each cell in order" },
+      ],
+    },
+  ],
 }

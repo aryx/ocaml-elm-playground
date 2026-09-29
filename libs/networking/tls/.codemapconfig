@@ -87,6 +87,43 @@
   },
   skeletons: [
     {
+      name: 'DER read: tag, length, value',
+      bones: [
+        { at: 'Asn1.ml:type:t', role: 'a tag, its value, its raw bytes (what a signature covers)' },
+        { at: 'Asn1.ml:def:parse', role: 'one value: the tag, a short or long length' },
+        { at: 'Asn1.ml:def:children', role: "a constructed value's values" },
+        { at: 'Asn1.ml:def:oid', role: 'an object identifier as 1.2.840...' },
+        { at: 'Asn1.ml:def:integer', role: 'a big number, for RSA' },
+        { at: 'Asn1.ml:def:time', role: "a certificate's dates" },
+      ],
+      joints: [
+        { from: 'Asn1.ml:def:parse', to: 'Asn1.ml:type:t', say: 'made' },
+        { from: 'Asn1.ml:def:children', to: 'Asn1.ml:def:parse', say: 'one after the other' },
+        { from: 'Asn1.ml:type:t', to: 'Asn1.ml:def:oid', say: 'read as' },
+        { from: 'Asn1.ml:type:t', to: 'Asn1.ml:def:integer', say: 'read as' },
+        { from: 'Asn1.ml:type:t', to: 'Asn1.ml:def:time', say: 'read as' },
+      ],
+    },
+    {
+      name: 'A certificate: read, then the chain up to a root',
+      bones: [
+        { at: 'X509.ml:type:t', role: 'subject, issuer, dates, key, names, the signed bytes' },
+        { at: 'X509.ml:def:parse', role: 'the DER walked, field by field' },
+        { at: 'X509.ml:def:public_key', role: 'RSA or an elliptic curve' },
+        { at: 'X509.ml:def:signed_by', role: "the issuer's key checks the signature" },
+        { at: 'X509.ml:def:names_host', role: 'the host among its names, wildcards too' },
+        { at: 'X509.ml:def:verify', role: 'the host, the dates, up the chain to a trusted root' },
+        { at: 'X509.ml:def:verify_scheme', role: "the server's CertificateVerify, by its key" },
+      ],
+      joints: [
+        { from: 'X509.ml:def:parse', to: 'X509.ml:def:public_key', say: 'SubjectPublicKeyInfo' },
+        { from: 'X509.ml:def:parse', to: 'X509.ml:type:t', say: 'made' },
+        { from: 'X509.ml:def:verify', to: 'X509.ml:def:names_host', say: 'the leaf' },
+        { from: 'X509.ml:def:verify', to: 'X509.ml:def:signed_by', say: 'each link' },
+        { from: 'X509.ml:type:t', to: 'X509.ml:def:verify_scheme', say: "the leaf's key" },
+      ],
+    },
+    {
       name: 'The TLS 1.3 handshake',
       bones: [
         { at: '../unix/Tls_client.ml:def:connect', role: 'a socket, 96 random bytes, the hello sent' },

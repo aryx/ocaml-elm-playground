@@ -79,4 +79,76 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Where to go, and how to get there',
+      bones: [
+        { at: 'Pathfind.mli', role: 'the route: A*, Dijkstra, breadth-first, a flow field' },
+        { at: 'Steering.mli', role: 'the motion: a desired velocity, a force clamped' },
+        { at: 'Flock.mli', role: 'a crowd: three steering rules among neighbours' },
+      ],
+      joints: [
+        { from: 'Pathfind.mli', to: 'Steering.mli', say: 'the path, followed' },
+        { from: 'Flock.mli', to: 'Steering.mli', say: 'written with its vectors, seek, steer and blend' },
+      ],
+    },
+    {
+      name: "Reynolds's boids: separation, alignment, cohesion",
+      bones: [
+        { at: 'Flock.ml:def:neighbours', role: 'the others within a radius' },
+        { at: 'Flock.ml:def:separation', role: 'away from each, the more the closer' },
+        { at: 'Flock.ml:def:alignment', role: 'their mean heading' },
+        { at: 'Flock.ml:def:cohesion', role: 'towards their centre' },
+        { at: 'Flock.ml:def:flock', role: 'the three, weighted' },
+        { at: 'Steering.ml:def:blend', role: 'the forces summed' },
+      ],
+      joints: [
+        { from: 'Flock.ml:def:flock', to: 'Flock.ml:def:neighbours', say: 'near, and too near' },
+        { from: 'Flock.ml:def:flock', to: 'Flock.ml:def:separation', say: 'the too near' },
+        { from: 'Flock.ml:def:flock', to: 'Flock.ml:def:alignment', say: 'the near' },
+        { from: 'Flock.ml:def:flock', to: 'Flock.ml:def:cohesion', say: 'the near' },
+        { from: 'Flock.ml:def:flock', to: 'Steering.ml:def:blend', say: 'each steered, then weighted' },
+      ],
+    },
+    {
+      name: 'One search behind three',
+      bones: [
+        { at: 'Pathfind.ml:type:problem', role: 'neighbours, goal, estimate: the graph is functions' },
+        { at: 'Pathfind.ml:def:search', role: 'the frontier in priority order, a node expanded at a time' },
+        { at: 'Pathfind.ml:def:insert', role: 'the frontier kept sorted' },
+        { at: 'Pathfind.ml:def:rebuild', role: 'the path, back from the goal' },
+        { at: 'Pathfind.ml:def:astar', role: 'guided by the estimate' },
+        { at: 'Pathfind.ml:def:breadth_first', role: 'every step counted 1' },
+        { at: 'Pathfind.ml:def:field', role: 'the same loop, no goal: a cost to every node' },
+      ],
+      joints: [
+        { from: 'Pathfind.ml:def:astar', to: 'Pathfind.ml:def:search', say: 'guided' },
+        { from: 'Pathfind.ml:def:breadth_first', to: 'Pathfind.ml:def:search', say: 'unit steps' },
+        { from: 'Pathfind.ml:type:problem', to: 'Pathfind.ml:def:search', say: 'explored' },
+        { from: 'Pathfind.ml:def:search', to: 'Pathfind.ml:def:insert', say: 'each neighbour' },
+        { from: 'Pathfind.ml:def:search', to: 'Pathfind.ml:def:rebuild', say: 'the goal reached' },
+        { from: 'Pathfind.ml:def:field', to: 'Pathfind.ml:def:insert', say: 'each neighbour' },
+      ],
+    },
+    {
+      name: 'Steering: a desired velocity becomes a force',
+      bones: [
+        { at: 'Steering.ml:type:vehicle', role: 'position, velocity, its limits' },
+        { at: 'Steering.ml:def:seek', role: 'the simplest wish: full speed towards' },
+        { at: 'Steering.ml:def:arrive', role: 'slowing down near' },
+        { at: 'Steering.ml:def:follow', role: 'a path: ahead, the nearest point on it' },
+        { at: 'Steering.ml:def:steer', role: 'desired minus current, clamped' },
+        { at: 'Steering.ml:def:blend', role: 'several forces weighted' },
+        { at: 'Steering.ml:def:move', role: 'the force integrated' },
+      ],
+      joints: [
+        { from: 'Steering.ml:def:follow', to: 'Steering.ml:def:seek', say: 'off the path' },
+        { from: 'Steering.ml:def:follow', to: 'Steering.ml:def:arrive', say: 'a path of one point' },
+        { from: 'Steering.ml:def:seek', to: 'Steering.ml:def:steer', say: 'a desired velocity' },
+        { from: 'Steering.ml:def:steer', to: 'Steering.ml:def:blend', say: 'a force' },
+        { from: 'Steering.ml:def:blend', to: 'Steering.ml:def:move', say: 'the force' },
+        { from: 'Steering.ml:def:move', to: 'Steering.ml:type:vehicle', say: 'the next' },
+      ],
+    },
+  ],
 }

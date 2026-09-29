@@ -59,5 +59,26 @@
         { from: 'Playground3d_platform.ml:def:run_app3d', to: 'Playground_platform.ml:def:run_app', say: 'a 2D game' },
       ],
     },
+    // claude: a skeleton per module (the pass giving every module its own)
+    {
+      name: 'WebGL under the 2D platform: the scene drawn as a side effect of view',
+      bones: [
+        { at: 'Playground3d_platform.ml:def:init_gl', role: 'canvas, shaders, buffers: the GL state' },
+        { at: 'Playground3d_platform.ml:def:letterbox', role: 'the screen fitted in the canvas' },
+        { at: 'Playground3d_platform.ml:def:draw_view', role: 'a view: its matrix, its batches, cached meshes' },
+        { at: 'Playground3d_platform.ml:def:draw', role: 'every view of the frame' },
+        { at: 'Playground3d_platform.ml:def:gl_texture', role: 'a texture once its image loads' },
+        { at: 'Playground3d_platform.ml:def:run_app3d', role: 'a 2D game whose view draws the 3D and returns the HUD' },
+        { at: '../../Gpu_scene.ml:def:group_by_material', role: "the batches, shared with OpenGL's" },
+      ],
+      joints: [
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: 'Playground3d_platform.ml:def:init_gl', say: 'lazily' },
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: 'Playground3d_platform.ml:def:draw', say: 'in view' },
+        { from: 'Playground3d_platform.ml:def:draw', to: 'Playground3d_platform.ml:def:letterbox', say: 'where' },
+        { from: 'Playground3d_platform.ml:def:draw', to: 'Playground3d_platform.ml:def:draw_view', say: 'each view' },
+        { from: 'Playground3d_platform.ml:def:draw_view', to: '../../Gpu_scene.ml:def:group_by_material', say: 'shapes' },
+        { from: 'Playground3d_platform.ml:def:draw_view', to: 'Playground3d_platform.ml:def:gl_texture', say: 'a textured batch' },
+      ],
+    },
   ],
 }

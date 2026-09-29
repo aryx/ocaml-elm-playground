@@ -24,4 +24,37 @@
   dirs: {
     tests: { summary: "The kit's tests: deal 1 dealt as Microsoft's." },
   },
+  skeletons: [
+    {
+      name: 'The cards kit and its two solitaires',
+      bones: [
+        { at: 'Cards.mli', role: 'cards, the deals, a card drawn' },
+        { at: 'Cards.ml', role: "Microsoft's generator written out; suits as shapes" },
+        { at: '../../games/cards/TinySolitaire.ml', role: 'Klondike: dealt, drawn, dragged' },
+        { at: '../../games/cards/TinyFreeCell.ml', role: 'FreeCell: deal n is the numbered game' },
+      ],
+      joints: [
+        { from: 'Cards.ml', to: 'Cards.mli', say: 'implements' },
+        { from: '../../games/cards/TinySolitaire.ml', to: 'Cards.mli', say: 'a deck, a face, a slot' },
+        { from: '../../games/cards/TinyFreeCell.ml', to: 'Cards.mli', say: 'deal n, a face, under the mouse' },
+      ],
+    },
+    {
+      name: 'A card: numbered, dealt, drawn',
+      bones: [
+        { at: 'Cards.ml:type:card', role: 'a rank and a suit' },
+        { at: 'Cards.ml:def:of_index', role: "a number 0..51 in Microsoft's order" },
+        { at: 'Cards.ml:def:deal', role: "deal n: Microsoft's generator, the deck shuffled" },
+        { at: 'Cards.ml:def:suit_shape', role: 'a suit drawn from circles and triangles' },
+        { at: 'Cards.ml:def:face', role: 'a card drawn: paper, rank, suit' },
+        { at: 'Cards.ml:def:under', role: 'is the mouse on it?' },
+      ],
+      joints: [
+        { from: 'Cards.ml:def:deal', to: 'Cards.ml:def:of_index', say: 'each index drawn' },
+        { from: 'Cards.ml:def:of_index', to: 'Cards.ml:type:card', say: 'the card' },
+        { from: 'Cards.ml:type:card', to: 'Cards.ml:def:face', say: 'drawn' },
+        { from: 'Cards.ml:def:face', to: 'Cards.ml:def:suit_shape', say: 'its suit' },
+      ],
+    },
+  ],
 }

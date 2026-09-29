@@ -98,5 +98,57 @@
         { from: 'Celestial.ml:def:to_horizontal', to: 'Stereographic.ml:def:project', say: 'azimuth, altitude' },
       ],
     },
+    {
+      name: "Celestial: a star's place, from the catalogue's frame to the sky overhead",
+      bones: [
+        { at: "Celestial.ml:type:equatorial", role: "a place on the sky: right ascension, declination" },
+        { at: "Celestial.ml:def:julian_date", role: "an instant as days since noon, 4713 BC" },
+        { at: "Celestial.ml:def:precess", role: "the J2000 place moved to the date's equinox" },
+        { at: "Celestial.ml:def:lst", role: "the sky's turn over this longitude: sidereal time" },
+        { at: "Celestial.ml:def:to_horizontal", role: "altitude and azimuth for this latitude" },
+        { at: "Celestial.ml:def:of_ecliptic", role: "the Sun's and planets' plane tilted to the equator" },
+      ],
+      joints: [
+        { from: "Celestial.ml:def:julian_date", to: "Celestial.ml:def:lst", say: "the date" },
+        { from: "Celestial.ml:type:equatorial", to: "Celestial.ml:def:precess", say: "a J2000 place" },
+        { from: "Celestial.ml:def:precess", to: "Celestial.ml:def:to_horizontal", say: "the place of date" },
+        { from: "Celestial.ml:def:lst", to: "Celestial.ml:def:to_horizontal", say: "the hour angle" },
+        { from: "Celestial.ml:def:of_ecliptic", to: "Celestial.ml:type:equatorial", say: "a planet's place" },
+      ],
+    },
+    {
+      name: "Ephemeris: the planets by Kepler, the Moon by its disturbances",
+      bones: [
+        { at: "Ephemeris.ml:def:elements", role: "each orbit's six numbers, and their drift a century" },
+        { at: "Ephemeris.ml:def:kepler", role: "Kepler's equation solved by Newton" },
+        { at: "Ephemeris.ml:def:heliocentric", role: "a planet's place round the Sun" },
+        { at: "Ephemeris.ml:def:planet", role: "seen from the Earth: the two places subtracted" },
+        { at: "Ephemeris.ml:def:equatorial_of_ecliptic", role: "turned onto the equator" },
+        { at: "Ephemeris.ml:def:moon", role: "a mean motion and six periodic terms" },
+      ],
+      joints: [
+        { from: "Ephemeris.ml:def:heliocentric", to: "Ephemeris.ml:def:elements", say: "at the date" },
+        { from: "Ephemeris.ml:def:heliocentric", to: "Ephemeris.ml:def:kepler", say: "the mean anomaly" },
+        { from: "Ephemeris.ml:def:planet", to: "Ephemeris.ml:def:heliocentric", say: "the planet's and the Earth's" },
+        { from: "Ephemeris.ml:def:planet", to: "Ephemeris.ml:def:equatorial_of_ecliptic", say: "the difference" },
+      ],
+    },
+    {
+      name: "Bright_stars: the catalogue and the figures drawn between its stars",
+      bones: [
+        { at: "Bright_stars.ml:type:star", role: "a star: its id, place, magnitude, class" },
+        { at: "Bright_stars.ml:def:stars", role: "the catalogue, one line a star" },
+        { at: "Bright_stars.ml:def:find", role: "a star by its Bayer id" },
+        { at: "Bright_stars.ml:type:figure", role: "a constellation: lines between ids" },
+        { at: "Bright_stars.ml:def:figures", role: "the figures, chains of ids" },
+        { at: "Bright_stars.ml:def:color", role: "the class's colour on screen" },
+      ],
+      joints: [
+        { from: "Bright_stars.ml:def:stars", to: "Bright_stars.ml:type:star", say: "made of" },
+        { from: "Bright_stars.ml:def:figures", to: "Bright_stars.ml:type:figure", say: "made of" },
+        { from: "Bright_stars.ml:type:figure", to: "Bright_stars.ml:def:find", say: "each end's id" },
+        { from: "Bright_stars.ml:def:find", to: "Bright_stars.ml:def:stars", say: "looked up in" },
+      ],
+    },
   ],
 }

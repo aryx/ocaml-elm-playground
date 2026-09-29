@@ -30,4 +30,38 @@
       important: [{ at: 'def:belongs', weight: 2 }],
     },
   },
+  skeletons: [
+    {
+      name: 'The sports kit: a loose ball, and players in their places',
+      bones: [
+        { at: 'Free_ball.ml', role: 'the ball pushed ahead, not carried' },
+        { at: 'Formation.ml', role: 'a place per player, pulled toward the ball' },
+        { at: '../../games/sports/TinyKickOff2.ml', role: 'football, the ball free (ball=glued carries it)' },
+        { at: '../../games/sports/TinySensibleSoccer.ml', role: 'football seen from high above' },
+        { at: '../../games/sports/TinySpeedball2.ml', role: 'the metal ball, the arena' },
+      ],
+      joints: [
+        { from: '../../games/sports/TinyKickOff2.ml', to: 'Free_ball.ml', say: 'touch, roll' },
+        { from: '../../games/sports/TinyKickOff2.ml', to: 'Formation.ml', say: 'where each runs' },
+        { from: '../../games/sports/TinySensibleSoccer.ml', to: 'Free_ball.ml', say: 'touch, roll' },
+        { from: '../../games/sports/TinySpeedball2.ml', to: 'Formation.ml', say: 'where each runs' },
+      ],
+    },
+    {
+      name: 'A formation: home, pulled to the ball, run to',
+      bones: [
+        { at: 'Formation.ml:type:spot', role: 'a place as fractions of the half pitch' },
+        { at: 'Formation.ml:def:at', role: 'the spot on the pitch, for the side attacking up or down' },
+        { at: 'Formation.ml:def:belongs', role: 'home pulled toward the ball' },
+        { at: 'Formation.ml:def:nearest', role: 'who goes for the ball' },
+        { at: 'Formation.ml:def:run_to', role: 'a step toward the target, kept in bounds' },
+      ],
+      joints: [
+        { from: 'Formation.ml:type:spot', to: 'Formation.ml:def:at', say: 'the spot' },
+        { from: 'Formation.ml:def:at', to: 'Formation.ml:def:belongs', say: 'the home' },
+        { from: 'Formation.ml:def:belongs', to: 'Formation.ml:def:run_to', say: 'the target' },
+        { from: 'Formation.ml:def:nearest', to: 'Formation.ml:def:run_to', say: 'the chaser: the ball as target' },
+      ],
+    },
+  ],
 }

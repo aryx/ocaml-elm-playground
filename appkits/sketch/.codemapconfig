@@ -55,4 +55,54 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "Sketchpad's kit: the drawing as constraints, satisfied",
+      bones: [
+        { at: "Sketch.ml", role: "points shared by lines and circles, constraints, instances of other sheets" },
+        { at: "Relax.ml", role: "Sutherland's relaxation: each point moved to lessen its errors" },
+        { at: "../../apps/cad/TinySketchpad.ml", role: "Sketchpad: the light pen, the buttons, the display" },
+      ],
+      joints: [
+        { from: "Relax.ml", to: "Sketch.ml", say: "a sheet in, a sheet out" },
+        { from: "../../apps/cad/TinySketchpad.ml", to: "Sketch.ml", say: "drawn, aimed at" },
+        { from: "../../apps/cad/TinySketchpad.ml", to: "Relax.ml", say: "solve, each frame" },
+      ],
+    },
+    {
+      name: "Sketch: points shared, constraints, instances",
+      bones: [
+        { at: "Sketch.ml:type:sheet", role: "points, items, constraints, instances of masters" },
+        { at: "Sketch.ml:type:constr", role: "horizontal, parallel, equal, on a line, on a circle" },
+        { at: "Sketch.ml:def:add_item", role: "a line or circle between points already there" },
+        { at: "Sketch.ml:def:merge", role: "two points made one: what makes the drawing a structure" },
+        { at: "Sketch.ml:def:place", role: "an instance of another sheet, not itself" },
+        { at: "Sketch.ml:def:strokes_depth", role: "what is drawn: items, and instances expanded" },
+        { at: "Sketch.ml:def:aim", role: "the light pen: the point, line or circle it is near" },
+      ],
+      joints: [
+        { from: "Sketch.ml:def:add_item", to: "Sketch.ml:type:sheet", say: "added" },
+        { from: "Sketch.ml:def:merge", to: "Sketch.ml:type:sheet", say: "rewritten" },
+        { from: "Sketch.ml:type:sheet", to: "Sketch.ml:type:constr", say: "holds" },
+        { from: "Sketch.ml:def:strokes_depth", to: "Sketch.ml:def:place", say: "instances" },
+        { from: "Sketch.ml:def:aim", to: "Sketch.ml:def:strokes_depth", say: "near which" },
+      ],
+    },
+    {
+      name: "Relax: errors, and a least-squares move per point",
+      bones: [
+        { at: "Relax.ml:def:error_with", role: "a constraint's error, the points looked up" },
+        { at: "Relax.ml:def:error", role: "the sheet's worst error" },
+        { at: "Relax.ml:def:sweep", role: "each free point: derivatives by a trial move, the normal equations by Cramer" },
+        { at: "Relax.ml:def:solve", role: "sweeps until the error is small or the budget spent" },
+        { at: "Relax.ml:def:h", role: "the trial move" },
+      ],
+      joints: [
+        { from: "Relax.ml:def:solve", to: "Relax.ml:def:sweep", say: "repeated" },
+        { from: "Relax.ml:def:solve", to: "Relax.ml:def:error", say: "done?" },
+        { from: "Relax.ml:def:sweep", to: "Relax.ml:def:error_with", say: "before and after the trial" },
+        { from: "Relax.ml:def:sweep", to: "Relax.ml:def:h", say: "derivatives" },
+      ],
+    },
+  ],
 }

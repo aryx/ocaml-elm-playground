@@ -27,4 +27,25 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Bitplanes and colour cycles, both ways',
+      bones: [
+        { at: 'Ilbm.ml:type:t', role: 'colour numbers, a palette, cycling ranges' },
+        { at: 'Ilbm.ml:type:range', role: 'CRNG: colours turning at a rate' },
+        { at: 'Ilbm.ml:def:decode', role: 'BMHD, CMAP, CRNG, BODY: planes put back together' },
+        { at: 'Ilbm.ml:def:plane_rows', role: 'a row of numbers cut into bitplanes' },
+        { at: 'Ilbm.ml:def:encode', role: 'the chunks written, rows PackBits-packed' },
+        { at: 'Ilbm.ml:def:to_rgba', role: 'numbers through the palette' },
+        { at: '../../../compression/Packbits.ml:def:decode', role: 'the run lengths' },
+      ],
+      joints: [
+        { from: 'Ilbm.ml:def:decode', to: '../../../compression/Packbits.ml:def:decode', say: "each plane's row" },
+        { from: 'Ilbm.ml:def:decode', to: 'Ilbm.ml:type:t', say: 'bits gathered per pixel' },
+        { from: 'Ilbm.ml:def:encode', to: 'Ilbm.ml:def:plane_rows', say: 'each row' },
+        { from: 'Ilbm.ml:type:range', to: 'Ilbm.ml:type:t', say: 'kept with it' },
+        { from: 'Ilbm.ml:type:t', to: 'Ilbm.ml:def:to_rgba', say: 'shown' },
+      ],
+    },
+  ],
 }

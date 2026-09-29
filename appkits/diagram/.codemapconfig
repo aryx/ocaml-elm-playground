@@ -50,4 +50,55 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "The diagram kit: shapes over a sheet, connectors routed",
+      bones: [
+        { at: "Diagram.ml", role: "shapes whose cells are formulas in one sheet: move a box, its connectors follow" },
+        { at: "Ortho_route.ml", role: "a connector's right-angled path round the boxes" },
+        { at: "../sheet/", role: "the ShapeSheet: formulas and their recalculation" },
+      ],
+      joints: [
+        { from: "Diagram.ml", to: "../sheet/", say: "every cell" },
+        { from: "Diagram.ml", to: "Ortho_route.ml", say: "a connector drawn" },
+      ],
+    },
+    {
+      name: "Diagram: Visio's ShapeSheet, a shape's geometry as formulas",
+      bones: [
+        { at: "Diagram.ml:type:shape", role: "a shape: its rows of cells, geometry, connection points, glue" },
+        { at: "Diagram.ml:type:t", role: "the page: the sheet and the shapes" },
+        { at: "Diagram.ml:def:drop", role: "a master dropped: its cells written in the sheet" },
+        { at: "Diagram.ml:def:set_formula", role: "a cell set: its names translated, the sheet recalculated" },
+        { at: "Diagram.ml:def:translate", role: "PinX, Sheet.3!Width: names into cell references" },
+        { at: "Diagram.ml:def:glue", role: "a connector's end as a formula of its target's cells" },
+        { at: "Diagram.ml:def:route", role: "the connector's path, from its ends and the boxes" },
+        { at: "Ortho_route.ml:def:route", role: "the path found" },
+      ],
+      joints: [
+        { from: "Diagram.ml:def:drop", to: "Diagram.ml:def:set_formula", say: "each cell" },
+        { from: "Diagram.ml:def:set_formula", to: "Diagram.ml:def:translate", say: "the text" },
+        { from: "Diagram.ml:def:set_formula", to: "Diagram.ml:type:t", say: "the sheet" },
+        { from: "Diagram.ml:def:glue", to: "Diagram.ml:def:set_formula", say: "BeginX = Sheet.n!..." },
+        { from: "Diagram.ml:def:route", to: "Ortho_route.ml:def:route", say: "the boxes as obstacles" },
+        { from: "Diagram.ml:type:t", to: "Diagram.ml:type:shape", say: "holds" },
+      ],
+    },
+    {
+      name: "Ortho_route: a connector's path as a shortest path on a grid",
+      bones: [
+        { at: "Ortho_route.ml:def:route", role: "Dijkstra over the lines through the boxes' edges" },
+        { at: "Ortho_route.ml:type:dir", role: "the side a glued end leaves by" },
+        { at: "Ortho_route.ml:def:inside", role: "a point in an obstacle, grown by the margin" },
+        { at: "Ortho_route.ml:def:heap_push", role: "the frontier, a binary heap" },
+        { at: "Ortho_route.ml:def:simplify", role: "collinear points dropped: the bends" },
+      ],
+      joints: [
+        { from: "Ortho_route.ml:def:route", to: "Ortho_route.ml:type:dir", say: "the stubs" },
+        { from: "Ortho_route.ml:def:route", to: "Ortho_route.ml:def:inside", say: "blocked" },
+        { from: "Ortho_route.ml:def:route", to: "Ortho_route.ml:def:heap_push", say: "the frontier" },
+        { from: "Ortho_route.ml:def:route", to: "Ortho_route.ml:def:simplify", say: "the path" },
+      ],
+    },
+  ],
 }

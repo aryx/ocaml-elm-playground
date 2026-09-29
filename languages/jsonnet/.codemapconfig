@@ -80,6 +80,42 @@
   },
   skeletons: [
     {
+      name: 'Jsonnet text into tokens: three kinds of string',
+      bones: [
+        { at: 'Jsonnet_lexer.ml:type:kind', role: 'a keyword, a name, a number, a string, an operator' },
+        { at: 'Jsonnet_lexer.ml:def:tokenize', role: 'one loop over the characters' },
+        { at: "Jsonnet_lexer.ml:comment:\"a quoted string's body\"", role: "'...' and \"...\", escapes decoded" },
+        { at: 'Jsonnet_lexer.ml:comment:"no escapes, the quote doubled"', role: "@'...': no escapes, the quote doubled" },
+        { at: 'Jsonnet_lexer.ml:comment:"after its line, the lines indented as the first"', role: '|||: lines indented as the first' },
+      ],
+      joints: [
+        { from: 'Jsonnet_lexer.ml:def:tokenize', to: "Jsonnet_lexer.ml:comment:\"a quoted string's body\"", say: 'a quote' },
+        { from: 'Jsonnet_lexer.ml:def:tokenize', to: 'Jsonnet_lexer.ml:comment:"no escapes, the quote doubled"', say: '@ and a quote' },
+        { from: 'Jsonnet_lexer.ml:def:tokenize', to: 'Jsonnet_lexer.ml:comment:"after its line, the lines indented as the first"', say: '|||' },
+        { from: 'Jsonnet_lexer.ml:def:tokenize', to: 'Jsonnet_lexer.ml:type:kind', say: 'the tokens, with lines' },
+      ],
+    },
+    {
+      name: 'Jsonnet tokens into a tree: one function, its parsers local',
+      bones: [
+        { at: 'Jsonnet_parse.ml:def:parse', role: 'the tokens held; every parser a local function in it' },
+        { at: 'Jsonnet_parse.ml:def:levels', role: 'the binary operators by level: one parser climbs them' },
+        { at: 'Jsonnet_parse.ml:comment:"x = e, or f(x) = e: a function"', role: 'a binding, a function if it has parameters' },
+        { at: 'Jsonnet_parse.ml:comment:"after e[: an index, or a slice"', role: 'postfix: an index or a slice' },
+        { at: 'Jsonnet_parse.ml:comment:"after {: the members, or a comprehension"', role: 'an object: fields, locals, asserts' },
+        { at: 'Jsonnet_parse.ml:comment:"for x in e, then for and if"', role: 'a comprehension' },
+        { at: 'Jsonnet_parse.ml:def:resolve', role: "an import's path, from the importing file" },
+      ],
+      joints: [
+        { from: 'Jsonnet_parse.ml:def:parse', to: 'Jsonnet_parse.ml:def:levels', say: 'binary expressions' },
+        { from: 'Jsonnet_parse.ml:def:parse', to: 'Jsonnet_parse.ml:comment:"x = e, or f(x) = e: a function"', say: 'local' },
+        { from: 'Jsonnet_parse.ml:def:parse', to: 'Jsonnet_parse.ml:comment:"after e[: an index, or a slice"', say: 'e[...]' },
+        { from: 'Jsonnet_parse.ml:def:parse', to: 'Jsonnet_parse.ml:comment:"after {: the members, or a comprehension"', say: '{' },
+        { from: 'Jsonnet_parse.ml:comment:"after {: the members, or a comprehension"', to: 'Jsonnet_parse.ml:comment:"for x in e, then for and if"', say: 'a for inside' },
+        { from: 'Jsonnet_parse.ml:def:parse', to: 'Jsonnet_parse.ml:def:resolve', say: 'import' },
+      ],
+    },
+    {
       name: 'A jsonnet file to JSON',
       bones: [
         { at: 'Jsonnet_lexer.ml:def:tokenize', role: 'text into tokens' },

@@ -28,4 +28,43 @@
   dirs: {
     tests: { summary: "The kit's tests: presses judged, charts reduced." },
   },
+  skeletons: [
+    {
+      name: 'One rhythm engine, three instruments',
+      bones: [
+        { at: 'Rhythm.mli', role: 'the clock, the grades, a chart played through' },
+        { at: 'Rhythm.ml', role: 'presses judged against notes; charts made from a tune' },
+        { at: '../../libs/audio/formats/abc/Abc.ml', role: 'the tune the charts are read from' },
+        { at: '../../games/rhythm/TinyDDR.ml', role: 'four arrows stepped on' },
+        { at: '../../games/rhythm/TinyGuitarHero.ml', role: 'frets held, the strum, long notes' },
+        { at: '../../games/rhythm/TinyRockBand.ml', role: 'a band: each voice a part, each its difficulty' },
+      ],
+      joints: [
+        { from: 'Rhythm.ml', to: 'Rhythm.mli', say: 'implements' },
+        { from: '../../libs/audio/formats/abc/Abc.ml', to: 'Rhythm.ml', say: "a voice's notes" },
+        { from: '../../games/rhythm/TinyDDR.ml', to: 'Rhythm.mli', say: 'start, play' },
+        { from: '../../games/rhythm/TinyGuitarHero.ml', to: 'Rhythm.mli', say: 'reduce, strummed, play' },
+        { from: '../../games/rhythm/TinyRockBand.ml', to: 'Rhythm.mli', say: 'on_frets, reduce' },
+      ],
+    },
+    {
+      name: 'A performance: notes, presses judged, misses',
+      bones: [
+        { at: 'Rhythm.ml:type:note', role: 'when, which lane, how long held' },
+        { at: 'Rhythm.ml:type:performance', role: 'each note judged or not, combo, score' },
+        { at: 'Rhythm.ml:def:play', role: 'a frame: the presses, then the misses' },
+        { at: 'Rhythm.ml:def:press', role: 'the nearest unjudged note in the lane' },
+        { at: 'Rhythm.ml:def:judge', role: 'the error graded by its window' },
+        { at: 'Rhythm.ml:def:on_frets', role: "a tune's voice made a chart" },
+        { at: 'Rhythm.ml:def:reduce', role: 'the chart for a difficulty: frets folded' },
+      ],
+      joints: [
+        { from: 'Rhythm.ml:def:on_frets', to: 'Rhythm.ml:def:reduce', say: 'the Expert chart' },
+        { from: 'Rhythm.ml:def:reduce', to: 'Rhythm.ml:type:note', say: 'the notes to play' },
+        { from: 'Rhythm.ml:def:play', to: 'Rhythm.ml:def:press', say: 'each lane pressed' },
+        { from: 'Rhythm.ml:def:press', to: 'Rhythm.ml:def:judge', say: 'the error in seconds' },
+        { from: 'Rhythm.ml:def:press', to: 'Rhythm.ml:type:performance', say: 'the note judged, the score' },
+      ],
+    },
+  ],
 }

@@ -106,5 +106,63 @@
         { from: 'ways/', to: 'Playground.mli:def:game', say: 'build an app' },
       ],
     },
+    // claude: a skeleton per module of the core (the pass giving every
+    // module its own)
+    {
+      name: 'The 2D API: shapes as data, a game as an app over one loop',
+      bones: [
+        { at: 'Playground.ml:type:shape', role: 'a form placed: x, y, angle, scale, alpha' },
+        { at: 'Playground.ml:type:computer', role: 'mouse, keyboard, screen, time, flags' },
+        { at: 'Playground.ml:type:app', role: "Elm's program: init, update, view, subscriptions" },
+        { at: 'Playground.ml:def:game', role: "a view and an update made an app, the platform's events subscribed" },
+        { at: 'Playground.ml:def:game_update', role: "each message into the computer, a Tick into the program's update" },
+        { at: 'Playground.ml:def:update_keyboard', role: 'a key named canonically, into the set held and its flag (arrows, WASD)' },
+        { at: 'Playground.ml:def:picture', role: 'the simplest app: shapes that never change' },
+      ],
+      joints: [
+        { from: 'Playground.ml:def:game', to: 'Playground.ml:type:app', say: 'builds' },
+        { from: 'Playground.ml:def:game', to: 'Playground.ml:def:game_update', say: 'its update' },
+        { from: 'Playground.ml:def:game_update', to: 'Playground.ml:type:computer', say: 'a new computer' },
+        { from: 'Playground.ml:def:game_update', to: 'Playground.ml:def:update_keyboard', say: 'a key changed' },
+        { from: 'Playground.ml:type:computer', to: 'Playground.ml:type:shape', say: "the program's view" },
+      ],
+    },
+    {
+      name: 'The 3D API: faces moved and turned, seen by a camera',
+      bones: [
+        { at: 'Playground3d.ml:type:shape3d', role: 'polygons, textured, smooth, groups, HUD' },
+        { at: 'Playground3d.ml:def:box', role: 'the solids: faces made once' },
+        { at: 'Playground3d.ml:def:map_points', role: 'every transform: the points mapped' },
+        { at: 'Playground3d.ml:type:camera', role: 'eye, target, fov' },
+        { at: 'Playground3d.ml:def:flatten_faces', role: 'the tree as faces' },
+        { at: 'Playground3d.ml:def:render3d_to_2d', role: "the painter's algorithm into 2D shapes (SVG)" },
+        { at: 'Playground3d.ml:def:game3d', role: 'the 3D app: a camera and shapes per frame' },
+      ],
+      joints: [
+        { from: 'Playground3d.ml:def:box', to: 'Playground3d.ml:type:shape3d', say: 'builds' },
+        { from: 'Playground3d.ml:def:map_points', to: 'Playground3d.ml:type:shape3d', say: 'moved, rotated' },
+        { from: 'Playground3d.ml:def:game3d', to: 'Playground3d.ml:type:camera', say: 'a view' },
+        { from: 'Playground3d.ml:def:render3d_to_2d', to: 'Playground3d.ml:def:flatten_faces', say: 'faces' },
+        { from: 'Playground3d.ml:type:camera', to: 'Playground3d.ml:def:render3d_to_2d', say: 'projects' },
+      ],
+    },
+    {
+      name: 'A 3D scene for the GPU: triangles batched by material',
+      bones: [
+        { at: 'Gpu_scene.ml:type:material', role: 'flat colour or a texture: a draw call each' },
+        { at: 'Gpu_scene.ml:type:vertex_data', role: 'position, normal, colour, uv' },
+        { at: 'Gpu_scene.ml:def:fan_triangles', role: 'a polygon as a fan' },
+        { at: 'Gpu_scene.ml:def:collect_batches', role: 'the shape tree walked into batches' },
+        { at: 'Gpu_scene.ml:def:group_by_material', role: 'one list per material' },
+        { at: 'Gpu_scene.ml:def:vertex_floats_of_group', role: '11 floats a vertex, for a buffer' },
+      ],
+      joints: [
+        { from: 'Gpu_scene.ml:def:collect_batches', to: 'Gpu_scene.ml:def:fan_triangles', say: 'each face' },
+        { from: 'Gpu_scene.ml:def:collect_batches', to: 'Gpu_scene.ml:type:vertex_data', say: 'makes' },
+        { from: 'Gpu_scene.ml:def:group_by_material', to: 'Gpu_scene.ml:def:collect_batches', say: 'walks' },
+        { from: 'Gpu_scene.ml:def:group_by_material', to: 'Gpu_scene.ml:def:vertex_floats_of_group', say: 'per material' },
+        { from: 'Gpu_scene.ml:type:material', to: 'Gpu_scene.ml:def:group_by_material', say: 'the key' },
+      ],
+    },
   ],
 }

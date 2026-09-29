@@ -25,4 +25,40 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'One light-cycle arena, three Trons',
+      bones: [
+        { at: 'Lightcycles.mli', role: 'the arena, the cycles, the brains, a whole game' },
+        { at: 'Lightcycles.ml', role: 'the rules and the two computer players' },
+        { at: '../../games/arcade/TinyTron.ml', role: 'the brains on its own arena' },
+        { at: '../../games/arcade/TinyTron3d.ml', role: "the kit's game, drawn in 3D" },
+        { at: '../../games/arcade/TinyTronscroll.ml', role: 'its directions, over the network' },
+      ],
+      joints: [
+        { from: 'Lightcycles.ml', to: 'Lightcycles.mli', say: 'implements' },
+        { from: '../../games/arcade/TinyTron.ml', to: 'Lightcycles.mli', say: 'computer_turn, search_turn' },
+        { from: '../../games/arcade/TinyTron3d.ml', to: 'Lightcycles.mli', say: 'model and update whole' },
+        { from: '../../games/arcade/TinyTronscroll.ml', to: 'Lightcycles.mli', say: 'dir, delta, opposite' },
+      ],
+    },
+    {
+      name: 'Rounds of cycles; a computer that counts room',
+      bones: [
+        { at: 'Lightcycles.ml:type:round', role: 'the arena with its trails, the cycles' },
+        { at: 'Lightcycles.ml:def:update', role: 'title, playing, winner' },
+        { at: 'Lightcycles.ml:def:update_game', role: 'each cycle told where to go: keys or a brain' },
+        { at: 'Lightcycles.ml:def:computer_turn', role: 'the way with the most room: a flood fill' },
+        { at: 'Lightcycles.ml:def:search_turn', role: 'a search scored by a Voronoi split' },
+        { at: 'Lightcycles.ml:def:step_round', role: 'all move at once; crashes, head-on too' },
+      ],
+      joints: [
+        { from: 'Lightcycles.ml:def:update', to: 'Lightcycles.ml:def:update_game', say: 'the keyboard' },
+        { from: 'Lightcycles.ml:def:update_game', to: 'Lightcycles.ml:def:computer_turn', say: 'brain Room' },
+        { from: 'Lightcycles.ml:def:update_game', to: 'Lightcycles.ml:def:search_turn', say: 'brain Search' },
+        { from: 'Lightcycles.ml:def:update_game', to: 'Lightcycles.ml:def:step_round', say: 'the wanted turns' },
+        { from: 'Lightcycles.ml:def:step_round', to: 'Lightcycles.ml:type:round', say: 'the next round, or its end' },
+      ],
+    },
+  ],
 }

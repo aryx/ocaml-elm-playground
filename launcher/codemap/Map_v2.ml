@@ -530,6 +530,35 @@ let card (t : t) (i : int) : string * string list option =
  * where it parts from the hovered one -- the child, under their deepest
  * common folder, on its side: a far file its region, a near one itself.
  * A road from user to used, green to red, as wide as the uses *)
+(* claude: the unit whose name is under the mouse, and the files tied to
+ * it, its users and what it uses (shift+click: a view of them all, the
+ * author: "all the things relevant to the dir") *)
+let unit_with_ties (t : t) (c : camera) : (string * string list) option =
+  match t.pointer with
+  | None -> None
+  | Some (u, v) -> (
+      let mx = to_px c u and my = to_py c v in
+      match List.find_opt (fun n -> within n.nbox mx my && n.said = None) (names t c) with
+      | Some n when n.node <> 0 ->
+          let h = t.placed.(n.node).path in
+          let inside p = p = h || Code_search.starts p (h ^ "/") in
+          (* the units tied, as the hover's roads show them: each where it
+           * parts from [h] (~/ix's version_control: lib_core,
+           * lib_security, lib_compression) *)
+          let parts p = String.split_on_char '/' p in
+          let side q =
+            let rec go acc = function x :: r, y :: r' when x = y -> go (x :: acc) (r, r') | _, y :: _ -> List.rev (y :: acc) | _ -> List.rev acc in
+            String.concat "/" (go [] (parts h, parts q))
+          in
+          let tied =
+            List.filter_map
+              (fun (src, dst, _) -> if inside dst && not (inside src) then Some (side src) else if inside src && not (inside dst) then Some (side dst) else None)
+              (Code_rank.links (rank_of t))
+            |> List.sort_uniq compare
+          in
+          Some (h, h :: tied)
+      | _ -> None)
+
 let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
   match t.pointer with
   | None -> []
@@ -551,6 +580,10 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
             in
             let index = Hashtbl.create 256 in
             Array.iteri (fun i (p : entry Treemap.placed) -> Hashtbl.replace index p.path i) t.placed;
+            (* claude: in a view of chosen units (a selection, shift+click's),
+             * the ties file to file (the author: "finer grained arrows
+             * ... file-to-file instead of folder to folder") *)
+            let side q = if t.top_kept && Hashtbl.mem index q then q else side q in
             let add tbl k n = Hashtbl.replace tbl k (n + Option.value (Hashtbl.find_opt tbl k) ~default:0) in
             let users = Hashtbl.create 16 and uses = Hashtbl.create 16 in
             List.iter
@@ -558,9 +591,10 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
                 if inside dst && not (inside src) then add users (side src) n
                 else if inside src && not (inside dst) then add uses (side dst) n)
               (Code_rank.links (rank_of t));
-            let top tbl = Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl [] |> List.sort (fun (_, x) (_, y) -> compare y x) |> List.filteri (fun i _ -> i < 12) in
+            let top tbl = Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl [] |> List.sort (fun (_, x) (_, y) -> compare y x) |> List.filteri (fun i _ -> i < (if t.top_kept then 30 else 12)) in
             let x0, y0, x1, y1 = n.nbox in
             let hx = (x0 +. x1) /. 2. and hy = (y0 +. y1) /. 2. in
+            let biggest = List.fold_left (fun m (_, n) -> max m n) 1 (top users @ top uses) in
             let centre k =
               match Hashtbl.find_opt index k with
               | Some i -> (match clip c t.placed.(i).rect with Some (a0, b0, a1, b1) -> Some (float_of_int (a0 + a1) /. 2., float_of_int (b0 + b1) /. 2.) | None -> None)
@@ -571,7 +605,9 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
               let len = Float.max 1. (Float.hypot dx dy) in
               let bend = Float.min 80. (0.15 *. len) in
               let pts = Map_atlas.bspline [| (ax, ay); (((ax +. bx) /. 2.) -. (dy /. len *. bend), ((ay +. by) /. 2.) +. (dx /. len *. bend)); (bx, by) |] in
-              Map_atlas.road a pts (Float.min 9. (1.5 +. (1.5 *. Float.log (float_of_int (n + 1))))) 0.8
+              (* claude: as wide as its uses (the author), by area: the
+               * square root of its share of the largest *)
+              Map_atlas.road a pts (1.5 +. (12. *. Float.sqrt (float_of_int n /. float_of_int biggest))) 0.8
             in
             let label (x, y) k n col =
               let str = Printf.sprintf "%s %d" (Filename.basename k) n in
@@ -1755,7 +1791,12 @@ let search_lit ?(glow = rgb 255 225 90) ?(dot = 3.) ?(chosen : Code_search.hit o
                | Some (x, y, xe) when ground ->
                    let w = Float.max 30. (xe -. x) in
                    [ rectangle glow (w +. 8.) 12. |> move (sx a (x +. (w /. 2.))) (sy a y) |> fade (if sel then 0.55 else 0.3) ]
-               | Some (x, y, _) -> [ circle glow (if sel then 6. else dot) |> move (sx a x) (sy a y) |> fade (if sel then 1. else 0.85) ]
+               (* claude: a halo round each, glowing slowly: a match, not a
+                * capital (the author) *)
+               | Some (x, y, _) ->
+                   let pulse = 0.5 +. (0.5 *. Float.sin ((t.clock *. 3.) +. (float_of_int (h.line mod 7)))) in
+                   [ circle glow ((dot *. 2.4) +. (2. *. pulse)) |> move (sx a x) (sy a y) |> fade (0.12 +. (0.12 *. pulse));
+                     circle glow (if sel then 6. else dot) |> move (sx a x) (sy a y) |> fade (if sel then 1. else 0.85) ]
                | None -> [])
            | View | Tour -> []))
 

@@ -25,4 +25,24 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Blocks to frames, frames onto a canvas',
+      bones: [
+        { at: 'Gif.ml:def:frames', role: "the blocks walked: each image's patch, delay, disposal" },
+        { at: 'Gif.ml:type:frame', role: 'a patch at x, y, and what to do after it' },
+        { at: 'Gif.ml:def:interlaced_rows', role: 'the four passes, their rows in order' },
+        { at: 'Gif.ml:def:animation', role: 'patches composed, disposal applied: full pictures' },
+        { at: 'Gif.ml:def:decode', role: 'a still: the first picture' },
+        { at: '../../../compression/Lzw.ml:def:decode', role: 'the codes to colour indices' },
+      ],
+      joints: [
+        { from: 'Gif.ml:def:frames', to: '../../../compression/Lzw.ml:def:decode', say: 'the data sub-blocks' },
+        { from: 'Gif.ml:def:frames', to: 'Gif.ml:def:interlaced_rows', say: 'interlaced' },
+        { from: 'Gif.ml:def:frames', to: 'Gif.ml:type:frame', say: 'a list' },
+        { from: 'Gif.ml:def:animation', to: 'Gif.ml:def:frames', say: 'the size and the patches' },
+        { from: 'Gif.ml:def:decode', to: 'Gif.ml:def:animation', say: 'the first' },
+      ],
+    },
+  ],
 }

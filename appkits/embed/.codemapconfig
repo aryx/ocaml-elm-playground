@@ -49,4 +49,60 @@
       related: ['../tests/Unit_embed.ml'],
     },
   },
+  skeletons: [
+    {
+      name: "Parts in documents: the part, the document of parts, the hosts",
+      bones: [
+        { at: "Component.ml", role: "a part: a record of functions any host can draw, feed and save" },
+        { at: "Compound.ml", role: "OpenDoc's document: columns and rows of parts, sized, saved" },
+        { at: "../../apps/office/TinyOpenDoc.ml", role: "the compound document editor" },
+        { at: "../../apps/office/TinyOffice.ml", role: "a letter with a sheet or a drawing in it" },
+        { at: "../../apps/music/TinyReface.ml", role: "a synthesizer's panel as a part" },
+      ],
+      joints: [
+        { from: "Compound.ml", to: "Component.ml", say: "its leaves" },
+        { from: "../../apps/office/TinyOpenDoc.ml", to: "Compound.ml", say: "the document" },
+        { from: "../../apps/office/TinyOffice.ml", to: "Component.ml", say: "registry, draw_in" },
+        { from: "../../apps/music/TinyReface.ml", to: "Component.ml", say: "draw_in, input_in" },
+      ],
+    },
+    {
+      name: "Component: a part as a record of functions",
+      bones: [
+        { at: "Component.ml:type:part", role: "kind, height, draw, input, menu, command, save" },
+        { at: "Component.ml:type:registry", role: "kinds known, each with its loader" },
+        { at: "Component.ml:def:load", role: "a part from its kind and text, by the host's registry" },
+        { at: "Component.ml:def:placeholder", role: "a kind nothing here can show: kept, not lost" },
+        { at: "Component.ml:def:fit", role: "a scaled part: its natural box fitted into the frame" },
+        { at: "Component.ml:def:draw_in", role: "drawn in its frame, scaled or not" },
+        { at: "Component.ml:def:input_in", role: "the mouse scaled back into the part" },
+      ],
+      joints: [
+        { from: "Component.ml:def:load", to: "Component.ml:type:registry", say: "looked up" },
+        { from: "Component.ml:def:load", to: "Component.ml:def:placeholder", say: "unknown kind" },
+        { from: "Component.ml:def:draw_in", to: "Component.ml:def:fit", say: "scaled" },
+        { from: "Component.ml:def:input_in", to: "Component.ml:def:fit", say: "scaled" },
+        { from: "Component.ml:def:draw_in", to: "Component.ml:type:part", say: "its draw" },
+      ],
+    },
+    {
+      name: "Compound: columns and rows of parts, negotiated, saved",
+      bones: [
+        { at: "Compound.ml:type:t", role: "a part, a column, a row, or a node sized" },
+        { at: "Compound.ml:def:height", role: "a node's height: the frame proposes, the part insists" },
+        { at: "Compound.ml:def:widths", role: "a row's width shared by its children's shares" },
+        { at: "Compound.ml:def:walk", role: "where each part goes, and the splitters between" },
+        { at: "Compound.ml:def:update", role: "the node at a path changed" },
+        { at: "Compound.ml:def:save", role: "one line a node, each part's text counted" },
+        { at: "Compound.ml:def:load", role: "read back, the parts through the registry" },
+      ],
+      joints: [
+        { from: "Compound.ml:def:walk", to: "Compound.ml:def:height", say: "each node" },
+        { from: "Compound.ml:def:height", to: "Compound.ml:def:widths", say: "a row" },
+        { from: "Compound.ml:def:update", to: "Compound.ml:type:t", say: "rebuilt" },
+        { from: "Compound.ml:def:save", to: "Compound.ml:type:t", say: "written" },
+        { from: "Compound.ml:def:load", to: "Compound.ml:type:t", say: "read" },
+      ],
+    },
+  ],
 }

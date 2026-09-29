@@ -29,4 +29,35 @@
       related: ['../tests/Unit_nls.ml'],
     },
   },
+  skeletons: [
+    {
+      name: "NLS: the document kit and TinyNLS",
+      bones: [
+        { at: "Nls_doc.ml", role: "a document as a tree of statements, numbered by their place" },
+        { at: "../../apps/office/TinyNLS.ml", role: "Engelbart's NLS: views, commands, links followed" },
+      ],
+      joints: [
+        { from: "../../apps/office/TinyNLS.ml", to: "Nls_doc.ml", say: "every command" },
+      ],
+    },
+    {
+      name: "Nls_doc: statements in a tree, their numbers computed",
+      bones: [
+        { at: "Nls_doc.ml:type:statement", role: "a statement: its id, text, branch" },
+        { at: "Nls_doc.ml:def:of_outline", role: "indented lines to the tree" },
+        { at: "Nls_doc.ml:def:number", role: "its number, 1a2b: from its path, never stored" },
+        { at: "Nls_doc.ml:def:place", role: "a branch put after, down or up from a statement" },
+        { at: "Nls_doc.ml:def:move", role: "a branch cut and placed; not into itself" },
+        { at: "Nls_doc.ml:def:visible", role: "the statements shown down to a level" },
+        { at: "Nls_doc.ml:def:links", role: "the <links> in a statement's text" },
+        { at: "Nls_doc.ml:def:path_in", role: "the indices down to a statement" },
+      ],
+      joints: [
+        { from: "Nls_doc.ml:def:of_outline", to: "Nls_doc.ml:type:statement", say: "built" },
+        { from: "Nls_doc.ml:def:number", to: "Nls_doc.ml:def:path_in", say: "the path" },
+        { from: "Nls_doc.ml:def:move", to: "Nls_doc.ml:def:place", say: "where" },
+        { from: "Nls_doc.ml:def:visible", to: "Nls_doc.ml:type:statement", say: "walked" },
+      ],
+    },
+  ],
 }

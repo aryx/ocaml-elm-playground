@@ -47,4 +47,52 @@
   dirs: {
     fonts: { summary: "The fonts' data as text: Hershey's JHF and the VGA's bitmaps, with where they come from." },
   },
+  skeletons: [
+    {
+      name: 'Two fonts, strokes and bitmaps',
+      bones: [
+        { at: 'Hershey.ml', role: 'letters as pen strokes: any size, any angle' },
+        { at: 'Vga_font.ml', role: 'letters as 8x16 bitmaps: the code map reads by them' },
+        { at: '../../../playground/platforms/software/Shape_render_software.ml:def:draw_words', role: "the Playground's words: Hershey's strokes, stroked" },
+        { at: '../../../launcher/codemap/Code_view.ml', role: "the code map's text: VGA cells" },
+      ],
+      joints: [
+        { from: '../../../playground/platforms/software/Shape_render_software.ml:def:draw_words', to: 'Hershey.ml', say: 'layout' },
+        { from: '../../../launcher/codemap/Code_view.ml', to: 'Vga_font.ml', say: 'decode, bit' },
+      ],
+    },
+    {
+      name: 'A Hershey glyph read and laid out',
+      bones: [
+        { at: 'Hershey.ml:type:glyph', role: 'left, right, strokes of points' },
+        { at: 'Hershey.ml:def:decode_glyph', role: "two characters a point, ' R' the pen up" },
+        { at: 'Hershey.ml:def:font', role: 'the .jhf file, a glyph per line, lazily' },
+        { at: 'Hershey.ml:def:glyph', role: "a character's, '?' when missing" },
+        { at: 'Hershey.ml:def:layout', role: 'a string: glyphs side by side' },
+        { at: 'Hershey.ml:def:units_per_em', role: 'the scale to a font size' },
+      ],
+      joints: [
+        { from: 'Hershey.ml:def:font', to: 'Hershey.ml:def:decode_glyph', say: 'each line' },
+        { from: 'Hershey.ml:def:decode_glyph', to: 'Hershey.ml:type:glyph', say: 'made' },
+        { from: 'Hershey.ml:def:glyph', to: 'Hershey.ml:def:font', say: 'code - 32' },
+        { from: 'Hershey.ml:def:layout', to: 'Hershey.ml:def:glyph', say: 'each character' },
+      ],
+    },
+    {
+      name: 'Code page 437 from UTF-8',
+      bones: [
+        { at: 'Vga_font.ml:comment:"the 256 glyphs, 16 bytes each"', role: 'the table read at start: glyphs and Unicode' },
+        { at: 'Vga_font.ml:def:decode', role: 'a UTF-8 character to its glyph, and its length' },
+        { at: 'Vga_font.ml:def:of_unicode', role: 'Unicode to code page 437' },
+        { at: 'Vga_font.ml:def:row', role: "a glyph's row: a byte" },
+        { at: 'Vga_font.ml:def:bit', role: 'one pixel of a glyph' },
+      ],
+      joints: [
+        { from: 'Vga_font.ml:comment:"the 256 glyphs, 16 bytes each"', to: 'Vga_font.ml:def:of_unicode', say: 'the Unicode table' },
+        { from: 'Vga_font.ml:def:decode', to: 'Vga_font.ml:def:of_unicode', say: "'?' when none" },
+        { from: 'Vga_font.ml:def:bit', to: 'Vga_font.ml:def:row', say: 'bit 7 - x' },
+        { from: 'Vga_font.ml:comment:"the 256 glyphs, 16 bytes each"', to: 'Vga_font.ml:def:row', say: 'the bytes' },
+      ],
+    },
+  ],
 }

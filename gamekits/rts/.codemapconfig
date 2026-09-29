@@ -22,4 +22,40 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Orders over the pathfinder, for the strategy games',
+      bones: [
+        { at: 'Orders.ml', role: 'the grid made a search problem; a unit walked' },
+        { at: '../../libs/ai/movement/Pathfind.ml', role: 'A* and the flow field' },
+        { at: '../../games/strategy/TinyDune2.ml', role: 'a unit sent: a path, the nearest spice' },
+        { at: '../../games/strategy/TinyWarcraft2.ml', role: 'paths, and a field for a crowd' },
+        { at: '../../games/rpg/TinyGauntlet2.ml', role: 'monsters rolling down one field' },
+      ],
+      joints: [
+        { from: 'Orders.ml', to: '../../libs/ai/movement/Pathfind.ml', say: 'the problem' },
+        { from: '../../games/strategy/TinyDune2.ml', to: 'Orders.ml', say: 'path, advance' },
+        { from: '../../games/strategy/TinyWarcraft2.ml', to: 'Orders.ml', say: 'path, field, downhill' },
+        { from: '../../games/rpg/TinyGauntlet2.ml', to: 'Orders.ml', say: 'field, downhill' },
+      ],
+    },
+    {
+      name: 'An order: a path found, then walked tile by tile',
+      bones: [
+        { at: 'Orders.ml:def:problem', role: 'the grid: four steps, the Manhattan estimate' },
+        { at: 'Orders.ml:def:path', role: 'A* to one target' },
+        { at: 'Orders.ml:def:nearest', role: 'to the nearest cell wanted: no estimate' },
+        { at: 'Orders.ml:def:field', role: 'every cell its distance: one search for many' },
+        { at: 'Orders.ml:def:downhill', role: 'a cell to the next lower one' },
+        { at: 'Orders.ml:def:advance', role: 'a unit moved toward its next tile' },
+      ],
+      joints: [
+        { from: 'Orders.ml:def:problem', to: 'Orders.ml:def:path', say: 'the search' },
+        { from: 'Orders.ml:def:problem', to: 'Orders.ml:def:nearest', say: 'the goal changed' },
+        { from: 'Orders.ml:def:problem', to: 'Orders.ml:def:field', say: 'the search' },
+        { from: 'Orders.ml:def:field', to: 'Orders.ml:def:downhill', say: 'the distances' },
+        { from: 'Orders.ml:def:path', to: 'Orders.ml:def:advance', say: 'the tiles to walk' },
+      ],
+    },
+  ],
 }

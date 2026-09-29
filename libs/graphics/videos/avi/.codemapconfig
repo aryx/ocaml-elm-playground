@@ -25,4 +25,25 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'RIFF chunks: JPEG frames and PCM',
+      bones: [
+        { at: 'Avi.ml:def:chunks', role: 'a list of RIFF chunks: name, where, size' },
+        { at: 'Avi.ml:def:of_string', role: 'hdrl for the streams, movi for their chunks' },
+        { at: 'Avi.ml:def:to_string', role: 'frames as JPEGs, the sound interleaved, the index' },
+        { at: 'Avi.ml:def:chunk', role: 'one written, padded to even' },
+        { at: '../../images/jpeg/Jpeg.ml:def:decode', role: 'a frame, when shown' },
+        { at: '../../images/jpeg/Jpeg_encode.ml:def:encode', role: 'a frame, when written' },
+        { at: '../movie/Movie.ml:type:t', role: 'what the reader gives' },
+      ],
+      joints: [
+        { from: 'Avi.ml:def:of_string', to: 'Avi.ml:def:chunks', say: 'RIFF, hdrl, strl' },
+        { from: 'Avi.ml:def:of_string', to: '../../images/jpeg/Jpeg.ml:def:decode', say: '00dc, the last kept' },
+        { from: 'Avi.ml:def:of_string', to: '../movie/Movie.ml:type:t', say: 'the frames at the rate' },
+        { from: 'Avi.ml:def:to_string', to: '../../images/jpeg/Jpeg_encode.ml:def:encode', say: 'each picture' },
+        { from: 'Avi.ml:def:to_string', to: 'Avi.ml:def:chunk', say: '00dc, 01wb, idx1' },
+      ],
+    },
+  ],
 }

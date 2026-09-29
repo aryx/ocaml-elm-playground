@@ -34,4 +34,37 @@
     },
     'Psnr.ml': { digest: '717cff476b42', summary: 'The mean squared error over red, green and blue, and its decibels.' },
   },
+  skeletons: [
+    {
+      name: 'Colour as video stores it, and the error measured',
+      bones: [
+        { at: 'Yuv.ml', role: 'RGB to YCbCr and back, colour at half resolution' },
+        { at: 'Psnr.ml', role: 'how far a decoded picture is from its original: the tests' },
+        { at: '../y4m/', role: 'raw YCbCr frames in a file' },
+        { at: '../mpeg1/', role: 'the codec, which works in YCbCr 4:2:0' },
+      ],
+      joints: [
+        { from: '../y4m/', to: 'Yuv.ml', say: 'planes to pictures, both ways' },
+        { from: '../mpeg1/', to: 'Yuv.ml', say: 'of_image, to_image' },
+      ],
+    },
+    {
+      name: 'Pictures to planes and back',
+      bones: [
+        { at: 'Yuv.ml:type:range', role: 'full 0-255 or studio 16-235' },
+        { at: 'Yuv.ml:def:of_rgb', role: 'BT.601: luma and two colour differences' },
+        { at: 'Yuv.ml:def:chroma_size', role: '4:2:0: a colour sample per 2x2' },
+        { at: 'Yuv.ml:def:of_image', role: 'a picture to planes, colour averaged' },
+        { at: 'Yuv.ml:def:tables_of', role: 'the inverse as tables, once per range' },
+        { at: 'Yuv.ml:def:to_image', role: 'planes to a picture' },
+      ],
+      joints: [
+        { from: 'Yuv.ml:def:of_image', to: 'Yuv.ml:def:of_rgb', say: 'each pixel' },
+        { from: 'Yuv.ml:def:of_image', to: 'Yuv.ml:def:chroma_size', say: 'the colour planes' },
+        { from: 'Yuv.ml:def:to_image', to: 'Yuv.ml:def:tables_of', say: 'lazily' },
+        { from: 'Yuv.ml:def:to_image', to: 'Yuv.ml:def:chroma_size', say: 'a colour sample per 2x2' },
+        { from: 'Yuv.ml:type:range', to: 'Yuv.ml:def:of_rgb', say: 'squeezed or not' },
+      ],
+    },
+  ],
 }

@@ -66,4 +66,58 @@
     'Clipboard.ml': { digest: 'b27fb48891dc',
       summary: 'A string option, and nothing more.' },
   },
+  skeletons: [
+    {
+      name: "The document kit: what an editor holds, as values",
+      bones: [
+        { at: "Document.ml", role: "the content, its file and the version saved: dirty is a comparison" },
+        { at: "Undo.ml", role: "the versions before and after, named by their edit" },
+        { at: "Clipboard.ml", role: "what was cut or copied, of any kind" },
+        { at: "Saved.ml", role: "a value as the text of a file, and back" },
+        { at: "../file_menu/", role: "New, Open, Save, the apps' files" },
+        { at: "../../examples/GuiEditor.ml", role: "the small editor over a document and a clipboard" },
+        { at: "../../apps/graphics/TinyMacDraw.ml", role: "an app whose history is an Undo" },
+      ],
+      joints: [
+        { from: "../file_menu/", to: "Saved.ml", say: "to_string, of_string" },
+        { from: "../../examples/GuiEditor.ml", to: "Document.ml", say: "the text and its file" },
+        { from: "../../apps/graphics/TinyMacDraw.ml", to: "Undo.ml", say: "each edit" },
+        { from: "../../examples/GuiEditor.ml", to: "Clipboard.ml", say: "cut, paste" },
+      ],
+    },
+    {
+      name: "Document: the content, and the version last saved",
+      bones: [
+        { at: "Document.ml:type:t", role: "content, path, the version saved, equality" },
+        { at: "Document.ml:def:create", role: "a new document, saved as it is" },
+        { at: "Document.ml:def:put", role: "the content changed" },
+        { at: "Document.ml:def:dirty", role: "content and saved compared, no flag to forget" },
+        { at: "Document.ml:def:mark_saved", role: "saved: the content is the saved version" },
+        { at: "Document.ml:def:title", role: "the name, and * when dirty" },
+      ],
+      joints: [
+        { from: "Document.ml:def:create", to: "Document.ml:type:t", say: "made" },
+        { from: "Document.ml:def:put", to: "Document.ml:def:dirty", say: "maybe" },
+        { from: "Document.ml:def:mark_saved", to: "Document.ml:def:dirty", say: "no longer" },
+        { from: "Document.ml:def:title", to: "Document.ml:def:dirty", say: "the *" },
+      ],
+    },
+    {
+      name: "Undo: the versions as two stacks round the present",
+      bones: [
+        { at: "Undo.ml:type:t", role: "now, the past, the future, a limit" },
+        { at: "Undo.ml:def:record", role: "an edit: now pushed on the past, the future dropped" },
+        { at: "Undo.ml:def:amend", role: "now changed without a step: a drag in progress" },
+        { at: "Undo.ml:def:undo", role: "the past back, now onto the future" },
+        { at: "Undo.ml:def:redo", role: "the future back" },
+        { at: "Undo.ml:def:keep", role: "the oldest versions forgotten" },
+      ],
+      joints: [
+        { from: "Undo.ml:def:record", to: "Undo.ml:type:t", say: "pushed" },
+        { from: "Undo.ml:def:record", to: "Undo.ml:def:keep", say: "at the limit" },
+        { from: "Undo.ml:def:undo", to: "Undo.ml:type:t", say: "popped" },
+        { from: "Undo.ml:def:redo", to: "Undo.ml:type:t", say: "popped" },
+      ],
+    },
+  ],
 }

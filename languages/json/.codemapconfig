@@ -23,4 +23,20 @@
   dirs: {
     tests: { summary: 'JSON read: values, escapes, comments, errors.' },
   },
+  skeletons: [
+    {
+      name: 'JSON, read for the configs',
+      bones: [
+        { at: 'Json.mli', role: 'the value, read, a member' },
+        { at: 'Json.ml', role: 'a recursive descent over the text' },
+        { at: '../jsonnet/Jsonnet.ml', role: 'manifests its values as Json.t' },
+        { at: '../../launcher/codemap/Code_guide.ml', role: "reads the configs' values" },
+      ],
+      joints: [
+        { from: 'Json.ml', to: 'Json.mli', say: 'implements' },
+        { from: '../jsonnet/Jsonnet.ml', to: 'Json.mli', say: 'a Json.t' },
+        { from: '../jsonnet/Jsonnet.ml', to: '../../launcher/codemap/Code_guide.ml', say: 'a config evaluated' },
+      ],
+    },
+  ],
 }

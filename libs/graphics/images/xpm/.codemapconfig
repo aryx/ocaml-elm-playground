@@ -25,4 +25,24 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'A character per pixel, read and written',
+      bones: [
+        { at: 'Xpm.ml:type:t', role: 'a name, a palette of characters, rows of them' },
+        { at: 'Xpm.ml:def:strings', role: "the C file's string literals, in order" },
+        { at: 'Xpm.ml:def:parse', role: 'header, colours, rows; each checked' },
+        { at: 'Xpm.ml:def:color_line', role: "a character and its 'c' colour, None transparent" },
+        { at: 'Xpm.ml:def:print', role: 'back to a C file' },
+        { at: '../../../../playground/layers/Sprite.ml:def:of_xpm', role: "the user: a sprite's palette and rows" },
+      ],
+      joints: [
+        { from: 'Xpm.ml:def:parse', to: 'Xpm.ml:def:strings', say: 'the text' },
+        { from: 'Xpm.ml:def:parse', to: 'Xpm.ml:def:color_line', say: 'ncolors lines' },
+        { from: 'Xpm.ml:def:parse', to: 'Xpm.ml:type:t', say: 'made' },
+        { from: 'Xpm.ml:type:t', to: 'Xpm.ml:def:print', say: 'written' },
+        { from: '../../../../playground/layers/Sprite.ml:def:of_xpm', to: 'Xpm.ml:def:parse', say: 'a sprite file' },
+      ],
+    },
+  ],
 }

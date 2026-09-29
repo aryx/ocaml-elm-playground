@@ -53,4 +53,58 @@
       related: ['../tests/Unit_vcard.ml'],
     },
   },
+  skeletons: [
+    {
+      name: "The PIM files: iCalendar, and vCard over its lines",
+      bones: [
+        { at: "Ics.ml", role: "iCalendar: events and to-dos, content lines folded, repeating rules" },
+        { at: "Vcard.ml", role: "vCard: the address book's cards, on Ics's lines" },
+        { at: "../../libs/core/time/", role: "dates, clocks, repeating rules" },
+        { at: "../../apps/pim/", role: "Calendar, the Palm Pilot, their date books and address books" },
+      ],
+      joints: [
+        { from: "Vcard.ml", to: "Ics.ml", say: "unfold, content_line, escape" },
+        { from: "Ics.ml", to: "../../libs/core/time/", say: "Civil, Recur" },
+        { from: "../../apps/pim/", to: "Ics.ml", say: "the calendar" },
+        { from: "../../apps/pim/", to: "Vcard.ml", say: "the cards" },
+      ],
+    },
+    {
+      name: "Ics: lines to components to events",
+      bones: [
+        { at: "Ics.ml:def:unfold", role: "the text unfolded: a line continued by a space" },
+        { at: "Ics.ml:def:content_line", role: "NAME;PARAMS:value" },
+        { at: "Ics.ml:def:component", role: "BEGIN ... END, nested" },
+        { at: "Ics.ml:def:event_of", role: "a VEVENT: its moments, its rule" },
+        { at: "Ics.ml:type:event", role: "an event: start, end, summary, a rule" },
+        { at: "Ics.ml:def:rule_of_string", role: "RRULE: a repeating rule, or unsupported" },
+        { at: "Ics.ml:def:of_string", role: "the whole calendar: events and to-dos" },
+      ],
+      joints: [
+        { from: "Ics.ml:def:of_string", to: "Ics.ml:def:unfold", say: "first" },
+        { from: "Ics.ml:def:of_string", to: "Ics.ml:def:content_line", say: "each line" },
+        { from: "Ics.ml:def:of_string", to: "Ics.ml:def:component", say: "nested" },
+        { from: "Ics.ml:def:of_string", to: "Ics.ml:def:event_of", say: "each VEVENT" },
+        { from: "Ics.ml:def:event_of", to: "Ics.ml:def:rule_of_string", say: "RRULE" },
+        { from: "Ics.ml:def:event_of", to: "Ics.ml:type:event", say: "made" },
+      ],
+    },
+    {
+      name: "Vcard: a card built property by property",
+      bones: [
+        { at: "Vcard.ml:type:card", role: "a card: names, phones, emails, addresses, a birthday" },
+        { at: "Vcard.ml:def:of_string", role: "the cards between BEGIN and END" },
+        { at: "Vcard.ml:def:property", role: "one property into the card" },
+        { at: "Vcard.ml:def:structured", role: "N and ADR: fields split at ;" },
+        { at: "Vcard.ml:def:to_string", role: "the cards written back" },
+        { at: "Vcard.ml:def:display_name", role: "the name shown and sorted by" },
+      ],
+      joints: [
+        { from: "Vcard.ml:def:of_string", to: "Vcard.ml:def:property", say: "each line" },
+        { from: "Vcard.ml:def:property", to: "Vcard.ml:def:structured", say: "N, ADR, ORG" },
+        { from: "Vcard.ml:def:property", to: "Vcard.ml:type:card", say: "filled" },
+        { from: "Vcard.ml:type:card", to: "Vcard.ml:def:to_string", say: "written" },
+      ],
+    },
+  ],
 }

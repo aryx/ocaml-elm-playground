@@ -159,5 +159,43 @@ local skeletons = import '../../skeletons.libsonnet';
     skeletons.game('TinyCalendar.ml', 'def:move_event', 'an event dragged: its end and rule turn with it', say='a drag', init='def:initial'),
     skeletons.game('TinyQuicken.ml', 'def:quickfill', 'a payee completed, the line filled from last time', say='a payee typed', init='def:initial'),
     skeletons.game('TinyPalmPilot.ml', 'def:hard_buttons', 'the four buttons: an application each', say='a button pressed', init='def:initial'),
+    {
+      name: "Palm: the device the four applications share",
+      bones: [
+        { at: "Palm.ml:type:data", role: "the Palm's records: events, cards, to-dos, memos" },
+        { at: "Palm.ml:type:input", role: "a tap on the screen, the keys" },
+        { at: "Palm.ml:def:to_screen", role: "160 by 160 dots onto the playground" },
+        { at: "Palm.ml:def:of_screen", role: "a tap back to a dot" },
+        { at: "Palm.ml:def:text", role: "a string in Hershey's strokes, scaled to the dots" },
+        { at: "Palm.ml:def:buttons", role: "labels laid out along the bottom" },
+        { at: "Palm.ml:def:tapped", role: "the button a tap is on" },
+      ],
+      joints: [
+        { from: "Palm.ml:def:of_screen", to: "Palm.ml:type:input", say: "the tap" },
+        { from: "Palm.ml:def:text", to: "Palm.ml:def:to_screen", say: "placed" },
+        { from: "Palm.ml:def:tapped", to: "Palm.ml:def:buttons", say: "searched" },
+        { from: "Palm.ml:def:tapped", to: "Palm.ml:type:input", say: "reads" },
+      ],
+    },
+    {
+      name: "Pim_address: the list, a card, its editing",
+      bones: [
+        { at: "Pim_address.ml:type:t", role: "the mode: the list, a card shown, a card edited" },
+        { at: "Pim_address.ml:def:update", role: "a tap or a key: looked up, opened, edited, saved" },
+        { at: "Pim_address.ml:def:view", role: "the list, the card, or the fields" },
+        { at: "Pim_address.ml:def:looked_up", role: "the first card whose last name starts with what was written" },
+        { at: "Pim_address.ml:def:sorted", role: "the cards by name" },
+        { at: "Pim_address.ml:def:card_of", role: "the fields written back into the card" },
+        { at: "Palm.ml:def:tapped", role: "the button tapped" },
+      ],
+      joints: [
+        { from: "Pim_address.ml:def:update", to: "Pim_address.ml:type:t", say: "the next mode" },
+        { from: "Pim_address.ml:def:update", to: "Pim_address.ml:def:looked_up", say: "the lookup line" },
+        { from: "Pim_address.ml:def:update", to: "Palm.ml:def:tapped", say: "New, Edit, Done" },
+        { from: "Pim_address.ml:def:update", to: "Pim_address.ml:def:card_of", say: "Done editing" },
+        { from: "Pim_address.ml:def:view", to: "Pim_address.ml:def:sorted", say: "the list" },
+        { from: "Pim_address.ml:def:looked_up", to: "Pim_address.ml:def:sorted", say: "in order" },
+      ],
+    },
   ],
 }

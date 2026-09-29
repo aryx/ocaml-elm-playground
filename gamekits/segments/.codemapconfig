@@ -39,4 +39,55 @@
   dirs: {
     tests: { summary: "The kit's tests: openings found, turns kept square." },
   },
+  skeletons: [
+    {
+      name: 'A mine and a ship, under the Descents',
+      bones: [
+        { at: 'Segments.ml', role: 'the mine: boxes, and the openings where they touch' },
+        { at: 'Sixdof.ml', role: 'the ship: three axes, turned any way' },
+        { at: '../../games/flight/TinyDescent.ml', role: 'the mine drawn by the game itself' },
+        { at: '../../games/flight/TinyDescent3d.ml', role: 'the same mine as a 3D scene' },
+        { at: '../../games/flight/TinyElite.ml', role: 'Sixdof alone, in space' },
+      ],
+      joints: [
+        { from: '../../games/flight/TinyDescent.ml', to: 'Segments.ml', say: 'walls to draw, a move' },
+        { from: '../../games/flight/TinyDescent.ml', to: 'Sixdof.ml', say: 'pitch, yaw, roll' },
+        { from: '../../games/flight/TinyDescent3d.ml', to: 'Segments.ml', say: 'walls, a move' },
+        { from: '../../games/flight/TinyElite.ml', to: 'Sixdof.ml', say: 'the ship turned' },
+      ],
+    },
+    {
+      name: 'A mine of boxes: openings cut, a ball flown through',
+      bones: [
+        { at: 'Segments.ml:type:level', role: 'the boxes, their walls, their openings' },
+        { at: 'Segments.ml:def:make', role: 'faces that touch become openings both ways' },
+        { at: 'Segments.ml:def:rock', role: 'a side with its openings cut out' },
+        { at: 'Segments.ml:def:inside', role: 'a ball fits: each side near it open' },
+        { at: 'Segments.ml:def:move', role: 'axis by axis, sliding' },
+        { at: 'Segments.ml:def:mine', role: 'the level: twelve boxes' },
+      ],
+      joints: [
+        { from: 'Segments.ml:def:mine', to: 'Segments.ml:def:make', say: 'the boxes' },
+        { from: 'Segments.ml:def:make', to: 'Segments.ml:def:rock', say: 'each side and its holes' },
+        { from: 'Segments.ml:def:make', to: 'Segments.ml:type:level', say: 'walls and openings' },
+        { from: 'Segments.ml:def:move', to: 'Segments.ml:def:inside', say: 'each axis tried' },
+      ],
+    },
+    {
+      name: 'Six degrees of freedom: three axes kept square',
+      bones: [
+        { at: 'Sixdof.ml:type:t', role: 'right, up, forward: where the ship points' },
+        { at: 'Sixdof.ml:def:turn', role: 'pitch, yaw, roll: each a plane rotation' },
+        { at: 'Sixdof.ml:def:rotate', role: 'two axes turned in their plane' },
+        { at: 'Sixdof.ml:def:straighten', role: 'squared up again: rounding errors undone' },
+        { at: 'Sixdof.ml:def:along', role: 'a ship-relative move made a world one' },
+      ],
+      joints: [
+        { from: 'Sixdof.ml:def:turn', to: 'Sixdof.ml:def:rotate', say: 'three times' },
+        { from: 'Sixdof.ml:def:turn', to: 'Sixdof.ml:def:straighten', say: 'the axes' },
+        { from: 'Sixdof.ml:def:straighten', to: 'Sixdof.ml:type:t', say: 'the new orientation' },
+        { from: 'Sixdof.ml:type:t', to: 'Sixdof.ml:def:along', say: 'its axes' },
+      ],
+    },
+  ],
 }

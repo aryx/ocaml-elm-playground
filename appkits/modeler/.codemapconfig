@@ -46,4 +46,58 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "Blender's kit: the scene, and the quad view's projections",
+      bones: [
+        { at: "Modeler.ml", role: "the scene: objects placed by location, rotation, scale; their wireframes" },
+        { at: "Modeler_view.ml", role: "three plans and a camera: points to the screen, clicks back to objects" },
+        { at: "../../libs/graphics/3d/geometry/", role: "the camera's projection, the ray tracer's too" },
+        { at: "../../apps/graphics/TinyBlender.ml", role: "Blender 2.8: the quad view, the tools, the render" },
+      ],
+      joints: [
+        { from: "../../apps/graphics/TinyBlender.ml", to: "Modeler.ml", say: "every edit" },
+        { from: "../../apps/graphics/TinyBlender.ml", to: "Modeler_view.ml", say: "drawn, picked" },
+        { from: "Modeler_view.ml", to: "Modeler.ml", say: "wires" },
+        { from: "Modeler_view.ml", to: "../../libs/graphics/3d/geometry/", say: "Camera" },
+      ],
+    },
+    {
+      name: "Modeler: objects as primitives placed, and their wireframes",
+      bones: [
+        { at: "Modeler.ml:type:obj", role: "an object: kind, location, rotation, scale, a Boolean modifier" },
+        { at: "Modeler.ml:type:t", role: "the scene: the objects, by name" },
+        { at: "Modeler.ml:def:default", role: "Blender's start: a cube, a light, a camera" },
+        { at: "Modeler.ml:def:transform", role: "a point scaled, turned, moved: the object in the world" },
+        { at: "Modeler.ml:def:edges", role: "a primitive's edges, in its own space" },
+        { at: "Modeler.ml:def:wires", role: "an object's wireframe: its edges transformed" },
+        { at: "Modeler.ml:def:to_world", role: "Blender's z up to the renderer's y up" },
+      ],
+      joints: [
+        { from: "Modeler.ml:type:t", to: "Modeler.ml:type:obj", say: "holds" },
+        { from: "Modeler.ml:def:wires", to: "Modeler.ml:def:edges", say: "the primitive" },
+        { from: "Modeler.ml:def:wires", to: "Modeler.ml:def:transform", say: "each end" },
+        { from: "Modeler.ml:def:transform", to: "Modeler.ml:type:obj", say: "its placing" },
+      ],
+    },
+    {
+      name: "Modeler_view: a plan is two coordinates, the camera a projection",
+      bones: [
+        { at: "Modeler_view.ml:type:view", role: "Top, Front, Right, and the camera" },
+        { at: "Modeler_view.ml:def:project", role: "a point in a plan: two of its coordinates" },
+        { at: "Modeler_view.ml:def:unproject", role: "a drag in a plan back into space" },
+        { at: "Modeler_view.ml:def:camera", role: "the scene's camera, as the ray tracer's" },
+        { at: "Modeler_view.ml:def:perspective", role: "a point through the camera" },
+        { at: "Modeler_view.ml:def:pick", role: "the object whose wire is nearest the click" },
+        { at: "Modeler_view.ml:def:axes", role: "a plan's two axes" },
+        { at: "Modeler_view.ml:def:to_segment", role: "the distance to a wire on the screen" },
+      ],
+      joints: [
+        { from: "Modeler_view.ml:def:project", to: "Modeler_view.ml:def:axes", say: "which two" },
+        { from: "Modeler_view.ml:def:unproject", to: "Modeler_view.ml:def:axes", say: "which two" },
+        { from: "Modeler_view.ml:def:perspective", to: "Modeler_view.ml:def:camera", say: "through" },
+        { from: "Modeler_view.ml:def:pick", to: "Modeler_view.ml:def:to_segment", say: "each wire" },
+      ],
+    },
+  ],
 }

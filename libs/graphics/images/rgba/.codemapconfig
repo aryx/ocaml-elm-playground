@@ -16,4 +16,20 @@
     },
     'Rgba_image.ml': { digest: 'd27e1456cdf5', summary: 'The record, and a transparent picture made.' },
   },
+  skeletons: [
+    {
+      name: 'The picture every reader gives',
+      bones: [
+        { at: 'Rgba_image.ml:type:t', role: 'width, height, 4 bytes a pixel, row by row' },
+        { at: 'Rgba_image.ml:def:create', role: 'all transparent' },
+        { at: '../png/Png.ml:def:decode', role: 'a maker: a decoder' },
+        { at: '../../imaging/', role: 'a taker: filters, a new picture each' },
+      ],
+      joints: [
+        { from: '../png/Png.ml:def:decode', to: 'Rgba_image.ml:def:create', say: 'filled' },
+        { from: 'Rgba_image.ml:def:create', to: 'Rgba_image.ml:type:t', say: 'made' },
+        { from: 'Rgba_image.ml:type:t', to: '../../imaging/', say: 'processed' },
+      ],
+    },
+  ],
 }

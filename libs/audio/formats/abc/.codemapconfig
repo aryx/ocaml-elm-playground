@@ -38,4 +38,52 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Two notations, one tune',
+      bones: [
+        { at: 'Abc.mli', role: 'the tune: voices of timed events; ABC read into it' },
+        { at: 'Doremi.mli', role: 'solfège, read into the same tune' },
+      ],
+      joints: [
+        { from: 'Doremi.mli', to: 'Abc.mli', say: 'makes an Abc.tune' },
+      ],
+    },
+    {
+      name: 'Abc: lines to voices of events',
+      bones: [
+        { at: 'Abc.ml:type:tune', role: 'the title, the voices, which are drums' },
+        { at: 'Abc.ml:type:state', role: 'the unit length, the key, the voice being read' },
+        { at: 'Abc.ml:def:parse', role: 'line by line: a field or music' },
+        { at: 'Abc.ml:def:field', role: 'T:, L:, Q:, K:, V:' },
+        { at: 'Abc.ml:def:key_offsets', role: "the key signature's sharps and flats" },
+        { at: 'Abc.ml:def:parse_music_line', role: 'the letters: pitch, accidental, length' },
+        { at: 'Abc.ml:def:emit', role: 'an event at the voice time' },
+      ],
+      joints: [
+        { from: 'Abc.ml:def:parse', to: 'Abc.ml:def:field', say: 'a header line' },
+        { from: 'Abc.ml:def:parse', to: 'Abc.ml:def:parse_music_line', say: 'a music line' },
+        { from: 'Abc.ml:def:field', to: 'Abc.ml:def:key_offsets', say: 'K:' },
+        { from: 'Abc.ml:def:parse_music_line', to: 'Abc.ml:def:emit', say: 'each note or chord' },
+        { from: 'Abc.ml:def:emit', to: 'Abc.ml:type:state', say: "into the voice's events" },
+        { from: 'Abc.ml:def:parse', to: 'Abc.ml:type:tune', say: 'the voices gathered' },
+      ],
+    },
+    {
+      name: 'Doremi: syllables to an Abc tune',
+      bones: [
+        { at: 'Doremi.ml:def:syllables', role: 'do re mi ... as semitones' },
+        { at: 'Doremi.ml:def:split_syllable', role: 'a word: its syllable, octave, accidental' },
+        { at: 'Doremi.ml:def:fraction', role: 'a length after the colon' },
+        { at: 'Doremi.ml:def:parse', role: 'words to events, voices by line' },
+        { at: 'Abc.ml:type:tune', role: 'what comes out' },
+      ],
+      joints: [
+        { from: 'Doremi.ml:def:parse', to: 'Doremi.ml:def:split_syllable', say: 'each word' },
+        { from: 'Doremi.ml:def:split_syllable', to: 'Doremi.ml:def:syllables', say: 'looked up' },
+        { from: 'Doremi.ml:def:parse', to: 'Doremi.ml:def:fraction', say: 're:1/2' },
+        { from: 'Doremi.ml:def:parse', to: 'Abc.ml:type:tune', say: 'the events' },
+      ],
+    },
+  ],
 }

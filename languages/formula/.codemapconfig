@@ -31,4 +31,38 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'The formula language and the sheet that evaluates it',
+      bones: [
+        { at: 'Formula.mli', role: 'a cell typed: a formula, a number, text' },
+        { at: 'Formula.ml', role: 'tokens, a grammar a function per rule, refs' },
+        { at: '../../appkits/sheet/Sheet.ml', role: 'the evaluator: cells recomputed through refs' },
+        { at: '../../apps/office/TinyVisiCalc.ml', role: 'the first spreadsheet over it (Lotus, Excel too)' },
+      ],
+      joints: [
+        { from: 'Formula.ml', to: 'Formula.mli', say: 'implements' },
+        { from: 'Formula.mli', to: '../../appkits/sheet/Sheet.ml', say: 'the expressions to evaluate' },
+        { from: '../../apps/office/TinyVisiCalc.ml', to: '../../appkits/sheet/Sheet.ml', say: 'a cell typed' },
+      ],
+    },
+    {
+      name: 'A cell typed: tokens, a recursive descent, an expression',
+      bones: [
+        { at: 'Formula.ml:type:expr', role: 'numbers, cells, ranges, operators, functions' },
+        { at: 'Formula.ml:def:content_of', role: 'what a cell holds: = starts a formula' },
+        { at: 'Formula.ml:def:tokens', role: 'the characters into tokens' },
+        { at: 'Formula.ml:def:parse', role: 'expr, term, factor, atom: a function per rule' },
+        { at: 'Formula.ml:def:refs', role: 'the cells it reads: what to recompute' },
+        { at: 'Formula.ml:def:shift', role: 'copied elsewhere: relative references moved' },
+      ],
+      joints: [
+        { from: 'Formula.ml:def:content_of', to: 'Formula.ml:def:parse', say: 'after the =' },
+        { from: 'Formula.ml:def:parse', to: 'Formula.ml:def:tokens', say: 'the text' },
+        { from: 'Formula.ml:def:parse', to: 'Formula.ml:type:expr', say: 'the tree' },
+        { from: 'Formula.ml:type:expr', to: 'Formula.ml:def:refs', say: 'its cells' },
+        { from: 'Formula.ml:type:expr', to: 'Formula.ml:def:shift', say: 'pasted' },
+      ],
+    },
+  ],
 }

@@ -116,4 +116,63 @@
   dirs: {
     tests: { summary: 'Each idea checked on numbers: curves, tweens, springs, areas, shakes, bursts, hashes.' },
   },
+  skeletons: [
+    // claude: the folder's parts: small ideas, each alone, joined by
+    // curves and a hash
+    {
+      name: 'Juice: curves and a hash under the effects',
+      bones: [
+        { at: 'Tween.ml', role: 'the base: lerp and an eased progress' },
+        { at: 'Ease.ml', role: 'the curves a tween is shaped by' },
+        { at: 'Hash.ml', role: 'a random number for a point, no state' },
+        { at: 'Emitter.ml', role: 'particles in bursts' },
+        { at: 'Trauma.ml', role: 'screen shake from noise' },
+        { at: 'Squash.ml', role: 'squash and stretch' },
+        { at: 'Follow.ml', role: 'a spring chasing a target' },
+      ],
+      joints: [
+        { from: 'Tween.ml', to: 'Ease.ml', say: 'shaped by' },
+        { from: 'Emitter.ml', to: 'Hash.ml', say: 'six draws a particle' },
+        { from: 'Emitter.ml', to: 'Tween.ml', say: 'between' },
+        { from: 'Trauma.ml', to: 'Hash.ml', say: "the noise's lattice" },
+        { from: 'Trauma.ml', to: 'Ease.ml', say: 'smoothstep' },
+        { from: 'Squash.ml', to: 'Ease.ml', say: 'elastic landing' },
+      ],
+    },
+    {
+      name: "Penner's curves: each written easing in, out and in_out derived",
+      bones: [
+        { at: 'Ease.ml:type:t', role: 'a curve: 0..1 to 0..1' },
+        { at: 'Ease.ml:def:quad', role: 'the families, written as in' },
+        { at: 'Ease.ml:def:bounce_out', role: 'the one written as it falls: four parabolas' },
+        { at: 'Ease.ml:def:out', role: 'any curve run backwards' },
+        { at: 'Ease.ml:def:in_out', role: 'half in, half out' },
+        { at: 'Ease.ml:def:all', role: 'every curve by name, for the demo' },
+      ],
+      joints: [
+        { from: 'Ease.ml:def:quad', to: 'Ease.ml:def:out', say: 'reversed' },
+        { from: 'Ease.ml:def:quad', to: 'Ease.ml:def:in_out', say: 'halved' },
+        { from: 'Ease.ml:def:bounce_out', to: 'Ease.ml:def:out', say: 'bounce = out bounce_out' },
+        { from: 'Ease.ml:def:in_out', to: 'Ease.ml:def:all', say: 'listed' },
+      ],
+    },
+    {
+      name: 'A burst: particles born from a recipe, moved and aged',
+      bones: [
+        { at: 'Emitter.ml:type:recipe', role: 'count, speed, spread, life, gravity, drag' },
+        { at: 'Emitter.ml:type:particle', role: 'one: position, velocity, age' },
+        { at: 'Emitter.ml:type:t', role: 'the seed, the draws so far, the particles' },
+        { at: 'Emitter.ml:def:born', role: 'a particle from six hashed draws' },
+        { at: 'Emitter.ml:def:burst', role: 'count of them, capped' },
+        { at: 'Emitter.ml:def:move', role: 'semi-implicit Euler' },
+        { at: 'Emitter.ml:def:step', role: 'moved, the dead dropped' },
+      ],
+      joints: [
+        { from: 'Emitter.ml:type:recipe', to: 'Emitter.ml:def:burst', say: 'the recipe' },
+        { from: 'Emitter.ml:def:burst', to: 'Emitter.ml:def:born', say: 'k = 0 .. count-1' },
+        { from: 'Emitter.ml:def:born', to: 'Emitter.ml:type:particle', say: 'makes' },
+        { from: 'Emitter.ml:def:step', to: 'Emitter.ml:def:move', say: 'each' },
+      ],
+    },
+  ],
 }

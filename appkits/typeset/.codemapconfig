@@ -33,4 +33,35 @@
       related: ['../../examples/TypesetParagraph.ml', '../tests/Unit_typeset.ml'],
     },
   },
+  skeletons: [
+    {
+      name: "Typeset: where to break a paragraph, and who asks",
+      bones: [
+        { at: "Linebreak.ml", role: "a paragraph broken into lines: greedy, or Knuth and Plass" },
+        { at: "../../examples/TypesetParagraph.ml", role: "the two ways side by side, their badness shown" },
+        { at: "../browser/", role: "wrap=pretty: the page's paragraphs set by Knuth and Plass" },
+      ],
+      joints: [
+        { from: "../../examples/TypesetParagraph.ml", to: "Linebreak.ml", say: "greedy, optimal" },
+        { from: "../browser/", to: "Linebreak.ml", say: "optimal" },
+      ],
+    },
+    {
+      name: "Linebreak: badness, demerits, the best breaks",
+      bones: [
+        { at: "Linebreak.ml:type:word", role: "a word: its text and width" },
+        { at: "Linebreak.ml:def:ratio", role: "how much a line must stretch or shrink" },
+        { at: "Linebreak.ml:def:badness_of", role: "TeX's badness: 100 times the ratio cubed" },
+        { at: "Linebreak.ml:def:demerits_of", role: "a line's cost: (10 + its badness) squared, TeX's line penalty in it" },
+        { at: "Linebreak.ml:def:greedy", role: "as many words as fit, line after line" },
+        { at: "Linebreak.ml:def:optimal", role: "the breaks with the least total demerits, by dynamic programming" },
+      ],
+      joints: [
+        { from: "Linebreak.ml:def:greedy", to: "Linebreak.ml:type:word", say: "fills" },
+        { from: "Linebreak.ml:def:optimal", to: "Linebreak.ml:def:ratio", say: "each candidate line" },
+        { from: "Linebreak.ml:def:optimal", to: "Linebreak.ml:def:demerits_of", say: "summed" },
+        { from: "Linebreak.ml:def:demerits_of", to: "Linebreak.ml:def:badness_of", say: "from" },
+      ],
+    },
+  ],
 }

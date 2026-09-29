@@ -52,4 +52,59 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "MacDraw's model: figures, and a drawing of them by id",
+      bones: [
+        { at: "Figure.ml", role: "one figure: a line, rectangle, oval, text or group; hit, moved, resized" },
+        { at: "Drawing.ml", role: "the figures by id, back to front: what the tools change" },
+        { at: "../draw_view/", role: "the figures drawn as shapes" },
+        { at: "../../apps/graphics/TinyMacDraw.ml", role: "MacDraw: the tools, the selection, the handles" },
+        { at: "../../apps/office/Part_drawing.ml", role: "the office's drawing part, over the same model" },
+      ],
+      joints: [
+        { from: "Drawing.ml", to: "Figure.ml", say: "holds, hits, moves" },
+        { from: "../../apps/graphics/TinyMacDraw.ml", to: "Drawing.ml", say: "every edit" },
+        { from: "../../apps/office/Part_drawing.ml", to: "Drawing.ml", say: "every edit" },
+        { from: "../draw_view/", to: "Figure.ml", say: "draws" },
+      ],
+    },
+    {
+      name: "Drawing: figures by id, back to front",
+      bones: [
+        { at: "Drawing.ml:type:t", role: "the figures in painting order, and the next id" },
+        { at: "Drawing.ml:def:add", role: "a figure in front, a new id" },
+        { at: "Drawing.ml:def:at", role: "the front-most figure under a point" },
+        { at: "Drawing.ml:def:to_front", role: "reordered: an id keeps its figure wherever it goes" },
+        { at: "Drawing.ml:def:group", role: "several figures as one, in the place of the front one" },
+        { at: "Drawing.ml:def:align", role: "the chosen figures lined up on a side" },
+        { at: "Figure.ml:def:hit", role: "the figure's own hit test" },
+        { at: "Figure.ml:def:bounds", role: "its box" },
+      ],
+      joints: [
+        { from: "Drawing.ml:def:add", to: "Drawing.ml:type:t", say: "appended" },
+        { from: "Drawing.ml:def:at", to: "Figure.ml:def:hit", say: "each, front first" },
+        { from: "Drawing.ml:def:to_front", to: "Drawing.ml:type:t", say: "the list reordered" },
+        { from: "Drawing.ml:def:group", to: "Drawing.ml:type:t", say: "one for several" },
+        { from: "Drawing.ml:def:align", to: "Figure.ml:def:bounds", say: "the sides" },
+      ],
+    },
+    {
+      name: "Figure: a shape as points, hit and reshaped",
+      bones: [
+        { at: "Figure.ml:type:t", role: "a line, rectangle, oval, text, or a group of them" },
+        { at: "Figure.ml:def:bounds", role: "the box round it" },
+        { at: "Figure.ml:def:hit", role: "a click near its outline, or inside it when filled" },
+        { at: "Figure.ml:def:map_points", role: "every point through a function: moves and resizes are maps" },
+        { at: "Figure.ml:def:handles", role: "its handles, at the corners of its box" },
+        { at: "Figure.ml:def:drag_handle", role: "a handle dragged: the box refitted, the points mapped" },
+      ],
+      joints: [
+        { from: "Figure.ml:def:drag_handle", to: "Figure.ml:def:bounds", say: "the old box" },
+        { from: "Figure.ml:def:drag_handle", to: "Figure.ml:def:map_points", say: "fit" },
+        { from: "Figure.ml:def:handles", to: "Figure.ml:def:bounds", say: "the corners" },
+        { from: "Figure.ml:def:hit", to: "Figure.ml:type:t", say: "by case" },
+      ],
+    },
+  ],
 }

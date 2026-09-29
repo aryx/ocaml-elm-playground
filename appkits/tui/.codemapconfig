@@ -28,4 +28,23 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "A Tui program, and the two places it runs",
+      bones: [
+        { at: "Tui_snake.ml", role: "Snake as Model-View-Update over a screen of characters" },
+        { at: "../../libs/terminal/", role: "Tui: the program type; Curses and Vt under it" },
+        { at: "../../playground/ways/Textmode.ml", role: "the way: a Tui program as a Playground app" },
+        { at: "../../examples/TextmodeSnake.ml", role: "Snake in the Playground" },
+        { at: "../../libs/terminal/unix/", role: "Tty_unix: the same program in a real terminal" },
+      ],
+      joints: [
+        { from: "Tui_snake.ml", to: "../../libs/terminal/", say: "a Tui.program" },
+        { from: "../../examples/TextmodeSnake.ml", to: "../../playground/ways/Textmode.ml", say: "textmode" },
+        { from: "../../examples/TextmodeSnake.ml", to: "Tui_snake.ml", say: "program" },
+        { from: "../../playground/ways/Textmode.ml", to: "../../libs/terminal/", say: "its bytes fed to a Vt" },
+        { from: "../../libs/terminal/unix/", to: "../../libs/terminal/", say: "runs a Tui" },
+      ],
+    },
+  ],
 }

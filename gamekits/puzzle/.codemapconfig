@@ -44,4 +44,43 @@
   dirs: {
     tests: { summary: "The kit's tests: pushes, undo, the levels solved." },
   },
+  skeletons: [
+    {
+      name: 'The puzzle kit: a push, an undo, the Sokoban rules',
+      bones: [
+        { at: 'Push.ml', role: 'the chain of things a move would push' },
+        { at: 'Puzzle_undo.ml', role: 'every past state kept: undo is a pop' },
+        { at: 'Sokoban.ml', role: 'the rules, the .xsb format, a solver' },
+        { at: '../../games/puzzle/TinySokoban.ml', role: 'the game' },
+        { at: '../../games/puzzle/TinySokobanEd.ml', role: 'its level editor, checked and solved' },
+        { at: '../../games/puzzle/TinyBabaIsYou.ml', role: 'pushes chains of words' },
+      ],
+      joints: [
+        { from: 'Sokoban.ml', to: 'Push.ml', say: 'a chain of one box' },
+        { from: '../../games/puzzle/TinySokoban.ml', to: 'Sokoban.ml', say: 'a step' },
+        { from: '../../games/puzzle/TinySokoban.ml', to: 'Puzzle_undo.ml', say: 'each board recorded' },
+        { from: '../../games/puzzle/TinySokobanEd.ml', to: 'Sokoban.ml', say: 'problems, solve, to_xsb' },
+        { from: '../../games/puzzle/TinyBabaIsYou.ml', to: 'Push.ml', say: 'a chain of any length' },
+        { from: '../../games/puzzle/TinyBabaIsYou.ml', to: 'Puzzle_undo.ml', say: 'each state recorded' },
+      ],
+    },
+    {
+      name: 'Sokoban: a board stepped, read from .xsb, solved breadth first',
+      bones: [
+        { at: 'Sokoban.ml:type:board', role: 'the map with its boxes, the player, the counts' },
+        { at: 'Sokoban.ml:def:of_xsb', role: 'the text format: levels of rows' },
+        { at: 'Sokoban.ml:def:start', role: 'a level made a board' },
+        { at: 'Sokoban.ml:def:step', role: 'a move, or a push of one box' },
+        { at: 'Sokoban.ml:def:solved', role: 'no box off a goal' },
+        { at: 'Sokoban.ml:def:solve', role: 'breadth first: a shortest solution' },
+      ],
+      joints: [
+        { from: 'Sokoban.ml:def:of_xsb', to: 'Sokoban.ml:def:start', say: 'the rows' },
+        { from: 'Sokoban.ml:def:start', to: 'Sokoban.ml:type:board', say: 'the board' },
+        { from: 'Sokoban.ml:type:board', to: 'Sokoban.ml:def:step', say: 'a direction' },
+        { from: 'Sokoban.ml:def:solve', to: 'Sokoban.ml:def:step', say: 'four each position' },
+        { from: 'Sokoban.ml:def:solve', to: 'Sokoban.ml:def:solved', say: 'stop at the first' },
+      ],
+    },
+  ],
 }

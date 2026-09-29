@@ -27,4 +27,38 @@
   dirs: {
     tests: { summary: "The kit's tests: lines found, moves stopped." },
   },
+  skeletons: [
+    {
+      name: 'One Doom level, drawn twice',
+      bones: [
+        { at: 'Sectors.mli', role: 'sectors, lines, the level; where, and moving' },
+        { at: 'Sectors.ml', role: 'lines found from the loops; sliding along walls' },
+        { at: '../../games/fps/TinyDoom.ml', role: 'drawn by columns: the 2.5D trick' },
+        { at: '../../games/fps/TinyDoom3d.ml', role: 'the same sectors as 3D polygons' },
+      ],
+      joints: [
+        { from: 'Sectors.ml', to: 'Sectors.mli', say: 'implements' },
+        { from: '../../games/fps/TinyDoom.ml', to: 'Sectors.mli', say: 'lines to draw, a move' },
+        { from: '../../games/fps/TinyDoom3d.ml', to: 'Sectors.mli', say: 'sectors to build, a move' },
+      ],
+    },
+    {
+      name: 'A level of sectors: made, located in, walked',
+      bones: [
+        { at: 'Sectors.ml:type:sector', role: 'a floor, a ceiling, loops of points' },
+        { at: 'Sectors.ml:def:make', role: 'every edge a line; two sectors sharing it a portal' },
+        { at: 'Sectors.ml:type:line', role: 'a front sector, and a back one if open' },
+        { at: 'Sectors.ml:def:sector_at', role: 'which sector a point is in' },
+        { at: 'Sectors.ml:def:move', role: 'blocked by a wall, a step, a low ceiling' },
+        { at: 'Sectors.ml:def:outpost', role: 'the level, drawn as a plan' },
+      ],
+      joints: [
+        { from: 'Sectors.ml:def:outpost', to: 'Sectors.ml:def:make', say: 'the sectors' },
+        { from: 'Sectors.ml:type:sector', to: 'Sectors.ml:def:make', say: 'loops, cut where others touch' },
+        { from: 'Sectors.ml:def:make', to: 'Sectors.ml:type:line', say: 'the lines' },
+        { from: 'Sectors.ml:def:move', to: 'Sectors.ml:def:sector_at', say: 'the floor here' },
+        { from: 'Sectors.ml:type:line', to: 'Sectors.ml:def:move', say: 'what may block' },
+      ],
+    },
+  ],
 }

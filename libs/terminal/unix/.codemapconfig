@@ -23,4 +23,39 @@
       ],
     },
   },
+  skeletons: [
+    // claude: the folder's parts, and its one module's loop
+    {
+      name: 'A Tui program in a real terminal',
+      bones: [
+        { at: 'Tty_unix.mli', role: 'the promise: raw mode, alternate screen, undone after' },
+        { at: 'Tty_unix.ml', role: 'the loop over stdin and stdout' },
+        { at: '../Tui.ml', role: 'the program run: the same as on the playground' },
+        { at: '../Curses.ml', role: 'what is written: the difference' },
+      ],
+      joints: [
+        { from: 'Tty_unix.ml', to: 'Tty_unix.mli', say: 'implements' },
+        { from: 'Tty_unix.ml', to: '../Tui.ml', say: 'runs' },
+        { from: 'Tty_unix.ml', to: '../Curses.ml', say: 'refreshes with' },
+      ],
+    },
+    {
+      name: 'Keys in, a tick, the difference out',
+      bones: [
+        { at: 'Tty_unix.ml:def:run', role: 'raw mode set, the loop, restored at the end' },
+        { at: 'Tty_unix.ml:def:available', role: 'what stdin has, without blocking' },
+        { at: 'Tty_unix.ml:def:write', role: 'bytes to stdout' },
+        { at: '../Line_discipline.ml:def:split_keys', role: 'bytes into keys' },
+        { at: '../Tui.ml:type:program', role: 'update on a key and a tick, view' },
+        { at: '../Curses.ml:def:refresh', role: 'the view against the one shown' },
+      ],
+      joints: [
+        { from: 'Tty_unix.ml:def:run', to: 'Tty_unix.ml:def:available', say: 'every 1/20 s' },
+        { from: 'Tty_unix.ml:def:available', to: '../Line_discipline.ml:def:split_keys', say: 'bytes' },
+        { from: '../Line_discipline.ml:def:split_keys', to: '../Tui.ml:type:program', say: 'Key k' },
+        { from: '../Tui.ml:type:program', to: '../Curses.ml:def:refresh', say: 'the view' },
+        { from: '../Curses.ml:def:refresh', to: 'Tty_unix.ml:def:write', say: 'the bytes' },
+      ],
+    },
+  ],
 }

@@ -575,6 +575,10 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     end
     else clicked
   in
+  (* claude: shift+click on a unit's name: a view of it and all it is
+   * tied to *)
+  let with_ties = if clicked && units && Set_.mem "Shift" computer.keyboard.keys then Map_v2.unit_with_ties t t.cam else None in
+  let clicked = if with_ties <> None then false else clicked in
   (* claude: a click on a match (a search's, a layer's): its file, and
    * its definition peeked at, as Enter in the search *)
   let jumped_to, clicked =
@@ -721,7 +725,13 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   let target = clamp_cam target in
   let cam = if cam_now then target else ease t.cam target in
   (* claude: the folder laid out anew, or back up from the top *)
-  let action = match (zoom, action) with Some p, Stay -> Select (p, [ p ]) | None, Stay when up_from_top -> Up | _ -> action in
+  let action =
+    match (with_ties, zoom, action) with
+    | Some (h, set), _, Stay -> Select (Printf.sprintf "%s and what it is tied to: %s" h (String.concat ", " (List.tl set)), set)
+    | None, Some p, Stay -> Select (p, [ p ])
+    | None, None, Stay when up_from_top -> Up
+    | _ -> action
+  in
   ({ t with target; cam; before_right = mouse.mrdown }, action)
 
 (* claude: the search (/, Code_search, drawn by Map_v2): typed letters

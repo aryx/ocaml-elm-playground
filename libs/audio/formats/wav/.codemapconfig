@@ -20,4 +20,21 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'WAV: a RIFF header and 16-bit samples, both ways',
+      bones: [
+        { at: 'Wav.ml:def:to_string_channels', role: 'the 44-byte header, the samples interleaved' },
+        { at: 'Wav.ml:def:write_stereo', role: "a game's sound to a file" },
+        { at: 'Wav.ml:def:chunks', role: "RIFF's chunks walked" },
+        { at: 'Wav.ml:def:of_string', role: 'fmt and data found, mixed to mono, resampled' },
+        { at: '../../signal/Signal.ml:def:to_int16', role: 'a float to 16 bits' },
+      ],
+      joints: [
+        { from: 'Wav.ml:def:write_stereo', to: 'Wav.ml:def:to_string_channels', say: 'left, right' },
+        { from: 'Wav.ml:def:to_string_channels', to: '../../signal/Signal.ml:def:to_int16', say: 'each sample' },
+        { from: 'Wav.ml:def:of_string', to: 'Wav.ml:def:chunks', say: 'finds fmt and data' },
+      ],
+    },
+  ],
 }

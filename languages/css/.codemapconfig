@@ -159,6 +159,113 @@
   },
   skeletons: [
     {
+      name: 'The cascade: rules indexed, matched, sorted, the last one wins',
+      bones: [
+        { at: 'Cascade.ml:def:flatten', role: "@media's rules kept when the query holds" },
+        { at: 'Cascade.ml:type:entry', role: 'a rule with its layer, specificity, order' },
+        { at: 'Cascade.ml:def:key', role: 'indexed by id, class or name: few candidates' },
+        { at: 'Cascade.ml:def:hints', role: 'align=, bgcolor=...: style before style sheets' },
+        { at: 'Cascade.ml:def:cascade', role: 'down the tree: candidates matched, sorted, merged' },
+        { at: 'Cascade.ml:def:explain', role: 'where each declaration came from' },
+      ],
+      joints: [
+        { from: 'Cascade.ml:def:flatten', to: 'Cascade.ml:type:entry', say: 'the rules in order' },
+        { from: 'Cascade.ml:type:entry', to: 'Cascade.ml:def:key', say: 'its bucket' },
+        { from: 'Cascade.ml:def:key', to: 'Cascade.ml:def:cascade', say: "an element's candidates" },
+        { from: 'Cascade.ml:def:hints', to: 'Cascade.ml:def:cascade', say: 'under the author rules' },
+        { from: 'Cascade.ml:def:cascade', to: 'Cascade.ml:def:explain', say: 'the same sort, kept' },
+      ],
+    },
+    {
+      name: "Declared values computed, each element's from its parent's",
+      bones: [
+        { at: 'Computed.ml:type:t', role: 'every property the layout reads' },
+        { at: 'Computed.ml:def:initial', role: 'the values before any rule' },
+        { at: 'Computed.ml:def:expand', role: 'shorthands into longhands' },
+        { at: 'Computed.ml:def:compute', role: 'var() substituted, lengths resolved, inherited' },
+        { at: 'Computed.ml:def:user_agent_sheet', role: "the browser's own sheet" },
+        { at: 'Computed.ml:def:styles', role: 'the cascade, then down the tree' },
+      ],
+      joints: [
+        { from: 'Computed.ml:def:styles', to: 'Computed.ml:def:user_agent_sheet', say: 'under the page' },
+        { from: 'Computed.ml:def:styles', to: 'Computed.ml:def:compute', say: "each element's declarations" },
+        { from: 'Computed.ml:def:compute', to: 'Computed.ml:def:expand', say: 'margin: 1em 2em' },
+        { from: 'Computed.ml:def:initial', to: 'Computed.ml:def:compute', say: "the root's parent" },
+        { from: 'Computed.ml:def:compute', to: 'Computed.ml:type:t', say: 'the style' },
+      ],
+    },
+    {
+      name: 'CSS Syntax Level 3: characters, tokens, blocks, rules',
+      bones: [
+        { at: 'Css_syntax.ml:def:raw_tokens', role: 'the tokenizer, blocks opened and closed' },
+        { at: 'Css_syntax.ml:def:components', role: 'tokens nested into blocks and functions' },
+        { at: 'Css_syntax.ml:type:component', role: 'a token, a block, a function' },
+        { at: 'Css_syntax.ml:def:rules_of_block', role: 'preludes and blocks: rules, at-rules' },
+        { at: 'Css_syntax.ml:def:declarations_of_block', role: 'name: value !important' },
+        { at: 'Css_syntax.ml:def:parse_stylesheet', role: 'the entry' },
+      ],
+      joints: [
+        { from: 'Css_syntax.ml:def:parse_stylesheet', to: 'Css_syntax.ml:def:raw_tokens', say: 'the text' },
+        { from: 'Css_syntax.ml:def:raw_tokens', to: 'Css_syntax.ml:def:components', say: 'tokens' },
+        { from: 'Css_syntax.ml:def:components', to: 'Css_syntax.ml:type:component', say: 'the tree' },
+        { from: 'Css_syntax.ml:def:components', to: 'Css_syntax.ml:def:rules_of_block', say: 'the top level' },
+        { from: 'Css_syntax.ml:def:rules_of_block', to: 'Css_syntax.ml:def:declarations_of_block', say: "a rule's {...}" },
+      ],
+    },
+    {
+      name: 'Values: lengths with calc(), colours by every notation',
+      bones: [
+        { at: 'Css_values.ml:type:length', role: 'px plus a percentage, resolved late' },
+        { at: 'Css_values.ml:def:length', role: 'a component made a length: units, calc' },
+        { at: 'Css_values.ml:def:calc', role: 'calc() evaluated over terms' },
+        { at: 'Css_values.ml:def:substitute', role: 'var() replaced by custom properties' },
+        { at: 'Css_values.ml:def:color', role: 'names, #hex, rgb(), hsl(), currentColor' },
+        { at: 'Css_values.ml:def:resolve', role: 'a length against its base' },
+      ],
+      joints: [
+        { from: 'Css_values.ml:def:substitute', to: 'Css_values.ml:def:length', say: 'the value, var() gone' },
+        { from: 'Css_values.ml:def:length', to: 'Css_values.ml:def:calc', say: 'calc(...)' },
+        { from: 'Css_values.ml:def:length', to: 'Css_values.ml:type:length', say: 'px and %' },
+        { from: 'Css_values.ml:type:length', to: 'Css_values.ml:def:resolve', say: 'at layout' },
+      ],
+    },
+    {
+      name: 'Before CSS: a look inherited, a box not',
+      bones: [
+        { at: 'Looks.ml:type:t', role: 'the look: size, bold, italic, colour, link, alignment' },
+        { at: 'Looks.ml:def:root', role: 'the page at its root: the size, the colours' },
+        { at: 'Looks.ml:def:look', role: "the tag's changes to the parent's look" },
+        { at: 'Looks.ml:def:netscape', role: "Netscape's extensions: font, color=" },
+        { at: 'Looks.ml:type:box', role: 'display and margins: not inherited' },
+        { at: 'Looks.ml:def:box', role: "the tag's box" },
+        { at: 'Looks.ml:def:styled', role: 'style= declarations over the look' },
+      ],
+      joints: [
+        { from: 'Looks.ml:def:root', to: 'Looks.ml:def:look', say: 'the first parent' },
+        { from: 'Looks.ml:def:look', to: 'Looks.ml:def:netscape', say: 'extensions honoured' },
+        { from: 'Looks.ml:def:look', to: 'Looks.ml:type:t', say: 'the child look' },
+        { from: 'Looks.ml:def:box', to: 'Looks.ml:type:box', say: 'in ems of the look' },
+        { from: 'Looks.ml:def:look', to: 'Looks.ml:def:styled', say: 'then its style=' },
+      ],
+    },
+    {
+      name: 'Selectors: parsed, weighed, matched right to left',
+      bones: [
+        { at: 'Selectors.ml:type:complex', role: 'compounds joined by combinators' },
+        { at: 'Selectors.ml:def:parse_complex', role: 'a prelude into compounds' },
+        { at: 'Selectors.ml:def:specificity', role: 'ids, classes, names: the cascade key' },
+        { at: 'Selectors.ml:def:matches', role: 'the entry: the element and its ancestors' },
+        { at: 'Selectors.ml:def:matches_complex', role: 'the last compound first, then leftwards' },
+        { at: 'Selectors.ml:def:matches_simple', role: 'a tag, #id, .class, [attr], :pseudo' },
+      ],
+      joints: [
+        { from: 'Selectors.ml:def:parse_complex', to: 'Selectors.ml:type:complex', say: 'the selector' },
+        { from: 'Selectors.ml:type:complex', to: 'Selectors.ml:def:specificity', say: 'its weight' },
+        { from: 'Selectors.ml:def:matches', to: 'Selectors.ml:def:matches_complex', say: 'the element' },
+        { from: 'Selectors.ml:def:matches_complex', to: 'Selectors.ml:def:matches_simple', say: 'each compound' },
+      ],
+    },
+    {
       name: "TinyChrome's style: sheets to computed values",
       bones: [
         { at: 'Css_syntax.ml:def:parse_stylesheet', role: 'text into rules' },

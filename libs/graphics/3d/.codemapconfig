@@ -166,5 +166,96 @@
         { from: 'Triangle.ml:def:fill', to: 'Zbuffer.ml:def:test_and_set', say: 'a depth' },
       ],
     },
+    {
+      name: 'Faces through the stages',
+      bones: [
+        { at: 'Render.ml:type:face', role: 'a polygon: points with uv and normal, a paint' },
+        { at: 'Render.ml:type:options', role: 'each stage switched on or off' },
+        { at: 'Render.ml:def:render', role: 'sort or clear, then each face' },
+        { at: 'Render.ml:def:color_of_paint', role: "a face's colour closure, made once" },
+        { at: 'Render.ml:def:fan_triangles', role: 'a convex polygon as triangles' },
+        { at: 'Triangle.ml:def:fill', role: 'where the triangles go' },
+      ],
+      joints: [
+        { from: 'Render.ml:type:options', to: 'Render.ml:def:render', say: 'which stages run' },
+        { from: 'Render.ml:type:face', to: 'Render.ml:def:render', say: 'the scene' },
+        { from: 'Render.ml:def:render', to: 'Render.ml:def:color_of_paint', say: 'a face at a time' },
+        { from: 'Render.ml:def:render', to: 'Render.ml:def:fan_triangles', say: 'before and after clipping' },
+        { from: 'Render.ml:def:render', to: 'Triangle.ml:def:fill', say: 'projected vertices, the colour closure' },
+      ],
+    },
+    {
+      name: 'A triangle by its edge functions',
+      bones: [
+        { at: 'Triangle.ml:type:fill_rule', role: 'shared edges: epsilon or top-left' },
+        { at: 'Triangle.ml:def:snap', role: 'vertices on a 1/256 grid: exact tests' },
+        { at: 'Triangle.ml:def:fill', role: 'the bounding box, pixel by pixel' },
+        { at: 'Triangle.ml:comment:"one pixel, given its 3 edge function values"', role: 'inside? depth? colour' },
+        { at: 'Triangle.ml:comment:"optimization (Opti.enabled): incremental edge functions"', role: 'a step right is an addition' },
+        { at: 'Interpolate.ml:def:make', role: 'depth and uv from the weights' },
+        { at: 'Zbuffer.ml:def:test_and_set', role: 'nearer than what is there?' },
+      ],
+      joints: [
+        { from: 'Triangle.ml:def:fill', to: 'Triangle.ml:def:snap', say: 'Top_left' },
+        { from: 'Triangle.ml:type:fill_rule', to: 'Triangle.ml:def:fill', say: 'ties on an edge' },
+        { from: 'Triangle.ml:def:fill', to: 'Triangle.ml:comment:"one pixel, given its 3 edge function values"', say: 'w0, w1, w2' },
+        { from: 'Triangle.ml:comment:"optimization (Opti.enabled): incremental edge functions"', to: 'Triangle.ml:comment:"one pixel, given its 3 edge function values"', say: 'the same values, stepped' },
+        { from: 'Triangle.ml:comment:"one pixel, given its 3 edge function values"', to: 'Interpolate.ml:def:make', say: 'barycentric weights' },
+        { from: 'Triangle.ml:comment:"one pixel, given its 3 edge function values"', to: 'Zbuffer.ml:def:test_and_set', say: 'z' },
+      ],
+    },
+    {
+      name: 'A polygon cut at the near plane',
+      bones: [
+        { at: 'Clip.ml:type:vertex', role: 'a view-space point, its uv and normal' },
+        { at: 'Clip.ml:def:near_plane', role: 'each edge walked: kept, cut or dropped' },
+        { at: 'Clip.ml:def:intersect', role: 'the new vertex where an edge crosses' },
+      ],
+      joints: [
+        { from: 'Clip.ml:def:near_plane', to: 'Clip.ml:def:intersect', say: 'an edge crossing z = near' },
+        { from: 'Clip.ml:def:intersect', to: 'Clip.ml:type:vertex', say: 'uv lerped, normal renormalized' },
+      ],
+    },
+    {
+      name: 'A point to a pixel',
+      bones: [
+        { at: 'Project.ml:type:vertex', role: 'screen x, y, and depth, uv, their /z' },
+        { at: 'Project.ml:def:vertex', role: 'a world point: to view space first' },
+        { at: 'Project.ml:def:vertex_of_view', role: 'perspective, viewport, the /z kept' },
+        { at: 'geometry/Camera.ml:def:ndc', role: 'the perspective divide' },
+      ],
+      joints: [
+        { from: 'Project.ml:def:vertex', to: 'Project.ml:def:vertex_of_view', say: 'Camera.view of the point' },
+        { from: 'Project.ml:def:vertex_of_view', to: 'geometry/Camera.ml:def:ndc', say: 'None: behind or too far' },
+        { from: 'Project.ml:def:vertex_of_view', to: 'Project.ml:type:vertex', say: 'what Triangle interpolates' },
+      ],
+    },
+    {
+      name: 'Linear on screen: 1/z, not z',
+      bones: [
+        { at: 'Interpolate.ml:type:mode', role: 'affine or perspective-correct' },
+        { at: 'Interpolate.ml:def:make', role: 'a closure per triangle, weights to z, u, v' },
+        { at: 'Interpolate.ml:comment:"TODO: wrong with an orthographic camera"', role: 'the known flaw' },
+        { at: 'Project.ml:type:vertex', role: 'inv_z, u_over_z, v_over_z made there' },
+      ],
+      joints: [
+        { from: 'Project.ml:type:vertex', to: 'Interpolate.ml:def:make', say: 'the three vertices' },
+        { from: 'Interpolate.ml:type:mode', to: 'Interpolate.ml:def:make', say: 'which' },
+      ],
+    },
+    {
+      name: 'A texel for a uv',
+      bones: [
+        { at: 'Texture.ml:type:image', role: 'RGBA bytes, width, height' },
+        { at: 'Texture.ml:def:sample_nearest', role: 'the texel under the point' },
+        { at: 'Texture.ml:def:sample_bilinear', role: 'the four around, weighted; centres at i + 0.5' },
+        { at: 'Render.ml:def:color_of_paint', role: 'the user: one of the two, by options' },
+      ],
+      joints: [
+        { from: 'Render.ml:def:color_of_paint', to: 'Texture.ml:def:sample_bilinear', say: 'options.bilinear' },
+        { from: 'Render.ml:def:color_of_paint', to: 'Texture.ml:def:sample_nearest', say: 'else' },
+        { from: 'Texture.ml:type:image', to: 'Texture.ml:def:sample_bilinear', say: 'clamped at the borders' },
+      ],
+    },
   ],
 }

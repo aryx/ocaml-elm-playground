@@ -34,4 +34,36 @@
   dirs: {
     tests: { summary: "Park and Miller's check value, seeds scrambled, the same numbers everywhere." },
   },
+  skeletons: [
+    // claude: the folder: one generator, the same numbers natively and in
+    // a browser
+    {
+      name: "Park and Miller's generator, seeded by a hash",
+      bones: [
+        { at: 'Lehmer.mli', role: 'the promise: the same numbers everywhere' },
+        { at: 'Lehmer.ml', role: "Schrage's trick in 31 bits" },
+      ],
+      joints: [
+        { from: 'Lehmer.ml', to: 'Lehmer.mli', say: 'implements' },
+      ],
+    },
+    {
+      name: 'Lehmer: a seed scrambled, stepped without overflow',
+      bones: [
+        { at: 'Lehmer.ml:type:t', role: 'the seed: 1 .. 2^31 - 2' },
+        { at: 'Lehmer.ml:def:scramble', role: "any int as a seed, by MurmurHash3's finalizer" },
+        { at: 'Lehmer.ml:def:next', role: "a * s mod m by Schrage's q and r: no overflow" },
+        { at: 'Lehmer.ml:def:to_unit', role: 'a seed as a float in [0, 1]' },
+        { at: 'Lehmer.ml:type:state', role: 'a mutable one, for the AI libraries' },
+        { at: 'Lehmer.ml:def:draw', role: 'stepped and read' },
+      ],
+      joints: [
+        { from: 'Lehmer.ml:def:scramble', to: 'Lehmer.ml:type:t', say: 'a first seed' },
+        { from: 'Lehmer.ml:type:t', to: 'Lehmer.ml:def:next', say: 'the seed' },
+        { from: 'Lehmer.ml:def:next', to: 'Lehmer.ml:def:to_unit', say: 'the next' },
+        { from: 'Lehmer.ml:def:draw', to: 'Lehmer.ml:def:next', say: 'steps' },
+        { from: 'Lehmer.ml:type:state', to: 'Lehmer.ml:def:draw', say: 'holds' },
+      ],
+    },
+  ],
 }

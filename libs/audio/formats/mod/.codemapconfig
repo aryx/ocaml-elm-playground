@@ -65,4 +65,69 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'A tracker song: the file, the player, the chip',
+      bones: [
+        { at: 'Mod.mli', role: 'the file: samples, patterns of cells, the order' },
+        { at: 'Mod_player.mli', role: 'the rows and ticks, the effects' },
+        { at: 'Paula.mli', role: "the Amiga's channel: a sample at a period" },
+      ],
+      joints: [
+        { from: 'Mod.mli', to: 'Mod_player.mli', say: 'the song played' },
+        { from: 'Mod_player.mli', to: 'Paula.mli', say: 'a period and a volume per channel' },
+      ],
+    },
+    {
+      name: 'Mod: a song in bytes, both ways',
+      bones: [
+        { at: 'Mod.ml:type:song', role: 'instruments, patterns, positions, the tag' },
+        { at: 'Mod.ml:type:cell', role: 'a note: instrument, period, effect, parameter' },
+        { at: 'Mod.ml:def:of_string', role: 'the header, the patterns, the sample data' },
+        { at: 'Mod.ml:def:cell_of_bytes', role: 'four bytes unpacked' },
+        { at: 'Mod.ml:def:to_string', role: 'the song written back' },
+        { at: 'Mod.ml:def:note_name', role: 'a period named as a note' },
+      ],
+      joints: [
+        { from: 'Mod.ml:def:of_string', to: 'Mod.ml:def:cell_of_bytes', say: 'each cell' },
+        { from: 'Mod.ml:def:of_string', to: 'Mod.ml:type:song', say: 'builds' },
+        { from: 'Mod.ml:type:song', to: 'Mod.ml:def:to_string', say: 'written' },
+        { from: 'Mod.ml:type:cell', to: 'Mod.ml:def:note_name', say: 'its period' },
+      ],
+    },
+    {
+      name: 'Mod_player: ticks and rows',
+      bones: [
+        { at: 'Mod_player.ml:type:t', role: 'the position, row, tick, speed, tempo' },
+        { at: 'Mod_player.ml:type:channel', role: "a channel's note and effects' memory" },
+        { at: 'Mod_player.ml:def:fill', role: 'a block: a tick when due, the channels panned' },
+        { at: 'Mod_player.ml:def:tick', role: 'tick 0 plays the row, the others the effects' },
+        { at: 'Mod_player.ml:def:play_cell', role: 'a cell: instrument, note, effect set up' },
+        { at: 'Mod_player.ml:def:effect_tick', role: 'slides, vibrato, volume slides' },
+        { at: 'Paula.ml:def:next', role: "a channel's sample" },
+      ],
+      joints: [
+        { from: 'Mod_player.ml:def:fill', to: 'Mod_player.ml:def:tick', say: 'every 2.5 / tempo seconds' },
+        { from: 'Mod_player.ml:def:tick', to: 'Mod_player.ml:def:play_cell', say: 'tick 0' },
+        { from: 'Mod_player.ml:def:tick', to: 'Mod_player.ml:def:effect_tick', say: 'the other ticks' },
+        { from: 'Mod_player.ml:def:play_cell', to: 'Mod_player.ml:type:channel', say: 'set' },
+        { from: 'Mod_player.ml:def:fill', to: 'Paula.ml:def:next', say: 'each channel, each sample' },
+      ],
+    },
+    {
+      name: "Paula: a sample read at the period's rate",
+      bones: [
+        { at: 'Paula.ml:type:t', role: 'the sample, the position, the loop, period and volume' },
+        { at: 'Paula.ml:def:trigger', role: 'a note: a sample from an offset' },
+        { at: 'Paula.ml:def:set_period', role: 'the pitch, as the Amiga said it' },
+        { at: 'Paula.ml:type:reading', role: "hold (Paula's), linear, cubic" },
+        { at: 'Paula.ml:def:next', role: 'a sample: read, then on by clock / period / rate' },
+      ],
+      joints: [
+        { from: 'Paula.ml:def:trigger', to: 'Paula.ml:type:t', say: 'the sample' },
+        { from: 'Paula.ml:def:set_period', to: 'Paula.ml:def:next', say: 'the step' },
+        { from: 'Paula.ml:type:reading', to: 'Paula.ml:def:next', say: 'how to read between' },
+      ],
+    },
+  ],
 }

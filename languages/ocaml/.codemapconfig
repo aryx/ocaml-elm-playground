@@ -90,6 +90,27 @@
   },
   skeletons: [
     {
+      name: 'OCaml parsed by hand, forgiving: a bad item skipped, not the file',
+      bones: [
+        { at: 'Parse_ml.ml:def:parse', role: 'items to the end; a stray end stepped past' },
+        { at: 'Parse_ml.ml:def:reading', role: 'comments, directives, attributes dropped' },
+        { at: 'Parse_ml.ml:def:items', role: "a module's items; one that fails is skipped" },
+        { at: 'Parse_ml.ml:def:item', role: 'let, type, module, open... by the keyword' },
+        { at: 'Parse_ml.ml:def:expr', role: 'precedence climbing over the infix operators' },
+        { at: 'Parse_ml.ml:def:pattern', role: 'patterns: or, tuple, cons, constructor' },
+        { at: 'Parse_ml.ml:def:modexpr', role: 'structures, functors, paths' },
+      ],
+      joints: [
+        { from: 'Parse_ml.ml:def:parse', to: 'Parse_ml.ml:def:reading', say: 'the tokens kept' },
+        { from: 'Parse_ml.ml:def:parse', to: 'Parse_ml.ml:def:items', say: 'the top level' },
+        { from: 'Parse_ml.ml:def:items', to: 'Parse_ml.ml:def:item', say: 'each' },
+        { from: 'Parse_ml.ml:def:item', to: 'Parse_ml.ml:def:expr', say: "a let's body" },
+        { from: 'Parse_ml.ml:def:expr', to: 'Parse_ml.ml:def:pattern', say: 'let, fun, match' },
+        { from: 'Parse_ml.ml:def:item', to: 'Parse_ml.ml:def:modexpr', say: 'module M = ...' },
+        { from: 'Parse_ml.ml:def:modexpr', to: 'Parse_ml.ml:def:items', say: 'struct ... end' },
+      ],
+    },
+    {
       name: 'An OCaml file coloured',
       bones: [
         { at: 'Lexer_ml.mll:def:tokens', role: 'text into tokens, comments kept' },

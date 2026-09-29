@@ -51,4 +51,56 @@
       related: ['../tests/Unit_blocks.ml'],
     },
   },
+  skeletons: [
+    {
+      name: 'Blocks on screen: laid out, then changed by the mouse',
+      bones: [
+        { at: 'Block_layout.ml', role: 'where every block, slot and mouth lies, and where a stack may snap' },
+        { at: 'Block_edit.ml', role: 'the program changed: a stack taken, dropped at a target' },
+        { at: '../../languages/scratch/', role: 'the program: scripts of blocks, their specs' },
+        { at: '../../apps/devtools/Scratch_ide.ml', role: 'the IDE: the mouse turned into takes and drops' },
+      ],
+      joints: [
+        { from: '../../languages/scratch/', to: 'Block_layout.ml', say: 'the scripts, sized' },
+        { from: '../../apps/devtools/Scratch_ide.ml', to: 'Block_layout.ml', say: 'a snap target' },
+        { from: '../../apps/devtools/Scratch_ide.ml', to: 'Block_edit.ml', say: 'take, drop' },
+        { from: 'Block_edit.ml', to: 'Block_layout.ml', say: 'paths and targets' },
+      ],
+    },
+    {
+      name: 'Block_layout: blocks sized like parentheses, placed down, snapped',
+      bones: [
+        { at: 'Block_layout.ml:type:path', role: 'a place: a script, then steps into blocks' },
+        { at: 'Block_layout.ml:def:size', role: 'a block as wide as its words, C blocks as tall as their mouths' },
+        { at: 'Block_layout.ml:def:place_block', role: 'a block placed, its slots and mouths inside' },
+        { at: 'Block_layout.ml:def:place_stack', role: 'a stack placed down, each block below the last' },
+        { at: 'Block_layout.ml:def:layout', role: 'every script: its pieces and its targets' },
+        { at: 'Block_layout.ml:def:snap', role: 'the nearest valid target to a dragged stack' },
+      ],
+      joints: [
+        { from: 'Block_layout.ml:def:layout', to: 'Block_layout.ml:def:place_stack', say: 'each script' },
+        { from: 'Block_layout.ml:def:place_stack', to: 'Block_layout.ml:def:place_block', say: 'each block' },
+        { from: 'Block_layout.ml:def:place_block', to: 'Block_layout.ml:def:size', say: 'how big' },
+        { from: 'Block_layout.ml:def:snap', to: 'Block_layout.ml:def:layout', say: 'the targets' },
+        { from: 'Block_layout.ml:def:layout', to: 'Block_layout.ml:type:path', say: 'each piece at its path' },
+      ],
+    },
+    {
+      name: 'Block_edit: a path followed, the program rebuilt',
+      bones: [
+        { at: 'Block_edit.ml:type:dragged', role: 'what the mouse carries: a stack or a reporter' },
+        { at: 'Block_edit.ml:def:take', role: 'a stack pulled out with every block under it' },
+        { at: 'Block_edit.ml:def:drop', role: 'the stack put at a snap target' },
+        { at: 'Block_edit.ml:def:map_stack', role: 'follow a path, change the stack at its end' },
+        { at: 'Block_edit.ml:def:map_script', role: 'the one script changed, the others kept' },
+      ],
+      joints: [
+        { from: 'Block_edit.ml:def:take', to: 'Block_edit.ml:type:dragged', say: 'carried' },
+        { from: 'Block_edit.ml:type:dragged', to: 'Block_edit.ml:def:drop', say: 'let go' },
+        { from: 'Block_edit.ml:def:take', to: 'Block_edit.ml:def:map_script', say: 'the rest left' },
+        { from: 'Block_edit.ml:def:drop', to: 'Block_edit.ml:def:map_script', say: 'inserted' },
+        { from: 'Block_edit.ml:def:map_script', to: 'Block_edit.ml:def:map_stack', say: 'down the path' },
+      ],
+    },
+  ],
 }

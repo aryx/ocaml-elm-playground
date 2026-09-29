@@ -33,4 +33,37 @@
       important: [{ at: 'def:toward', weight: 2 }],
     },
   },
+  skeletons: [
+    {
+      name: 'The maze kit: moving on a grid, and chasing',
+      bones: [
+        { at: 'Grid_move.ml', role: 'a mover pixel by pixel, turning only at a tile center' },
+        { at: 'Chase.ml', role: "the ghosts' choices at a crossing" },
+        { at: '../../games/arcade/TinyPacman.ml', role: 'Pac-Man and the four ghosts' },
+        { at: '../../games/arcade/TinyBomberman.ml', role: 'the bombers and the monsters' },
+      ],
+      joints: [
+        { from: 'Chase.ml', to: 'Grid_move.ml', say: 'a choose for slide' },
+        { from: '../../games/arcade/TinyPacman.ml', to: 'Grid_move.ml', say: 'the player moved' },
+        { from: '../../games/arcade/TinyPacman.ml', to: 'Chase.ml', say: 'toward a target tile' },
+        { from: '../../games/arcade/TinyBomberman.ml', to: 'Grid_move.ml', say: 'movers, their tiles' },
+      ],
+    },
+    {
+      name: 'A mover: steered at the centers, slid between',
+      bones: [
+        { at: 'Grid_move.ml:type:mover', role: 'pixels, its direction, the one wanted' },
+        { at: 'Grid_move.ml:def:move_player', role: 'reversing at once, else steer and slide' },
+        { at: 'Grid_move.ml:def:slide', role: 'speed pixels, a choice at each center' },
+        { at: 'Grid_move.ml:def:steer', role: 'the wanted way if open, else on, else stop' },
+        { at: 'Grid_move.ml:def:advance', role: 'one pixel, the tunnel wrapping' },
+      ],
+      joints: [
+        { from: 'Grid_move.ml:def:move_player', to: 'Grid_move.ml:def:slide', say: 'steer as the choice' },
+        { from: 'Grid_move.ml:def:slide', to: 'Grid_move.ml:def:steer', say: 'at a center' },
+        { from: 'Grid_move.ml:def:slide', to: 'Grid_move.ml:def:advance', say: 'each pixel' },
+        { from: 'Grid_move.ml:def:advance', to: 'Grid_move.ml:type:mover', say: 'the mover moved' },
+      ],
+    },
+  ],
 }

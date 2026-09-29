@@ -24,4 +24,22 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Meshes kept while drawn, freed when not',
+      bones: [
+        { at: 'Mesh_cache.ml:type:t', role: 'meshes by id, each marked used or not' },
+        { at: 'Mesh_cache.ml:def:find_or_build', role: 'the GPU mesh of an id, built once' },
+        { at: 'Mesh_cache.ml:def:sweep', role: "end of frame: the unused freed, marks cleared" },
+        { at: 'Mesh_cache.ml:def:stats', role: 'live, built, freed: the last frame' },
+        { at: '../../../playground/platforms/native/Playground3d_platform.ml:def:run_app3d', role: 'the OpenGL frame loop, a user' },
+      ],
+      joints: [
+        { from: '../../../playground/platforms/native/Playground3d_platform.ml:def:run_app3d', to: 'Mesh_cache.ml:def:find_or_build', say: "each cached shape's id" },
+        { from: '../../../playground/platforms/native/Playground3d_platform.ml:def:run_app3d', to: 'Mesh_cache.ml:def:sweep', say: 'after the frame' },
+        { from: 'Mesh_cache.ml:def:find_or_build', to: 'Mesh_cache.ml:type:t', say: 'marked used' },
+        { from: 'Mesh_cache.ml:def:sweep', to: 'Mesh_cache.ml:def:stats', say: 'counted' },
+      ],
+    },
+  ],
 }

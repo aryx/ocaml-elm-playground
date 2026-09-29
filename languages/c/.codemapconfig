@@ -84,6 +84,26 @@
   },
   skeletons: [
     {
+      name: 'C read without its headers: which names are types',
+      bones: [
+        { at: 'Parse_c.ml:def:parse', role: 'items to the end; one that fails is skipped' },
+        { at: 'Parse_c.ml:def:reading', role: "the directives read apart, #if's first branch kept" },
+        { at: 'Parse_c.ml:def:item', role: 'a macro used, or a declaration' },
+        { at: 'Parse_c.ml:def:names_type', role: 'the guess: is this name a type, from what follows' },
+        { at: 'Parse_c.ml:def:declarator', role: "C's inside-out declarators" },
+        { at: 'Parse_c.ml:def:stmt', role: 'statements, blocks' },
+        { at: 'Parse_c.ml:def:binary', role: 'expressions by precedence climbing' },
+      ],
+      joints: [
+        { from: 'Parse_c.ml:def:parse', to: 'Parse_c.ml:def:reading', say: 'the tokens kept, the defines' },
+        { from: 'Parse_c.ml:def:parse', to: 'Parse_c.ml:def:item', say: 'each top-level item' },
+        { from: 'Parse_c.ml:def:item', to: 'Parse_c.ml:def:names_type', say: 'a type here, or a call?' },
+        { from: 'Parse_c.ml:def:item', to: 'Parse_c.ml:def:declarator', say: 'the name declared' },
+        { from: 'Parse_c.ml:def:item', to: 'Parse_c.ml:def:stmt', say: "a function's body" },
+        { from: 'Parse_c.ml:def:stmt', to: 'Parse_c.ml:def:binary', say: 'its expressions' },
+      ],
+    },
+    {
       name: 'A C file coloured',
       bones: [
         { at: 'Lexer_c.mll:def:tokens', role: 'text into tokens, comments kept' },

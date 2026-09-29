@@ -48,4 +48,56 @@
   dirs: {
     tests: { summary: "The kit's tests: moves blocked, ladders climbed, sensors read." },
   },
+  skeletons: [
+    {
+      name: 'The platformer kit: boxes on tiles, ladders, shaped ground',
+      bones: [
+        { at: 'Tile_move.ml', role: 'the base: a box moved on a tilemap, axis by axis' },
+        { at: 'Ladder.ml', role: 'climbing, over Tile_move: snapped to the column' },
+        { at: 'Slope.ml', role: "Sonic's way instead: pixel masks, sensors, modes" },
+        { at: '../../games/platform/TinyMario.ml', role: 'the tile games (Celeste, Metroid...)' },
+        { at: '../../games/platform/TinyLodeRunner.ml', role: 'the ladder games (Rick, Vikings)' },
+        { at: '../../games/platform/TinySonic.ml', role: 'the slope games (Mario World too)' },
+      ],
+      joints: [
+        { from: 'Ladder.ml', to: 'Tile_move.ml', say: 'standing, blocked' },
+        { from: '../../games/platform/TinyMario.ml', to: 'Tile_move.ml', say: 'move_by, hits' },
+        { from: '../../games/platform/TinyLodeRunner.ml', to: 'Ladder.ml', say: 'reach, climb' },
+        { from: '../../games/platform/TinySonic.ml', to: 'Slope.ml', say: 'the ground under each sensor' },
+      ],
+    },
+    {
+      name: 'A ladder: found under the feet, climbed at its center',
+      bones: [
+        { at: 'Ladder.ml:def:ladder_at', role: 'the column center of a ladder tile' },
+        { at: 'Ladder.ml:def:reach', role: 'at the body, or just under the feet' },
+        { at: 'Ladder.ml:def:standing', role: 'on the ground, or on a ladder' },
+        { at: 'Ladder.ml:def:on_top', role: 'standing on its top rung' },
+        { at: 'Ladder.ml:def:climb', role: 'pixel steps, stopped where the ladder or room ends' },
+      ],
+      joints: [
+        { from: 'Ladder.ml:def:reach', to: 'Ladder.ml:def:ladder_at', say: 'two heights tried' },
+        { from: 'Ladder.ml:def:standing', to: 'Ladder.ml:def:reach', say: 'no ground? a ladder' },
+        { from: 'Ladder.ml:def:climb', to: 'Ladder.ml:def:reach', say: 'each step still on it' },
+      ],
+    },
+    {
+      name: 'Ground of any angle: surfaces felt by sensors',
+      bones: [
+        { at: 'Slope.ml:type:surface', role: "a tile's solid pixels and its angle" },
+        { at: 'Slope.ml:def:slope', role: 'a ramp from one height to another' },
+        { at: 'Slope.ml:def:mode_of', role: 'the angle picks floor, wall or ceiling' },
+        { at: 'Slope.ml:def:down', role: "that mode's down: where the sensor looks" },
+        { at: 'Slope.ml:def:solid_at', role: 'a world pixel inside the ground?' },
+        { at: 'Slope.ml:def:ground', role: 'the sensor: out of the ground, or down to it' },
+      ],
+      joints: [
+        { from: 'Slope.ml:def:slope', to: 'Slope.ml:type:surface', say: 'the mask' },
+        { from: 'Slope.ml:def:mode_of', to: 'Slope.ml:def:ground', say: 'the mode' },
+        { from: 'Slope.ml:def:ground', to: 'Slope.ml:def:down', say: 'its direction' },
+        { from: 'Slope.ml:def:ground', to: 'Slope.ml:def:solid_at', say: 'each pixel along it' },
+        { from: 'Slope.ml:def:solid_at', to: 'Slope.ml:type:surface', say: 'the tile there' },
+      ],
+    },
+  ],
 }

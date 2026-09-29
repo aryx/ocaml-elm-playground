@@ -46,4 +46,53 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'A bot: what it senses, then what it decides',
+      bones: [
+        { at: 'Sense.mli', role: 'the perception: a target seen, heard, remembered, forgotten' },
+        { at: 'Bot.mli', role: "the loop: senses delayed, decisions at a rate, a reflex every frame" },
+        { at: '../decision/', role: 'what a bot decides with: a machine, a tree, scores' },
+        { at: '../movement/', role: 'how its intent becomes motion' },
+      ],
+      joints: [
+        { from: 'Sense.mli', to: 'Bot.mli', say: "the senses a bot's sense function builds" },
+        { from: 'Bot.mli', to: '../decision/', say: 'decide: senses -> intent' },
+        { from: 'Bot.mli', to: '../movement/', say: 'the intent, steered' },
+      ],
+    },
+    {
+      name: 'Human-like play: late, slow, imprecise',
+      bones: [
+        { at: 'Bot.ml:type:t', role: 'sense, decide, delay, rate, reflex' },
+        { at: 'Bot.ml:type:running', role: 'the senses remembered, the last intent, the frame' },
+        { at: 'Bot.ml:def:start', role: 'no memory yet' },
+        { at: 'Bot.ml:def:step', role: 'a frame: sense now, decide on what was sensed delay frames ago' },
+        { at: 'Bot.ml:def:nth_or_last', role: 'the reaction time' },
+        { at: 'Bot.ml:def:aim_error', role: 'a wobble that settles the longer a target is seen' },
+      ],
+      joints: [
+        { from: 'Bot.ml:def:start', to: 'Bot.ml:type:running', say: 'the first' },
+        { from: 'Bot.ml:type:running', to: 'Bot.ml:def:step', say: 'stepped' },
+        { from: 'Bot.ml:type:t', to: 'Bot.ml:def:step', say: 'its functions' },
+        { from: 'Bot.ml:def:step', to: 'Bot.ml:def:nth_or_last', say: 'the senses decided on' },
+        { from: 'Bot.ml:def:step', to: 'Bot.ml:type:running', say: 'the next, and an intent' },
+      ],
+    },
+    {
+      name: 'A target perceived, then remembered',
+      bones: [
+        { at: 'Sense.ml:type:target', role: 'visible, audible, where last seen, for how long' },
+        { at: 'Sense.ml:def:unknown', role: 'never seen' },
+        { at: 'Sense.ml:def:update', role: 'a frame: in sight and in the clear?' },
+        { at: 'Sense.ml:def:forget', role: 'a memory too old let go' },
+        { at: 'Sense.ml:def:focus', role: 'the nearest seen, else the freshest remembered' },
+      ],
+      joints: [
+        { from: 'Sense.ml:def:unknown', to: 'Sense.ml:def:update', say: 'the first' },
+        { from: 'Sense.ml:def:update', to: 'Sense.ml:def:forget', say: 'aged' },
+        { from: 'Sense.ml:def:forget', to: 'Sense.ml:def:focus', say: 'the targets' },
+      ],
+    },
+  ],
 }

@@ -24,4 +24,24 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Frames at their times, decoded on demand',
+      bones: [
+        { at: 'Movie.ml:type:t', role: 'a size, the start times, a frame by index' },
+        { at: 'Movie.ml:def:of_frames', role: 'pictures in memory, with their delays' },
+        { at: 'Movie.ml:def:sequential', role: 'a decoder that only goes forward, remembered where it stopped' },
+        { at: 'Movie.ml:def:index_at', role: 'the frame showing at a time: bisection' },
+        { at: 'Movie.ml:def:frame_at', role: 'what a player asks' },
+        { at: '../mpeg1/Mpeg1.ml:def:of_string', role: 'a sequential decoder' },
+      ],
+      joints: [
+        { from: 'Movie.ml:def:of_frames', to: 'Movie.ml:type:t', say: 'the delays summed' },
+        { from: '../mpeg1/Mpeg1.ml:def:of_string', to: 'Movie.ml:def:sequential', say: 'start, next' },
+        { from: 'Movie.ml:def:sequential', to: 'Movie.ml:type:t', say: 'frame: forward, or from the start' },
+        { from: 'Movie.ml:def:frame_at', to: 'Movie.ml:def:index_at', say: 'the time' },
+        { from: 'Movie.ml:def:frame_at', to: 'Movie.ml:type:t', say: 'frame i' },
+      ],
+    },
+  ],
 }

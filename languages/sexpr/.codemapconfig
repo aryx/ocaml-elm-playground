@@ -44,4 +44,38 @@
   dirs: {
     tests: { summary: 'Both dialects read: atoms, lists, prefixes, spans, errors.' },
   },
+  skeletons: [
+    {
+      name: 'The reader the Lisps share',
+      bones: [
+        { at: 'Sexpr.ml', role: 'the tree, each node with its span in the text' },
+        { at: 'Sexpr_read.ml', role: 'text into trees, in the Emacs or the Scheme dialect' },
+        { at: '../lisp/Lisp_read.ml', role: "TinyEmacs's Lisp reads through it" },
+        { at: '../scheme/Scheme_eval.ml', role: "TinyDrScheme's Scheme reads through it" },
+      ],
+      joints: [
+        { from: 'Sexpr_read.ml', to: 'Sexpr.ml', say: 'builds' },
+        { from: '../lisp/Lisp_read.ml', to: 'Sexpr_read.ml', say: 'Emacs' },
+        { from: '../scheme/Scheme_eval.ml', to: 'Sexpr_read.ml', say: 'Scheme' },
+      ],
+    },
+    {
+      name: 'Reading: skip, then one datum, spans kept',
+      bones: [
+        { at: 'Sexpr_read.ml:type:dialect', role: "Emacs's ?a and #'f; Scheme's #\\a, #(...), quasiquote" },
+        { at: 'Sexpr_read.ml:def:read_all', role: 'every datum in a text' },
+        { at: 'Sexpr_read.ml:def:skip', role: 'spaces and comments, #| nested |# too' },
+        { at: 'Sexpr_read.ml:def:read', role: 'one datum: a list, a quote, a string, an atom' },
+        { at: 'Sexpr_read.ml:def:read_list', role: 'to its closing paren, a dotted tail' },
+        { at: 'Sexpr_read.ml:def:atom', role: 'a number or a symbol' },
+      ],
+      joints: [
+        { from: 'Sexpr_read.ml:def:read_all', to: 'Sexpr_read.ml:def:read', say: 'until only blanks' },
+        { from: 'Sexpr_read.ml:def:read', to: 'Sexpr_read.ml:def:skip', say: 'first' },
+        { from: 'Sexpr_read.ml:def:read', to: 'Sexpr_read.ml:def:read_list', say: '(' },
+        { from: 'Sexpr_read.ml:def:read_list', to: 'Sexpr_read.ml:def:read', say: 'each element' },
+        { from: 'Sexpr_read.ml:def:read', to: 'Sexpr_read.ml:def:atom', say: 'anything else' },
+      ],
+    },
+  ],
 }

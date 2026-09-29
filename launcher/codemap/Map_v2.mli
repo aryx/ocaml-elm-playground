@@ -74,6 +74,10 @@ val hovered_match : Code_map_base.t -> Code_map_base.camera -> (Code_search.hit 
    users, 1 its uses only, 2 its users only (a's first press) *)
 val best_street_mode : Code_map_base.t -> int
 
+(* claude: the unit whose name is under the mouse, and the files tied to
+   it (its users, what it uses): shift+click's view *)
+val unit_with_ties : Code_map_base.t -> Code_map_base.camera -> (string * string list) option
+
 (* claude: at the street, the panel whose name is under a pixel *)
 val street_title_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> string option
 

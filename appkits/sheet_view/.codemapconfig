@@ -23,4 +23,40 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "Sheet_view: the kit, the engine under it, its apps",
+      bones: [
+        { at: "Sheet_view.ml", role: "a sheet drawn in a rectangle, and where a click landed" },
+        { at: "../sheet/", role: "the values shown" },
+        { at: "../../apps/office/TinyExcel.ml", role: "Excel" },
+        { at: "../../apps/office/Part_sheet.ml", role: "the office's sheet part" },
+        { at: "../../libs/gui/", role: "widgets: the boxes and fills drawn" },
+      ],
+      joints: [
+        { from: "Sheet_view.ml", to: "../sheet/", say: "show" },
+        { from: "Sheet_view.ml", to: "../../libs/gui/", say: "Widget" },
+        { from: "../../apps/office/TinyExcel.ml", to: "Sheet_view.ml", say: "draw, cell_at" },
+        { from: "../../apps/office/Part_sheet.ml", to: "Sheet_view.ml", say: "draw, cell_at" },
+      ],
+    },
+    {
+      name: "Sheet_view: a grid of cells, both ways",
+      bones: [
+        { at: "Sheet_view.ml:type:geometry", role: "columns, rows, their sizes, the heads" },
+        { at: "Sheet_view.ml:def:cell_box", role: "a cell's box on the screen" },
+        { at: "Sheet_view.ml:def:cell_at", role: "a point back to its cell" },
+        { at: "Sheet_view.ml:def:corners", role: "a selection as its two corners" },
+        { at: "Sheet_view.ml:def:draw", role: "the heads, the grid, the values, the selection lit" },
+        { at: "Sheet_view.ml:def:text_in", role: "a cell's text, clipped to its box" },
+      ],
+      joints: [
+        { from: "Sheet_view.ml:def:draw", to: "Sheet_view.ml:def:cell_box", say: "each cell" },
+        { from: "Sheet_view.ml:def:draw", to: "Sheet_view.ml:def:corners", say: "the selection" },
+        { from: "Sheet_view.ml:def:draw", to: "Sheet_view.ml:def:text_in", say: "each value" },
+        { from: "Sheet_view.ml:def:cell_at", to: "Sheet_view.ml:type:geometry", say: "inverts" },
+        { from: "Sheet_view.ml:def:cell_box", to: "Sheet_view.ml:type:geometry", say: "from" },
+      ],
+    },
+  ],
 }

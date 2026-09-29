@@ -166,6 +166,118 @@
   // bytes, the model stepped by the game's own update
   skeletons: [
     {
+      name: 'The input exchange: every input until acknowledged',
+      bones: [
+        { at: 'Inputs.ml:type:t', role: "every player's inputs by tick, what each has of mine, checksums" },
+        { at: 'Inputs.ml:def:add_mine', role: 'my input for a tick' },
+        { at: 'Inputs.ml:def:packet', role: 'every input of mine one of them may still miss, acks, a checksum' },
+        { at: 'Inputs.ml:def:receive', role: 'theirs read, garbage refused, acks noted' },
+        { at: 'Inputs.ml:def:extend', role: 'how far a player is known without a hole' },
+        { at: 'Inputs.ml:def:compare', role: 'two checksums of one tick: a desync?' },
+      ],
+      joints: [
+        { from: 'Inputs.ml:def:add_mine', to: 'Inputs.ml:type:t', say: 'kept' },
+        { from: 'Inputs.ml:type:t', to: 'Inputs.ml:def:packet', say: 'what they lack' },
+        { from: 'Inputs.ml:def:packet', to: 'Inputs.ml:def:receive', say: 'bytes, over the network' },
+        { from: 'Inputs.ml:def:receive', to: 'Inputs.ml:def:extend', say: 'the known ticks' },
+        { from: 'Inputs.ml:def:receive', to: 'Inputs.ml:def:compare', say: 'their checksum' },
+      ],
+    },
+    {
+      name: 'Lockstep: wait for everybody',
+      bones: [
+        { at: 'Lockstep.ml:type:t', role: 'the inputs, the input delay, the next tick' },
+        { at: 'Lockstep.ml:def:step', role: 'every input of the tick known, or a stall' },
+        { at: 'Lockstep.ml:def:packet', role: 'the inputs sent' },
+        { at: 'Lockstep.ml:def:receive', role: 'the inputs received' },
+        { at: 'Lockstep.ml:def:desync', role: 'where the copies differ' },
+        { at: 'Inputs.ml:def:add_mine', role: 'mine, delay ticks ahead' },
+        { at: 'Inputs.ml:def:known_upto', role: "each player's known ticks" },
+      ],
+      joints: [
+        { from: 'Lockstep.ml:def:step', to: 'Inputs.ml:def:known_upto', say: 'all there?' },
+        { from: 'Lockstep.ml:def:step', to: 'Inputs.ml:def:add_mine', say: 'mine, for tick + delay' },
+        { from: 'Lockstep.ml:def:receive', to: 'Lockstep.ml:def:step', say: 'unblocks' },
+        { from: 'Lockstep.ml:type:t', to: 'Lockstep.ml:def:step', say: 'the tick' },
+        { from: 'Lockstep.ml:def:step', to: 'Lockstep.ml:def:packet', say: 'mine to send' },
+      ],
+    },
+    {
+      name: "Client-side prediction: mine at once, the server's corrected",
+      bones: [
+        { at: 'Prediction.ml:type:t', role: 'the model, the others guessed, mine not yet confirmed' },
+        { at: 'Prediction.ml:def:play', role: 'one tick: my input, their latest' },
+        { at: 'Prediction.ml:def:step', role: 'played now, kept as pending' },
+        { at: 'Prediction.ml:def:correct', role: "the server's world, my pending inputs replayed on it" },
+        { at: 'Prediction.ml:def:model', role: 'what is drawn' },
+      ],
+      joints: [
+        { from: 'Prediction.ml:def:step', to: 'Prediction.ml:def:play', say: 'my input' },
+        { from: 'Prediction.ml:def:correct', to: 'Prediction.ml:def:play', say: 'each pending input again' },
+        { from: 'Prediction.ml:def:step', to: 'Prediction.ml:type:t', say: 'pending' },
+        { from: 'Prediction.ml:def:correct', to: 'Prediction.ml:type:t', say: 'a misprediction counted' },
+        { from: 'Prediction.ml:type:t', to: 'Prediction.ml:def:model', say: 'the model' },
+      ],
+    },
+    {
+      name: 'Rollback: guess, and replay from the first wrong guess',
+      bones: [
+        { at: 'Rollback.ml:type:t', role: 'the model, the ticks played but not confirmed' },
+        { at: 'Rollback.ml:type:played', role: 'a tick saved: the model before, the inputs used' },
+        { at: 'Rollback.ml:def:best', role: 'the real input, else the last known' },
+        { at: 'Rollback.ml:def:play', role: 'a tick played, saved' },
+        { at: 'Rollback.ml:def:roll_back', role: 'back to the earliest wrong tick, every tick since replayed' },
+        { at: 'Rollback.ml:def:confirm', role: 'the ticks all real: final, handed over' },
+        { at: 'Rollback.ml:def:step', role: 'a frame: settle, then play my input' },
+      ],
+      joints: [
+        { from: 'Rollback.ml:def:step', to: 'Rollback.ml:def:roll_back', say: 'settle: new inputs arrived' },
+        { from: 'Rollback.ml:def:step', to: 'Rollback.ml:def:play', say: 'the next tick' },
+        { from: 'Rollback.ml:def:roll_back', to: 'Rollback.ml:def:play', say: 'replayed' },
+        { from: 'Rollback.ml:def:play', to: 'Rollback.ml:def:best', say: "each player's input" },
+        { from: 'Rollback.ml:def:play', to: 'Rollback.ml:type:played', say: 'saved' },
+        { from: 'Rollback.ml:def:step', to: 'Rollback.ml:def:confirm', say: 'then' },
+      ],
+    },
+    {
+      name: 'A network in one process, from a seed',
+      bones: [
+        { at: 'Sim_net.ml:type:config', role: 'latency, jitter, loss, duplication' },
+        { at: 'Sim_net.ml:type:t', role: 'the packets in flight, by arrival' },
+        { at: 'Sim_net.ml:def:send', role: 'lost, delayed, duplicated: the draws in a fixed order' },
+        { at: 'Sim_net.ml:def:draw', role: "a number from the network's own seed" },
+        { at: 'Sim_net.ml:def:insert', role: 'in order of arrival, stably' },
+        { at: 'Sim_net.ml:def:receive', role: 'what has arrived by now' },
+      ],
+      joints: [
+        { from: 'Sim_net.ml:type:config', to: 'Sim_net.ml:def:send', say: 'the odds' },
+        { from: 'Sim_net.ml:def:send', to: 'Sim_net.ml:def:draw', say: 'each chance' },
+        { from: 'Sim_net.ml:def:send', to: 'Sim_net.ml:def:insert', say: 'in flight' },
+        { from: 'Sim_net.ml:def:insert', to: 'Sim_net.ml:type:t', say: 'the queue' },
+        { from: 'Sim_net.ml:type:t', to: 'Sim_net.ml:def:receive', say: 'arrived' },
+      ],
+    },
+    {
+      name: 'Snapshots: inputs to the server, the world back',
+      bones: [
+        { at: 'Snapshot.ml:module:Client', role: 'inputs numbered, resent until applied' },
+        { at: 'Snapshot.ml:module:Server', role: 'inputs in, one world out' },
+        { at: 'Snapshot.ml:def:inputs', role: "each player's next input, else the last again" },
+        { at: 'Snapshot.ml:def:packet', role: 'the world, and which of mine it applied' },
+        { at: 'Snapshot.ml:type:state', role: 'a snapshot: the tick, the ack, the inputs, the world' },
+        { at: 'Snapshot.ml:comment:"mine up to [acked] applied: forgotten"', role: 'a snapshot received' },
+        { at: 'Prediction.ml:def:correct', role: 'what the client does with it' },
+      ],
+      joints: [
+        { from: 'Snapshot.ml:module:Client', to: 'Snapshot.ml:module:Server', say: 'my unapplied inputs' },
+        { from: 'Snapshot.ml:module:Server', to: 'Snapshot.ml:def:inputs', say: 'a tick' },
+        { from: 'Snapshot.ml:def:inputs', to: 'Snapshot.ml:def:packet', say: 'the world after them' },
+        { from: 'Snapshot.ml:def:packet', to: 'Snapshot.ml:type:state', say: 'read back' },
+        { from: 'Snapshot.ml:type:state', to: 'Snapshot.ml:comment:"mine up to [acked] applied: forgotten"', say: 'the ack' },
+        { from: 'Snapshot.ml:type:state', to: 'Prediction.ml:def:correct', say: 'the world' },
+      ],
+    },
+    {
       name: 'Peer to peer: lockstep and rollback',
       bones: [
         { at: '../../../playground/apis/Multiplayer.ml', role: "the game's side: update fed every player's keys" },

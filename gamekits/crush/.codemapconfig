@@ -27,4 +27,40 @@
   dirs: {
     tests: { summary: "The kit's tests: planes cut, crushes undone." },
   },
+  skeletons: [
+    {
+      name: 'One set of rules, drawn two ways',
+      bones: [
+        { at: 'Crush.mli', role: 'levels as slices, a play, a frame of it' },
+        { at: 'Crush.ml', role: 'crushing, uncrushing, turning; the platforming' },
+        { at: '../../games/puzzle/TinyCrush.ml', role: 'drawn on the 2D playground, a cabinet projection' },
+        { at: '../../games/puzzle/TinyCrush3d.ml', role: 'drawn as a 3D scene' },
+      ],
+      joints: [
+        { from: 'Crush.ml', to: 'Crush.mli', say: 'implements' },
+        { from: '../../games/puzzle/TinyCrush.ml', to: 'Crush.mli', say: 'the keys read, a frame stepped' },
+        { from: '../../games/puzzle/TinyCrush3d.ml', to: 'Crush.mli', say: 'the keys read, a frame stepped' },
+      ],
+    },
+    {
+      name: 'Slices crushed into one plane, and walked',
+      bones: [
+        { at: 'Crush.ml:type:level', role: 'slices of strings: a 3D level' },
+        { at: 'Crush.ml:def:plane', role: 'the plane played on: one slice or all crushed' },
+        { at: 'Crush.ml:type:play', role: 'Danny: plane coordinates, depth, crushed or not' },
+        { at: 'Crush.ml:def:crush', role: 'refused if he would be inside a block' },
+        { at: 'Crush.ml:def:uncrush', role: 'back into the slice under his feet' },
+        { at: 'Crush.ml:def:step', role: 'a frame: the crush animated, or keys, gravity, tiles' },
+        { at: 'Crush.ml:def:frame', role: 'the step, then fell, exit or on' },
+      ],
+      joints: [
+        { from: 'Crush.ml:type:level', to: 'Crush.ml:def:plane', say: 'the slices' },
+        { from: 'Crush.ml:def:frame', to: 'Crush.ml:def:step', say: 'the input' },
+        { from: 'Crush.ml:def:step', to: 'Crush.ml:def:crush', say: 'c, on the ground' },
+        { from: 'Crush.ml:def:step', to: 'Crush.ml:def:uncrush', say: 'c again' },
+        { from: 'Crush.ml:def:plane', to: 'Crush.ml:def:step', say: 'the tiles to collide with' },
+        { from: 'Crush.ml:def:step', to: 'Crush.ml:type:play', say: 'the next play' },
+      ],
+    },
+  ],
 }

@@ -25,4 +25,36 @@
   dirs: {
     tests: { summary: "The kit's tests: sentences run against a small world." },
   },
+  skeletons: [
+    {
+      name: 'The kit and its two front ends: typed words, clicked verbs',
+      bones: [
+        { at: 'Adventure.mli', role: 'the model both games share: world, sentence, rule' },
+        { at: 'Adventure.ml', role: 'association lists; the rules tried in order' },
+        { at: '../../games/adventure/TinyZork.ml:def:parse', role: 'typed words made a sentence' },
+        { at: '../../games/adventure/TinyManiacMansion.ml:def:do_sentence', role: 'a clicked verb and object made a sentence' },
+      ],
+      joints: [
+        { from: 'Adventure.ml', to: 'Adventure.mli', say: 'implements' },
+        { from: '../../games/adventure/TinyZork.ml:def:parse', to: 'Adventure.mli', say: 'a sentence to run' },
+        { from: '../../games/adventure/TinyManiacMansion.ml:def:do_sentence', to: 'Adventure.mli', say: 'a sentence to run' },
+      ],
+    },
+    {
+      name: 'A sentence answered: the first rule that matches acts',
+      bones: [
+        { at: 'Adventure.ml:type:world', role: 'the state: where you are, where each thing is, flags' },
+        { at: 'Adventure.ml:type:sentence', role: 'what the player said: verb, object, with' },
+        { at: 'Adventure.ml:type:rule', role: 'a pattern, a test, an act' },
+        { at: 'Adventure.ml:def:visible', role: 'only what is seen may be named' },
+        { at: 'Adventure.ml:def:run', role: 'the rules tried in order' },
+      ],
+      joints: [
+        { from: 'Adventure.ml:type:sentence', to: 'Adventure.ml:def:run', say: 'the sentence' },
+        { from: 'Adventure.ml:type:rule', to: 'Adventure.ml:def:run', say: 'the game\'s rules' },
+        { from: 'Adventure.ml:def:run', to: 'Adventure.ml:def:visible', say: 'is each object here?' },
+        { from: 'Adventure.ml:def:run', to: 'Adventure.ml:type:world', say: 'the next world, and a reply' },
+      ],
+    },
+  ],
 }

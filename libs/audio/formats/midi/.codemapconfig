@@ -25,4 +25,23 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'MIDI: bytes to a score, a tune to bytes',
+      bones: [
+        { at: 'Midi.ml:type:score', role: 'notes in seconds, the duration' },
+        { at: 'Midi.ml:def:read_vlq', role: 'a variable-length time' },
+        { at: 'Midi.ml:def:track_events', role: 'a track: running status, notes paired on and off' },
+        { at: 'Midi.ml:def:parse', role: 'the header, the tracks, ticks to seconds' },
+        { at: 'Midi.ml:def:of_tune', role: 'an ABC tune written as a MIDI file' },
+        { at: 'Midi.ml:def:vlq', role: 'a time written' },
+      ],
+      joints: [
+        { from: 'Midi.ml:def:parse', to: 'Midi.ml:def:track_events', say: 'each MTrk' },
+        { from: 'Midi.ml:def:track_events', to: 'Midi.ml:def:read_vlq', say: 'each delta' },
+        { from: 'Midi.ml:def:parse', to: 'Midi.ml:type:score', say: 'the notes' },
+        { from: 'Midi.ml:def:of_tune', to: 'Midi.ml:def:vlq', say: 'each delta' },
+      ],
+    },
+  ],
 }

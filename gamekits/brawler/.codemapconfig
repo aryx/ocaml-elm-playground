@@ -49,4 +49,40 @@
     '3d': { summary: 'A fighter as a skeleton of boxes, poses interpolated between keyframes (Virtua Fighter).' },
     tests: { summary: "The kit's tests: phases, overlaps, poses." },
   },
+  skeletons: [
+    {
+      name: 'The fighting kit: a move is frames, a hit is two boxes',
+      bones: [
+        { at: 'Frame_data.ml', role: 'a move as startup, active, recovery frames' },
+        { at: 'Hitbox.ml', role: "a move's reach and a body, overlapping or not" },
+        { at: 'Stickman.ml', role: 'a fighter drawn: poses between keyframes' },
+        { at: '../../games/fighting/TinyStreetFighter.ml', role: 'the one-on-one fighter' },
+        { at: '../../games/fighting/TinyFinalFight.ml', role: "the beat 'em up" },
+        { at: '3d', role: 'the same poses in 3D, a skeleton of boxes' },
+      ],
+      joints: [
+        { from: 'Frame_data.ml', to: 'Hitbox.ml', say: 'the active frames carry a hitbox' },
+        { from: '../../games/fighting/TinyStreetFighter.ml', to: 'Frame_data.ml', say: 'which phase, this frame' },
+        { from: '../../games/fighting/TinyStreetFighter.ml', to: 'Stickman.ml', say: "the move's poses" },
+        { from: '../../games/fighting/TinyFinalFight.ml', to: 'Stickman.ml', say: "the move's poses" },
+        { from: '../../games/fighting/TinyFinalFight.ml', to: 'Hitbox.ml', say: 'did the punch land?' },
+      ],
+    },
+    {
+      name: 'A stick figure: keyframes, a pose, its joints, a drawing',
+      bones: [
+        { at: 'Stickman.ml:type:pose', role: 'the lean and each limb: two angles' },
+        { at: 'Stickman.ml:def:at', role: "a move's keyframes read at a frame" },
+        { at: 'Stickman.ml:def:lerp', role: 'between two keyframes' },
+        { at: 'Stickman.ml:def:joints', role: 'angles made points, the lowest foot on the ground' },
+        { at: 'Stickman.ml:def:draw', role: 'segments and a head, the back limbs darker' },
+      ],
+      joints: [
+        { from: 'Stickman.ml:def:at', to: 'Stickman.ml:def:lerp', say: 'the two keyframes around the frame' },
+        { from: 'Stickman.ml:def:lerp', to: 'Stickman.ml:type:pose', say: 'the pose now' },
+        { from: 'Stickman.ml:type:pose', to: 'Stickman.ml:def:joints', say: 'the angles' },
+        { from: 'Stickman.ml:def:joints', to: 'Stickman.ml:def:draw', say: 'the points, facing either way' },
+      ],
+    },
+  ],
 }

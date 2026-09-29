@@ -246,5 +246,170 @@
         { from: 'Layout.ml:def:arrange', to: 'Widget.mli:type:box', say: 'a box per leaf' },
       ],
     },
+    // claude: a skeleton per module of the toolkit (the pass giving every
+    // module its own)
+    {
+      name: 'A widget: a box, the input it sees, the paint it returns',
+      bones: [
+        { at: 'Widget.ml:type:box', role: 'a centred rectangle: the hub of every GUI' },
+        { at: 'Widget.ml:def:contains', role: 'the hit test' },
+        { at: 'Widget.ml:type:id', role: 'a widget named by where it is' },
+        { at: 'Widget.ml:type:input', role: "the frame's mouse, keys and typing" },
+        { at: 'Widget.ml:type:paint', role: 'fills, texts, discs, segments: drawn by the host' },
+        { at: 'Widget.ml:def:frame', role: 'a border as four fills' },
+      ],
+      joints: [
+        { from: 'Widget.ml:type:box', to: 'Widget.ml:type:id', say: 'names it' },
+        { from: 'Widget.ml:type:input', to: 'Widget.ml:def:contains', say: 'the mouse' },
+        { from: 'Widget.ml:def:frame', to: 'Widget.ml:type:paint', say: 'gives' },
+      ],
+    },
+    {
+      name: 'A look in one record',
+      bones: [
+        { at: 'Theme.ml:type:t', role: 'faces, edges, sizes: every widget reads it' },
+        { at: 'Theme.ml:def:default', role: 'the greys' },
+        { at: '../core/Color.ml:def:rgb', role: 'each colour made of' },
+      ],
+      joints: [
+        { from: 'Theme.ml:def:default', to: 'Theme.ml:type:t', say: 'a value of' },
+        { from: 'Theme.ml:def:default', to: '../core/Color.ml:def:rgb', say: 'colours' },
+      ],
+    },
+    {
+      name: 'Paint given the state: no mouse, no frame',
+      bones: [
+        { at: 'Look.ml:def:face', role: 'the face: plain, hot or held' },
+        { at: 'Look.ml:def:button', role: 'a face, a frame, a text' },
+        { at: 'Look.ml:def:dial', role: 'knobs and selectors: a disc and a pointer' },
+        { at: 'Look.ml:def:advance', role: 'a character a cell: where the caret goes' },
+        { at: 'Look.ml:def:field', role: 'a field scrolled to its caret' },
+        { at: 'Look.ml:def:field_column_at', role: 'a click back to a column' },
+        { at: 'Look.ml:def:menu_items', role: 'a menu open over the rest' },
+      ],
+      joints: [
+        { from: 'Look.ml:def:button', to: 'Look.ml:def:face', say: 'colour' },
+        { from: 'Look.ml:def:field', to: 'Look.ml:def:advance', say: 'cells' },
+        { from: 'Look.ml:def:field_column_at', to: 'Look.ml:def:advance', say: 'cells' },
+      ],
+    },
+    {
+      name: 'Immediate mode: asked each frame, the capture decides',
+      bones: [
+        { at: 'Immediate.ml:type:t', role: "the toolkit's state between frames: capture, focus, paint" },
+        { at: 'Immediate.ml:type:capture', role: 'who has the mouse' },
+        { at: 'Immediate.ml:def:frame', role: "a frame begins: the press, Tab, the release's focus" },
+        { at: 'Immediate.ml:def:interact', role: 'hot, held, clicked: the only place the capture changes' },
+        { at: 'Immediate.ml:def:button', role: 'a widget: interact, draw, answer' },
+        { at: 'Immediate.ml:def:draw', role: 'paint collected in order' },
+        { at: 'Immediate.ml:def:paint', role: 'the frame, and the overlay on top' },
+      ],
+      joints: [
+        { from: 'Immediate.ml:def:frame', to: 'Immediate.ml:type:t', say: 'a new frame' },
+        { from: 'Immediate.ml:def:button', to: 'Immediate.ml:def:interact', say: 'the mouse' },
+        { from: 'Immediate.ml:def:interact', to: 'Immediate.ml:type:capture', say: 'claims' },
+        { from: 'Immediate.ml:def:button', to: 'Immediate.ml:def:draw', say: 'Look.button' },
+        { from: 'Immediate.ml:def:draw', to: 'Immediate.ml:def:paint', say: 'collected' },
+      ],
+    },
+    {
+      name: 'Retained: a tree of mutable widgets, callbacks fired',
+      bones: [
+        { at: 'Retained.ml:type:kind', role: 'what a widget is, with its callback' },
+        { at: 'Retained.ml:type:t', role: "a widget: its own state, kept" },
+        { at: 'Retained.ml:type:ui', role: 'the root and last frame\'s mouse' },
+        { at: 'Retained.ml:def:make', role: 'every constructor builds one' },
+        { at: 'Retained.ml:def:leaves', role: 'the shown widgets, in tab order' },
+        { at: 'Retained.ml:def:handle', role: 'a frame: hit test, callbacks fire' },
+        { at: 'Retained.ml:def:paint', role: 'the tree walked, Look per widget' },
+      ],
+      joints: [
+        { from: 'Retained.ml:def:make', to: 'Retained.ml:type:t', say: 'builds' },
+        { from: 'Retained.ml:def:handle', to: 'Retained.ml:def:leaves', say: 'walks' },
+        { from: 'Retained.ml:def:handle', to: 'Retained.ml:type:kind', say: 'calls back' },
+        { from: 'Retained.ml:def:paint', to: 'Retained.ml:def:leaves', say: 'walks' },
+      ],
+    },
+    {
+      name: 'MVU: the view read for messages, folded, viewed again',
+      bones: [
+        { at: 'Mvu.ml:type:element', role: 'the view: widgets carrying messages' },
+        { at: 'Mvu.ml:type:t', role: "what the view can't hold: focus, press, open menu" },
+        { at: 'Mvu.ml:def:leaves', role: 'the view flattened' },
+        { at: 'Mvu.ml:def:events', role: "one frame's input into messages, and the paint" },
+        { at: 'Mvu.ml:def:step', role: 'the loop: events, update, view again' },
+      ],
+      joints: [
+        { from: 'Mvu.ml:def:step', to: 'Mvu.ml:def:events', say: 'the view of the model' },
+        { from: 'Mvu.ml:def:events', to: 'Mvu.ml:def:leaves', say: 'each element' },
+        { from: 'Mvu.ml:type:element', to: 'Mvu.ml:def:events', say: 'read' },
+        { from: 'Mvu.ml:def:events', to: 'Mvu.ml:type:t', say: 'the new state' },
+      ],
+    },
+    {
+      name: "Focus: last frame's order is what Tab walks",
+      bones: [
+        { at: 'Focus.ml:type:t', role: 'who has it, this frame\'s order, last frame\'s' },
+        { at: 'Focus.ml:def:frame', role: 'the order becomes last' },
+        { at: 'Focus.ml:def:saw', role: 'a widget asked for, in order' },
+        { at: 'Focus.ml:def:after', role: 'the next one, wrapping round' },
+        { at: 'Focus.ml:def:next', role: 'Tab' },
+      ],
+      joints: [
+        { from: 'Focus.ml:def:saw', to: 'Focus.ml:type:t', say: 'order' },
+        { from: 'Focus.ml:def:frame', to: 'Focus.ml:type:t', say: 'last' },
+        { from: 'Focus.ml:def:next', to: 'Focus.ml:def:after', say: 'in last' },
+      ],
+    },
+    {
+      name: "Tk's grid: tracks sized, the rest shared by weight",
+      bones: [
+        { at: 'Grid.ml:type:item', role: 'a cell: row, column, span, sticky' },
+        { at: 'Grid.ml:def:tracks', role: 'one axis: single cells first, spans grow the last' },
+        { at: 'Grid.ml:def:make', role: 'widths and heights settled' },
+        { at: 'Grid.ml:def:grown', role: 'the room left, by weight' },
+        { at: 'Grid.ml:def:arrange', role: 'each item its box, sticky to its sides' },
+      ],
+      joints: [
+        { from: 'Grid.ml:type:item', to: 'Grid.ml:def:make', say: 'items' },
+        { from: 'Grid.ml:def:make', to: 'Grid.ml:def:tracks', say: 'each axis' },
+        { from: 'Grid.ml:def:arrange', to: 'Grid.ml:def:grown', say: 'the box given' },
+      ],
+    },
+    {
+      name: 'UTF-8 in cells: a character, a column',
+      bones: [
+        { at: 'Text.ml:def:continues', role: 'a byte 10xxxxxx continues a character' },
+        { at: 'Text.ml:def:next_char', role: 'a character forward' },
+        { at: 'Text.ml:def:prev_char', role: 'and back' },
+        { at: 'Text.ml:def:column', role: 'a byte offset as a column' },
+        { at: 'Text.ml:def:byte_of_column', role: 'and back: where a click puts the caret' },
+        { at: 'Text.ml:def:edit', role: "a frame's typing applied to a field" },
+      ],
+      joints: [
+        { from: 'Text.ml:def:next_char', to: 'Text.ml:def:continues', say: 'skips' },
+        { from: 'Text.ml:def:byte_of_column', to: 'Text.ml:def:next_char', say: 'steps' },
+        { from: 'Text.ml:def:edit', to: 'Text.ml:def:prev_char', say: 'Backspace' },
+      ],
+    },
+    {
+      name: 'A piece table: split and spliced, undo the old list',
+      bones: [
+        { at: 'Text_edit.ml:type:piece', role: 'a span of the original or the added' },
+        { at: 'Text_edit.ml:type:t', role: 'two buffers, the pieces, caret, past and future' },
+        { at: 'Text_edit.ml:def:split', role: 'the only surgery: a piece cut at a position' },
+        { at: 'Text_edit.ml:def:raw_insert', role: 'appended, a piece spliced in (or extended)' },
+        { at: 'Text_edit.ml:def:insert', role: 'the selection replaced, remembered' },
+        { at: 'Text_edit.ml:def:remember', role: 'the pieces kept for undo' },
+        { at: 'Text_edit.ml:def:undo', role: 'the old list back' },
+      ],
+      joints: [
+        { from: 'Text_edit.ml:def:insert', to: 'Text_edit.ml:def:remember', say: 'first' },
+        { from: 'Text_edit.ml:def:insert', to: 'Text_edit.ml:def:raw_insert', say: 'then' },
+        { from: 'Text_edit.ml:def:raw_insert', to: 'Text_edit.ml:def:split', say: 'at the caret' },
+        { from: 'Text_edit.ml:def:remember', to: 'Text_edit.ml:def:undo', say: 'past' },
+        { from: 'Text_edit.ml:def:split', to: 'Text_edit.ml:type:piece', say: 'cuts' },
+      ],
+    },
   ],
 }

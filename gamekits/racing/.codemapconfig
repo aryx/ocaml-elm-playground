@@ -73,4 +73,90 @@
     '3d': { summary: 'A course as a ribbon in space, with a width, a height and a bank (Mario Kart 64, Star Fox).' },
     tests: { summary: "The kit's tests: roads built, cars driven, laps counted." },
   },
+  skeletons: [
+    {
+      name: 'Three roads: pseudo-3D ahead, from above, and with hills',
+      bones: [
+        { at: 'Road.ml', role: "OutRun's road: sections of curve and hill, as segments" },
+        { at: 'Car.ml', role: 'a car on that road: along it and across it' },
+        { at: 'Topdown.ml', role: 'a car seen from above: grip, walls, a computer driver' },
+        { at: 'Offroad.ml', role: 'Topdown with a height: slopes, jumps, landing' },
+        { at: '3d', role: 'a course as a 3D ribbon, built from controls or a Road' },
+        { at: '../../games/racing/TinyOutRun.ml', role: 'drives Car on Road' },
+        { at: '../../games/racing/TinyMicroMachines.ml', role: 'drives Topdown (and Super Sprint, GTA...)' },
+      ],
+      joints: [
+        { from: 'Car.ml', to: 'Road.ml', say: "the segment's curve pushes out" },
+        { from: 'Offroad.ml', to: 'Topdown.ml', say: 'the body it lifts' },
+        { from: '3d', to: 'Road.ml', say: 'of_road: the coast as a stage' },
+        { from: '../../games/racing/TinyOutRun.ml', to: 'Car.ml', say: 'the keys, each frame' },
+        { from: '../../games/racing/TinyMicroMachines.ml', to: 'Topdown.ml', say: 'gas and steer' },
+      ],
+    },
+    {
+      name: 'A car on the pseudo-3D road',
+      bones: [
+        { at: 'Car.ml:type:t', role: 'along the road, across it, the speed' },
+        { at: 'Car.ml:type:params', role: 'accelerations tuned to a segment length' },
+        { at: 'Car.ml:def:drive', role: 'a frame: steer, the curve pushing out, the grass' },
+        { at: 'Road.ml:def:segment_at', role: 'the segment under the car' },
+      ],
+      joints: [
+        { from: 'Car.ml:type:params', to: 'Car.ml:def:drive', say: 'the tuning' },
+        { from: 'Car.ml:def:drive', to: 'Road.ml:def:segment_at', say: 'its curve' },
+        { from: 'Car.ml:def:drive', to: 'Car.ml:type:t', say: 'the next car' },
+      ],
+    },
+    {
+      name: 'A road: sections eased into segments, then into space',
+      bones: [
+        { at: 'Road.ml:type:section', role: 'enter, hold, leave; a curve and a hill' },
+        { at: 'Road.ml:def:build', role: 'each section eased in and out, segment by segment' },
+        { at: 'Road.ml:type:t', role: 'the segments, their heights and curves' },
+        { at: 'Road.ml:def:segment_at', role: 'the segment at a distance, wrapping' },
+        { at: 'Road.ml:def:centerline', role: 'curves turned into headings: the road in space' },
+      ],
+      joints: [
+        { from: 'Road.ml:type:section', to: 'Road.ml:def:build', say: 'the course' },
+        { from: 'Road.ml:def:build', to: 'Road.ml:type:t', say: 'the segments' },
+        { from: 'Road.ml:type:t', to: 'Road.ml:def:segment_at', say: 'a distance' },
+        { from: 'Road.ml:type:t', to: 'Road.ml:def:centerline', say: 'for Track3d and the 3D coast' },
+      ],
+    },
+    {
+      name: 'A car from above: driven, bounced, followed round',
+      bones: [
+        { at: 'Topdown.ml:type:t', role: 'position, velocity, heading, the next waypoint' },
+        { at: 'Topdown.ml:def:drive', role: 'gas and steer; the grip pulls velocity to heading' },
+        { at: 'Topdown.ml:def:bounce', role: 'a wall: back out on one axis, halved' },
+        { at: 'Topdown.ml:type:track', role: 'waypoints round the course' },
+        { at: 'Topdown.ml:def:follow', role: 'the next waypoint when near' },
+        { at: 'Topdown.ml:def:computer', role: 'a driver: aim past the next waypoint' },
+      ],
+      joints: [
+        { from: 'Topdown.ml:def:computer', to: 'Topdown.ml:def:drive', say: 'gas and steer' },
+        { from: 'Topdown.ml:def:drive', to: 'Topdown.ml:def:bounce', say: 'before and after' },
+        { from: 'Topdown.ml:def:bounce', to: 'Topdown.ml:def:follow', say: 'the car moved' },
+        { from: 'Topdown.ml:type:track', to: 'Topdown.ml:def:computer', say: 'the waypoints' },
+      ],
+    },
+    {
+      name: 'Off-road: a top-down car given a height',
+      bones: [
+        { at: 'Offroad.ml:type:ground', role: 'the height at a point, and gravity' },
+        { at: 'Offroad.ml:type:t', role: 'a Topdown body, its height, in the air or not' },
+        { at: 'Offroad.ml:def:drive', role: 'on the ground or in the air' },
+        { at: 'Offroad.ml:def:on_ground', role: 'the slope slows or speeds; a crest launches' },
+        { at: 'Offroad.ml:def:in_air', role: 'a ballistic hop, then landing' },
+        { at: 'Offroad.ml:def:pose', role: 'pitch and roll, for the drawing' },
+      ],
+      joints: [
+        { from: 'Offroad.ml:def:drive', to: 'Offroad.ml:def:on_ground', say: 'not air' },
+        { from: 'Offroad.ml:def:drive', to: 'Offroad.ml:def:in_air', say: 'air' },
+        { from: 'Offroad.ml:type:ground', to: 'Offroad.ml:def:on_ground', say: 'the slope' },
+        { from: 'Offroad.ml:def:on_ground', to: 'Offroad.ml:type:t', say: 'flying, or on the ground' },
+        { from: 'Offroad.ml:type:t', to: 'Offroad.ml:def:pose', say: 'how it tilts' },
+      ],
+    },
+  ],
 }

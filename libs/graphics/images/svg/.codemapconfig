@@ -29,4 +29,26 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'XML to a tree, the tree to coverage, coverage to colour',
+      bones: [
+        { at: 'Svg.ml:def:parse', role: 'the text: its <svg> element' },
+        { at: 'Svg.ml:type:node', role: 'an element: name, attributes, children' },
+        { at: 'Svg.ml:def:render', role: 'the viewBox fitted, the tree drawn, unpremultiplied' },
+        { at: 'Svg.ml:def:draw', role: 'style inherited, transform composed, fill then stroke' },
+        { at: 'Svg.ml:def:shape', role: 'rect, circle, path... as contours' },
+        { at: 'Svg.ml:def:paint_contours', role: 'coverage as white on black, laid over' },
+        { at: '../../2d/Fill.ml:def:polygons_aa', role: 'the antialiased filler' },
+      ],
+      joints: [
+        { from: 'Svg.ml:def:parse', to: 'Svg.ml:type:node', say: 'the tree' },
+        { from: 'Svg.ml:def:render', to: 'Svg.ml:def:draw', say: 'each child' },
+        { from: 'Svg.ml:def:draw', to: 'Svg.ml:def:shape', say: 'the transform so far' },
+        { from: 'Svg.ml:def:draw', to: 'Svg.ml:def:paint_contours', say: 'fill; Stroke.contours for a stroke' },
+        { from: 'Svg.ml:def:paint_contours', to: '../../2d/Fill.ml:def:polygons_aa', say: 'the rule' },
+        { from: 'Svg.ml:def:draw', to: 'Svg.ml:def:draw', say: 'the children' },
+      ],
+    },
+  ],
 }

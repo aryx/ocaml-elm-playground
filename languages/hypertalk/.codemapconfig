@@ -42,4 +42,39 @@
   dirs: {
     tests: { summary: 'Scripts parsed and run against a world of strings: the path, pass, loops.' },
   },
+  skeletons: [
+    {
+      name: 'HyperTalk and its two stacks',
+      bones: [
+        { at: 'Hypertalk.mli', role: 'scripts parsed, messages sent, a world given as functions' },
+        { at: 'Hypertalk.ml', role: 'the parser and the message passing' },
+        { at: '../../apps/office/TinyHyperCard.ml', role: 'cards, fields and buttons: the world' },
+        { at: '../../games/adventure/TinyMyst.ml', role: 'an island as a stack of cards' },
+      ],
+      joints: [
+        { from: 'Hypertalk.ml', to: 'Hypertalk.mli', say: 'implements' },
+        { from: '../../apps/office/TinyHyperCard.ml', to: 'Hypertalk.mli', say: 'mouseUp, along the path' },
+        { from: '../../games/adventure/TinyMyst.ml', to: 'Hypertalk.mli', say: 'a click, along the path' },
+      ],
+    },
+    {
+      name: 'A message up the path: button, card, stack',
+      bones: [
+        { at: 'Hypertalk.ml:def:parse', role: 'a script into handlers: on mouseUp ... end' },
+        { at: 'Hypertalk.ml:type:handler', role: 'a message name, its statements' },
+        { at: 'Hypertalk.ml:type:world', role: 'fields, go, answer: the host as functions' },
+        { at: 'Hypertalk.ml:def:send_depth', role: 'the first script handling it; pass goes on' },
+        { at: 'Hypertalk.ml:def:exec', role: 'put, go, if, repeat, answer...' },
+        { at: 'Hypertalk.ml:def:eval', role: 'every value a string' },
+      ],
+      joints: [
+        { from: 'Hypertalk.ml:def:parse', to: 'Hypertalk.ml:type:handler', say: 'the handlers' },
+        { from: 'Hypertalk.ml:type:handler', to: 'Hypertalk.ml:def:send_depth', say: 'looked up by name' },
+        { from: 'Hypertalk.ml:def:send_depth', to: 'Hypertalk.ml:def:exec', say: "the handler's statements" },
+        { from: 'Hypertalk.ml:def:exec', to: 'Hypertalk.ml:def:eval', say: 'expressions' },
+        { from: 'Hypertalk.ml:def:exec', to: 'Hypertalk.ml:type:world', say: 'the world changed' },
+        { from: 'Hypertalk.ml:def:exec', to: 'Hypertalk.ml:def:send_depth', say: 'a message sent' },
+      ],
+    },
+  ],
 }

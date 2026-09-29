@@ -238,5 +238,24 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: '../../playground/ways/Teletype.ml:def:teletype', to: 'TinyBasic.ml:def:view', say: 'the screen' },
       ],
     },
+    {
+      name: "Scratch_look: the pieces drawn, and the stage",
+      bones: [
+        { at: "Scratch_look.ml:type:theme", role: "Scratch 2's colours or Snap!'s, zebra or not" },
+        { at: "Scratch_look.ml:def:pieces_shapes", role: "Block_layout's pieces drawn: bodies, labels, slots" },
+        { at: "Scratch_look.ml:def:body", role: "a block's shape by its kind: command, reporter, predicate, hat, ring" },
+        { at: "Scratch_look.ml:def:outline", role: "a command block's outline: notch, tab, C arms" },
+        { at: "Scratch_look.ml:def:zebras", role: "Snap!'s zebra: a block in its own colour's slot, lighter" },
+        { at: "Scratch_look.ml:def:stage_shapes", role: "the stage: pen ink, sprites, speech bubbles" },
+        { at: "Scratch_look.ml:def:sprite_shapes", role: "a sprite: its costume turned and scaled" },
+      ],
+      joints: [
+        { from: "Scratch_look.ml:def:pieces_shapes", to: "Scratch_look.ml:def:zebras", say: "first" },
+        { from: "Scratch_look.ml:def:pieces_shapes", to: "Scratch_look.ml:def:body", say: "each body" },
+        { from: "Scratch_look.ml:def:body", to: "Scratch_look.ml:def:outline", say: "commands" },
+        { from: "Scratch_look.ml:def:pieces_shapes", to: "Scratch_look.ml:type:theme", say: "colours" },
+        { from: "Scratch_look.ml:def:stage_shapes", to: "Scratch_look.ml:def:sprite_shapes", say: "each sprite" },
+      ],
+    },
   ],
 }

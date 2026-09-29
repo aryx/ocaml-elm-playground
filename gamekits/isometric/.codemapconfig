@@ -26,4 +26,41 @@
   dirs: {
     tests: { summary: "The kit's tests: projected and back again." },
   },
+  skeletons: [
+    {
+      name: 'The isometric kit and the three games it draws',
+      bones: [
+        { at: 'Isometric.mli', role: 'a view, a point projected, sorted, seen through' },
+        { at: 'Isometric.ml', role: 'two lines of arithmetic, and their inverse' },
+        { at: '../../games/shmup/TinyZaxxon.ml', role: 'a fortress flown over, its shadow the altimeter' },
+        { at: '../../games/rpg/TinyDiablo.ml', role: 'a dungeon clicked on: the ground under the mouse' },
+        { at: '../../games/racing/TinySuperOffRoad.ml', role: 'a track seen from one corner' },
+      ],
+      joints: [
+        { from: 'Isometric.ml', to: 'Isometric.mli', say: 'implements' },
+        { from: '../../games/shmup/TinyZaxxon.ml', to: 'Isometric.mli', say: 'follow, sorted, sight' },
+        { from: '../../games/rpg/TinyDiablo.ml', to: 'Isometric.mli', say: 'at, ground' },
+        { from: '../../games/racing/TinySuperOffRoad.ml', to: 'Isometric.mli', say: 'project, depth, sorted' },
+      ],
+    },
+    {
+      name: 'A world seen from one fixed angle',
+      bones: [
+        { at: 'Isometric.ml:type:t', role: 'the view: two screen axes, up, an origin' },
+        { at: 'Isometric.ml:def:project', role: 'the two lines the whole kit is' },
+        { at: 'Isometric.ml:def:shadow', role: 'the height given back: the point at y = 0' },
+        { at: 'Isometric.ml:def:ground', role: 'the lines run backwards: screen to floor' },
+        { at: 'Isometric.ml:def:depth', role: 'along the one direction toward the eye' },
+        { at: 'Isometric.ml:def:sorted', role: 'painted back to front' },
+        { at: 'Isometric.ml:def:sight', role: 'where the line of sight meets a plane' },
+      ],
+      joints: [
+        { from: 'Isometric.ml:type:t', to: 'Isometric.ml:def:project', say: 'the axes' },
+        { from: 'Isometric.ml:def:project', to: 'Isometric.ml:def:shadow', say: 'the same point, on the floor' },
+        { from: 'Isometric.ml:type:t', to: 'Isometric.ml:def:ground', say: 'inverted' },
+        { from: 'Isometric.ml:def:depth', to: 'Isometric.ml:def:sorted', say: 'each shape keyed' },
+        { from: 'Isometric.ml:type:t', to: 'Isometric.ml:def:sight', say: 'the eye direction' },
+      ],
+    },
+  ],
 }

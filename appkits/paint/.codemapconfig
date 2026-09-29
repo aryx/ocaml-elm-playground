@@ -82,4 +82,86 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "MacPaint's kit: the bitmap, the patterns, the tools, the fill",
+      bones: [
+        { at: "Bitmap.ml", role: "the 1-bit picture, eight dots a byte, and as rectangles to draw" },
+        { at: "Pattern.ml", role: "an 8 by 8 tile of dots: the ink every tool paints with" },
+        { at: "Paint.ml", role: "the tools: brush strokes, rectangles, ovals, through a pattern" },
+        { at: "Seed_fill.ml", role: "the paint bucket: the area found span by span, then painted" },
+        { at: "../../apps/graphics/TinyMacPaint.ml", role: "MacPaint" },
+        { at: "../../apps/office/Part_picture.ml", role: "the office's picture part" },
+      ],
+      joints: [
+        { from: "Paint.ml", to: "Pattern.ml", say: "which dots are black" },
+        { from: "Paint.ml", to: "Bitmap.ml", say: "set" },
+        { from: "Seed_fill.ml", to: "Paint.ml", say: "dot" },
+        { from: "Seed_fill.ml", to: "Bitmap.ml", say: "the area" },
+        { from: "../../apps/graphics/TinyMacPaint.ml", to: "Paint.ml", say: "the tools" },
+        { from: "../../apps/office/Part_picture.ml", to: "Bitmap.ml", say: "drawn as rectangles" },
+      ],
+    },
+    {
+      name: "Bitmap: dots in bytes, and runs grown into rectangles",
+      bones: [
+        { at: "Bitmap.ml:type:t", role: "width, height, rows of bytes" },
+        { at: "Bitmap.ml:def:get", role: "a dot: its byte and its bit" },
+        { at: "Bitmap.ml:def:set", role: "a dot set, inside only" },
+        { at: "Bitmap.ml:def:change", role: "a copy changed: the picture stays a value" },
+        { at: "Bitmap.ml:def:runs", role: "a row's runs of black" },
+        { at: "Bitmap.ml:def:rectangles", role: "runs grown down while the next row repeats them: few shapes to draw" },
+      ],
+      joints: [
+        { from: "Bitmap.ml:def:get", to: "Bitmap.ml:type:t", say: "reads" },
+        { from: "Bitmap.ml:def:set", to: "Bitmap.ml:type:t", say: "writes" },
+        { from: "Bitmap.ml:def:rectangles", to: "Bitmap.ml:def:runs", say: "each row" },
+        { from: "Bitmap.ml:def:runs", to: "Bitmap.ml:def:get", say: "each dot" },
+      ],
+    },
+    {
+      name: "Paint: every tool a set of dots, each through the pattern",
+      bones: [
+        { at: "Paint.ml:def:dot", role: "a dot painted: the pattern's bit at that place" },
+        { at: "Paint.ml:def:line_dots", role: "Bresenham's line" },
+        { at: "Paint.ml:def:stroke", role: "the brush stamped along the line" },
+        { at: "Paint.ml:def:fill_rect", role: "a rectangle filled" },
+        { at: "Paint.ml:def:oval_dots", role: "an oval's dots, all or its edge" },
+        { at: "Paint.ml:def:in_oval", role: "a dot's centre inside the ellipse" },
+      ],
+      joints: [
+        { from: "Paint.ml:def:stroke", to: "Paint.ml:def:line_dots", say: "the path" },
+        { from: "Paint.ml:def:stroke", to: "Paint.ml:def:dot", say: "each brush dot" },
+        { from: "Paint.ml:def:fill_rect", to: "Paint.ml:def:dot", say: "each" },
+        { from: "Paint.ml:def:oval_dots", to: "Paint.ml:def:in_oval", say: "each dot tested" },
+        { from: "Paint.ml:def:oval_dots", to: "Paint.ml:def:dot", say: "painted" },
+      ],
+    },
+    {
+      name: "Pattern: eight bytes, a tile of dots",
+      bones: [
+        { at: "Pattern.ml:type:t", role: "eight rows of eight bits" },
+        { at: "Pattern.ml:def:black", role: "is the dot at x, y black: the tile repeated" },
+        { at: "Pattern.ml:def:make", role: "a pattern from its eight rows" },
+        { at: "Pattern.ml:def:palette", role: "MacPaint's patterns: greys, lines, bricks, a weave" },
+      ],
+      joints: [
+        { from: "Pattern.ml:def:palette", to: "Pattern.ml:def:make", say: "each" },
+        { from: "Pattern.ml:def:make", to: "Pattern.ml:type:t", say: "made" },
+        { from: "Pattern.ml:def:black", to: "Pattern.ml:type:t", say: "reads" },
+      ],
+    },
+    {
+      name: "Seed_fill: the area span by span, then painted",
+      bones: [
+        { at: "Seed_fill.ml:def:area", role: "the mask: a span wall to wall, a seed per run above and below" },
+        { at: "Seed_fill.ml:def:fill", role: "the mask painted with the pattern" },
+        { at: "Paint.ml:def:dot", role: "a dot painted" },
+      ],
+      joints: [
+        { from: "Seed_fill.ml:def:fill", to: "Seed_fill.ml:def:area", say: "first" },
+        { from: "Seed_fill.ml:def:fill", to: "Paint.ml:def:dot", say: "each dot of the mask" },
+      ],
+    },
+  ],
 }

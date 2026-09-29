@@ -28,4 +28,42 @@
       ],
     },
   },
+  skeletons: [
+    // claude: the folder: one module shared by every language's highlighter
+    {
+      name: "What a language's highlighter gives the code map",
+      bones: [
+        { at: 'Highlight_code.mli', role: 'the contract: categories and an analysis' },
+        { at: 'Highlight_code.ml', role: 'the colours, and tokens cut into lines' },
+        { at: '../../../languages/ocaml/Highlight_ml.ml', role: "OCaml's highlighter, one producer" },
+        { at: '../../../languages/c/Highlight_c.ml', role: "C's, another" },
+        { at: '../../../launcher/codemap/Code_file.ml', role: 'the consumer: a file on the map' },
+      ],
+      joints: [
+        { from: 'Highlight_code.ml', to: 'Highlight_code.mli', say: 'implements' },
+        { from: '../../../languages/ocaml/Highlight_ml.ml', to: 'Highlight_code.mli', say: 'produces an analysis' },
+        { from: '../../../languages/c/Highlight_c.ml', to: 'Highlight_code.mli', say: 'produces an analysis' },
+        { from: '../../../launcher/codemap/Code_file.ml', to: 'Highlight_code.mli', say: 'reads' },
+      ],
+    },
+    {
+      name: 'An analysis: coloured spans, definitions and references',
+      bones: [
+        { at: 'Highlight_code.ml:type:category', role: "a token's kind, every language's" },
+        { at: 'Highlight_code.ml:def:rgb', role: "a category's colour, codemap's taste" },
+        { at: 'Highlight_code.ml:type:span', role: 'a piece of a line and its category' },
+        { at: 'Highlight_code.ml:def:lines', role: 'tokens cut into spans, a line each' },
+        { at: 'Highlight_code.ml:type:definition', role: 'a name defined, where' },
+        { at: 'Highlight_code.ml:type:reference', role: 'a name used, its path' },
+        { at: 'Highlight_code.ml:type:analysis', role: 'all of it, for one file' },
+      ],
+      joints: [
+        { from: 'Highlight_code.ml:type:category', to: 'Highlight_code.ml:def:rgb', say: 'coloured' },
+        { from: 'Highlight_code.ml:def:lines', to: 'Highlight_code.ml:type:span', say: 'makes' },
+        { from: 'Highlight_code.ml:type:span', to: 'Highlight_code.ml:type:analysis', say: 'spans' },
+        { from: 'Highlight_code.ml:type:definition', to: 'Highlight_code.ml:type:analysis', say: 'definitions' },
+        { from: 'Highlight_code.ml:type:reference', to: 'Highlight_code.ml:type:analysis', say: 'references' },
+      ],
+    },
+  ],
 }

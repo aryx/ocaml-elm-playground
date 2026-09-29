@@ -31,4 +31,40 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "The File menu: over the store, for every app",
+      bones: [
+        { at: "File_menu.ml", role: "New, Open, Save, Save As, Export, and their dialogs" },
+        { at: "../document/", role: "Saved: a document as bytes with its magic" },
+        { at: "../../playground/", role: "the platform's store: stored, fetched, exported" },
+        { at: "../../apps/", role: "the apps: MacDraw, Blender, Office, Calendar..." },
+      ],
+      joints: [
+        { from: "../../apps/", to: "File_menu.ml", say: "menu_in, dialog, view" },
+        { from: "File_menu.ml", to: "../document/", say: "to_string, of_string" },
+        { from: "File_menu.ml", to: "../../playground/", say: "store, fetch" },
+      ],
+    },
+    {
+      name: "File_menu: a menu item to a dialog to the store",
+      bones: [
+        { at: "File_menu.ml:type:t", role: "the file's name, the dialog open, what was said" },
+        { at: "File_menu.ml:def:menu_in", role: "the menu drawn, an item picked" },
+        { at: "File_menu.ml:def:command", role: "an item: Save at once, or a dialog opened" },
+        { at: "File_menu.ml:def:dialog", role: "the dialog: a name typed, a document chosen" },
+        { at: "File_menu.ml:def:save", role: "the document as bytes, stored" },
+        { at: "File_menu.ml:def:open_", role: "bytes fetched, a document if its magic is right" },
+        { at: "File_menu.ml:type:result", role: "what the app must do: nothing, new, opened" },
+      ],
+      joints: [
+        { from: "File_menu.ml:def:menu_in", to: "File_menu.ml:def:command", say: "the item" },
+        { from: "File_menu.ml:def:command", to: "File_menu.ml:def:save", say: "Save" },
+        { from: "File_menu.ml:def:command", to: "File_menu.ml:type:t", say: "Open..., Save As..." },
+        { from: "File_menu.ml:def:dialog", to: "File_menu.ml:def:save", say: "Save" },
+        { from: "File_menu.ml:def:dialog", to: "File_menu.ml:def:open_", say: "Open" },
+        { from: "File_menu.ml:def:open_", to: "File_menu.ml:type:result", say: "Opened" },
+      ],
+    },
+  ],
 }

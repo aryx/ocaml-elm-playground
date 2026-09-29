@@ -143,5 +143,78 @@
         { from: 'Curses.ml:def:refresh', to: 'unix/Tty_unix.ml:def:run', say: 'the bytes changed' },
       ],
     },
+    // claude: a skeleton per module (the pass giving every module its own)
+    {
+      name: 'A program as a value: requests and their continuations',
+      bones: [
+        { at: 'Talk.ml:type:talk', role: 'Done, Print, Read_line, Random, Spawn, Step' },
+        { at: 'Talk.ml:def:print', role: 'the requests, each a one-step program' },
+        { at: 'Talk.ml:def:ask', role: 'glued by let*: print, then read' },
+        { at: 'Talk.ml:type:machine', role: 'the program, its parents, the tty, the Vt, the outbox' },
+        { at: 'Talk.ml:def:advance', role: 'played until it reads, ends, or spends its frame' },
+        { at: 'Talk.ml:def:input', role: 'a key through the tty, a line to the program' },
+        { at: 'Talk.ml:def:tick', role: 'a frame: steps again, bytes at the baud rate' },
+      ],
+      joints: [
+        { from: 'Talk.ml:def:print', to: 'Talk.ml:type:talk', say: 'builds' },
+        { from: 'Talk.ml:type:talk', to: 'Talk.ml:type:machine', say: 'its program' },
+        { from: 'Talk.ml:def:input', to: 'Talk.ml:def:advance', say: 'the answer' },
+        { from: 'Talk.ml:def:tick', to: 'Talk.ml:def:advance', say: 'resumed' },
+        { from: 'Talk.ml:def:advance', to: 'Talk.ml:type:machine', say: 'outbox, mode' },
+      ],
+    },
+    {
+      name: "Cooked mode: the tty's line, one key at a time",
+      bones: [
+        { at: 'Line_discipline.ml:type:t', role: 'the mode, the echo, the line so far' },
+        { at: 'Line_discipline.ml:def:split_keys', role: 'bytes into keys, escape sequences whole' },
+        { at: 'Line_discipline.ml:def:cooked', role: 'a key: erase, kill, ^C, Enter gives the line' },
+        { at: 'Line_discipline.ml:type:event', role: 'what the program reads' },
+        { at: 'Line_discipline.ml:def:input', role: 'raw keys passed, cooked ones edited' },
+        { at: 'Line_discipline.ml:def:output', role: 'newlines as CR LF' },
+      ],
+      joints: [
+        { from: 'Line_discipline.ml:def:input', to: 'Line_discipline.ml:def:split_keys', say: 'keys' },
+        { from: 'Line_discipline.ml:def:input', to: 'Line_discipline.ml:def:cooked', say: 'in Cooked' },
+        { from: 'Line_discipline.ml:def:cooked', to: 'Line_discipline.ml:type:event', say: 'Line, Interrupt' },
+        { from: 'Line_discipline.ml:def:cooked', to: 'Line_discipline.ml:type:t', say: 'the line' },
+      ],
+    },
+    {
+      name: "A VT100's parser: a state machine, a byte at a time",
+      bones: [
+        { at: 'Vt.ml:type:cell', role: 'a glyph and its attributes' },
+        { at: 'Vt.ml:type:t', role: 'the cells, the cursor, the parser state' },
+        { at: 'Vt.ml:type:state', role: 'where in a sequence: ground, escape, CSI, UTF-8' },
+        { at: 'Vt.ml:def:feed', role: 'a copy, then every byte stepped' },
+        { at: 'Vt.ml:def:step', role: 'one byte: print, control, or on in a sequence' },
+        { at: 'Vt.ml:def:csi', role: 'ESC [ ...: moves, erases, scrolls, colours' },
+        { at: 'Vt.ml:def:put', role: 'a character at the cursor, wrapping' },
+      ],
+      joints: [
+        { from: 'Vt.ml:def:feed', to: 'Vt.ml:def:step', say: 'each byte' },
+        { from: 'Vt.ml:def:step', to: 'Vt.ml:type:state', say: 'moves' },
+        { from: 'Vt.ml:def:step', to: 'Vt.ml:def:csi', say: 'a final byte' },
+        { from: 'Vt.ml:def:step', to: 'Vt.ml:def:put', say: 'a character' },
+        { from: 'Vt.ml:def:put', to: 'Vt.ml:type:cell', say: 'writes' },
+      ],
+    },
+    {
+      name: 'Curses: screens as values, the difference as bytes',
+      bones: [
+        { at: 'Curses.ml:type:t', role: 'rows of Vt cells, shared between versions' },
+        { at: 'Curses.ml:def:put', role: 'text drawn: only its row copied' },
+        { at: 'Curses.ml:def:refresh', role: 'the difference: unshared rows compared' },
+        { at: 'Curses.ml:def:cup', role: 'a cursor move' },
+        { at: 'Curses.ml:def:sgr', role: 'the colours set' },
+        { at: 'Curses.ml:def:redraw', role: 'the whole screen: refresh from blank' },
+      ],
+      joints: [
+        { from: 'Curses.ml:def:put', to: 'Curses.ml:type:t', say: 'a new version' },
+        { from: 'Curses.ml:def:refresh', to: 'Curses.ml:def:cup', say: 'moves' },
+        { from: 'Curses.ml:def:refresh', to: 'Curses.ml:def:sgr', say: 'pens' },
+        { from: 'Curses.ml:def:redraw', to: 'Curses.ml:def:refresh', say: 'before = blank' },
+      ],
+    },
   ],
 }

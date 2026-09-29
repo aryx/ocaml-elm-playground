@@ -62,5 +62,78 @@
         { from: 'Shape_render_native.ml:def:render', to: 'Image_native.ml:def:surface_of_url', say: 'an image shape' },
       ],
     },
+    // claude: a skeleton per module (the pass giving every module its own)
+    {
+      name: 'run_app natively: a window, Cairo on its pixels, the shared loop',
+      bones: [
+        { at: 'Playground_platform.ml:def:run_app', role: "the app captured for tinybox, or run: window, surface, loop" },
+        { at: 'Playground_platform.ml:def:flags', role: 'the command line as the flags' },
+        { at: 'Playground_platform.ml:def:store', role: 'documents, through Store, under a capability' },
+        { at: 'Playground_platform.ml:def:fetch_file', role: 'the sounds a program loads' },
+        { at: 'Playground_platform.ml:def:draw_fps', role: 'the frame rate over the picture' },
+        { at: '../native_common/Native_loop_2d.ml:def:run', role: 'the loop it hands init, update, view and draw to' },
+        { at: 'Shape_render_native.ml:def:render', role: "draw's shapes, by Cairo" },
+      ],
+      joints: [
+        { from: 'Playground_platform.ml:def:run_app', to: '../native_common/Native_loop_2d.ml:def:run', say: "the app's functions" },
+        { from: 'Playground_platform.ml:def:run_app', to: 'Playground_platform.ml:def:fetch_file', say: "Audio's fetcher" },
+        { from: '../native_common/Native_loop_2d.ml:def:run', to: 'Shape_render_native.ml:def:render', say: 'draw' },
+        { from: 'Shape_render_native.ml:def:render', to: 'Playground_platform.ml:def:draw_fps', say: 'then' },
+      ],
+    },
+    {
+      name: "A shape tree drawn by Cairo: the groups' transforms as hooks",
+      bones: [
+        { at: 'Shape_render_native.ml:type:hook', role: "the enclosing groups' transforms, replayed" },
+        { at: 'Shape_render_native.ml:def:render_shape', role: 'one shape by its form; a group extends the hook' },
+        { at: 'Shape_render_native.ml:def:render_transform', role: 'move, rotate, scale on the context' },
+        { at: 'Shape_render_native.ml:def:render_polygon', role: 'the forms: a path filled' },
+        { at: 'Shape_render_native.ml:def:render_words', role: 'text centred' },
+        { at: 'Shape_render_native.ml:def:render_image', role: 'a picture, from Image_native' },
+        { at: 'Shape_render_native.ml:def:render', role: 'every shape of the frame' },
+      ],
+      joints: [
+        { from: 'Shape_render_native.ml:def:render', to: 'Shape_render_native.ml:def:render_shape', say: 'each' },
+        { from: 'Shape_render_native.ml:def:render_shape', to: 'Shape_render_native.ml:type:hook', say: 'a group' },
+        { from: 'Shape_render_native.ml:def:render_shape', to: 'Shape_render_native.ml:def:render_polygon', say: 'a form' },
+        { from: 'Shape_render_native.ml:def:render_shape', to: 'Shape_render_native.ml:def:render_image', say: 'an image' },
+        { from: 'Shape_render_native.ml:def:render_polygon', to: 'Shape_render_native.ml:def:render_transform', say: 'placed' },
+      ],
+    },
+    {
+      name: 'Pictures as Cairo surfaces, converted once',
+      bones: [
+        { at: 'Image_native.ml:def:cairo_surface_of_image', role: 'RGBA to premultiplied ARGB' },
+        { at: 'Image_native.ml:def:surface_of_url', role: 'a picture by its name, cached' },
+        { at: 'Image_native.ml:def:animation_of_url', role: 'an animated GIF, each frame a surface' },
+        { at: 'Image_native.ml:def:surface_of_url_at', role: 'the frame for the time' },
+        { at: 'Image_native.ml:def:surface_of_bitmap', role: "a program's own pixels" },
+        { at: 'Image_native.ml:def:load_queued', role: 'the preloads, before the first frame' },
+      ],
+      joints: [
+        { from: 'Image_native.ml:def:surface_of_url', to: 'Image_native.ml:def:cairo_surface_of_image', say: 'decoded' },
+        { from: 'Image_native.ml:def:animation_of_url', to: 'Image_native.ml:def:cairo_surface_of_image', say: 'each frame' },
+        { from: 'Image_native.ml:def:surface_of_url_at', to: 'Image_native.ml:def:animation_of_url', say: 'animated?' },
+        { from: 'Image_native.ml:def:surface_of_bitmap', to: 'Image_native.ml:def:cairo_surface_of_image', say: 'converted' },
+      ],
+    },
+    {
+      name: 'OpenGL: shaders, batches by material, a HUD texture on top',
+      bones: [
+        { at: 'Playground3d_platform.ml:def:vertex_shader_source', role: 'the shaders: Phong lighting per pixel' },
+        { at: 'Playground3d_platform.ml:def:link_program', role: 'compiled and linked' },
+        { at: 'Playground3d_platform.ml:def:get_or_create_gl_texture', role: 'a texture uploaded once' },
+        { at: 'Playground3d_platform.ml:def:run_app3d', role: 'the window, the GL state, draw per view, the loop' },
+        { at: '../../Gpu_scene.ml:def:group_by_material', role: 'the scene as batches of vertices' },
+        { at: '../native_common/Native_loop_3d.ml:def:run', role: 'the 3D loop it runs in' },
+      ],
+      joints: [
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: 'Playground3d_platform.ml:def:link_program', say: 'at start' },
+        { from: 'Playground3d_platform.ml:def:vertex_shader_source', to: 'Playground3d_platform.ml:def:link_program', say: 'source' },
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: '../../Gpu_scene.ml:def:group_by_material', say: 'each view' },
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: 'Playground3d_platform.ml:def:get_or_create_gl_texture', say: 'a textured batch' },
+        { from: 'Playground3d_platform.ml:def:run_app3d', to: '../native_common/Native_loop_3d.ml:def:run', say: 'update, draw, present' },
+      ],
+    },
   ],
 }

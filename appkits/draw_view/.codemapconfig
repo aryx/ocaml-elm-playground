@@ -19,4 +19,34 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "draw_view: the figures drawn, for two apps",
+      bones: [
+        { at: "Figure_shapes.ml", role: "a figure as Playground shapes: strokes, fills, letters" },
+        { at: "../draw/", role: "the model: Figure.t" },
+        { at: "../stroke_text/", role: "the text figures' letters" },
+        { at: "../../apps/graphics/TinyMacDraw.ml", role: "MacDraw" },
+        { at: "../../apps/office/Part_drawing.ml", role: "the office's drawing part" },
+      ],
+      joints: [
+        { from: "Figure_shapes.ml", to: "../draw/", say: "draws" },
+        { from: "Figure_shapes.ml", to: "../stroke_text/", say: "Text" },
+        { from: "../../apps/graphics/TinyMacDraw.ml", to: "Figure_shapes.ml", say: "view" },
+        { from: "../../apps/office/Part_drawing.ml", to: "Figure_shapes.ml", say: "draw" },
+      ],
+    },
+    {
+      name: "Figure_shapes: a figure as strokes",
+      bones: [
+        { at: "Figure_shapes.ml:def:figure", role: "a figure, case by case; a group, its figures" },
+        { at: "Figure_shapes.ml:def:segment", role: "a stroke: a thin rectangle, turned" },
+        { at: "Figure_shapes.ml:def:grey", role: "a fill: a grey level" },
+      ],
+      joints: [
+        { from: "Figure_shapes.ml:def:figure", to: "Figure_shapes.ml:def:segment", say: "outlines, an oval in 64" },
+        { from: "Figure_shapes.ml:def:figure", to: "Figure_shapes.ml:def:grey", say: "fills" },
+      ],
+    },
+  ],
 }

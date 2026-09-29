@@ -1,0 +1,26 @@
+// libs/audio/testutil/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'What the tests of sound share: WAVs written and compared with golden ones.',
+  skeletons: [
+    {
+      name: 'A golden WAV: written, read back, compared',
+      bones: [
+        { at: 'Testutil_wav.ml:def:compare', role: 'actual/ written, golden/ read, sample by sample' },
+        { at: 'Testutil_wav.ml:def:check', role: "a test's one call" },
+        { at: 'Testutil_wav.ml:def:check_stereo', role: 'each channel its own file' },
+        { at: 'Testutil_wav.ml:def:fail', role: 'the differences as one failure' },
+        { at: '../formats/wav/Wav.ml:def:write', role: 'the file written' },
+        { at: '../signal/Signal.ml:def:to_int16', role: 'compared as 16 bits' },
+      ],
+      joints: [
+        { from: 'Testutil_wav.ml:def:check', to: 'Testutil_wav.ml:def:compare', say: 'the samples' },
+        { from: 'Testutil_wav.ml:def:check_stereo', to: 'Testutil_wav.ml:def:compare', say: 'left, right' },
+        { from: 'Testutil_wav.ml:def:compare', to: '../formats/wav/Wav.ml:def:write', say: 'actual/' },
+        { from: 'Testutil_wav.ml:def:compare', to: '../signal/Signal.ml:def:to_int16', say: 'each sample, both files' },
+        { from: 'Testutil_wav.ml:def:compare', to: 'Testutil_wav.ml:def:fail', say: 'a message, or none' },
+      ],
+    },
+  ],
+}

@@ -93,4 +93,102 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'Sources, then shapers',
+      bones: [
+        { at: 'Oscillator.mli', role: 'the periodic waves, aliasing tamed' },
+        { at: 'Noise.mli', role: "the NES's shift register, and a small LCG" },
+        { at: 'Fm.mli', role: 'one sine wobbling another: sidebands' },
+        { at: 'Pluck.mli', role: 'a string: a burst of noise in a loop' },
+        { at: 'Envelope.mli', role: 'the loudness over time: ADSR' },
+        { at: 'Filter.mli', role: 'the spectrum shaped: one-pole, biquad, EQ' },
+      ],
+      joints: [
+        { from: 'Pluck.mli', to: 'Noise.mli', say: 'fills its line with' },
+        { from: 'Oscillator.mli', to: 'Envelope.mli', say: 'a wave, then made to start and stop' },
+        { from: 'Envelope.mli', to: 'Filter.mli', say: 'then its brightness shaped' },
+      ],
+    },
+    {
+      name: 'Envelope: ADSR ahead, and live by a gate',
+      bones: [
+        { at: 'Envelope.ml:type:t', role: 'attack, decay, sustain, release' },
+        { at: 'Envelope.ml:def:level', role: 'ahead: the level at a time, the note held so long' },
+        { at: 'Envelope.ml:type:running', role: 'live: a stage and a level' },
+        { at: 'Envelope.ml:def:gate_on', role: 'a key down: to the attack' },
+        { at: 'Envelope.ml:def:gate_off', role: 'a key up: to the release, from where it was' },
+        { at: 'Envelope.ml:def:fill', role: 'a block, stage by stage, linear or exponential' },
+      ],
+      joints: [
+        { from: 'Envelope.ml:type:t', to: 'Envelope.ml:def:level', say: 'a formula of time' },
+        { from: 'Envelope.ml:def:gate_on', to: 'Envelope.ml:type:running', say: 'the stage set' },
+        { from: 'Envelope.ml:def:gate_off', to: 'Envelope.ml:type:running', say: 'the stage set' },
+        { from: 'Envelope.ml:type:running', to: 'Envelope.ml:def:fill', say: 'stepped, sample by sample' },
+      ],
+    },
+    {
+      name: 'Filter: the cookbook biquad, stepped',
+      bones: [
+        { at: 'Filter.ml:def:low_pass', role: 'the one-pole: the simplest smoothing' },
+        { at: 'Filter.ml:type:biquad', role: 'five coefficients' },
+        { at: 'Filter.ml:def:biquad', role: 'low, high, band pass from a cutoff and a Q' },
+        { at: 'Filter.ml:def:shelf', role: 'the EQ shelves, from the cookbook' },
+        { at: 'Filter.ml:type:memory', role: 'the last two inputs and outputs' },
+        { at: 'Filter.ml:def:step', role: 'one sample through the difference equation' },
+        { at: 'Filter.ml:def:response', role: "the gain at a frequency, for the EQ's curve" },
+      ],
+      joints: [
+        { from: 'Filter.ml:def:biquad', to: 'Filter.ml:type:biquad', say: 'computes' },
+        { from: 'Filter.ml:def:shelf', to: 'Filter.ml:type:biquad', say: 'computes' },
+        { from: 'Filter.ml:type:biquad', to: 'Filter.ml:def:step', say: 'the coefficients' },
+        { from: 'Filter.ml:type:memory', to: 'Filter.ml:def:step', say: 'read and shifted' },
+        { from: 'Filter.ml:type:biquad', to: 'Filter.ml:def:response', say: 'H(e^iw) measured' },
+      ],
+    },
+    {
+      name: "Noise: the NES's 15-bit register",
+      bones: [
+        { at: 'Noise.ml:type:mode', role: 'long hiss, or short metallic buzz' },
+        { at: 'Noise.ml:def:step', role: 'one shift, the tap XORed back in' },
+        { at: 'Noise.ml:def:render', role: 'the register clocked at the noise rate' },
+        { at: 'Noise.ml:def:lcg', role: "a small generator, the voices' dice" },
+        { at: 'Noise.ml:def:uniform', role: 'its state as a float from -1 to 1' },
+      ],
+      joints: [
+        { from: 'Noise.ml:type:mode', to: 'Noise.ml:def:step', say: 'which bit is tapped' },
+        { from: 'Noise.ml:def:render', to: 'Noise.ml:def:step', say: 'rate / 44,100 steps a sample' },
+        { from: 'Noise.ml:def:lcg', to: 'Noise.ml:def:uniform', say: 'the next state, scaled' },
+      ],
+    },
+    {
+      name: 'Oscillator: a phase, a wave, the jumps smoothed',
+      bones: [
+        { at: 'Oscillator.ml:type:waveform', role: 'sine, square, triangle, sawtooth' },
+        { at: 'Oscillator.ml:def:wave', role: 'the naive wave, a formula of the phase' },
+        { at: 'Oscillator.ml:def:polyblep', role: 'a jump rounded: less aliasing' },
+        { at: 'Oscillator.ml:def:polyblamp', role: "a corner rounded: the triangle's" },
+        { at: 'Oscillator.ml:def:wave_band_limited', role: 'the wave, corrected at its jumps' },
+        { at: 'Oscillator.ml:def:next', role: 'the phase accumulator, one sample' },
+      ],
+      joints: [
+        { from: 'Oscillator.ml:def:next', to: 'Oscillator.ml:def:wave_band_limited', say: 'band-limited' },
+        { from: 'Oscillator.ml:def:next', to: 'Oscillator.ml:def:wave', say: 'naive' },
+        { from: 'Oscillator.ml:def:wave_band_limited', to: 'Oscillator.ml:def:polyblep', say: 'square, sawtooth' },
+        { from: 'Oscillator.ml:def:wave_band_limited', to: 'Oscillator.ml:def:polyblamp', say: 'triangle' },
+      ],
+    },
+    {
+      name: 'Pluck: Karplus-Strong, tuned',
+      bones: [
+        { at: 'Pluck.ml:def:period', role: "the line's length in samples" },
+        { at: 'Pluck.ml:def:render', role: 'noise in a delay line, averaged each time round' },
+        { at: 'Noise.ml:def:step', role: 'the burst of the pluck' },
+      ],
+      joints: [
+        { from: 'Pluck.ml:def:render', to: 'Noise.ml:def:step', say: 'the line filled' },
+        { from: 'Pluck.ml:def:render', to: 'Pluck.ml:def:period', say: 'untuned: the whole samples' },
+      ],
+    },
+  ],
 }

@@ -80,4 +80,84 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "Quicken's kit: money, the register, reconciling, QIF",
+      bones: [
+        { at: "Money.ml", role: "money in cents, read, shown, written on a cheque in words" },
+        { at: "Ledger.ml", role: "the register: transactions, their order, the running balance" },
+        { at: "Reconcile.ml", role: "the statement against the ticked: and hints when they differ" },
+        { at: "Qif.ml", role: "the register as Quicken's interchange file" },
+        { at: "../../apps/pim/TinyQuicken.ml", role: "Quicken: the register and the cheque on screen" },
+      ],
+      joints: [
+        { from: "Ledger.ml", to: "Money.ml", say: "amounts" },
+        { from: "Reconcile.ml", to: "Ledger.ml", say: "the transactions" },
+        { from: "Qif.ml", to: "Ledger.ml", say: "read, written" },
+        { from: "../../apps/pim/TinyQuicken.ml", to: "Ledger.ml", say: "the register" },
+        { from: "../../apps/pim/TinyQuicken.ml", to: "Reconcile.ml", say: "the statement" },
+      ],
+    },
+    {
+      name: "Money: cents, never floats",
+      bones: [
+        { at: "Money.ml:type:cents", role: "an amount as an int of cents" },
+        { at: "Money.ml:def:of_string", role: "typed text to cents: 12, 12.5, -3.07" },
+        { at: "Money.ml:def:to_string", role: "cents shown, two decimals" },
+        { at: "Money.ml:def:words", role: "the cheque's line: dollars in words, cents as /100" },
+        { at: "Money.ml:def:in_words", role: "a number in words, by thousands" },
+        { at: "Money.ml:def:below_thousand", role: "three digits in words" },
+      ],
+      joints: [
+        { from: "Money.ml:def:of_string", to: "Money.ml:type:cents", say: "made" },
+        { from: "Money.ml:def:words", to: "Money.ml:def:in_words", say: "the dollars" },
+        { from: "Money.ml:def:in_words", to: "Money.ml:def:below_thousand", say: "each group" },
+      ],
+    },
+    {
+      name: "Ledger: the register, in date order, with its balances",
+      bones: [
+        { at: "Ledger.ml:type:txn", role: "a transaction: date, number, payee, category, amount, status" },
+        { at: "Ledger.ml:type:status", role: "open, cleared, reconciled" },
+        { at: "Ledger.ml:def:sort", role: "by date, stable: the order typed kept on a day" },
+        { at: "Ledger.ml:def:balances", role: "the running balance, line by line" },
+        { at: "Ledger.ml:def:quickfill", role: "a payee typed: the last transaction to them" },
+        { at: "Ledger.ml:def:date_of_string", role: "QIF's dates, 9/14'04 the 2000s" },
+      ],
+      joints: [
+        { from: "Ledger.ml:type:txn", to: "Ledger.ml:type:status", say: "has" },
+        { from: "Ledger.ml:def:sort", to: "Ledger.ml:type:txn", say: "ordered" },
+        { from: "Ledger.ml:def:balances", to: "Ledger.ml:type:txn", say: "summed" },
+        { from: "Ledger.ml:def:quickfill", to: "Ledger.ml:type:txn", say: "the newest first" },
+      ],
+    },
+    {
+      name: "Qif: records of lettered fields",
+      bones: [
+        { at: "Qif.ml:def:write", role: "each transaction a record: D, T, N, P, L, M, C, ^" },
+        { at: "Qif.ml:def:read", role: "lines grouped into records at each ^" },
+        { at: "Qif.ml:def:of_fields", role: "a record's fields as a transaction, or why not" },
+      ],
+      joints: [
+        { from: "Qif.ml:def:read", to: "Qif.ml:def:of_fields", say: "each record" },
+      ],
+    },
+    {
+      name: "Reconcile: the difference, and where it may come from",
+      bones: [
+        { at: "Reconcile.ml:def:cleared", role: "the reconciled and the ticked, summed" },
+        { at: "Reconcile.ml:def:difference", role: "the statement less the cleared" },
+        { at: "Reconcile.ml:def:hints", role: "missing, extra, wrong sign, transposed digits, a multiple of nine" },
+        { at: "Reconcile.ml:def:subset", role: "up to three open transactions adding up to it" },
+        { at: "Reconcile.ml:def:swaps", role: "an amount with two digits swapped" },
+        { at: "Reconcile.ml:def:finish", role: "done: the ticked become reconciled" },
+      ],
+      joints: [
+        { from: "Reconcile.ml:def:difference", to: "Reconcile.ml:def:cleared", say: "less" },
+        { from: "Reconcile.ml:def:hints", to: "Reconcile.ml:def:difference", say: "first" },
+        { from: "Reconcile.ml:def:hints", to: "Reconcile.ml:def:subset", say: "missing" },
+        { from: "Reconcile.ml:def:hints", to: "Reconcile.ml:def:swaps", say: "transposed" },
+      ],
+    },
+  ],
 }

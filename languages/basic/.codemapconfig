@@ -95,6 +95,41 @@
   },
   skeletons: [
     {
+      name: "A line crunched as Microsoft's parser read it",
+      bones: [
+        { at: 'Basic_parse.ml:def:parse_line', role: 'a line: numbered (stored) or direct (run now)' },
+        { at: 'Basic_parse.ml:def:statements', role: 'statements between colons' },
+        { at: 'Basic_parse.ml:def:statement', role: 'a keyword picks the statement' },
+        { at: 'Basic_parse.ml:def:expr', role: 'recursive descent: OR, AND, NOT, comparison, sum, product' },
+        { at: 'Basic_parse.ml:def:name', role: 'a name ends where a keyword starts: the cruncher' },
+        { at: 'Basic_parse.ml:type:stmt', role: 'what the interpreter runs' },
+      ],
+      joints: [
+        { from: 'Basic_parse.ml:def:parse_line', to: 'Basic_parse.ml:def:statements', say: 'after the number' },
+        { from: 'Basic_parse.ml:def:statements', to: 'Basic_parse.ml:def:statement', say: 'each' },
+        { from: 'Basic_parse.ml:def:statement', to: 'Basic_parse.ml:def:expr', say: 'its expressions' },
+        { from: 'Basic_parse.ml:def:expr', to: 'Basic_parse.ml:def:name', say: 'a variable' },
+        { from: 'Basic_parse.ml:def:statement', to: 'Basic_parse.ml:type:stmt', say: 'the tree' },
+      ],
+    },
+    {
+      name: 'The floppy: listings as data, a catalog',
+      bones: [
+        { at: 'Basic_disk.ml:type:file', role: 'a name, a dialect, the lines' },
+        { at: 'Basic_disk.ml:def:guess', role: 'GUESS, checked against Tty_guess' },
+        { at: 'Basic_disk.ml:def:mandel', role: 'MANDEL, checked against the loop in OCaml' },
+        { at: 'Basic_disk.ml:def:files', role: 'the disk: eight programs' },
+        { at: 'Basic_disk.ml:def:catalog', role: "CATALOG, in Apple DOS's format" },
+        { at: 'Basic_session.ml:def:session', role: 'LOAD, SAVE and RUN name over it' },
+      ],
+      joints: [
+        { from: 'Basic_disk.ml:def:guess', to: 'Basic_disk.ml:def:files', say: 'a listing' },
+        { from: 'Basic_disk.ml:def:mandel', to: 'Basic_disk.ml:def:files', say: 'a listing' },
+        { from: 'Basic_disk.ml:def:files', to: 'Basic_session.ml:def:session', say: 'the disk at start' },
+        { from: 'Basic_disk.ml:def:files', to: 'Basic_disk.ml:def:catalog', say: 'the names and sizes' },
+      ],
+    },
+    {
       name: 'A line of BASIC, typed and run',
       bones: [
         { at: 'Basic_session.ml:def:session', role: 'the prompt: editor, calculator, shell' },

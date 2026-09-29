@@ -164,6 +164,26 @@ local skeletons = import '../../skeletons.libsonnet';
     skeletons.game('TinyChrome.ml', 'def:on_tab', 'each tab its own, answers routed by number', say='a message', init='def:init'),
     skeletons.game('TinyIRC.ml', 'def:heard', "the server's lines, one case a command", say='lines arrived', init='def:initial'),
     skeletons.game('TinyEudora.ml', 'def:session_step', 'the POP3 or SMTP machine, fed its lines', say='lines arrived', init='def:initial'),
+    {
+      name: "Browser_media: a page's audio and video players, one deck for the sound",
+      bones: [
+        { at: "Browser_media.ml:type:player", role: "a player per file: opened, playing, where" },
+        { at: "Browser_media.ml:def:player", role: "by URL: the same file in two tabs is one player" },
+        { at: "Browser_media.ml:def:opened", role: "its bytes opened by Media when first had" },
+        { at: "Browser_media.ml:def:deck", role: "the one sound playing: samples, position, owner" },
+        { at: "Browser_media.ml:def:install", role: "the deck as an Audio instrument, its fill the sound out" },
+        { at: "Browser_media.ml:def:position", role: "where a player is: the deck's samples, else the clock" },
+        { at: "Browser_media.ml:def:draw", role: "the page's players: the frame, the controls, the time" },
+        { at: "Browser_media.ml:def:click", role: "play or pause" },
+      ],
+      joints: [
+        { from: "Browser_media.ml:def:click", to: "Browser_media.ml:def:player", say: "the element's source" },
+        { from: "Browser_media.ml:def:click", to: "Browser_media.ml:def:opened", say: "its media" },
+        { from: "Browser_media.ml:def:click", to: "Browser_media.ml:def:deck", say: "play: the samples given" },
+        { from: "Browser_media.ml:def:install", to: "Browser_media.ml:def:deck", say: "fill reads" },
+        { from: "Browser_media.ml:def:draw", to: "Browser_media.ml:def:position", say: "the frame shown" },
+      ],
+    },
   ],
   dirs: {
     site: { summary: "The built-in site the browsers show with no network, and tiny_httpd serves." },

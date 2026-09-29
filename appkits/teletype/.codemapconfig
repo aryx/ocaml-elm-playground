@@ -64,4 +64,27 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: "The teletype's games: conversations run by a shell or alone",
+      bones: [
+        { at: "Tty_hangman.ml", role: "Hangman: a word guessed a letter at a time" },
+        { at: "Tty_guess.ml", role: "Guess the number: too low, too high, halved" },
+        { at: "Tty_wumpus.ml", role: "Hunt the Wumpus: a dodecahedron of rooms, crooked arrows" },
+        { at: "../../libs/terminal/", role: "Talk: a program that asks and waits, as a value" },
+        { at: "../../apps/system/TinyTerminal.ml", role: "the VT100 and tsh: each game a command, spawned" },
+        { at: "../../examples/TeletypeHangman.ml", role: "Hangman alone, on the Teletype way" },
+        { at: "../../games/adventure/TinyWumpus.ml", role: "the Wumpus alone, a game of its genre" },
+      ],
+      joints: [
+        { from: "Tty_hangman.ml", to: "../../libs/terminal/", say: "written in Talk" },
+        { from: "Tty_guess.ml", to: "../../libs/terminal/", say: "written in Talk" },
+        { from: "Tty_wumpus.ml", to: "../../libs/terminal/", say: "written in Talk" },
+        { from: "../../apps/system/TinyTerminal.ml", to: "Tty_hangman.ml", say: "hangman" },
+        { from: "../../apps/system/TinyTerminal.ml", to: "Tty_wumpus.ml", say: "wumpus" },
+        { from: "../../examples/TeletypeHangman.ml", to: "Tty_hangman.ml", say: "program" },
+        { from: "../../games/adventure/TinyWumpus.ml", to: "Tty_wumpus.ml", say: "program" },
+      ],
+    },
+  ],
 }

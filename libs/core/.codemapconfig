@@ -110,4 +110,121 @@
   dirs: {
     tests: { summary: 'Unit tests: base64, the calendars, the clock, repeating events, Program.main.' },
   },
+  skeletons: [
+    // claude: the folder's parts: Elm's core as the playground's programs see it
+    {
+      name: "Elm's core: the effects and what they carry",
+      bones: [
+        { at: 'Basics.ml', role: 'the arithmetic every program opens' },
+        { at: 'Color.ml', role: 'the palette the shapes are painted with' },
+        { at: 'Set_.mli', role: 'the keys held down, as a set' },
+        { at: 'Sub.ml', role: 'what a program listens to: events in' },
+        { at: 'Cmd.mli', role: 'what a program asks for: effects out' },
+        { at: 'Keyboard.ml', role: "a key's name, carried by Sub" },
+        { at: 'Time.ml', role: "a tick's time, carried by Sub" },
+        { at: 'Program.mli', role: 'where every program starts, or is recorded' },
+        { at: 'time/', role: 'calendars and clocks, for the PIM apps' },
+      ],
+      joints: [
+        { from: 'Sub.ml', to: 'Keyboard.ml', say: 'a key event' },
+        { from: 'Sub.ml', to: 'Time.ml', say: 'a tick' },
+        { from: 'Color.ml', to: 'Basics.ml', say: 'written with' },
+        { from: 'time/', to: 'Time.ml', say: 'dates of an instant' },
+      ],
+    },
+    {
+      name: "Floats first: Elm's arithmetic",
+      bones: [
+        { at: 'Basics.ml:def:+', role: '+ is the float +: x + 1. in every game' },
+        { at: 'Basics.ml:def:+..', role: "the ints' +, renamed out of the way" },
+        { at: 'Basics.ml:def:pi', role: 'the angles start here' },
+        { at: 'Basics.ml:def:degrees_to_radians', role: 'degrees, as Elm speaks them' },
+        { at: 'Basics.ml:def:clamp', role: 'a value kept in its range' },
+      ],
+      joints: [
+        { from: 'Basics.ml:def:pi', to: 'Basics.ml:def:degrees_to_radians', say: 'the conversion' },
+      ],
+    },
+    {
+      name: 'A color: three clamped channels, the palette made of them',
+      bones: [
+        { at: 'Color.ml:type:t', role: 'red, green, blue' },
+        { at: 'Color.ml:def:color_clamp', role: 'a channel kept in 0..255' },
+        { at: 'Color.ml:def:rgb', role: 'the only way to make one' },
+        { at: 'Color.ml:def:red', role: "the palette's plain colours" },
+        { at: 'Color.ml:def:rainbow', role: 'the plain ones in order' },
+      ],
+      joints: [
+        { from: 'Color.ml:def:rgb', to: 'Color.ml:def:color_clamp', say: 'each channel' },
+        { from: 'Color.ml:def:rgb', to: 'Color.ml:type:t', say: 'builds' },
+        { from: 'Color.ml:def:red', to: 'Color.ml:def:rainbow', say: 'listed in' },
+      ],
+    },
+    {
+      name: 'A balanced tree, polymorphic: kept balanced by bal and join',
+      bones: [
+        { at: 'Set_.ml:type:t', role: 'a node: left, element, right, height' },
+        { at: 'Set_.ml:def:bal', role: 'one rotation when heights differ by more than 2' },
+        { at: 'Set_.ml:def:add', role: 'insert, rebalancing on the way up' },
+        { at: 'Set_.ml:def:join', role: 'two trees and a middle, of any heights' },
+        { at: 'Set_.ml:def:split', role: 'below and above an element: union, inter, diff' },
+        { at: 'Set_.ml:def:mem', role: 'the question every game asks: is the key held?' },
+        { at: 'Set_.ml:def:elements', role: 'the set as a sorted list' },
+      ],
+      joints: [
+        { from: 'Set_.ml:def:add', to: 'Set_.ml:def:bal', say: 'rebalance' },
+        { from: 'Set_.ml:def:join', to: 'Set_.ml:def:bal', say: 'rebalance' },
+        { from: 'Set_.ml:def:split', to: 'Set_.ml:def:join', say: 'the halves joined' },
+        { from: 'Set_.ml:def:mem', to: 'Set_.ml:type:t', say: 'walks' },
+      ],
+    },
+    {
+      name: 'Subscriptions: an event matched to the first sub that wants it',
+      bones: [
+        { at: 'Sub.ml:type:onesub', role: 'what a program listens to, and its message maker' },
+        { at: 'Sub.ml:type:t', role: "a program's subscriptions: a list" },
+        { at: 'Sub.ml:def:on_animation_frame', role: 'the constructors programs call' },
+        { at: 'Sub.ml:type:event', role: 'what a platform reports' },
+        { at: 'Sub.ml:def:event_to_msgopt', role: "an event turned into the program's message" },
+        { at: 'Sub.ml:def:find_map_opt', role: 'the first that answers wins' },
+      ],
+      joints: [
+        { from: 'Sub.ml:def:on_animation_frame', to: 'Sub.ml:type:t', say: 'builds' },
+        { from: 'Sub.ml:type:event', to: 'Sub.ml:def:event_to_msgopt', say: "the platform's event" },
+        { from: 'Sub.ml:type:t', to: 'Sub.ml:def:event_to_msgopt', say: "the program's subs" },
+        { from: 'Sub.ml:def:event_to_msgopt', to: 'Sub.ml:def:find_map_opt', say: 'searched' },
+      ],
+    },
+    {
+      name: 'A main: run now, or recorded for tinybox',
+      bones: [
+        { at: 'Program.ml:def:collecting', role: 'set by tinybox before the programs link in' },
+        { at: 'Program.ml:def:entries', role: 'the recorded mains, by name' },
+        { at: 'Program.ml:def:main', role: 'every program ends here' },
+        { at: 'Program.ml:def:run', role: 'tinybox starts the one chosen' },
+        { at: 'Program.ml:def:argv', role: "the program's own command line, refused at top level" },
+        { at: 'Program.ml:def:given_argv', role: "tinybox's words for the program" },
+      ],
+      joints: [
+        { from: 'Program.ml:def:main', to: 'Program.ml:def:collecting', say: 'asks' },
+        { from: 'Program.ml:def:main', to: 'Program.ml:def:entries', say: 'records' },
+        { from: 'Program.ml:def:run', to: 'Program.ml:def:given_argv', say: 'sets' },
+        { from: 'Program.ml:def:run', to: 'Program.ml:def:entries', say: 'finds' },
+        { from: 'Program.ml:def:argv', to: 'Program.ml:def:given_argv', say: 'reads' },
+      ],
+    },
+    {
+      name: 'Base64: 6 bits a character, both ways',
+      bones: [
+        { at: 'Base64.ml:def:alphabet', role: 'the 64 characters' },
+        { at: 'Base64.ml:def:value', role: 'a character back to its 6 bits' },
+        { at: 'Base64.ml:def:encode', role: '3 bytes in, 4 characters out' },
+        { at: 'Base64.ml:def:decode', role: 'bits piled up, a byte out every 8' },
+      ],
+      joints: [
+        { from: 'Base64.ml:def:encode', to: 'Base64.ml:def:alphabet', say: 'looks up' },
+        { from: 'Base64.ml:def:decode', to: 'Base64.ml:def:value', say: 'each character' },
+      ],
+    },
+  ],
 }

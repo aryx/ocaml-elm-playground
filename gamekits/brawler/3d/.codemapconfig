@@ -23,4 +23,42 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'The 3D fighter kit and its users',
+      bones: [
+        { at: 'Skeleton.mli', role: 'poses, keyframes, a figure, where its hand is' },
+        { at: 'Skeleton.ml', role: 'boxes jointed and turned, hierarchically' },
+        { at: '../../../games/fighting/TinyVirtuaFighter.ml', role: 'the fighter: 2D frame data, 3D bodies' },
+        { at: '../../../games/adventure/TinyZeldaOcarina.ml', role: 'a sword and shield held in the hands' },
+        { at: '../../../games/adventure/TinyAloneInTheDark.ml', role: 'a figure walking fixed-camera rooms' },
+      ],
+      joints: [
+        { from: 'Skeleton.ml', to: 'Skeleton.mli', say: 'implements' },
+        { from: '../../../games/fighting/TinyVirtuaFighter.ml', to: 'Skeleton.mli', say: 'keyframes, a pose drawn' },
+        { from: '../../../games/adventure/TinyZeldaOcarina.ml', to: 'Skeleton.mli', say: 'a pose, and where the hand is' },
+        { from: '../../../games/adventure/TinyAloneInTheDark.ml', to: 'Skeleton.mli', say: 'a pose drawn' },
+      ],
+    },
+    {
+      name: 'A figure as a tree of boxes: pose, lerp, figure, turned',
+      bones: [
+        { at: 'Skeleton.ml:type:pose', role: 'each limb: pitch, yaw, bend; the lean and turn' },
+        { at: 'Skeleton.ml:def:at', role: 'keyframes read at a frame' },
+        { at: 'Skeleton.ml:def:lerp', role: 'each angle between two keyframes' },
+        { at: 'Skeleton.ml:def:jointed', role: 'a limb: two boxes, the lower bent at the joint' },
+        { at: 'Skeleton.ml:def:figure', role: 'the trunk carries arms and head: the hierarchy' },
+        { at: 'Skeleton.ml:def:draw', role: 'the figure turned to its heading' },
+        { at: 'Skeleton.ml:def:hand', role: 'the same transforms by hand, for what it holds' },
+      ],
+      joints: [
+        { from: 'Skeleton.ml:def:at', to: 'Skeleton.ml:def:lerp', say: 'two keyframes' },
+        { from: 'Skeleton.ml:def:lerp', to: 'Skeleton.ml:type:pose', say: 'the pose now' },
+        { from: 'Skeleton.ml:type:pose', to: 'Skeleton.ml:def:figure', say: 'the angles' },
+        { from: 'Skeleton.ml:def:figure', to: 'Skeleton.ml:def:jointed', say: 'each limb' },
+        { from: 'Skeleton.ml:def:figure', to: 'Skeleton.ml:def:draw', say: 'the shape, facing -z' },
+        { from: 'Skeleton.ml:type:pose', to: 'Skeleton.ml:def:hand', say: 'where a sword goes' },
+      ],
+    },
+  ],
 }

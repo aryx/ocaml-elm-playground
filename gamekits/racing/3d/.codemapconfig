@@ -23,4 +23,44 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'One ribbon under five 3D games',
+      bones: [
+        { at: 'Track3d.mli', role: 'a course: built, asked where, drawn' },
+        { at: 'Track3d.ml', role: 'a spline, sampled evenly, with width and bank' },
+        { at: '../Road.ml', role: 'the 2D kit road it can be built from' },
+        { at: '../../../games/racing/TinyMarioKart64.ml', role: 'a circuit from control points' },
+        { at: '../../../games/shmup/TinyStarFox.ml', role: 'a canyon flown along' },
+        { at: '../../../games/racing/TinyVirtuaRacing.ml', role: "OutRun's coast as a stage" },
+      ],
+      joints: [
+        { from: 'Track3d.ml', to: 'Track3d.mli', say: 'implements' },
+        { from: '../Road.ml', to: 'Track3d.ml', say: 'of_road' },
+        { from: '../../../games/racing/TinyMarioKart64.ml', to: 'Track3d.mli', say: 'build, locate, strip' },
+        { from: '../../../games/shmup/TinyStarFox.ml', to: 'Track3d.mli', say: 'at, across' },
+        { from: '../../../games/racing/TinyVirtuaRacing.ml', to: 'Track3d.mli', say: 'of_road' },
+      ],
+    },
+    {
+      name: 'A course: controls, a spline, places, located, drawn',
+      bones: [
+        { at: 'Track3d.ml:type:control', role: 'a control point: where, how wide, how banked' },
+        { at: 'Track3d.ml:def:catmull', role: 'the spline through them' },
+        { at: 'Track3d.ml:def:build', role: 'resampled at an even step: the places' },
+        { at: 'Track3d.ml:type:t', role: 'the places along the ribbon' },
+        { at: 'Track3d.ml:def:at', role: 'the place at a distance along' },
+        { at: 'Track3d.ml:def:locate', role: 'a point back to distance and offset' },
+        { at: 'Track3d.ml:def:strip', role: 'a lane drawn as quads' },
+      ],
+      joints: [
+        { from: 'Track3d.ml:type:control', to: 'Track3d.ml:def:build', say: 'the controls' },
+        { from: 'Track3d.ml:def:build', to: 'Track3d.ml:def:catmull', say: 'the fine line' },
+        { from: 'Track3d.ml:def:build', to: 'Track3d.ml:type:t', say: 'even places' },
+        { from: 'Track3d.ml:type:t', to: 'Track3d.ml:def:at', say: 'a distance' },
+        { from: 'Track3d.ml:type:t', to: 'Track3d.ml:def:locate', say: 'a point' },
+        { from: 'Track3d.ml:type:t', to: 'Track3d.ml:def:strip', say: 'a segment' },
+      ],
+    },
+  ],
 }

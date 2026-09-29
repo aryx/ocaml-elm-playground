@@ -131,6 +131,78 @@
   },
   skeletons: [
     {
+      name: 'One pass: parsed, checked and emitted as P-code together',
+      bones: [
+        { at: 'Pascal_compile.ml:def:compile', role: 'the text in, a program or an error at a place' },
+        { at: 'Pascal_compile.ml:def:program', role: 'the main block; labels made addresses' },
+        { at: 'Pascal_compile.ml:def:block', role: "declarations, nested procedures, the body" },
+        { at: 'Pascal_compile.ml:def:statement', role: 'a statement emitted with its line marked' },
+        { at: 'Pascal_compile.ml:def:expression', role: 'its type returned, its code emitted' },
+        { at: 'Pascal_compile.ml:def:variable', role: 'a name: its static depth and offset' },
+        { at: 'Pascal_compile.ml:def:emit', role: 'an instruction appended' },
+      ],
+      joints: [
+        { from: 'Pascal_compile.ml:def:compile', to: 'Pascal_compile.ml:def:program', say: 'the tokens' },
+        { from: 'Pascal_compile.ml:def:program', to: 'Pascal_compile.ml:def:block', say: 'the main block' },
+        { from: 'Pascal_compile.ml:def:block', to: 'Pascal_compile.ml:def:statement', say: 'begin ... end' },
+        { from: 'Pascal_compile.ml:def:statement', to: 'Pascal_compile.ml:def:expression', say: 'types checked' },
+        { from: 'Pascal_compile.ml:def:expression', to: 'Pascal_compile.ml:def:variable', say: 'a name' },
+        { from: 'Pascal_compile.ml:def:expression', to: 'Pascal_compile.ml:def:emit', say: 'the code' },
+      ],
+    },
+    {
+      name: 'The P-machine: a store, a stack of frames, stepped in slices',
+      bones: [
+        { at: 'Pmachine.ml:type:machine', role: 'the store, pc, sp, mp; the line being read' },
+        { at: 'Pmachine.ml:def:start', role: 'a program loaded' },
+        { at: 'Pmachine.ml:def:resume', role: 'k instructions, or a pause, or a stop' },
+        { at: 'Pmachine.ml:def:instruction', role: 'one P-code instruction done' },
+        { at: 'Pmachine.ml:def:base', role: 'up the static links: a nested variable' },
+        { at: 'Pmachine.ml:type:stop', role: 'halted, paused, needing a line or a random number' },
+        { at: 'Pmachine.ml:def:run', role: 'the same machine as a Talk program' },
+      ],
+      joints: [
+        { from: 'Pmachine.ml:def:start', to: 'Pmachine.ml:type:machine', say: 'fresh' },
+        { from: 'Pmachine.ml:def:resume', to: 'Pmachine.ml:def:instruction', say: 'each, until stopped' },
+        { from: 'Pmachine.ml:def:instruction', to: 'Pmachine.ml:def:base', say: 'Lod, Str' },
+        { from: 'Pmachine.ml:def:resume', to: 'Pmachine.ml:type:stop', say: 'why it stopped' },
+        { from: 'Pmachine.ml:def:run', to: 'Pmachine.ml:def:resume', say: 'answering what it needs' },
+      ],
+    },
+    {
+      name: 'The debugger: the machine read back as the source',
+      bones: [
+        { at: 'Pdebug.ml:def:line', role: 'the source line of the pc' },
+        { at: 'Pdebug.ml:def:frames', role: 'the call stack, down the dynamic links' },
+        { at: 'Pdebug.ml:def:variable', role: 'a name found in a frame, by static links' },
+        { at: 'Pdebug.ml:def:watch', role: 'a watch expression evaluated on the store' },
+        { at: 'Pdebug.ml:type:step', role: 'F7, F8, to the cursor, to a breakpoint' },
+        { at: 'Pdebug.ml:def:pause_for', role: 'a step as a pause test the machine asks' },
+      ],
+      joints: [
+        { from: 'Pdebug.ml:def:frames', to: 'Pdebug.ml:def:variable', say: 'a frame' },
+        { from: 'Pdebug.ml:def:watch', to: 'Pdebug.ml:def:variable', say: 'its names' },
+        { from: 'Pdebug.ml:type:step', to: 'Pdebug.ml:def:pause_for', say: 'the step asked' },
+        { from: 'Pdebug.ml:def:pause_for', to: 'Pdebug.ml:def:line', say: 'left the line?' },
+      ],
+    },
+    {
+      name: 'The disk of classics, opened in the IDE',
+      bones: [
+        { at: 'Pascal_disk.ml:def:hello', role: 'the first program' },
+        { at: 'Pascal_disk.ml:def:hanoi', role: 'recursion: the call stack to watch' },
+        { at: 'Pascal_disk.ml:def:scopes', role: 'nested procedures: the static links' },
+        { at: 'Pascal_disk.ml:def:files', role: 'the disk: names and sources' },
+        { at: '../../appkits/editor/Tui_turbo.ml:def:init', role: 'the IDE, the disk in File Open' },
+      ],
+      joints: [
+        { from: 'Pascal_disk.ml:def:hello', to: 'Pascal_disk.ml:def:files', say: 'a source' },
+        { from: 'Pascal_disk.ml:def:hanoi', to: 'Pascal_disk.ml:def:files', say: 'a source' },
+        { from: 'Pascal_disk.ml:def:scopes', to: 'Pascal_disk.ml:def:files', say: 'a source' },
+        { from: 'Pascal_disk.ml:def:files', to: '../../appkits/editor/Tui_turbo.ml:def:init', say: 'the files' },
+      ],
+    },
+    {
       name: 'Pascal to P-code, run',
       bones: [
         { at: 'Pascal_lexer.ml:def:tokens', role: 'text into tokens' },

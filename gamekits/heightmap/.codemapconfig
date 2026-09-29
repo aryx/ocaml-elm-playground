@@ -27,4 +27,40 @@
   dirs: {
     tests: { summary: "The kit's tests: the island the same on every run." },
   },
+  skeletons: [
+    {
+      name: 'One terrain under a 2.5D and a 3D game',
+      bones: [
+        { at: 'Heightmap.mli', role: 'a terrain as a grid of heights, asked and coloured' },
+        { at: 'Heightmap.ml', role: 'diamond-square made into an island' },
+        { at: '../../games/flight/TinyComanche.ml', role: 'the voxel space: columns from the heights' },
+        { at: '../../games/flight/TinyComanche3d.ml', role: 'the same heights as a mesh' },
+        { at: '../../games/fps/TinyFortnite.ml', role: 'an island to land on' },
+      ],
+      joints: [
+        { from: 'Heightmap.ml', to: 'Heightmap.mli', say: 'implements' },
+        { from: '../../games/flight/TinyComanche.ml', to: 'Heightmap.mli', say: 'height, kind, clear' },
+        { from: '../../games/flight/TinyComanche3d.ml', to: 'Heightmap.mli', say: 'height, kind, colour' },
+        { from: '../../games/fps/TinyFortnite.ml', to: 'Heightmap.mli', say: 'cells, kinds, light' },
+      ],
+    },
+    {
+      name: 'A terrain made up, then asked',
+      bones: [
+        { at: 'Heightmap.ml:type:t', role: 'the grid of heights, its top and its sea' },
+        { at: 'Heightmap.ml:def:diamond_square', role: 'the fractal: midpoints displaced, halving' },
+        { at: 'Heightmap.ml:def:generate', role: 'normalised, lowered toward the edges: an island' },
+        { at: 'Heightmap.ml:def:height', role: 'between cells, bilinear' },
+        { at: 'Heightmap.ml:def:clear', role: 'the line of sight, stepped above the ground' },
+        { at: 'Heightmap.ml:def:kind', role: 'sea to snow by height' },
+      ],
+      joints: [
+        { from: 'Heightmap.ml:def:diamond_square', to: 'Heightmap.ml:def:generate', say: 'raw heights' },
+        { from: 'Heightmap.ml:def:generate', to: 'Heightmap.ml:type:t', say: 'the terrain' },
+        { from: 'Heightmap.ml:type:t', to: 'Heightmap.ml:def:height', say: 'the cells' },
+        { from: 'Heightmap.ml:def:clear', to: 'Heightmap.ml:def:height', say: 'each step of the line' },
+        { from: 'Heightmap.ml:type:t', to: 'Heightmap.ml:def:kind', say: 'a cell, coloured' },
+      ],
+    },
+  ],
 }

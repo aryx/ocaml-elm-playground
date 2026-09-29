@@ -153,6 +153,63 @@
   },
   skeletons: [
     {
+      name: "The tokenizer: WHATWG's states as mutually recursive functions",
+      bones: [
+        { at: 'Html_lexer.ml:def:tokenize', role: 'newlines normalized, the machine started' },
+        { at: 'Html_lexer.ml:def:data', role: 'text until a <' },
+        { at: 'Html_lexer.ml:def:tag_open', role: 'a tag, an end tag, a comment, a doctype' },
+        { at: 'Html_lexer.ml:def:before_attribute_name', role: 'the attributes, state after state' },
+        { at: 'Html_lexer.ml:def:emit_tag', role: 'a tag out; script and style switch to raw text' },
+        { at: 'Html_lexer.ml:def:raw_text', role: 'up to the matching end tag, no markup' },
+        { at: 'Html_lexer.ml:type:token', role: 'what the tree builder reads' },
+      ],
+      joints: [
+        { from: 'Html_lexer.ml:def:tokenize', to: 'Html_lexer.ml:def:data', say: 'the start state' },
+        { from: 'Html_lexer.ml:def:data', to: 'Html_lexer.ml:def:tag_open', say: '<' },
+        { from: 'Html_lexer.ml:def:tag_open', to: 'Html_lexer.ml:def:before_attribute_name', say: 'after the name' },
+        { from: 'Html_lexer.ml:def:before_attribute_name', to: 'Html_lexer.ml:def:emit_tag', say: '>' },
+        { from: 'Html_lexer.ml:def:emit_tag', to: 'Html_lexer.ml:def:raw_text', say: '<script>, <title>' },
+        { from: 'Html_lexer.ml:def:emit_tag', to: 'Html_lexer.ml:type:token', say: 'the tag' },
+      ],
+    },
+    {
+      name: 'The tree builder: a stack of open elements, repaired by the DTD',
+      bones: [
+        { at: 'Html_tree.ml:def:parse', role: 'html, head, body made first; each token applied' },
+        { at: 'Html_tree.ml:type:t', role: 'the stack of open elements' },
+        { at: 'Html_tree.ml:def:start_tag', role: 'what it closes popped, then pushed' },
+        { at: 'Html_tree.ml:def:end_tag', role: 'popped to its match; </p> alone makes one' },
+        { at: 'Html_tree.ml:def:pop_to', role: 'pop to a name, unless a stop comes first' },
+        { at: 'Html_tree.ml:def:freeze', role: 'the mutable tree made a Dom' },
+      ],
+      joints: [
+        { from: 'Html_tree.ml:def:parse', to: 'Html_tree.ml:def:start_tag', say: 'a start tag' },
+        { from: 'Html_tree.ml:def:parse', to: 'Html_tree.ml:def:end_tag', say: 'an end tag' },
+        { from: 'Html_tree.ml:def:start_tag', to: 'Html_tree.ml:def:pop_to', say: 'Dtd.closes' },
+        { from: 'Html_tree.ml:def:end_tag', to: 'Html_tree.ml:def:pop_to', say: 'the name' },
+        { from: 'Html_tree.ml:def:pop_to', to: 'Html_tree.ml:type:t', say: 'the stack' },
+        { from: 'Html_tree.ml:def:parse', to: 'Html_tree.ml:def:freeze', say: 'the document' },
+      ],
+    },
+    {
+      name: "The line-mode browser: a tree printed, a character per cell",
+      bones: [
+        { at: 'Line_mode.ml:def:render', role: 'the root walked, the lines and links out' },
+        { at: 'Line_mode.ml:def:element', role: 'blocks on their own lines, inlines flowing, links numbered' },
+        { at: 'Line_mode.ml:type:printer', role: 'the line being filled, the word, the links' },
+        { at: 'Line_mode.ml:def:flush', role: 'the words broken greedily into lines' },
+        { at: 'Line_mode.ml:def:pre_text', role: "<pre>'s lines kept as they are" },
+        { at: 'Line_mode.ml:type:t', role: 'the lines, and the links listed' },
+      ],
+      joints: [
+        { from: 'Line_mode.ml:def:render', to: 'Line_mode.ml:def:element', say: 'the body' },
+        { from: 'Line_mode.ml:def:element', to: 'Line_mode.ml:type:printer', say: 'text added' },
+        { from: 'Line_mode.ml:def:element', to: 'Line_mode.ml:def:pre_text', say: 'inside <pre>' },
+        { from: 'Line_mode.ml:type:printer', to: 'Line_mode.ml:def:flush', say: 'at a block' },
+        { from: 'Line_mode.ml:def:flush', to: 'Line_mode.ml:type:t', say: 'the lines' },
+      ],
+    },
+    {
       name: 'Bytes to a tree',
       bones: [
         { at: 'Charset.ml:def:to_utf_8', role: 'the bytes decoded into text' },
