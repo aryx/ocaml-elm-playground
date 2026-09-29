@@ -417,7 +417,9 @@ peek, use/def is also great and varying height pixel is also very
 useful." The region level is the weak one ("not sure what we can do at
 that level"): its files' code drawn there was unreadable and removed;
 each file's card and table of contents (its sections, a click peeking
-at one) are the current attempt.
+at one) are the current attempt -- and the author, later that day: "I
+start to like the region with this file + summary + clickable red
+sections and capital. Love the peek and hover generalized."
 
 The peek grew: a section peeked at, a long peek scrolled by the wheel, a
 name hovered in a peek glowing there and on the map, a name defined
