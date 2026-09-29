@@ -1,5 +1,6 @@
 // games/shmup/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "Shoot 'em ups: a ship or a gun against waves of enemies; you shoot and dodge.",
@@ -39,6 +40,23 @@
     'TinyStarFox.ml': { digest: 'ffcb3289e87b', summary: 'Star Fox (Nintendo, 1993): an arwing on rails down a canyon, in 3D.' },
     'Asteroid.ml': { digest: 'fe15863ee2a6', summary: 'Asteroids, ported from a Haskell version (Haskell in Space): the ship, the rocks, wrapping.' },
   },
+  // Space Invaders' skeleton: Model-View-Update, then down its spine to
+  // the march, and across to the kit's shots
+  skeletons: [
+    skeletons.mvu('TinyInvaders.ml') + {
+      name: 'Space Invaders: Model-View-Update, and its march',
+      bones+: [
+        { at: 'TinyInvaders.ml:def:update_game', role: 'the rules of a frame' },
+        { at: 'TinyInvaders.ml:def:march', role: 'one alien moved a frame' },
+        { at: '../../gamekits/shmup/Shots.ml:def:advance', role: 'a shot moves (the kit)' },
+      ],
+      joints+: [
+        { from: 'TinyInvaders.ml:def:update', to: 'TinyInvaders.ml:def:update_game', say: 'the rules' },
+        { from: 'TinyInvaders.ml:def:update_game', to: 'TinyInvaders.ml:def:march', say: 'the march' },
+        { from: 'TinyInvaders.ml:def:update_game', to: '../../gamekits/shmup/Shots.ml:def:advance', say: 'the shots' },
+      ],
+    },
+  ],
   tours: [
     {
       name: 'How Space Invaders runs',

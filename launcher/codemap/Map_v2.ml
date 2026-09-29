@@ -541,13 +541,211 @@ let names_glow (t : t) (c : camera) (e : entry) : shape list =
                   in
                   lit @ callouts)))
 
+(*****************************************************************************)
+(* The skeletons *)
+(*****************************************************************************)
+
+(* claude: the skeletons (Code_guide.skeleton, x), at every level: from
+ * afar, a bone a dot at its line in its file's columns; at the ground and
+ * the street, its definition lit in the shaded file; the joints between
+ * the bones on the map, ivory roads, their direction the road's taper;
+ * an end off the map, a stub to the map's edge naming it *)
+let ivory = (245, 232, 200)
+
+(* the grounds on the map now, a file's path and its layout: the focus's
+ * and, at the street, the panels' *)
+let grounds (t : t) (e : entry) : (string * Code_ground.t) list =
+  if t.street then
+    let s = street_of t e in
+    (e.path, s.focus) :: List.map (fun (p : Code_street.panel) -> (p.path, p.ground)) s.panels
+  else [ (e.path, ground_of t e) ]
+
+let entry_of (t : t) (path : string) : entry option = List.find_opt (fun (x : entry) -> x.path = path) t.entries
+
+(* where a file's line is on the map now: its left, its middle's height,
+ * the end of its text *)
+let spot (t : t) (c : camera) (path : string) (line : int) : (float * float * float) option =
+  match at_ground t c with
+  | Some e -> (
+      match List.assoc_opt path (grounds t e) with
+      | Some g when line < Array.length g.places ->
+          let x, y, w, h = Code_ground.box g line in
+          let f = Option.map (fun (x : entry) -> Lazy.force x.file) (entry_of t path) in
+          let last = ref 0 in
+          Option.iter (fun (f : Code_file.t) -> for k = 0 to Code_file.cols - 1 do if Bytes.get f.chars ((line * Code_file.cols) + k) <> '\000' && Bytes.get f.chars ((line * Code_file.cols) + k) <> ' ' then last := k + 1 done) f;
+          Some (x, y +. (h /. 2.), Float.min (x +. w) (x +. (float_of_int !last *. Code_ground.cell_w g line)))
+      | _ -> None)
+  | None -> (
+      let found = ref None in
+      Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, x) when x.path = path -> found := Some i | _ -> ()) t.placed;
+      match !found with
+      | Some i -> (
+          match (clip c t.placed.(i).rect, t.geometry.(i)) with
+          | Some _, Some g ->
+              let x, y = line_pos t.placed.(i).rect g line in
+              let px = to_px c x and py = to_py c (y +. (g.cell_h /. 2.)) in
+              Some (px, py, px)
+          | _ -> None)
+      | None -> None)
+
+(* a bone's line in its file, found once *)
+let bone_line (t : t) (b : Code_guide.bone) : int option = match entry_of t b.bpath with Some e -> capital_line e b.banchor | None -> None
+
+(* a definition's lines: from its header to the next top-level one *)
+let extent (f : Code_file.t) (line : int) : int * int =
+  let next = List.fold_left (fun acc (l, _, (cat : Highlight_code.category)) -> if l > line && l < acc && cat <> Comment_section then l else acc) (Code_file.nlines f) f.defs in
+  (line, next - 1)
+
+let skeleton_shapes (t : t) (c : camera) : shape list =
+  let a = c.a in
+  let ground = at_ground t c in
+  let all = List.concat_map (fun (d : Code_guide.dir_note) -> d.skeletons) (Code_guide.dirs t.guide) in
+  (* at the ground, the skeletons with a bone on the map *)
+  let bone_spot (b : Code_guide.bone) = Option.bind (bone_line t b) (fun l -> Option.map (fun s -> (l, s)) (spot t c b.bpath l)) in
+  (* at the ground and the street, the skeletons of the file looked at
+   * (with a bone in it); from afar, all of them *)
+  let shown =
+    List.filter
+      (fun (s : Code_guide.skeleton) -> match ground with Some e -> List.exists (fun (b : Code_guide.bone) -> b.bpath = e.path) s.bones | None -> true)
+      all
+  in
+  (* from afar, a file whose bones are a few pixels apart (TinyInvaders'
+   * five) is one dot, its skeleton's name, the joints to other files
+   * leaving from it: coming nearer spreads it *)
+  let packed_files =
+    if ground <> None then []
+    else
+      let by_file = Hashtbl.create 8 in
+      List.iter
+        (fun (sk : Code_guide.skeleton) ->
+          List.iter
+            (fun (b : Code_guide.bone) ->
+              match bone_spot b with
+              | Some (_, (x, y, _)) -> Hashtbl.replace by_file b.bpath ((x, y, sk.sname) :: Option.value (Hashtbl.find_opt by_file b.bpath) ~default:[])
+              | None -> ())
+            sk.bones)
+        shown;
+      Hashtbl.fold
+        (fun path spots acc ->
+          let xs = List.map (fun (x, _, _) -> x) spots and ys = List.map (fun (_, y, _) -> y) spots in
+          let lo l = List.fold_left Float.min Float.infinity l and hi l = List.fold_left Float.max Float.neg_infinity l in
+          if List.length spots >= 2 && hi xs -. lo xs +. (hi ys -. lo ys) < 60. then
+            (path, ((lo xs +. hi xs) /. 2., (lo ys +. hi ys) /. 2., List.sort_uniq compare (List.map (fun (_, _, n) -> n) spots))) :: acc
+          else acc)
+        by_file []
+  in
+  let packed_at path = List.assoc_opt path packed_files in
+  (* a bone's place: its file's dot when packed *)
+  let bone_spot (b : Code_guide.bone) =
+    match (packed_at b.bpath, bone_spot b) with Some (x, y, _), Some (l, _) -> Some (l, (x +. 12., y, x +. 12.)) | _, s -> s
+  in
+  if shown = [] then [ label a dim 16. (float_of_int a.pw /. 2.) 30. "(no skeleton here: the configs name none)" ]
+  else
+  let r, g, b = ivory in
+  let ink_i = rgb r g b in
+  let bones = List.concat_map (fun (s : Code_guide.skeleton) -> s.bones) shown in
+  (* the shade: from afar the whole map; at the ground, every line but
+   * the bones' definitions *)
+  let shade =
+    match ground with
+    | None -> [ rectangle (rgb 8 6 20) (float_of_int a.pw) (float_of_int a.ph) |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph /. 2.)) |> fade 0.6 ]
+    | Some e ->
+        List.concat_map
+          (fun (path, (gr : Code_ground.t)) ->
+            match entry_of t path with
+            | None -> []
+            | Some x ->
+                let f = Lazy.force x.file in
+                let lit = List.filter_map (fun (bn : Code_guide.bone) -> if bn.bpath = path then Option.map (extent f) (bone_line t bn) else None) bones in
+                List.concat
+                  (List.init (Array.length gr.places) (fun l ->
+                       if List.exists (fun (s, e) -> l >= s && l <= e) lit then []
+                       else
+                         let x0, y0, w, h = Code_ground.box gr l in
+                         [ rectangle (rgb 8 6 20) (w +. 16.) (h +. 0.5) |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.72 ])))
+          (grounds t e)
+  in
+  (* the joints, bent one way or the other so that a -> b and b -> a (a
+   * loop, the model and its update) are two roads *)
+  let where at = match List.find_opt (fun (bn : Code_guide.bone) -> bn.bat = at) bones with Some bn -> Option.map (fun (l, s) -> (bn, l, s)) (bone_spot bn) |> fun x -> (bn, x) |> Option.some | None -> None in
+  let joints =
+    List.concat_map
+      (fun (s : Code_guide.skeleton) ->
+        List.concat_map
+          (fun (j : Code_guide.joint) ->
+            let same_pack = match (where j.jfrom, where j.jto) with Some (x, _), Some (y, _) -> x.bpath = y.bpath && packed_at x.bpath <> None | _ -> false in
+            match (where j.jfrom, where j.jto) with
+            | _ when same_pack -> []
+            | Some (_, Some (_, _, (ax0, ay, _))), Some (_, Some (_, _, (bx0, by, _))) ->
+                (* from dot to dot *)
+                let ax = ax0 -. 12. and bx = bx0 -. 12. in
+                let dx = bx -. ax and dy = by -. ay in
+                let len = Float.max 1. (Float.sqrt ((dx *. dx) +. (dy *. dy))) in
+                (* the perpendicular turns with the direction: a -> b and b -> a
+                 * bend to opposite sides by themselves, a loop drawn as two *)
+                let bend = Float.min 140. (Float.max 40. (0.25 *. len)) in
+                let mx = ((ax +. bx) /. 2.) +. (-.dy /. len *. bend) and my = ((ay +. by) /. 2.) +. (dx /. len *. bend) in
+                let pts = Map_atlas.bspline [| (ax, ay); (mx, my); (bx, by) |] in
+                Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 6. 0.85
+                @ (match j.jsay with Some w -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | None -> [])
+            | Some (_, Some (_, _, (ax0, ay, _))), Some (bn, None) | Some (bn, None), Some (_, Some (_, _, (ax0, ay, _))) ->
+                (* an end off the map: a stub to its edge, naming it *)
+                let ae = ax0 -. 12. in
+                let ex = float_of_int a.pw -. 20. in
+                let pts = Map_atlas.bspline [| (ae, ay); ((ae +. ex) /. 2., ay -. 40.); (ex, ay) |] in
+                let name = snd (Code_guide.split bn.bat) in
+                let text = Printf.sprintf "%s  %s" name bn.bpath in
+                let tw = 0.5 *. 13. *. float_of_int (String.length text) in
+                Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6
+                @ [ words ink_i text |> scale (13. /. words_font_size) |> move (sx a (ex -. (tw /. 2.))) (sy a (ay +. 14.)) ]
+            | _ -> [])
+          s.joints)
+      shown
+  in
+  (* the bones: a dot and their role *)
+  let marks =
+    List.concat_map
+      (fun (bn : Code_guide.bone) ->
+        match bone_spot bn with
+        | _ when packed_at bn.bpath <> None -> []
+        | None -> []
+        | Some (_, (x, y, _)) ->
+            let size = 14. in
+            let tw = 0.5 *. size *. float_of_int (String.length bn.role) in
+            (* above the header's start, over the shaded line before it *)
+            let lx = x in
+            [
+              circle (rgb 20 16 30) 8. |> move (sx a (x -. 12.)) (sy a y);
+              circle ink_i 6. |> move (sx a (x -. 12.)) (sy a y);
+              rectangle (rgb 18 16 36) (tw +. 10.) (size +. 6.) |> move (sx a (lx +. (tw /. 2.))) (sy a (y -. 24.)) |> fade 0.9;
+              words ink_i bn.role |> scale (size /. words_font_size) |> move (sx a (lx +. (tw /. 2.))) (sy a (y -. 24.));
+            ])
+      bones
+  in
+  let dots =
+    List.concat_map
+      (fun (_, (x, y, names)) ->
+        let name = String.concat ", " names in
+        let tw = 0.5 *. 14. *. float_of_int (String.length name) in
+        [
+          circle (rgb 20 16 30) 10. |> move (sx a x) (sy a y);
+          circle ink_i 8. |> move (sx a x) (sy a y);
+          rectangle (rgb 18 16 36) (tw +. 10.) 20. |> move (sx a (x +. 16. +. (tw /. 2.))) (sy a (y -. 18.)) |> fade 0.9;
+          words ink_i name |> scale (14. /. words_font_size) |> move (sx a (x +. 16. +. (tw /. 2.))) (sy a (y -. 18.));
+        ])
+      packed_files
+  in
+  shade @ joints @ marks @ dots
+
 let labels (t : t) (c : camera) (_ : float) : shape list =
   let kept = names t c in
   (match at_ground t c with
   | Some e when t.street -> street_labels t c e @ line_lit t c e @ names_glow t c e
   | Some e -> notes t c e @ line_lit t c e @ names_glow t c e
   | None -> [])
-  @ List.rev_map (fun n -> n.draw) kept @ hover_card t c kept
+  @ List.rev_map (fun n -> n.draw) kept
+  @ (if t.xray then skeleton_shapes t c else [])
+  @ hover_card t c kept
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,
  * not the treemap's): what Enter opens, what the status line says *)

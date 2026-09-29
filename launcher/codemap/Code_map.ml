@@ -257,6 +257,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
     t.street <- not t.street;
     t.painted <- None
   end;
+  (* claude: the skeletons, at any level (Map_v2) *)
+  if pressed "x" then t.xray <- not t.xray;
   (* claude: the style, the next one, for this map and those to come *)
   let before = t.placed in
   let t =
@@ -571,7 +573,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
           (if t.style.units then
-             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   a what a file uses   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
+             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   a what a file uses   x skeleton   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
            else
            Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)

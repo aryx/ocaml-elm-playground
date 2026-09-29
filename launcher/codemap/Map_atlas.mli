@@ -31,7 +31,7 @@ val bspline : ?per:int -> (float * float) array -> (float * float) list
    pixels wide at the user's end, a third of it at the used's, green to
    red: its direction without an arrow (also the street level's edges,
    Code_street) *)
-val road : Code_map_base.area -> (float * float) list -> float -> float -> Playground.shape list
+val road : ?colours:(int * int * int) * (int * int * int) -> Code_map_base.area -> (float * float) list -> float -> float -> Playground.shape list
 
 val paint : aa:bool -> Code_map_base.t -> Code_map_base.camera -> Rgba_image.t
 val labels : Code_map_base.t -> Code_map_base.camera -> float -> Playground.shape list

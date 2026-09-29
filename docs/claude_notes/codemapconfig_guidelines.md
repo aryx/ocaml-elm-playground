@@ -48,6 +48,39 @@ that is the game's heart (TinyInvaders' `march`), not `update` and
 `view` -- every game has them, so as capitals they would crowd the map
 and say nothing; they are `important`, and `links`.
 
+## Skeletons
+
+The structure the rest hangs on, as in biology: a few definitions, each
+with a role, and the joints between them -- the loop of a game's
+Model-View-Update, a compiler's passes, how a program starts and runs.
+The map's X-ray (`x`) shows only them, at every level: from afar a dot
+in each file, the joints running between directories; at the ground the
+bones' definitions lit in the shaded file.
+
+- A skeleton is not the important lines: those say what to read, a
+  skeleton says how the parts connect. Four to eight bones; a role each,
+  a few words ("the state", "a frame: model -> model").
+- Joints are the flow of data or control, their direction meaning it:
+  `model -> update` (stepped), `update -> model` (the next state). A
+  loop is two joints, drawn as two roads.
+- Write a shared pattern once, in `skeletons.libsonnet` at the root (a
+  function of the file: `skeletons.mvu('TinyInvaders.ml')`), and extend
+  it with `+:` where a program has more: TinyInvaders' spine down to
+  `march`, and across to its kit's `Shots.advance`.
+- Let a skeleton span files and directories when the structure does: the
+  repository's own ("How a program runs": `Program.main`, the platform's
+  `run_app`, the frame loop, the game's update) sits in the root config.
+- Every Playground game is Model-View-Update: the template is the
+  default; name a game's skeleton for what it adds.
+
+## Notes
+
+An item's `say` is drawn beside its line at the ground and the street,
+in the room after the line's end (wrapped, three lines at most): write
+it short, 30 to 60 characters, what the line *is for* or *why* -- "one
+alien moved per frame: why the last one runs" -- never what it plainly
+says. An item without a `say` still makes its line taller.
+
 ## Important
 
 The lines a reader must see to understand the file, drawn larger near

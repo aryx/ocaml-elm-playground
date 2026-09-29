@@ -64,6 +64,7 @@ type t = {
   guide : Code_guide.t; (* claude: what the directories' .codemapconfig say (plan_codemap_v2.md) *)
   mutable street : bool; (* claude: at the ground, the file with what it uses (a: Code_street) *)
   mutable clock : float; (* claude: the frame's time (view's), for what pulses *)
+  mutable xray : bool; (* claude: the skeletons shown, the rest in the shade (x: Map_v2) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }

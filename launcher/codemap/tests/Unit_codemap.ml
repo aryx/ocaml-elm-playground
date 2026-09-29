@@ -249,11 +249,28 @@ let tests =
           in
           let problems = mistakes @ List.filter_map (function Ok _ -> None | Error e -> Some e) found in
           if problems <> [] then Alcotest.failf "the .codemapconfig files (tinybox codemap -check .):\n  %s" (String.concat "\n  " problems));
+      (* claude: a skeleton from a template, extended, across files *)
+      Testo.create "a skeleton, from a template, across files" (fun () ->
+          let files =
+            [
+              ("skeletons.libsonnet", "{ loop(f):: { name: 'Loop', bones: [{ at: f + ':def:step', role: 'a step' }, { at: f + ':type:state', role: 'the state' }], joints: [{ from: f + ':def:step', to: f + ':type:state' }] } }");
+              ( "game/.codemapconfig",
+                "local s = import '../skeletons.libsonnet'; { skeletons: [s.loop('G.ml') + { bones+: [{ at: '../kit/K.ml:def:move', role: 'a move' }], joints+: [{ from: 'G.ml:def:step', to: '../kit/K.ml:def:move' }] }] }" );
+            ]
+          in
+          let guide, mistakes = Code_guide.load ~read:(fun p -> List.assoc_opt p files) [ "game/.codemapconfig" ] in
+          Alcotest.(check (list string)) "no mistake" [] mistakes;
+          match Code_guide.skeletons_of guide "kit/K.ml" with
+          | [ sk ] ->
+              Alcotest.(check (list string)) "its bones, from the root" [ "game/G.ml def:step"; "game/G.ml type:state"; "kit/K.ml def:move" ]
+                (List.map (fun (b : Code_guide.bone) -> b.bpath ^ " " ^ b.banchor) sk.bones);
+              Alcotest.(check int) "two joints" 2 (List.length sk.joints)
+          | _ -> Alcotest.fail "one skeleton reaching kit/K.ml");
       Testo.create "a config's mistakes" (fun () ->
           let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
           Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");
           Alcotest.(check (list string)) "a misspelt field"
-            [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, views, layers)" ]
+            [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, skeletons, views, layers)" ]
             (load "{ summery: 'x' }");
           Alcotest.(check (list string)) "jsonnet's own" [ "d/.codemapconfig:1: expected ,, not b" ] (load "{ a: 1 b: 2 }"));
       (* claude: Code_layers' worked example *)

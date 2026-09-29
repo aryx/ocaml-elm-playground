@@ -19,6 +19,13 @@
    first (its kits), roads from each use to its definition (step 6);
    tinybox codemap <dir> focus=<path> opens the map on a unit.
 
+   x, the X-ray, at every level: the configs' skeletons (Code_guide), the
+   rest in the shade -- from afar, a dot per file (a file whose bones are
+   close together one dot, its skeleton's name) and the joints between
+   them across the map; at the ground and the street, the bones'
+   definitions lit, their roles, the joints between them, a bone in a
+   panel reached across files, one off the map a stub naming it.
+
    The camera moves a unit at a time (the plan's step 2, Code_units, in
    Code_map.update): the wheel or a click one level in, the wheel back,
    a right click or - one level out, the arrows to a neighbour. The unit

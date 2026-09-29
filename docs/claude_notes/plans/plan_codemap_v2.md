@@ -339,6 +339,47 @@ file, splitting near the kit), coloured by direction (green what it
 uses, red who uses it, as codemap's); the same inside the focus, with the
 config's `links`. What the focus does not touch, dimmed.
 
+## Skeletons (the author, 2026-09-29)
+
+"One notion we might want to add is 'skeleton' like in biology, where it
+helps to see the underlying structure; for space invader for instance
+the model, view, update are pretty fundamental"; and "great idea that
+skeletons span files", "what would be the skeleton at the earth level!"
+
+Done the same day: `skeletons` in a config (bones: an anchor with its
+file and a role; joints between bones), checked; a template in the
+root's `skeletons.libsonnet` (`mvu(file)`), extended by `+:`;
+TinyInvaders' (MVU, its spine to `march`, across to `Shots.advance`)
+and the repository's ("How a program runs", `Program.main` to the frame
+loop, across `libs/`, `playground/` and its platforms). The X-ray, `x`,
+at every level (`Map_v2.skeleton_shapes`); from afar, a file's close
+bones packed into one dot. To come: a skeleton for every game (the
+template's default, checked), the apps' and the languages' (a
+compiler's passes), the earth level marking each file by its skeleton,
+the tour following a skeleton's joints.
+
+## Anatomy: beyond the skeleton (later)
+
+The author (2026-09-29): "go even deeper with the biology terminology
+and at some point in addition to xray show also blood flows, muscles,
+etc.", "air flow". A body's systems, each a way of looking at the same
+code, each a mode like the X-ray, each from the configs where judgement
+is needed and from the analyses where it is not:
+
+| system | in the code | seen as | from |
+|---|---|---|---|
+| skeleton | the structure the rest hangs on | bones and joints (done) | the configs |
+| blood | the data carried round: the model through update and view, a token stream through a compiler's passes | a flow along the joints, colored by type, pulsing each "frame" | the types of the bones' parameters and results (the analyses), named in the config |
+| muscles | the code that does the work: the heavy loops, the rasterizer, the physics step | the definitions shaded by their weight (size, loops, calls per frame) | the analyses (size, nesting), hot ones named in the config |
+| nerves | the signals: input events, messages, subscriptions and commands | from the keyboard and mouse in, to update, out as commands | Sub/Cmd uses, `computer.keyboard`/`mouse` (the analyses) |
+| lungs, air | the exchange with the outside: files, network, the screen, the clock | the Cap.* uses, where the program breathes (the Caps layer) | a layer's pattern rules (`Cap.$X`) |
+| skin | what is shown to others: the interfaces | the .mli, the public names | the files themselves |
+| organs | the parts with one job: a kit, a subsystem | regions of the map (the directories) | the configs' summaries |
+
+The same mode switch, several systems: `x` the skeleton, and others to
+choose (keys or a menu), several shown at once, each in its colour, as
+an anatomy atlas's plates.
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in

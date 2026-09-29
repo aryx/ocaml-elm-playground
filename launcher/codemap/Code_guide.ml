@@ -23,6 +23,9 @@ type file_note = {
 }
 
 type tour = { name : string; stops : item list }
+type bone = { bat : string; bpath : string; banchor : string; role : string }
+type joint = { jfrom : string; jto : string; jsay : string option }
+type skeleton = { sname : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
 type dir_note = {
@@ -33,6 +36,7 @@ type dir_note = {
   subdirs : (string * string) list;
   notes : (string * file_note) list;
   tours : tour list;
+  skeletons : skeleton list;
   views : view list;
   layers : Json.t list;
 }
@@ -92,10 +96,17 @@ let file_note where v =
 (* a path of the config, from the root *)
 let under (dir : string) (p : string) : string = if dir = "" then p else Jsonnet_parse.resolve ~from:(dir ^ "/.codemapconfig") p
 
+let kinds = [ "def"; "type"; "module"; "section"; "comment"; "line"; "pattern" ]
+
+let split (s : string) : string option * string =
+  match String.index_opt s ':' with
+  | Some i when not (List.mem (String.sub s 0 i) kinds) -> (Some (String.sub s 0 i), String.sub s (i + 1) (String.length s - i - 1))
+  | _ -> (None, s)
+
 let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
   let where = if dir = "" then ".codemapconfig" else dir ^ "/.codemapconfig" in
   match
-    let fs = fields where [ "title"; "summary"; "generated"; "colors"; "dirs"; "files"; "tours"; "views"; "layers" ] v in
+    let fs = fields where [ "title"; "summary"; "generated"; "colors"; "dirs"; "files"; "tours"; "skeletons"; "views"; "layers" ] v in
     let obj k f = match List.assoc_opt k fs with Some (Json.Object kvs) -> List.map (fun (name, v) -> f (where ^ "." ^ k ^ "." ^ name) name v) kvs | Some _ -> bad "%s.%s: an object expected" where k | None -> [] in
     (match List.assoc_opt "generated" fs with Some g -> ignore (fields (where ^ ".generated") [ "by"; "on" ] g) | None -> ());
     {
@@ -114,6 +125,25 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
         opt_list where fs "tours" (fun w v ->
             let fs = fields w [ "name"; "stops" ] v in
             { name = (match opt_str w fs "name" with Some n -> n | None -> bad "%s: its name" w); stops = opt_list w fs "stops" item });
+      skeletons =
+        opt_list where fs "skeletons" (fun w v ->
+            let fs = fields w [ "name"; "bones"; "joints" ] v in
+            let need k = match opt_str w fs k with Some s -> s | None -> bad "%s: its %s" w k in
+            let bones =
+              opt_list w fs "bones" (fun w v ->
+                  let fs = fields w [ "at"; "role" ] v in
+                  let at = match opt_str w fs "at" with Some s -> s | None -> bad "%s: at, its anchor" w in
+                  match split at with
+                  | Some p, anchor -> { bat = at; bpath = under dir p; banchor = anchor; role = (match opt_str w fs "role" with Some r -> r | None -> bad "%s: its role" w) }
+                  | None, _ -> bad "%s: %s: a bone names its file ('File.ml:def:x')" w at)
+            in
+            let joints =
+              opt_list w fs "joints" (fun w v ->
+                  let fs = fields w [ "from"; "to"; "say" ] v in
+                  let bone k = match opt_str w fs k with Some s when List.exists (fun b -> b.bat = s) bones -> s | Some s -> bad "%s.%s: %s is none of the bones" w k s | None -> bad "%s: its %s" w k in
+                  { jfrom = bone "from"; jto = bone "to"; jsay = opt_str w fs "say" })
+            in
+            { sname = need "name"; bones; joints });
       views =
         opt_list where fs "views" (fun w v ->
             let fs = fields w [ "name"; "files"; "of"; "with" ] v in
@@ -159,18 +189,14 @@ let file_note (t : t) (path : string) : file_note option =
   Option.bind (List.find_opt (fun d -> d.dir = dir_of path) t) (fun d -> List.assoc_opt (Filename.basename path) d.notes)
 
 let colours (t : t) = List.concat_map (fun d -> d.colors) t
+let skeletons_of (t : t) (path : string) : skeleton list =
+  List.concat_map (fun d -> List.filter (fun s -> List.exists (fun b -> b.bpath = path) s.bones) d.skeletons) t
+
 let capitals (t : t) = List.concat_map (fun d -> List.concat_map (fun (name, n) -> List.map (fun i -> (under d.dir name, i)) n.capitals) d.notes) t
 
 (*****************************************************************************)
 (* Anchors *)
 (*****************************************************************************)
-
-let kinds = [ "def"; "type"; "module"; "section"; "comment"; "line"; "pattern" ]
-
-let split (s : string) : string option * string =
-  match String.index_opt s ':' with
-  | Some i when not (List.mem (String.sub s 0 i) kinds) -> (Some (String.sub s 0 i), String.sub s (i + 1) (String.length s - i - 1))
-  | _ -> (None, s)
 
 (* a line's characters, as the grid keeps them (a space a 0) *)
 let line_text (f : Code_file.t) (l : int) : string =
@@ -257,6 +283,9 @@ let check (t : t) ~(file : string -> (Code_file.t * string) option) ~(exists : s
               | None, _ -> err "%s: tour %S: %s: a stop names its file" conf tr.name i.at)
             tr.stops)
         d.tours;
+      List.iter
+        (fun s -> List.iter (fun b -> anchor (Printf.sprintf "%s: skeleton %S" conf s.sname) b.bpath b.banchor) s.bones)
+        d.skeletons;
       List.iter (fun (name, _) -> if not (exists (under d.dir name)) then err "%s: dirs: %s not found" conf name) d.subdirs;
       List.iter
         (fun v ->

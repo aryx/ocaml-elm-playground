@@ -207,7 +207,8 @@ let resample (k : int) (pts : (float * float) list) : (float * float) array =
         let s = Float.min 1. (Float.max 0. s) in
         (x0 +. (s *. (x1 -. x0)), y0 +. (s *. (y1 -. y0))))
 
-let road (a : area) (pts : (float * float) list) (w : float) (alpha : float) : shape list =
+let road ?(colours = (user_end, used_end)) (a : area) (pts : (float * float) list) (w : float) (alpha : float) : shape list =
+  let user_end, used_end = colours in
   (* pieces of at most 16 pixels (up to 400): the gradient smooth, and
    * the pieces off the map left out close to its edge *)
   let len = fst (List.fold_left (fun (l, (px, py)) (x, y) -> (l +. Float.sqrt (((x -. px) ** 2.) +. ((y -. py) ** 2.)), (x, y))) (0., List.hd pts) pts) in

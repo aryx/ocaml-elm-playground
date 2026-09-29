@@ -17,6 +17,7 @@
        files: { name: { summary, digest, capitals: [item], important: [item],
                         links: [{ from, to }], related: [path] } },
        tours: [{ name, stops: [item] }],
+       skeletons: [{ name, bones: [{ at: path:anchor, role }], joints: [{ from, to, say }] }],
        views: [{ name, files: [path] } or { name, of: path, with: 'users' }],
        layers: [{ name, rules: [...] }] }
 
@@ -54,6 +55,17 @@ type file_note = {
 }
 
 type tour = { name : string; stops : item list }
+
+(* claude: a skeleton, as in biology: the structure the rest hangs on --
+   a game's Model-View-Update, a compiler's lexer, parser, typer and
+   code generator -- its bones (an anchor, its file first, relative to
+   the config: 'TinyInvaders.ml:def:update', and the bone's role) and
+   the joints between them (the bones' anchors, as written), spanning
+   files if it must. Resolved: [bpath] the bone's file from the root,
+   [banchor] the anchor in it *)
+type bone = { bat : string; bpath : string; banchor : string; role : string }
+type joint = { jfrom : string; jto : string; jsay : string option }
+type skeleton = { sname : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
 type dir_note = {
@@ -64,6 +76,7 @@ type dir_note = {
   subdirs : (string * string) list; (* an immediate subdirectory's name, its summary *)
   notes : (string * file_note) list; (* a file's name, what is said of it *)
   tours : tour list;
+  skeletons : skeleton list;
   views : view list;
   layers : Json.t list;
 }
@@ -96,6 +109,9 @@ val colours : t -> (string * rgb) list
 
 (* the capitals: a file's path, and the item *)
 val capitals : t -> (string * item) list
+
+(* the skeletons with a bone in a file (its path from the root) *)
+val skeletons_of : t -> string -> skeleton list
 
 (* an anchor, read: its kind and what follows ("def", "view"); with a
    path first, split off ("Shots.ml:def:advance": Some "Shots.ml") *)

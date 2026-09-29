@@ -3,6 +3,25 @@
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   title: 'Games and applications that made computing history, rebuilt small in OCaml',
+  // the repository's skeleton: how any program runs, across directories
+  skeletons: [
+    {
+      name: 'How a program runs',
+      bones: [
+        { at: 'libs/core/Program.ml:def:main', role: 'every program starts here: at once, or chosen in tinybox' },
+        { at: 'playground/Playground.ml:def:game', role: 'a view, an update and a model make an app' },
+        { at: 'playground/platforms/native/Playground_platform.ml:def:run_app', role: 'the app handed to a platform' },
+        { at: 'playground/platforms/native_common/Native_loop_2d.ml:def:run', role: 'the frame loop: events in, update, view, drawn' },
+        { at: 'playground/Playground.ml:def:game_update', role: "each event becomes the game's update" },
+      ],
+      joints: [
+        { from: 'libs/core/Program.ml:def:main', to: 'playground/platforms/native/Playground_platform.ml:def:run_app', say: 'started' },
+        { from: 'playground/Playground.ml:def:game', to: 'playground/platforms/native/Playground_platform.ml:def:run_app', say: 'the app' },
+        { from: 'playground/platforms/native/Playground_platform.ml:def:run_app', to: 'playground/platforms/native_common/Native_loop_2d.ml:def:run', say: 'its loop' },
+        { from: 'playground/platforms/native_common/Native_loop_2d.ml:def:run', to: 'playground/Playground.ml:def:game_update', say: 'each event' },
+      ],
+    },
+  ],
   dirs: {
     playground: { summary: "The library every program is written with: Elm's playground, shapes, and its model-update-view loop." },
     games: { summary: 'The games, one directory per genre, each a classic rebuilt in miniature.' },
