@@ -1,50 +1,92 @@
-(* Code_street: a file and what it uses, at the street level
-   (plan_codemap_v2.md, step 6). The file looked at keeps its ground
-   (Code_ground) on the left of the map; on the right, a panel for each
-   file it uses the most, six at most, each laid out as its own ground
-   but with its weights turned: the definitions the focus uses tall, the
-   rest squeezed thin, so that a kit's file shows its shape and, large,
-   the few things the game takes from it. From each use to its
-   definition, an edge: a road (Map_atlas.road), green at the user's
-   end, red at the used's, the direction without an arrow; the roads to
-   one file bundled, through one point before its panel (Holten's idea,
-   flattened to two levels).
+(* Code_street: a file in its context, at the street level
+   (plan_codemap_v2.md, step 6): the file looked at in the middle, what it
+   uses on its left, what uses it on its right (the author: "on the right
+   of the focused file the callers of this file, and on the left the
+   callees ... so we have full context for a file"), a key cycling uses,
+   users, both.
 
-   The uses are the file's references to names defined elsewhere
-   (Code_file.refs), found among the map's files by Code_names, the
-   sure ones only: a guess would draw a road to a wrong place; and not
-   an operator's (Basics' +.): noise, not an association. *)
+   Each side's files in panels, six at most (the others named at its
+   foot), the program's own code first (its kits) and given thrice the
+   room, then the most used; each
+   laid out as its own ground (Code_ground) with its weights turned: on
+   the left the definitions the focus uses tall, on the right the lines
+   using the focus's definitions tall (the eight most tied; the others a
+   little less), the rest squeezed thin, so that a file shows its shape
+   and, large, what ties it to the focus.
 
-(* a use: the focus's line, the file and line of the definition, its name *)
-type edge = { from_line : int; target : string; target_line : int; name : string }
+   The ties: a mark in the margin, green at the user's line, red at the
+   used definition (codemap's colours); and a road from the name where
+   it is used to the name where it is defined (Map_atlas.road, green to
+   red, the direction without an arrow), bundled near the panel so that
+   the roads to one file read as one; faint, but the roads of the line
+   under the mouse, lit.
 
-(* a file used, in its panel: its path, its lines laid out there, how
-   many of the focus's uses go to it *)
+   A use is a reference to a name defined in another file
+   (Code_file.refs), found among the map's files by Code_names, the sure
+   ones only (a guess would draw a road to a wrong place), and not an
+   operator's (Basics' +.): noise, not a tie. *)
+
+(* a use: in [src] at [from_line], [from_col], of [name] defined in
+   [target] at [target_line], [target_col] *)
+type edge = { src : string; from_line : int; from_col : int; target : string; target_line : int; target_col : int; name : string }
+
+(* a file beside the focus, in its panel: its path, its lines laid out
+   there, how many ties to the focus *)
 type panel = { path : string; ground : Code_ground.t; count : int }
 
-type t = { focus : Code_ground.t; panels : panel list; edges : edge list; split : float }
+type mode = Uses | Users | Both
+
+(* [uses]: the focus's uses of the others (on the left); [users]: the
+   others' uses of the focus (on the right) *)
+(* [left_more], [right_more]: the files tied but not shown (six a side
+   at most), and their ties, for a line at the foot of their side *)
+type t = {
+  focus : Code_ground.t;
+  left : panel list;
+  right : panel list;
+  uses : edge list;
+  users : edge list;
+  focus_path : string;
+  left_more : (string * int) list;
+  right_more : (string * int) list;
+}
 
 (* [uses ~index ~roots ~path f]: [f]'s uses of the other files' names *)
 val uses : index:Code_names.index -> roots:string list -> path:string -> Code_file.t -> edge list
 
-(* [layout ~focus ~file edges ~pw ~ph]: the focus's lines (their
-   weights, Code_ground.weights) on the left, the files its [edges] go
-   to on the right in panels, [file] giving a file's lexed text; the
-   files [first] says first (the program's own code: its kits, Code_deps.own),
-   then the most used *)
+(* [layout ~mode ~first ~focus_path ~focus ~file ~uses ~users ~pw ~ph]:
+   the focus's lines (their weights, Code_ground.weights) in the middle,
+   the files [uses] go to on the left and those [users] come from on the
+   right, as [mode] says; [file] giving a file's lexed text; the files
+   [first] says first (the program's own code) *)
 val layout :
-  ?first:(string -> bool) -> focus:float array -> file:(string -> Code_file.t option) -> edge list -> pw:int -> ph:int -> t
+  mode:mode ->
+  ?first:(string -> bool) ->
+  focus_path:string ->
+  focus:float array ->
+  file:(string -> Code_file.t option) ->
+  uses:edge list ->
+  users:edge list ->
+  pw:int ->
+  ph:int ->
+  unit ->
+  t
+
+(* the panels, the left's and the right's *)
+val panels : t -> panel list
 
 (* the same, [q] times larger (Code_ground.scale) *)
 val scale : t -> float -> t
 
-(* the roads, on a map (its area); with [hover] (a file and a line, the
-   focus's, [focus_path], or a panel's), the roads from that use or to
-   that definition lit, the others dimmed *)
-val roads : ?hover:string * int -> ?focus_path:string -> Code_map_base.area -> t -> Playground.shape list
+(* the roads, on a map (its area): the line [hover] (a file and a line)
+   lit, its roads bright, the others faint *)
+val roads : ?hover:string * int -> Code_map_base.area -> t -> Playground.shape list
 
 (* the lit roads' ends framed: the uses green, the definitions red *)
-val ends : ?hover:string * int -> focus_path:string -> Code_map_base.area -> t -> Playground.shape list
+val ends : ?hover:string * int -> Code_map_base.area -> t -> Playground.shape list
 
 (* the file and line under a pixel, the focus's or a panel's *)
-val line_at : t -> focus_path:string -> float -> float -> (string * int) option
+val line_at : t -> float -> float -> (string * int) option
+
+(* the ground a file is laid out in, the focus's or a panel's *)
+val ground_of : t -> string -> Code_ground.t option

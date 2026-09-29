@@ -525,7 +525,18 @@ The same patterns serve search (`/` with a pattern) and anchors
    the definitions used tall and the rest squeezed; roads
    (`Map_atlas.road`) from each use to its definition, bundled per file;
    operators' uses left out, only sure resolutions kept. `focus=<path>`
-   opens the map on a unit. The hover (the author, 2026-09-29: "as we
+   opens the map on a unit. Then two-sided (the author: "on the right of
+   the focused file the callers of this file, and on the left the
+   callees ... so we have full context for a file", "something we can
+   also cycle through; just users, just uses, both"): `a` cycles what it
+   uses (left), what uses it (right, from `Code_rank`'s links), both,
+   off; six panels a side, the others named at its foot, the eight most
+   tied lines of a panel tall; the roads from the name used to the name
+   defined (not from the file's edge, which the author found useless),
+   faint, the hovered line's lit; the marks green at a user's line, red
+   at a definition used. A click peeks at a definition's body. To come:
+   grouping a crowded side by directory; a config saying which
+   neighbours matter. The hover (the author, 2026-09-29: "as we
    hover we probably want to highlight what is hovered on"): the line
    under the mouse framed; its roads lit, the others dimmed, their ends
    framed (a use green, a definition red); a name's binding pulsing and

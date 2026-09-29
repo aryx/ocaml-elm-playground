@@ -272,8 +272,10 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   (* claude: the glass's shape, the panel's too *)
   if pressed "o" then cycle_glass ();
   (* claude: at the ground, the file with what it uses (Map_v2) *)
+  (* claude: a: what it uses, then what uses it, then both, then off *)
   if pressed "a" then begin
-    t.street <- not t.street;
+    t.street_mode <- (t.street_mode + 1) mod 4;
+    t.street <- t.street_mode <> 0;
     t.painted <- None
   end;
   (* claude: the skeletons, at any level (Map_v2) *)

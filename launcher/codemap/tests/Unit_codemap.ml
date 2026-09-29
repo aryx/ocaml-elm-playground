@@ -226,13 +226,22 @@ let tests =
             [ "aim kit/Kit.ml:0"; "shoot kit/Kit.ml:2" ]
             (List.sort compare (List.map (fun (e : Code_street.edge) -> Printf.sprintf "%s %s:%d" e.name e.target e.target_line) edges));
           let s =
-            Code_street.layout ~focus:(Code_ground.weights f ~important:[]) ~file:(fun p -> Option.map Lazy.force (List.assoc_opt p files)) edges ~pw:1000 ~ph:600
+            Code_street.layout ~mode:Uses ~focus_path:"game/G.ml" ~focus:(Code_ground.weights f ~important:[]) ~file:(fun p -> Option.map Lazy.force (List.assoc_opt p files))
+              ~uses:edges ~users:[] ~pw:1000 ~ph:600 ()
           in
-          Alcotest.(check (list string)) "one panel, Kit.ml's" [ "kit/Kit.ml" ] (List.map (fun (p : Code_street.panel) -> p.path) s.panels);
-          let g = (List.hd s.panels).ground in
+          Alcotest.(check (list string)) "one panel on the left, Kit.ml's" [ "kit/Kit.ml" ] (List.map (fun (p : Code_street.panel) -> p.path) s.left);
+          Alcotest.(check bool) "the focus right of it" true (s.focus.ox > (List.hd s.left).ground.ox);
+          let g = (List.hd s.left).ground in
           Alcotest.(check bool) "its used definitions tall, the rest thin" true (g.places.(2).h > 3. *. g.places.(3).h && g.places.(0).h > 3. *. g.places.(3).h);
           Alcotest.(check (option (pair string int))) "a pixel on shoot's line" (Some ("kit/Kit.ml", 2))
-            (let x, y, _, h = Code_ground.box g 2 in Code_street.line_at s ~focus_path:"game/G.ml" (x +. 5.) (y +. (h /. 2.))));
+            (let x, y, _, h = Code_ground.box g 2 in Code_street.line_at s (x +. 5.) (y +. (h /. 2.)));
+          (* and the other way: G.ml's users of Kit.ml, on Kit.ml's right *)
+          let k = Lazy.force (List.assoc "kit/Kit.ml" files) in
+          let r =
+            Code_street.layout ~mode:Users ~focus_path:"kit/Kit.ml" ~focus:(Code_ground.weights k ~important:[]) ~file:(fun p -> Option.map Lazy.force (List.assoc_opt p files))
+              ~uses:[] ~users:edges ~pw:1000 ~ph:600 ()
+          in
+          Alcotest.(check (list string)) "G.ml, its user, on the right" [ "game/G.ml" ] (List.map (fun (p : Code_street.panel) -> p.path) r.right));
       (* claude: the repository's own configs: no mistake (tinybox
        * codemap -check . says the same); a file changed since it was
        * described is the checker's warning, not a failure: editing a
