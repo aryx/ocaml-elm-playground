@@ -10,6 +10,74 @@ newcomer should see first, and in what words.
 The worked example to imitate: `games/shmup/.codemapconfig`
 (TinyInvaders) and `gamekits/shmup/.codemapconfig` (its kit).
 
+## Processing a new project, start to finish
+
+For a session asked to "make the code map useful for <project>" (xv6,
+~/principia, any directory), with only this file to go on. The tools
+are tinybox's, in ~/github/ocaml-elm-playground (`./bin/tinybox` after
+a `make` there); the map's manual is its `docs/manual/codemap.md`
+(section 12: the format). Run the tools from that repository, giving the
+project's path.
+
+1. **Look first.** `tinybox codemap <project>` (the map as is, no
+   config), the project's README, its own CLAUDE.md or architecture
+   notes, `tinybox codemap -facts <project> .` (its top folders, their
+   sizes). Decide who the reader is and what they came for: to learn an
+   OS's paths, a compiler's passes, a library's API, a game's rules.
+2. **Write the root config yourself, first** (`<project>/.codemapconfig`):
+   the `title` (the project in a sentence), `colors` per top folder,
+   and the skeletons that cross the whole project -- its layers (a
+   directory bone each), and one chain per path a reader must follow
+   (below). These frame every other config.
+3. **Write the project's `skeletons.libsonnet`** at its root: the
+   shapes its parts repeat (ix: `cli`, Main to the CLI to the core;
+   Linux 0.01: `chain`, a path of [anchor, role, say]; this repository:
+   `mvu`, `game`, `drawn`...). A shape one config would repeat ten times
+   belongs there.
+4. **Split the rest** by top folders among parallel agents (a few
+   hundred files each at most), each given: the project's path, this
+   file, the manual's section 12, the root config and the libsonnet to
+   read (not edit), its area, and the rule to create only new configs
+   in its area and edit no source. Ask each for its LESSONS: what the
+   brief, the checks or this file got wrong for this codebase.
+5. **Check until done.** `tinybox codemap -check <project>` from the
+   tools' repository: 0 mistakes, 0 warnings, 0 missing. Then look at
+   the map (earth, a region, a file, `x`, `l`, `g`) as the reader
+   would, and fix what reads wrong.
+6. **Fold the lessons back** into this file, and into the tools when a
+   lesson is the tools' (the brief, -check, a language's reader): the
+   next project starts where this one ended.
+
+### What is useful, by kind of project
+
+The configs are for a reader's questions. Ask what they are, then give
+each an answer the map can draw:
+
+| project | the reader asks | give |
+|---|---|---|
+| an operating system (Linux 0.01, xv6, ~/ix's kernels) | how does it boot? what happens on a system call, a page fault, a timer tick, a read from disk? | a chain skeleton per path, across C and assembly (the entry label to the C handler to what it does); the core structures as capitals (the process, the inode, the buffer); a layer for what only a kernel may do (interrupts on and off, I/O ports, task switches, user memory); views pairing a subsystem's files |
+| a compiler or interpreter | what are the passes? where is the AST? how is a name resolved, a type checked, code emitted? | the pipeline as a skeleton (lexer, parser, checker, code generator); the AST's types as capitals; a tour through one expression compiled |
+| a library | what do I call? what is inside only? | the `.mli`'s (or header's) main types and functions as capitals; the skin plate shows the rest; a view of the API with an example using it |
+| a program with a UI (a game, an app) | where is the state, the frame's step, the picture? what makes it this program? | Model-View-Update and the program's heart (`skeletons.game`); the heart's trick as a capital; a tour through one frame |
+| a set of programs (~/ix, a Unix's commands) | what does each do, and what do they share? | `cli`-like shapes per program; the shared libraries as hubs; views pairing each program with its twin or its library |
+| a toolchain, a build system | what flows from what? | the data's path as a chain (source to object to executable); the formats' types as capitals |
+
+Across all: the entry points (a `main`, a boot label, an interrupt
+vector) and the few structures everything shares are what a newcomer
+needs first; the rest is found by searching.
+
+### Old code, C and assembly (Linux 0.01)
+
+- Assembly is read (labels are definitions, a.out's leading `_`
+  dropped in names but kept in anchors: `def:_system_call`); a chain
+  may start in assembly and go on in C.
+- A C prototype in the file (`extern int system_call(void);`) no longer
+  hides the body elsewhere: its uses resolve across files.
+- The comments are the author's own explanation, often long and
+  excellent (Linus's `|` and `/* */` notes): summaries should say what
+  they say, shorter, and important lines should point at the tricky
+  places they warn about.
+
 ## Before writing
 
 Start from the facts: `tinybox codemap -facts <root> <dir>` prints a
