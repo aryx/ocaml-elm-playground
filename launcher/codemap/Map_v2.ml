@@ -419,29 +419,17 @@ let unit_at (t : t) (c : camera) (_ : float) (px : float) (py : float) : int opt
 
 (* a directory's or a file's card: its path, what its config says of it
  * (Code_guide), and what it holds *)
-let card (t : t) (i : int) : string list =
+let card (t : t) (i : int) : string * string list option =
   let p = t.placed.(i) in
-  let said = function Some s -> wrap 48 s | None -> [] in
+  (* claude: what the configs say of it, its description; the counts were
+   * not what one wants to know (the author) *)
   match p.node with
-  | File (_, _, e) -> (e.path :: said (Option.bind (Code_guide.file_note t.guide e.path) (fun n -> n.summary))) @ [ lines_text e.nlines ]
-  | Dir (_, kids) ->
-      let prefix = p.path ^ "/" in
-      let n = String.length prefix in
-      let files, lines =
-        List.fold_left
-          (fun (f, l) (e : entry) -> if String.length e.path > n && String.sub e.path 0 n = prefix then (f + 1, l + e.nlines) else (f, l))
-          (0, 0) t.entries
-      in
-      let subdirs = List.length (List.filter (function Treemap.Dir _ -> true | File _ -> false) kids) in
-      [ prefix ]
-      @ said (Code_guide.dir_summary t.guide p.path)
-      @ [
-        Printf.sprintf "%d files, %s" files (lines_text lines);
-        (if subdirs = 0 then "no subdirectory" else Printf.sprintf "%d subdirector%s" subdirs (if subdirs = 1 then "y" else "ies"));
-        "click: fly into it";
-      ]
+  | File (_, _, e) -> (e.path, Option.map (wrap 52) (Option.bind (Code_guide.file_note t.guide e.path) (fun n -> n.summary)))
+  | Dir _ -> (p.path ^ "/", Option.map (wrap 52) (Code_guide.dir_summary t.guide p.path))
 
-(* the card of the name under the mouse, beside it, on the map *)
+(* the card of the name under the mouse, beside it, on the map: its path,
+ * and its description, readable; "not described yet" where no config
+ * says anything of it (the configs to write) *)
 let hover_card (t : t) (c : camera) (kept : name list) : shape list =
   match t.pointer with
   | None -> []
@@ -451,22 +439,29 @@ let hover_card (t : t) (c : camera) (kept : name list) : shape list =
       match List.find_opt (fun n -> within n.nbox mx my) kept with
       | None -> []
       | Some n ->
-          let lines = match n.said with Some l -> l | None -> card t n.node in
-          let size = 15. and gap = 6. in
-          let w = 16. +. (0.5 *. size *. float_of_int (List.fold_left (fun m s -> max m (String.length s)) 0 lines)) in
-          let h = 12. +. (float_of_int (List.length lines) *. (size +. gap)) in
+          let title, body, described =
+            match n.said with
+            | Some (t0 :: rest) -> (t0, rest, true)
+            | _ -> (
+                match card t n.node with
+                | title, Some lines -> (title, lines, true)
+                | title, None -> (title, [ "not described yet" ], false))
+          in
+          let ts = 13. and size = 16. and gap = 6. in
+          let width s z = 0.5 *. z *. float_of_int (String.length s) in
+          let w = 24. +. Float.max (width title ts) (List.fold_left (fun m l -> Float.max m (width l size)) 0. body) in
+          let h = 18. +. ts +. (float_of_int (List.length body) *. (size +. gap)) in
           let x0 = Float.min (mx +. 18.) (float_of_int a.pw -. w -. 4.) and y0 = Float.min (my +. 18.) (float_of_int a.ph -. h -. 4.) in
           let col = lighter (archi t.colours t.placed.(n.node).path) in
-          [
-            rectangle (rgb 18 16 36) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.95;
-          ]
+          [ rectangle (rgb 18 16 36) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.96 ]
           @ frame a col x0 y0 (x0 +. w) (y0 +. h) 1.5
+          @ [ label a col ts (x0 +. (w /. 2.)) (y0 +. 6. +. (ts /. 2.)) title ]
           @ List.mapi
-              (fun k s ->
-                (* centred: the words' width is only estimated *)
-                let y = y0 +. 6. +. (float_of_int k *. (size +. gap)) +. (size /. 2.) +. 3. in
-                label a (if k = 0 then col else ink) size (x0 +. (w /. 2.)) y s)
-              lines)
+              (fun k l ->
+                let y = y0 +. 12. +. ts +. (float_of_int k *. (size +. gap)) +. (size /. 2.) in
+                (* claude: centred: the font is proportional, a left edge unknown *)
+                label a (if described then ink else dim) size (x0 +. (w /. 2.)) y l)
+              body)
 
 (* claude: at the ground, what the config says of an important line, a
  * note after its end when the column has room for it *)

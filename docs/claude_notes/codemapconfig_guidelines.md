@@ -40,6 +40,10 @@ and to point at the places they talk about.
   Path.ml".
 - One sentence, two at most; about 60 to 100 characters. It is read on
   a card, beside the mouse.
+- The card is the summary alone, under the path: no counts of files,
+  lines or subdirectories (the author: not useful). A directory or file
+  without one shows "not described yet" -- the configs still to write,
+  seen by hovering.
 - For a game: the original (name, maker, year) and what makes it that
   game, in the fewest words.
 - No "This file...", no "This directory contains...".
