@@ -1404,7 +1404,16 @@ let anatomy_shapes (t : t) (c : camera) : shape list =
               @ (if on Lungs then lines Lungs 0.4 fs.lungs else [])
               @
               if on Skin then
-                List.filter_map (fun l -> Option.map (fun (x0, y0, _, h) -> rectangle (col Skin) 5. (Float.max 3. h) |> move (sx a (x0 -. 12.)) (sy a (y0 +. (h /. 2.)))) (box l)) fs.skin
+                (* claude: the skin, what the .mli exports: the private
+                 * definitions shaded, the exported ones lit and barred (the
+                 * author: "skin: exported") *)
+                List.concat_map
+                  (fun (a0, b0) ->
+                    List.filter_map
+                      (fun l -> Option.map (fun (x0, y0, w, h) -> rectangle (rgb 8 6 20) (w +. 16.) (h +. 0.5) |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.7) (box l))
+                      (List.init (b0 - a0 + 1) (fun k -> a0 + k)))
+                  fs.hidden
+                @ List.filter_map (fun l -> Option.map (fun (x0, y0, _, h) -> rectangle (col Skin) 6. (Float.max 4. h) |> move (sx a (x0 -. 12.)) (sy a (y0 +. (h /. 2.)))) (box l)) fs.skin
               else [])
         (grounds t e)
   | None ->

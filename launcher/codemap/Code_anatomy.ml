@@ -36,7 +36,7 @@ let meaning = function
   | Muscles -> "the loop-heavy code, the work"
   | Nerves -> "the inputs: keyboard, mouse, events"
   | Lungs -> "the I/O: files, network, console"
-  | Skin -> "the public API: what the .mli shows"
+  | Skin -> "exported: what the .mli shows, the rest shaded"
 
 let key = function Skeleton -> "1" | Blood -> "2" | Muscles -> "3" | Nerves -> "4" | Lungs -> "5" | Skin -> "6"
 
@@ -80,7 +80,7 @@ let line_has (f : Code_file.t) (l : int) (words : string list) : bool =
 (* The facts *)
 (*****************************************************************************)
 
-type facts = { nerves : int list; lungs : int list; muscles : (int * int * float) list; skin : int list }
+type facts = { nerves : int list; lungs : int list; muscles : (int * int * float) list; skin : int list; hidden : (int * int) list }
 
 let loop_words = [ "for"; "while"; "List.iter"; "List.map"; "List.fold_left"; "List.fold_right"; "List.filter"; "List.concat_map"; "Array.iter"; "Array.iteri"; "Array.map"; "Array.init"; "Array.fold_left"; "Hashtbl.iter"; "Seq." ]
 
@@ -108,7 +108,9 @@ let facts (f : Code_file.t) ~(public : string list option) : facts =
       defs
   in
   let skin = match public with None -> [] | Some names -> List.filter_map (fun (a, _, name) -> if List.mem name names then Some a else None) defs in
-  { nerves = lines nerve_words; lungs = lines lung_words; muscles; skin }
+  (* claude: what the .mli does not show: the private definitions' lines *)
+  let hidden = match public with None -> [] | Some names -> List.filter_map (fun (a, b, name) -> if List.mem name names then None else Some (a, b)) defs in
+  { nerves = lines nerve_words; lungs = lines lung_words; muscles; skin; hidden }
 
 let public_names (f : Code_file.t) : string list =
   List.filter_map (fun (_, name, (cat : Highlight_code.category)) -> match cat with Def_function | Def_value | Def_type | Def_module -> Some name | _ -> None) f.defs

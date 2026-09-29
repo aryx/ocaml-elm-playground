@@ -51,7 +51,9 @@ val lung_words : string list
    the density of its loops (a loop every fourth line makes 1; not
    size: the map's area already says it); its skin, the definitions' lines
    whose names [public] (its .mli's) exposes, [] if it has no .mli *)
-type facts = { nerves : int list; lungs : int list; muscles : (int * int * float) list; skin : int list }
+(* claude: [hidden], the private definitions' extents: what the .mli
+   does not show, shaded when the skin is on *)
+type facts = { nerves : int list; lungs : int list; muscles : (int * int * float) list; skin : int list; hidden : (int * int) list }
 
 val facts : Code_file.t -> public:string list option -> facts
 
