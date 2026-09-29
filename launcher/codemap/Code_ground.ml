@@ -120,6 +120,7 @@ let paint (img : Rgba_image.t) (f : Code_file.t) (g : t) ~(bg : int * int * int)
   Array.iteri
     (fun l (p : place) ->
       let x0, y0, w, h = box g l in
+      if h >= 0.5 then begin
       let glyphs = h >= 7. in
       (* a character's cell: half as wide as high; a bar's, a column's
        * eightieth *)
@@ -155,5 +156,6 @@ let paint (img : Rgba_image.t) (f : Code_file.t) (g : t) ~(bg : int * int * int)
           done;
           if !hits > 0 then set x y palette.(!ink - 1) !hits (ss * ss)
         done
-      done)
+      done
+      end)
     g.places

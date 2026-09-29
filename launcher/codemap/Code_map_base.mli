@@ -66,6 +66,7 @@ type t = {
   mutable clock : float; (* claude: the frame's time (view's), for what pulses *)
   mutable xray : bool; (* claude: the skeletons shown, the rest in the shade (x: Map_v2) *)
   mutable xray_n : int; (* claude: which of the skeletons at hand the X-ray shows (x again: the next) *)
+  mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }
@@ -83,7 +84,7 @@ and style = {
   labels : t -> camera -> float -> Playground.shape list;
   (* the definition a label under a pixel of the map ([q], px, py) names,
      if the style's labels name any: its file, line and name *)
-  pick : t -> camera -> float -> float -> float -> (string * int * string) option;
+  pick : t -> camera -> float -> float -> float -> (string * int * int) option; (* claude: its file, line and column (Map_v2's ground, street and region panels) *)
   (* claude: the directory or file whose name is under a pixel of the map,
      if the style's names are clickable (Map_v2's): a click flies to it *)
   unit_at : t -> camera -> float -> float -> float -> int option;

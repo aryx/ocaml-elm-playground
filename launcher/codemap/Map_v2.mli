@@ -19,6 +19,15 @@
    first (its kits), roads from each use to its definition (step 6);
    tinybox codemap <dir> focus=<path> opens the map on a unit.
 
+   At the region level (the unit looked at a directory), a file whose
+   block is big enough is laid out as a street's panel: the config's
+   important lines tall, the types' and substantial definitions'
+   headers small, the rest thin bars; its name on a tab. At the ground,
+   the street and the region, a click shows a definition's body readable
+   over the map (a peek: the name's under the mouse, found elsewhere if
+   defined elsewhere; else the line's own definition), a click or
+   Escape closing it.
+
    x, the X-ray, at every level: the configs' skeletons (Code_guide), the
    rest in the shade -- from afar, a dot per file (a file whose bones are
    close together one dot, its skeleton's name) and the joints between

@@ -103,6 +103,23 @@ let stops (e : entry) : (int * string) list =
   let marks = List.filter_map (fun l -> if l > 0 then Some (l, Code_file.trick) else None) f.marks in
   (0, "its header") :: List.sort_uniq (fun (a, _) (b, _) -> compare a b) (sections @ marks)
 
+(* claude: the definition a line is in: its header, to the line before
+ * the next top-level one *)
+let def_extent (f : Code_file.t) (line : int) : int * int =
+  let heads =
+    List.filter_map (fun (l, _, (cat : Highlight_code.category)) -> match cat with Def_function | Def_value | Def_type | Def_module -> Some l | _ -> None) f.defs
+    |> List.sort_uniq compare
+  in
+  let first = List.fold_left (fun acc l -> if l <= line then l else acc) (match heads with l :: _ when l <= line -> l | _ -> line) heads in
+  let last = match List.find_opt (fun l -> l > first) heads with Some n -> n - 1 | None -> Code_file.nlines f - 1 in
+  (* not the next section's banner and comment: up to its last line of code *)
+  let trailer l =
+    let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at f l c with Some cat -> Some cat | None -> first_cat (c + 1) in
+    match first_cat 0 with None -> true | Some (Comment | Comment_section) -> true | Some _ -> false
+  in
+  let rec trim l = if l > first && trailer l then trim (l - 1) else l in
+  (first, max first (trim last))
+
 let entries (t : t) : entry list = t.entries
 let number (t : t) (path : string) : int option = Hashtbl.find_opt t.order path
 
@@ -313,6 +330,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   let clicked = (mouse.mclick || mouse.mdouble) && on_map && not t.dragged in
   let t = if not mouse.mdown then { t with drag = None; dragged = (if mouse.mclick then false else t.dragged) } else t in
   (* claude: by units, a move taken, the click with it *)
+  (* claude: a click with a definition shown (t.peek) only closes it *)
+  let clicked = if clicked && t.peek <> None then (t.peek <- None; false) else clicked in
   let moved = if units then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
   let target, clicked =
     match moved with
@@ -328,7 +347,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
    * lit (plan_codemap_naming.md); Enter opens the file view *)
   let choice = match t.choices with Some cs -> List.find_opt (fun k -> k <= List.length cs && pressed (string_of_int k)) [ 1; 2; 3; 4; 5; 6; 7; 8; 9 ] | None -> None in
   let target, action =
-    if pressed "Escape" && t.choices <> None then (t.choices <- None; (target, Stay))
+    if pressed "Escape" && t.peek <> None then (t.peek <- None; (target, Stay))
+    else if pressed "Escape" && t.choices <> None then (t.choices <- None; (target, Stay))
     else if pressed "Escape" then (target, Close)
     else if choice <> None then (go_to t target (List.nth (Option.get t.choices) (Option.get choice - 1)), Stay)
     else if pressed "b" then
@@ -353,7 +373,38 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
       let file_of path = List.find_map (fun (e : entry) -> if e.path = path then Some (Lazy.force e.file) else None) t.entries in
       match (named, picked) with
       | Some i, _ -> (fit a t.placed.(i).rect, Stay)
-      | None, Some (path, line, _) -> ( match file_of path with Some f when pressed "Enter" -> (target, Open (f, line)) | _ -> (target, Stay))
+      | None, Some (path, line, col) -> (
+          match file_of path with
+          | Some f when pressed "Enter" -> (target, Open (f, line))
+          | Some f ->
+              (* claude: a click shows a definition's body, readable, over
+               * the map (Map_v2's peek): the name's under the mouse, its
+               * own file's or, defined elsewhere, found there; else the
+               * definition the line is in *)
+              let index_of_path p = let r = ref None in Array.iteri (fun i (q : entry Treemap.placed) -> if q.path = p then r := Some i) t.placed; !r in
+              let where =
+                match Code_file.name_at f line col with
+                | Some o -> Some (path, fst o.bound_at)
+                | None -> (
+                    match (Code_file.ref_at f line col, index_of_path path) with
+                    | Some r, Some i -> (
+                        match found t i path r with
+                        | c :: _, _ -> Some (c.path, c.line)
+                        | [], _ ->
+                            t.note <- r.rname ^ ": not in this map";
+                            None)
+                    | _ -> Some (path, line))
+              in
+              Option.iter
+                (fun (p, l) ->
+                  match file_of p with
+                  | Some g ->
+                      let first, last = def_extent g l in
+                      t.peek <- Some (p, first, min last (first + 80))
+                  | None -> ())
+                where;
+              (target, Stay)
+          | None -> (target, Stay))
       | None, None ->
       match under t u v with
       | None -> (target, Stay)
