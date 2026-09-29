@@ -47,6 +47,10 @@ let project (roots : string list) (p : string) : string =
 type index = {
   ml : (string, string * Code_file.t Lazy.t) Hashtbl.t;
   c : (string * Highlight_code.space, string * Highlight_code.definition) Hashtbl.t Lazy.t;
+  (* claude: the C files by path, and each one's headers, included
+   * transitively, made when first asked *)
+  cfiles : (string, Code_file.t Lazy.t) Hashtbl.t;
+  closure : (string, string list) Hashtbl.t;
 }
 
 let index (files : (string * Code_file.t Lazy.t) list) : index =
@@ -63,7 +67,54 @@ let index (files : (string * Code_file.t Lazy.t) list) : index =
          files;
        h)
   in
-  { ml; c }
+  let cfiles = Hashtbl.create 256 in
+  List.iter (fun (p, lf) -> if is_c p then Hashtbl.replace cfiles p lf) files;
+  { ml; c; cfiles; closure = Hashtbl.create 256 }
+
+(* claude: a C file's #include lines, "x.h" and <x/y.h>, as written *)
+let includes_of (f : Code_file.t) : string list =
+  Array.to_list f.lines
+  |> List.filter_map (fun spans ->
+         let b = Buffer.create 80 in
+         List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) spans;
+         let l = String.trim (Buffer.contents b) in
+         if String.length l > 9 && String.sub l 0 8 = "#include" then
+           let r = String.trim (String.sub l 8 (String.length l - 8)) in
+           if String.length r > 2 && (r.[0] = '"' || r.[0] = '<') then
+             let close = if r.[0] = '"' then '"' else '>' in
+             match String.index_from_opt r 1 close with Some j -> Some (String.sub r 1 (j - 1)) | None -> None
+           else None
+         else None)
+
+(* an include resolved: the file of that path's tail, the nearest *)
+let resolve_include (ix : index) (from : string) (inc : string) : string option =
+  (* claude: only within the includer's own top folder, or an include/
+   * directory (Linux's -Iinclude): never a stranger's header of the
+   * same name (~/ix's draw9.c's <libc.h>, Plan 9's, found in tiny/) *)
+  let top p = match String.index_opt p '/' with Some i -> String.sub p 0 i | None -> "" in
+  let reachable p = top p = top from || List.mem "include" (String.split_on_char '/' p) in
+  let ends p = reachable p && (p = inc || (String.length p > String.length inc && String.sub p (String.length p - String.length inc - 1) (String.length inc + 1) = "/" ^ inc)) in
+  Hashtbl.fold (fun p _ acc -> if ends p then (match acc with Some q when shared q from >= shared p from -> acc | _ -> Some p) else acc) ix.cfiles None
+
+(* a C file's headers, transitively *)
+let header_closure (ix : index) (p : string) : string list =
+  match Hashtbl.find_opt ix.closure p with
+  | Some l -> l
+  | None ->
+      let seen = Hashtbl.create 16 in
+      let rec go q depth =
+        if depth < 8 then
+          match Hashtbl.find_opt ix.cfiles q with
+          | Some lf ->
+              List.iter
+                (fun inc -> match resolve_include ix q inc with Some h when not (Hashtbl.mem seen h) -> Hashtbl.replace seen h (); go h (depth + 1) | _ -> ())
+                (includes_of (Lazy.force lf))
+          | None -> ()
+      in
+      go p 0;
+      let l = Hashtbl.fold (fun h () acc -> h :: acc) seen [] in
+      Hashtbl.replace ix.closure p l;
+      l
 
 (* sorted, and whether the first is alone at its rank *)
 let ranked (cs : candidate list) : candidate list * bool =
@@ -129,7 +180,21 @@ let find_c ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.refer
   let included = List.map (fun i -> normalize (Filename.concat dir i)) f.includes in
   let own_header p = Filename.dirname p = dir || List.mem (normalize p) included in
   let library p = List.exists (fun d -> String.length d >= 3 && (String.sub d 0 3 = "lib" || d = "include")) (String.split_on_char '/' (Filename.dirname p)) in
-  let all = List.filter (fun (p, _) -> p <> from) (Hashtbl.find_all (Lazy.force ix.c) (r.rname, r.rspace)) in
+  (* claude: C links only what can link: a definition in the use's own
+   * top folder, or in a file sharing a header with the use's (one
+   * program: Linux 0.01's fork.c declares copy_page_tables itself, and
+   * shares linux/sched.h with mm/memory.c) (the author, at ~/ix: tiny/'s calls resolved into kernel/ and
+   * languages/, programs never linked together) *)
+  let top p = match String.index_opt p '/' with Some i -> String.sub p 0 i | None -> "" in
+  let mine = lazy (header_closure ix from) in
+  let declares h = match Hashtbl.find_opt ix.cfiles h with Some lf -> List.exists (fun (d : Highlight_code.definition) -> d.dname = r.rname) (Lazy.force lf).definitions | None -> false in
+  let linkable p =
+    top p = top from
+    || List.mem p (Lazy.force mine)
+    || (let theirs = header_closure ix p in List.exists (fun h -> List.mem h theirs) (Lazy.force mine))
+  in
+  ignore declares;
+  let all = List.filter (fun (p, _) -> p <> from && linkable p) (Hashtbl.find_all (Lazy.force ix.c) (r.rname, r.rspace)) in
   (* the definitions, if any, over the declarations *)
   let best = List.fold_left (fun m (_, (d : Highlight_code.definition)) -> max m d.drank) 0 all in
   let cs =
