@@ -1332,9 +1332,19 @@ let text_of (e : entry) : string array =
 
 (* a query's hits among the map's files: names, or, a text search, lines *)
 let query_hits (t : t) (q : string) : Code_search.hit list =
-  match Code_search.text_query q with
-  | Some text -> Code_search.text_matches (List.map (fun (e : entry) -> (e.path, text_of e)) t.entries) text
-  | None -> if String.length q > 0 && q.[0] = '"' then [] else Code_search.matches (search_all t) q
+  match (Code_search.text_query q, Code_search.ref_query q) with
+  | Some text, _ -> Code_search.text_matches (List.map (fun (e : entry) -> (e.path, text_of e)) t.entries) text
+  (* claude: @name, the lines referring to it (Code_file.refs) *)
+  | None, Some name ->
+      Code_search.ref_matches
+        (List.map
+           (fun (e : entry) ->
+             let f = Lazy.force e.file in
+             let refs = Array.to_list f.refs |> List.concat_map (List.map (fun (r : Highlight_code.reference) -> (r.rline, String.concat "." (r.rpath @ [ r.rname ])))) in
+             (e.path, refs, text_of e))
+           t.entries)
+        name
+  | None, None -> if String.length q > 0 && (q.[0] = '"' || q.[0] = '@') then [] else Code_search.matches (search_all t) q
 
 let search_hits (t : t) : Code_search.hit list =
   match t.search with
@@ -1441,7 +1451,7 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
             let n = List.length (search_set t) in
             Printf.sprintf "Enter go   shift+Enter the %d %s together   ctrl+Enter a layer   Tab complete   \"text   / first: here or all" n
               (if List.exists (fun (h : Code_search.hit) -> h.kind = Dir || h.kind = File) hits then "found" else "files of these")
-        | _ -> "a name, \"text, name// directories so named   Tab complete   up/down choose   / first: here or all   Esc close");
+        | _ -> "a name, \"text, @reference, name// directories so named   Tab complete   up/down choose   / first: here or all   Esc close");
     ]
 
 (* claude: the layers (plan_codemap_v2.md): searches kept, ctrl+Enter,
@@ -1468,7 +1478,7 @@ let layer_groups (t : t) : (string * layer list) list =
         let g =
           List.map
             (fun (l : Code_guide.layer) ->
-              (l.lname, List.map (fun (r : Code_guide.rule) -> { lquery = "\"" ^ r.text; lcolour = r.colour; lsay = r.rsay; lhits = None }) l.rules))
+              (l.lname, List.map (fun (r : Code_guide.rule) -> { lquery = (if r.is_ref then "@" else "\"") ^ r.text; lcolour = r.colour; lsay = r.rsay; lhits = None }) l.rules))
             (Code_guide.layers t.guide)
         in
         t.guide_layers <- Some g;
@@ -1485,7 +1495,7 @@ let layers_shapes (t : t) (c : camera) : shape list =
     let lit = List.concat_map (fun (l : layer) -> let r, g, b = l.lcolour in search_lit ~glow:(rgb r g b) ~dot:4.5 t c (layer_hits t l)) layers in
     let row = 20. in
     let line (l : layer) =
-      let q = if String.length l.lquery > 0 && l.lquery.[0] = '"' then String.sub l.lquery 1 (String.length l.lquery - 1) else l.lquery in
+      let q = if String.length l.lquery > 0 && (l.lquery.[0] = '"' || l.lquery.[0] = '@') then String.sub l.lquery 1 (String.length l.lquery - 1) else l.lquery in
       Printf.sprintf "%s  %d%s" q (List.length (layer_hits t l)) (match l.lsay with Some s -> "   " ^ s | None -> "")
     in
     let head = Printf.sprintf "%s   (l: next)" (if group = "kept" then "layers kept" else group) in

@@ -18,7 +18,10 @@
    A query starting with a double quote searches the text: ("Cap.fork")
    finds every line containing Cap.fork, the case ignored unless it has
    a capital (smart case, Emacs's), at least two characters; before the
-   layers of plan_codemap_v2.md, a pattern to try. *)
+   layers of plan_codemap_v2.md, a pattern to try. Starting with @, the
+   references: @Cap.fork the lines whose code names Cap.fork (a
+   reference the lexer found, not a comment's or a string's words), a
+   last part alone (@fork) any path ending so. *)
 
 type kind =
   | Dir
@@ -62,3 +65,10 @@ val text_query : string -> string option
 
 (* the lines of files (path, lines) containing a text, at most [limit] *)
 val text_matches : ?limit:int -> (string * string array) list -> string -> hit list
+
+(* claude: the name searched for, if the query is a reference search *)
+val ref_query : string -> string option
+
+(* the lines of files (path, references as line and dotted name, lines'
+   text) referring to a name, at most [limit] *)
+val ref_matches : ?limit:int -> (string * (int * string) list * string array) list -> string -> hit list

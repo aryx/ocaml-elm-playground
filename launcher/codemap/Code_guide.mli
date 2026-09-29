@@ -19,7 +19,7 @@
        tours: [{ name, stops: [item] }],
        skeletons: [{ name, bones: [{ at: path:anchor, role }], joints: [{ from, to, say }] }],
        views: [{ name, files: [path] } or { name, of: path, with: 'users' }],
-       layers: [{ name, rules: [{ text, color: '#rrggbb', say }] }] }
+       layers: [{ name, rules: [{ text or ref, color: '#rrggbb', say }] }] }
 
    an item being { at: anchor, say: words, weight: 1 to 3 }.
 
@@ -27,7 +27,9 @@
    (smart case, as the search's text search), each rule's in its colour, all
    lit at once at any level; the colours best named in jsonnet (the
    author), local fork_color = '#e05050', then { text: 'Cap.fork',
-   color: fork_color }. Semgrep-like patterns later.
+   color: fork_color }; or ref: 'Cap.fork', the lines whose code refers
+   to Cap.fork (the lexer's references: not a comment's words). Semgrep-
+   like patterns later.
 
    Anchors, the places a config points at, by what they are rather than
    by their line, so that editing the code does not break them:
@@ -80,9 +82,9 @@ type joint = { jfrom : string; jto : string; jsay : string option }
 type skeleton = { sname : string; sdir : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
-(* claude: a layer's rule: the text of the lines it lights, their
-   colour, what it means *)
-type rule = { text : string; colour : rgb; rsay : string option }
+(* claude: a layer's rule: the text of the lines it lights (or, [is_ref],
+   the name their code refers to), their colour, what it means *)
+type rule = { text : string; is_ref : bool; colour : rgb; rsay : string option }
 
 (* a layer: its name, its config's directory, its rules *)
 type layer = { lname : string; ldir : string; rules : rule list }

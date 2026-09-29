@@ -376,7 +376,7 @@ let tests =
           let g, errs = Code_guide.load ~read:(fun p -> if p = ".codemapconfig" then Some config else None) [ ".codemapconfig" ] in
           Alcotest.(check (list string)) "no mistake" [] errs;
           match Code_guide.layers g with
-          | [ { lname = "Capabilities"; rules = [ { text = "Cap.fork"; colour; rsay = Some "forks" } ]; _ } ] ->
+          | [ { lname = "Capabilities"; rules = [ { text = "Cap.fork"; is_ref = false; colour; rsay = Some "forks" } ]; _ } ] ->
               Alcotest.(check (triple int int int)) "its colour, named" (0xe0, 0x50, 0x50) colour
           | _ -> Alcotest.fail "the layer");
       (* claude: a config's views and tours, their paths from the root *)
@@ -389,4 +389,11 @@ let tests =
           Alcotest.(check (list (list string))) "the view's files" [ [ "games/g/A.ml"; "kits/k" ] ] (List.map (fun (v : Code_guide.view) -> v.files) (Code_guide.views g));
           Alcotest.(check (list (list string))) "the tour's stops" [ [ "games/g/A.ml:def:f"; "kits/k/K.ml:def:g" ] ]
             (List.map (fun (tr : Code_guide.tour) -> List.map (fun (i : Code_guide.item) -> i.at) tr.stops) (Code_guide.tours g)));
+      (* claude: @name, the code's references, not the comments' words *)
+      Testo.create "search: references" (fun () ->
+          let files = [ ("a.ml", [ (0, "Cap.fork"); (2, "CapUnix.fork"); (2, "Unix.fork") ], [| "f Cap.fork"; "(* Cap.fork *)"; "g Unix.fork" |]) ] in
+          let lines q = List.map (fun (h : Code_search.hit) -> h.line) (Code_search.ref_matches files q) in
+          Alcotest.(check (list int)) "Cap.fork: the code's, once a line" [ 0 ] (lines "Cap.fork");
+          Alcotest.(check (list int)) "fork: any path ending so" [ 0; 2 ] (lines "fork");
+          Alcotest.(check (option string)) "the query" (Some "Cap.fork") (Code_search.ref_query "@Cap.fork"));
     ]

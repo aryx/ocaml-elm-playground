@@ -146,3 +146,27 @@ let text_matches ?(limit = 5000) (files : (string * string array) list) (text : 
        files
    with Exit -> ());
   List.rev !found
+
+let ref_query (q : string) : string option =
+  if String.length q >= 3 && q.[0] = '@' then Some (String.sub q 1 (String.length q - 1)) else None
+
+let ref_matches ?(limit = 5000) (files : (string * (int * string) list * string array) list) (name : string) : hit list =
+  let ends s suf = let n = String.length s and m = String.length suf in n >= m && String.sub s (n - m) m = suf in
+  let is n = n = name || ends n ("." ^ name) in
+  let found = ref [] and k = ref 0 in
+  (try
+     List.iter
+       (fun (path, refs, lines) ->
+         let seen = Hashtbl.create 8 in
+         List.iter
+           (fun (l, n) ->
+             if is n && not (Hashtbl.mem seen l) then begin
+               Hashtbl.replace seen l ();
+               found := { kind = Text; path; line = l; name = (if l < Array.length lines then String.trim lines.(l) else n) } :: !found;
+               incr k;
+               if !k >= limit then raise Exit
+             end)
+           refs)
+       files
+   with Exit -> ());
+  List.rev !found

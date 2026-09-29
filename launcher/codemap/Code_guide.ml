@@ -29,7 +29,7 @@ type skeleton = { sname : string; sdir : string; bones : bone list; joints : joi
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
 (* claude: a layer: lines matching its rules, each lit in its colour *)
-type rule = { text : string; colour : rgb; rsay : string option }
+type rule = { text : string; is_ref : bool; colour : rgb; rsay : string option }
 type layer = { lname : string; ldir : string; rules : rule list }
 
 type dir_note = {
@@ -166,10 +166,18 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
             let fs = fields w [ "name"; "rules" ] v in
             let rules =
               opt_list w fs "rules" (fun w v ->
-                  let fs = fields w [ "text"; "color"; "say" ] v in
-                  let text = match opt_str w fs "text" with Some t when String.length t >= 2 -> t | _ -> bad "%s: its text, two characters at least" w in
+                  let fs = fields w [ "text"; "ref"; "color"; "say" ] v in
+                  (* claude: a text, or a name referred to (ref:, the code's
+                   * references only, not comments' or strings' words) *)
+                  let text, is_ref =
+                    match (opt_str w fs "text", opt_str w fs "ref") with
+                    | Some t, None when String.length t >= 2 -> (t, false)
+                    | None, Some r when String.length r >= 2 -> (r, true)
+                    | Some _, Some _ -> bad "%s: text or ref, not both" w
+                    | _ -> bad "%s: its text or ref, two characters at least" w
+                  in
                   let colour = match opt_str w fs "color" with Some c -> ( match Code_config.hex c with Some rgb -> rgb | None -> bad "%s: %S is no #rrggbb" w c) | None -> bad "%s: its color" w in
-                  { text; colour; rsay = opt_str w fs "say" })
+                  { text; is_ref; colour; rsay = opt_str w fs "say" })
             in
             { lname = (match opt_str w fs "name" with Some n -> n | None -> bad "%s: its name" w); ldir = dir; rules });
     }

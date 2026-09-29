@@ -59,12 +59,12 @@ local dirs_color = '#e173eb';
     {
       name: 'Capabilities',
       rules: [
-        { text: 'Cap.network', color: network_color, say: 'the network: sockets, HTTP' },
-        { text: 'Cap.exec', color: process_color, say: 'runs another program' },
-        { text: 'Cap.fork', color: process_color, say: 'forks a process' },
-        { text: 'Cap.open_in', color: files_in_color, say: 'reads a file' },
-        { text: 'Cap.open_out', color: files_out_color, say: 'writes a file' },
-        { text: 'Cap.readdir', color: dirs_color, say: 'lists a directory' },
+        { ref: 'Cap.network', color: network_color, say: 'the network: sockets, HTTP' },
+        { ref: 'Cap.exec', color: process_color, say: 'runs another program' },
+        { ref: 'Cap.fork', color: process_color, say: 'forks a process' },
+        { ref: 'Cap.open_in', color: files_in_color, say: 'reads a file' },
+        { ref: 'Cap.open_out', color: files_out_color, say: 'writes a file' },
+        { ref: 'Cap.readdir', color: dirs_color, say: 'lists a directory' },
       ],
     },
   ],
