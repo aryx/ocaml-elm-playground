@@ -483,6 +483,10 @@ let names (t : t) (c : camera) : name list =
               else text 0. 0. (lighter (r, g, b)) 0.85
             in
             let nrank = if is_dir then 1000. -. (100. *. float_of_int p.depth) +. size else size in
+            (* claude: a folder laid out alone: its own name is the title's,
+             * and drawn large at its centre it hid its subfolders (the
+             * author, at launcher: codemap) *)
+            if not (t.top_kept && is_dir && p.depth = 1 && t.focus = 0) then
             cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw; said = None; sect = None } :: !cands
           end)
       | _ -> ())
