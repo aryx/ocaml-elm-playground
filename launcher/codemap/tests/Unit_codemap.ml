@@ -251,10 +251,19 @@ let tests =
           let sources = Code_deps.repository_sources ~root and configs = Code_deps.repository_configs ~root in
           let paths = List.filter_map (fun (p, _) -> if Filename.basename p = ".codemapconfig" then Some p else None) configs in
           let guide, mistakes = Code_guide.load ~read:(fun p -> List.assoc_opt p configs) paths in
+          (* claude: a generated file (Photos.mli) is no source of tinybox's
+           * but is one of tinybox codemap's, read from the disk; a path not
+           * of a source (a related note, a directory of pages) is not
+           * among the test's deps in _build: -check looks for those *)
+          let read p = In_channel.with_open_bin (Filename.concat root p) In_channel.input_all in
+          let source p = Filename.check_suffix p ".ml" || Filename.check_suffix p ".mli" in
           let found =
             Code_guide.check guide
-              ~file:(fun p -> Option.map (fun s -> (Code_file.make p s, s)) (List.assoc_opt p sources))
-              ~exists:(fun p -> Sys.file_exists (Filename.concat root p))
+              ~file:(fun p ->
+                match List.assoc_opt p sources with
+                | Some s -> Some (Code_file.make p s, s)
+                | None -> if source p && Sys.file_exists (Filename.concat root p) then (let s = read p in Some (Code_file.make p s, s)) else None)
+              ~exists:(fun p -> (not (source p)) || Sys.file_exists (Filename.concat root p))
           in
           let problems = mistakes @ List.filter_map (function Ok _ -> None | Error e -> Some e) found in
           if problems <> [] then Alcotest.failf "the .codemapconfig files (tinybox codemap -check .):\n  %s" (String.concat "\n  " problems));
