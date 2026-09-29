@@ -29,14 +29,16 @@
 (* where a line is: its column, its top, its height, in pixels *)
 type place = { col : int; y : float; h : float }
 
-type t = { places : place array; cols : int; colw : float; unit : float }
+type t = { places : place array; cols : int; colw : float; unit : float; ox : float; oy : float (* its top left corner *) }
 
 (* [weights f ~important]: each line's weight, [important] the
    config's (a line from 0, its weight) *)
 val weights : Code_file.t -> important:(int * int) list -> float array
 
-(* [layout weights ~pw ~ph]: the lines in columns on a map [pw] by [ph] *)
-val layout : float array -> pw:int -> ph:int -> t
+(* [layout weights ~pw ~ph]: the lines in columns on a map [pw] by
+   [ph], or a part of it, [x0] and [y0] its corner (the street level's
+   panels, Code_street) *)
+val layout : ?x0:float -> ?y0:float -> float array -> pw:int -> ph:int -> t
 
 (* [paint img f g ~bg ~aa]: the file's lines where [g] places them,
    their letters (VGA's font, anti-aliased if [aa]) when a line is 7

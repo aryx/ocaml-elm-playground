@@ -450,7 +450,17 @@ The same patterns serve search (`/` with a pattern) and anchors
 
 6. **Street level**: the focus and its associations; edges from
    `Code_names`' resolutions and the config's `links`, bundled
-   (`Map_atlas`'s bundles, moved to a module both use).
+   (`Map_atlas`'s bundles, moved to a module both use). (Done, 2026-09-29, the uses: `Code_street`;
+   at the ground, `a`: the focus on the left, a panel per file it uses
+   on the right (six at most, the program's own code first and thrice
+   its share, then the most used), each laid out by `Code_ground` with
+   the definitions used tall and the rest squeezed; roads
+   (`Map_atlas.road`) from each use to its definition, bundled per file;
+   operators' uses left out, only sure resolutions kept. `focus=<path>`
+   opens the map on a unit. To come: the users (red, the other way),
+   the config's `links` inside the focus, its `related` files as
+   panels of their own, an .ml and its .mli as one panel.)
+
 7. **codellm**: the facts brief and the guidelines; configs for
    `launcher/` and `launcher/codemap/` (the map explaining itself), then
    `~/ix`; a tour of each.

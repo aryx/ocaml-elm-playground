@@ -215,6 +215,24 @@ let tests =
           let big = Code_ground.layout (Array.make 1000 1.) ~pw:1600 ~ph:800 in
           Alcotest.(check bool) "a long file in columns, each 80 characters wide at least" true
             (big.cols > 1 && big.colw >= 40. *. big.unit));
+      (* claude: the street level: a file's uses of another's names, and
+       * the panel of the one used *)
+      Testo.create "the street: what a file uses, in its panel" (fun () ->
+          let srcs = [ ("game/G.ml", "let go x = Kit.shoot x + Kit.aim x\nlet y = x +. 1.\n"); ("kit/Kit.ml", "let aim x = x\n\nlet shoot x = x\nlet other = 3\n") ] in
+          let files = List.map (fun (p, s) -> (p, lazy (Code_file.make p s))) srcs in
+          let f = Lazy.force (List.assoc "game/G.ml" files) in
+          let edges = Code_street.uses ~index:(Code_names.index files) ~roots:[] ~path:"game/G.ml" f in
+          Alcotest.(check (list string)) "shoot and aim, in Kit.ml; no operator"
+            [ "aim kit/Kit.ml:0"; "shoot kit/Kit.ml:2" ]
+            (List.sort compare (List.map (fun (e : Code_street.edge) -> Printf.sprintf "%s %s:%d" e.name e.target e.target_line) edges));
+          let s =
+            Code_street.layout ~focus:(Code_ground.weights f ~important:[]) ~file:(fun p -> Option.map Lazy.force (List.assoc_opt p files)) edges ~pw:1000 ~ph:600
+          in
+          Alcotest.(check (list string)) "one panel, Kit.ml's" [ "kit/Kit.ml" ] (List.map (fun (p : Code_street.panel) -> p.path) s.panels);
+          let g = (List.hd s.panels).ground in
+          Alcotest.(check bool) "its used definitions tall, the rest thin" true (g.places.(2).h > 3. *. g.places.(3).h && g.places.(0).h > 3. *. g.places.(3).h);
+          Alcotest.(check (option (pair string int))) "a pixel on shoot's line" (Some ("kit/Kit.ml", 2))
+            (let x, y, _, h = Code_ground.box g 2 in Code_street.line_at s ~focus_path:"game/G.ml" (x +. 5.) (y +. (h /. 2.))));
       (* claude: the repository's own configs: no mistake (tinybox
        * codemap -check . says the same); a file changed since it was
        * described is the checker's warning, not a failure: editing a

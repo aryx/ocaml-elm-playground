@@ -196,7 +196,14 @@ let area_of (screen : Playground.screen) = (screen.left +. 20., screen.top -. 92
 
 let run_directory ?guide ?colours ?roots ~(name : string) ~(sources : (string * string) list) () : unit =
   let update (computer : Playground.computer) (m : alone) : alone =
-    let code = match m.code with Some c -> c | None -> of_directory ?guide ?colours ?roots ~area:(area_of computer.screen) ~name ~sources () in
+    let code =
+      match m.code with
+      | Some c -> c
+      | None ->
+          let c = of_directory ?guide ?colours ?roots ~area:(area_of computer.screen) ~name ~sources () in
+          (* claude: focus=<path>, the map opened on that unit *)
+          match List.assoc_opt "focus" (Playground_platform.flags ()) with Some p -> { c with map = Code_map.focus_on c.map p } | None -> c
+    in
     let keys = computer.keyboard.keys in
     let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
     let (Time now) = computer.time in

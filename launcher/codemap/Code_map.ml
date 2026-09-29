@@ -48,6 +48,18 @@ let make ?numbered ?colours ?roots ?guide ~area ~title ~marked entries : t =
   let t = Code_map_base.make ?numbered ?colours ?roots ?guide ~style:!chosen ~area ~title ~marked entries in
   if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
 
+(* claude: the map framing a unit by its path (a directory's or a
+ * file's), at once *)
+let focus_on (t : t) (path : string) : t =
+  let found = ref None in
+  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = path then found := Some i) t.placed;
+  match !found with
+  | Some i ->
+      t.focus <- i;
+      let c = fit t.target.a t.placed.(i).rect in
+      { t with target = c; cam = c }
+  | None -> t
+
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
@@ -240,6 +252,11 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   in
   (* claude: the glass's shape, the panel's too *)
   if pressed "o" then cycle_glass ();
+  (* claude: at the ground, the file with what it uses (Map_v2) *)
+  if pressed "a" then begin
+    t.street <- not t.street;
+    t.painted <- None
+  end;
   (* claude: the style, the next one, for this map and those to come *)
   let before = t.placed in
   let t =
@@ -542,7 +559,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
           (if t.style.units then
-             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
+             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   a what a file uses   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
            else
            Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)

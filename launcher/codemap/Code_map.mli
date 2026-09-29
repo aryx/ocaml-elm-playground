@@ -46,6 +46,10 @@ val make :
   entry list ->
   t
 
+(* claude: the map framing a unit by its path, a directory's or a
+   file's, at once (tinybox codemap <dir> focus=<path>) *)
+val focus_on : t -> string -> t
+
 type action = Stay | Open of Code_file.t * int (* its line, from 0 *) | Close
 
 (* keys as Code_view's; the mouse; Escape closes *)

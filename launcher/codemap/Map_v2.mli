@@ -14,7 +14,10 @@
    unit looked at is a file, the ground level (Code_ground): the whole
    map is that file, each line as high as it matters, the config's
    important lines marked in the margin, their words as notes after
-   them (the plan's step 5).
+   them (the plan's step 5). There, a: the street level (Code_street),
+   the file on the left, the files it uses on the right, its own code's
+   first (its kits), roads from each use to its definition (step 6);
+   tinybox codemap <dir> focus=<path> opens the map on a unit.
 
    The camera moves a unit at a time (the plan's step 2, Code_units, in
    Code_map.update): the wheel or a click one level in, the wheel back,

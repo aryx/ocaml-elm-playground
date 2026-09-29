@@ -109,8 +109,57 @@ let paint_ground ~(aa : bool) (t : t) (c : camera) (e : entry) : Rgba_image.t =
   Code_ground.paint img (Lazy.force e.file) g ~bg ~aa;
   img
 
+(* claude: the street level (Code_street, the plan's step 6): at the
+ * ground, a, the file on the left and what it uses on the right, roads
+ * from each use to its definition; laid out on the window's map, kept *)
+let street_cache : (string * int * int * Code_street.t) option ref = ref None
+
+let street_of (t : t) (e : entry) : Code_street.t =
+  let a = t.cam.a in
+  match !street_cache with
+  | Some (p, w, h, s) when p = e.path && w = a.pw && h = a.ph -> s
+  | _ ->
+      let f = Lazy.force e.file in
+      let edges = Code_street.uses ~index:(index_of t) ~roots:t.roots ~path:e.path f in
+      let file p = List.find_map (fun (x : entry) -> if x.path = p then Some (Lazy.force x.file) else None) t.entries in
+      let focus = Code_ground.weights f ~important:(List.map (fun (l, w, _) -> (l, w)) (important t e)) in
+      let s = Code_street.layout ~first:(fun p -> Code_deps.own e.path p) ~focus ~file edges ~pw:a.pw ~ph:a.ph in
+      street_cache := Some (e.path, a.pw, a.ph, s);
+      s
+
+let paint_street ~(aa : bool) (t : t) (c : camera) (e : entry) : Rgba_image.t =
+  let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
+  let bg = file_background t e.path in
+  fill img 0 0 c.a.pw c.a.ph dark;
+  let q = float_of_int c.a.pw /. float_of_int t.cam.a.pw in
+  let s = Code_street.scale (street_of t e) q in
+  fill img 0 0 (int_of_float s.split) c.a.ph bg;
+  let mark (g : Code_ground.t) (l : int) col =
+    if l < Array.length g.places then
+      let x0, y0, _, h = Code_ground.box g l in
+      fill img (int_of_float (x0 -. (5. *. q))) (int_of_float y0) (int_of_float (x0 -. (2. *. q))) (int_of_float (y0 +. h)) col
+  in
+  (* the uses marked green in the focus's margin, the definitions used
+   * red in the panels' *)
+  List.iter (fun (ed : Code_street.edge) -> mark s.focus ed.from_line (90, 220, 120)) s.edges;
+  Code_ground.paint img (Lazy.force e.file) s.focus ~bg ~aa;
+  List.iter
+    (fun (p : Code_street.panel) ->
+      match List.find_opt (fun (x : entry) -> x.path = p.path) t.entries with
+      | None -> ()
+      | Some x ->
+          let pbg = file_background t p.path in
+          let x0 = int_of_float p.ground.ox and y0 = int_of_float (p.ground.oy -. (22. *. q)) in
+          let y1 = match p.ground.places with [||] -> y0 | ps -> let l = ps.(Array.length ps - 1) in int_of_float (p.ground.oy +. l.y +. l.h) in
+          fill img x0 y0 c.a.pw (y1 + 2) pbg;
+          List.iter (fun (ed : Code_street.edge) -> if ed.target = p.path then mark p.ground ed.target_line (250, 80, 70)) s.edges;
+          Code_ground.paint img (Lazy.force x.file) p.ground ~bg:pbg ~aa)
+    s.panels;
+  img
+
 let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
   match at_ground t c with
+  | Some e when t.street -> paint_street ~aa t c e
   | Some e -> paint_ground ~aa t c e
   | None ->
   let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
@@ -375,14 +424,31 @@ let notes (t : t) (c : camera) (e : entry) : shape list =
                       lines)))
     (important t e)
 
+(* claude: at the street, each panel's title, the roads *)
+let street_labels (t : t) (c : camera) (e : entry) : shape list =
+  let a = c.a in
+  let s = street_of t e in
+  Code_street.roads a s
+  @ List.map
+      (fun (p : Code_street.panel) ->
+        let text = Printf.sprintf "%s   (%d use%s)" p.path p.count (if p.count = 1 then "" else "s") in
+        let tw = 0.5 *. 14. *. float_of_int (String.length text) in
+        label a (lighter (archi t.colours p.path)) 14. (p.ground.ox +. 8. +. (tw /. 2.)) (p.ground.oy -. 11.) text)
+      s.panels
+  @
+  if s.panels = [] then [ label a dim 16. (s.split +. ((float_of_int a.pw -. s.split) /. 2.)) (float_of_int a.ph /. 2.) "(nothing of this map's other files used)" ]
+  else []
+
 let labels (t : t) (c : camera) (_ : float) : shape list =
   let kept = names t c in
-  (match at_ground t c with Some e -> notes t c e | None -> []) @ List.rev_map (fun n -> n.draw) kept @ hover_card t c kept
+  (match at_ground t c with Some e when t.street -> street_labels t c e | Some e -> notes t c e | None -> [])
+  @ List.rev_map (fun n -> n.draw) kept @ hover_card t c kept
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,
  * not the treemap's): what Enter opens, what the status line says *)
 let pick (t : t) (c : camera) (_ : float) (px : float) (py : float) : (string * int * string) option =
   match at_ground t c with
+  | Some e when t.street -> Option.map (fun (p, l) -> (p, l, "")) (Code_street.line_at (street_of t e) ~focus_path:e.path px py)
   | Some e -> Option.map (fun l -> (e.path, l, "")) (Code_ground.line_at (ground_of t e) px py)
   | None -> None
 

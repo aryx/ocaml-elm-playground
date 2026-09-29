@@ -11,7 +11,7 @@
 (* See Code_ground.mli *)
 
 type place = { col : int; y : float; h : float }
-type t = { places : place array; cols : int; colw : float; unit : float }
+type t = { places : place array; cols : int; colw : float; unit : float; ox : float; oy : float }
 
 (*****************************************************************************)
 (* The weights *)
@@ -55,7 +55,7 @@ let weights (f : Code_file.t) ~(important : (int * int) list) : float array =
 
 let max_unit = 18.
 
-let layout (weights : float array) ~(pw : int) ~(ph : int) : t =
+let layout ?(x0 = 0.) ?(y0 = 0.) (weights : float array) ~(pw : int) ~(ph : int) : t =
   let total = Float.max 1. (Array.fold_left ( +. ) 0. weights) in
   let pw = float_of_int pw and ph = float_of_int ph in
   (* as many columns as keep 80 characters (40 units) in a column *)
@@ -75,16 +75,16 @@ let layout (weights : float array) ~(pw : int) ~(ph : int) : t =
         p)
       weights
   in
-  { places; cols = !col + 1; colw = pw /. float_of_int (max k (!col + 1)); unit }
+  { places; cols = !col + 1; colw = pw /. float_of_int (max k (!col + 1)); unit; ox = x0; oy = y0 }
 
 let scale (g : t) (q : float) : t =
-  { g with places = Array.map (fun p -> { p with y = p.y *. q; h = p.h *. q }) g.places; colw = g.colw *. q; unit = g.unit *. q }
+  { g with places = Array.map (fun p -> { p with y = p.y *. q; h = p.h *. q }) g.places; colw = g.colw *. q; unit = g.unit *. q; ox = g.ox *. q; oy = g.oy *. q }
 
 let pad = 8.
 
 let box (g : t) (l : int) : float * float * float * float =
   let p = g.places.(l) in
-  ((float_of_int p.col *. g.colw) +. pad, p.y, g.colw -. (2. *. pad), p.h)
+  (g.ox +. (float_of_int p.col *. g.colw) +. pad, g.oy +. p.y, g.colw -. (2. *. pad), p.h)
 
 let line_at (g : t) (x : float) (y : float) : int option =
   let found = ref None in
