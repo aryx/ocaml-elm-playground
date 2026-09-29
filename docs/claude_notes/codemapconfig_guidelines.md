@@ -86,7 +86,8 @@ them.
 "Ideally every file, every folder (and enclosing folders)" has a
 skeleton: the X-ray at any unit shows that unit's own structure, never
 an enclosing folder's with its bones off the map. -check says what is
-missing: a module (an `.ml` or `.c` of 40 lines or more) or a folder
+missing: a module (an `.ml` or `.c` of 150 lines or more: below, the
+derived one is honest enough) or a folder
 (two sources or more) with no skeleton of its own. Until one is
 written, the map derives one from the code (its capitals and important
 lines, else its most used definitions; for a folder its most tied
@@ -105,7 +106,9 @@ parts), marked "(derived)": a stand-in, not the judgement.
   the role each plays in the folder, not their own summaries.
 - An enclosing folder's shows the folders under it as bones: at the
   root, the areas (games/, libs/, ...); at libs/, its libraries.
-- A tiny module (a type and two functions) needs 3 bones, not padding.
+- A tiny module (a type and two functions) needs 3 bones, not padding;
+  under 150 lines the derived skeleton will do unless its structure
+  says more than its calls.
 
 ### What ~/ix taught (its first pass, 2026-09-29)
 

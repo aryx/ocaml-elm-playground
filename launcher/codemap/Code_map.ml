@@ -807,7 +807,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
           if pressed "Backspace" && s.query <> "" then begin s.query <- String.sub s.query 0 (String.length s.query - 1); s.sel <- 0 end;
           if pressed "Tab" then begin s.query <- Code_search.complete hits s.query; s.sel <- 0 end;
           (match arrow with
-          | Some "ArrowDown" -> s.sel <- min (max 0 (min n 8 - 1)) (s.sel + 1)
+          | Some "ArrowDown" -> s.sel <- min (max 0 (n - 1)) (s.sel + 1)
           | Some "ArrowUp" -> s.sel <- max 0 (s.sel - 1)
           | _ -> ());
           String.iter

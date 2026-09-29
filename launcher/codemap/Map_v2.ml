@@ -1684,6 +1684,9 @@ let query_hits (t : t) (q : string) : Code_search.hit list =
   match split_prefix q with
   | Some "text:", rest -> if String.length rest >= 2 then text_search rest else []
   | Some "ref:", rest -> if String.length rest >= 2 then ref_search rest else []
+  (* claude: view: or tour: alone, all of them, to explore (the author) *)
+  | Some (("view:" | "tour:") as p), rest when String.trim rest = "" ->
+      Array.to_list (search_all t) |> List.filter (fun (h : Code_search.hit) -> h.kind = (if p = "view:" then View else Tour))
   | Some p, rest ->
       let keep (h : Code_search.hit) =
         match (p, h.kind) with
@@ -1762,7 +1765,10 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
   let a = c.a in
   let w = Float.min 760. (float_of_int a.pw -. 40.) in
   let x0 = (float_of_int a.pw -. w) /. 2. and y0 = 12. in
-  let shown_hits = List.filteri (fun i _ -> i < 8) hits in
+  (* claude: eight at a time, the chosen one among them (up and down
+   * scroll the list) *)
+  let first = max 0 (s.sel - 7) in
+  let shown_hits = List.filteri (fun i _ -> i >= first && i < first + 8) hits in
   let row = 24. in
   let named = search_named t in
   let h = 50. +. (row *. float_of_int (max 1 (List.length shown_hits))) +. 30. in
@@ -1778,8 +1784,9 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
      else [])
   @ List.concat
       (List.mapi
-         (fun i (hit : Code_search.hit) ->
-           let y = y0 +. 44. +. (float_of_int i *. row) +. (row /. 2.) in
+         (fun i0 (hit : Code_search.hit) ->
+           let i = i0 + first in
+           let y = y0 +. 44. +. (float_of_int i0 *. row) +. (row /. 2.) in
            let kind = match hit.kind with Dir -> "dir" | File -> "file" | Def -> if Hashtbl.mem types (hit.path, hit.line) then "type" else "def" | Text -> "line" | View -> "view" | Tour -> "tour" in
            let cut n str = if String.length str > n then String.sub str 0 n ^ "..." else str in
            let name = match hit.kind with Dir -> hit.name ^ "/" | Text -> Printf.sprintf "%s:%d" (Code_search.basename hit.path) (hit.line + 1) | _ -> hit.name in
@@ -1802,6 +1809,7 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
         | _ :: _ :: _ -> Printf.sprintf "Enter: the %d directories named so, together   Esc close" (List.length named)
         | _ when hits <> [] ->
             let n = List.length (search_set t) in
+            if n = 0 then "Enter go   Tab complete   up/down choose   / first: here or all   Esc close" else
             Printf.sprintf "Enter go   shift+Enter the %d %s together   ctrl+Enter a layer   Tab complete   \"text   / first: here or all" n
               (if List.exists (fun (h : Code_search.hit) -> h.kind = Dir || h.kind = File) hits then "found" else "files of these")
         | _ -> "a name, \"text, @reference, name// directories so named   Tab complete   up/down choose   / first: here or all   Esc close");
@@ -2005,12 +2013,63 @@ let bone_card (t : t) (c : camera) : shape list =
           @ List.mapi (fun i l -> label a (if i = 0 then rgb r g b else if i = 1 then dim else ink) 15. (x0 +. 12. +. (text_width 15. l /. 2.)) (y0 +. 17. +. (22. *. float_of_int i)) l) lines)
   | _ -> []
 
+(* claude: where a hit is on the map, now: a unit's centre, a line's
+ * place; a view's, each of its units' *)
+let hit_spots (t : t) (c : camera) (h : Code_search.hit) : (float * float) list =
+  let index = Hashtbl.create 256 in
+  Array.iteri (fun i (p : entry Treemap.placed) -> Hashtbl.replace index p.path i) t.placed;
+  let unit p = match Hashtbl.find_opt index p with Some i -> (match clip c t.placed.(i).rect with Some (a0, b0, a1, b1) -> [ (float_of_int (a0 + a1) /. 2., float_of_int (b0 + b1) /. 2.) ] | None -> []) | None -> [] in
+  match h.kind with
+  | Dir | File -> unit h.path
+  | Def | Text -> (
+      match spot t c h.path h.line with
+      | Some (x, y, _) -> [ (x, y) ]
+      | None -> (
+          match Hashtbl.find_opt index h.path with
+          | Some i -> (
+              match t.geometry.(i) with
+              | Some g ->
+                  let x, y = line_pos t.placed.(i).rect g h.line in
+                  [ (to_px c x, to_py c (y +. (g.cell_h /. 2.))) ]
+              | None -> unit h.path)
+          | None -> []))
+  | View -> ( match List.nth_opt (Code_guide.views t.guide) h.line with Some v -> List.concat_map unit (match v.of_ with Some o -> o :: v.files | None -> v.files) | None -> [])
+  | Tour -> (
+      match List.nth_opt (Code_guide.tours t.guide) h.line with
+      | Some ({ stops = i :: _; _ } : Code_guide.tour) -> ( match Code_guide.split i.at with Some p, _ -> unit p | None, p -> unit p)
+      | _ -> [])
+
+(* the chosen hit, as the list scrolls (the author: "they should glow ...
+ * as the eyes otherwise can not always discern where is the match"): a
+ * ring pulsing round it, and a thread from its row in the box to it *)
+let chosen_glow (t : t) (c : camera) (s : search) (h : Code_search.hit) : shape list =
+  let a = c.a in
+  let w = Float.min 760. (float_of_int a.pw -. 40.) in
+  let x0 = (float_of_int a.pw -. w) /. 2. and y0 = 12. and row = 24. in
+  let first = max 0 (s.sel - 7) in
+  let ry = y0 +. 44. +. (float_of_int (s.sel - first) *. row) +. (row /. 2.) in
+  let pulse = 0.5 +. (0.5 *. Float.sin (t.clock *. 7.)) in
+  let glow = rgb 255 235 120 in
+  List.concat_map
+    (fun (x, y) ->
+      let rx = if x < x0 then x0 else if x > x0 +. w then x0 +. w else x in
+      let from = (rx, if y < ry then ry -. (row /. 2.) else ry +. (row /. 2.)) in
+      let from = if y > y0 +. 200. then (rx, y0 +. 200.) else from in
+      let pts = Map_atlas.bspline [| from; ((fst from +. x) /. 2., (snd from +. y) /. 2.); (x, y) |] in
+      Map_atlas.road ~colours:((255, 235, 120), (255, 235, 120)) a pts 2. 0.6
+      @ [
+          circle glow (14. +. (8. *. pulse)) |> move (sx a x) (sy a y) |> fade (0.25 +. (0.2 *. pulse));
+          circle glow 7. |> move (sx a x) (sy a y) |> fade 0.9;
+        ])
+    (hit_spots t c h)
+
 let search_shapes (t : t) (c : camera) : shape list =
   match t.search with
   | None -> []
   | Some s ->
       let hits = search_hits t in
-      search_lit ?chosen:(List.nth_opt hits s.sel) t c hits @ search_box t c s hits
+      let chosen = List.nth_opt hits s.sel in
+      search_lit ?chosen t c hits @ search_box t c s hits @ (match chosen with Some h -> chosen_glow t c s h | None -> [])
 
 let labels (t : t) (c : camera) (q : float) : shape list =
   let kept = names t c in
