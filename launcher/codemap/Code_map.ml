@@ -322,9 +322,14 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
       let u = to_u t.cam mpx and v = to_v t.cam mpy in
       (* claude: a name clicked (Map_v2's): to its directory or file *)
       let named = if clicked then t.style.unit_at t t.cam (Playground_platform.pixel_ratio ()) mpx mpy else None in
-      match named with
-      | Some i -> (fit a t.placed.(i).rect, Stay)
-      | None ->
+      (* claude: a line the style placed itself (Map_v2's ground), not
+       * the treemap's: Enter opens it there, a click stays *)
+      let picked = t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy in
+      let file_of path = List.find_map (fun (e : entry) -> if e.path = path then Some (Lazy.force e.file) else None) t.entries in
+      match (named, picked) with
+      | Some i, _ -> (fit a t.placed.(i).rect, Stay)
+      | None, Some (path, line, _) -> ( match file_of path with Some f when pressed "Enter" -> (target, Open (f, line)) | _ -> (target, Stay))
+      | None, None ->
       match under t u v with
       | None -> (target, Stay)
       | Some i -> (
@@ -502,14 +507,18 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
            | File (_, _, e) when List.mem e.path t.marked -> ( match clip c p.rect with Some b -> box yellow 3. b | None -> [])
            | _ -> [])
   in
+  (* claude: a style's own place under the mouse (Map_v2's ground: the
+   * lines laid out anew), else the treemap's *)
+  let picked = if on a mpx mpy then t.style.pick t c q mpx mpy else None in
   let hover, status =
     match hovered with
     | Some i -> (
         let p = t.placed.(i) in
-        let frame = match clip c p.rect with Some b -> box white 1.5 b | None -> [] in
+        (* claude: no frame round the unit one is in *)
+        let frame = match clip c p.rect with Some b when not (t.style.units && i = t.focus) -> box white 1.5 b | _ -> [] in
         match (p.node, t.geometry.(i)) with
         | File (_, _, e), Some g ->
-            let line = line_at g p.rect u v in
+            let line = match picked with Some (_, l, _) -> l | None -> line_at g p.rect u v in
             let def =
               if Lazy.is_val e.file then
                 List.fold_left (fun acc (l, name, _) -> if l <= line then Some name else acc) None (Lazy.force e.file).defs

@@ -47,7 +47,72 @@ let outside (t : t) (p : entry Treemap.placed) : bool =
   let u = p.rect.x +. (p.rect.w /. 2.) and v = p.rect.y +. (p.rect.h /. 2.) in
   not (u >= f.x && u < f.x +. f.w && v >= f.y && v < f.y +. f.h)
 
+(*****************************************************************************)
+(* The ground *)
+(*****************************************************************************)
+
+(* claude: the ground level (Code_ground, the plan's step 5): the unit
+ * looked at a file, and the camera there, the whole map is that file,
+ * each line as high as it matters *)
+let at_ground (t : t) (c : camera) : entry option =
+  match t.placed.(t.focus).node with
+  | File (_, _, e) when t.focus <> 0 ->
+      let f = fit c.a t.placed.(t.focus).rect in
+      if
+        Float.abs (Float.log (f.z /. c.z)) < 0.1
+        && Float.abs (f.cx -. c.cx) *. c.z < 0.05 *. float_of_int c.a.pw
+        && Float.abs (f.cy -. c.cy) *. c.z < 0.05 *. float_of_int c.a.ph
+      then Some e
+      else None
+  | _ -> None
+
+(* what the config calls important in a file, found: its line, its
+ * weight, its words; the capitals among them, weighing 3 *)
+let important (t : t) (e : entry) : (int * int * string option) list =
+  match Code_guide.file_note t.guide e.path with
+  | None -> []
+  | Some n ->
+      let f = Lazy.force e.file in
+      List.filter_map
+        (fun (it : Code_guide.item) -> match Code_guide.find f it.at with Ok l -> Some (l, it.weight, it.say) | Error _ -> None)
+        (n.important @ List.map (fun (it : Code_guide.item) -> { it with weight = 3 }) n.capitals)
+
+(* the file's lines laid out on the window's map (its pixels, not the
+ * picture's, which may be more: Code_ground.scale), kept *)
+let ground_cache : (string * int * int * Code_ground.t) option ref = ref None
+
+let ground_of (t : t) (e : entry) : Code_ground.t =
+  let a = t.cam.a in
+  match !ground_cache with
+  | Some (p, w, h, g) when p = e.path && w = a.pw && h = a.ph -> g
+  | _ ->
+      let f = Lazy.force e.file in
+      let weights = Code_ground.weights f ~important:(List.map (fun (l, w, _) -> (l, w)) (important t e)) in
+      let g = Code_ground.layout weights ~pw:a.pw ~ph:a.ph in
+      ground_cache := Some (e.path, a.pw, a.ph, g);
+      g
+
+let paint_ground ~(aa : bool) (t : t) (c : camera) (e : entry) : Rgba_image.t =
+  let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
+  let bg = file_background t e.path in
+  fill img 0 0 c.a.pw c.a.ph bg;
+  let q = float_of_int c.a.pw /. float_of_int t.cam.a.pw in
+  let g = Code_ground.scale (ground_of t e) q in
+  (* the important lines marked in the margin, a bar as thick as their
+   * weight *)
+  List.iter
+    (fun (l, w, _) ->
+      let x0, y0, _, h = Code_ground.box g l in
+      let bar = int_of_float (q *. float_of_int (1 + w)) in
+      fill img (int_of_float x0 - bar - int_of_float (2. *. q)) (int_of_float y0) (int_of_float x0 - int_of_float (2. *. q)) (int_of_float (y0 +. h)) (255, 215, 70))
+    (important t e);
+  Code_ground.paint img (Lazy.force e.file) g ~bg ~aa;
+  img
+
 let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
+  match at_ground t c with
+  | Some e -> paint_ground ~aa t c e
+  | None ->
   let img = Rgba_image.create ~width:c.a.pw ~height:c.a.ph in
   fill img 0 0 c.a.pw c.a.ph dark;
   Array.iteri
@@ -172,11 +237,13 @@ let names (t : t) (c : camera) : name list =
           { node = i; nbox = box; nrank = 10000.; draw = shape; said = None })
         above
   in
-  let cands = ref (crumbs @ capitals t c) in
+  (* at the ground, the file is the map: only the breadcrumb *)
+  let ground = at_ground t c <> None in
+  let cands = ref (crumbs @ if ground then [] else capitals t c) in
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
       match clip c p.rect with
-      | Some (x0, y0, x1, y1) when p.depth > 0 && (not (List.mem i above)) && not (outside t p && (match p.node with File _ -> true | Dir _ -> false)) ->
+      | Some (x0, y0, x1, y1) when (not ground) && p.depth > 0 && (not (List.mem i above)) && not (outside t p && (match p.node with File _ -> true | Dir _ -> false)) ->
           let w = float_of_int (x1 - x0) and h = float_of_int (y1 - y0) in
           let cx = (float_of_int x0 +. float_of_int x1) /. 2. and cy = (float_of_int y0 +. float_of_int y1) /. 2. in
           let is_dir, name = match p.node with Dir (n, _) -> (true, n) | File (n, _, _) -> (false, n) in
@@ -265,8 +332,58 @@ let hover_card (t : t) (c : camera) (kept : name list) : shape list =
                 label a (if k = 0 then col else ink) size (x0 +. (w /. 2.)) y s)
               lines)
 
+(* claude: at the ground, what the config says of an important line, a
+ * note after its end when the column has room for it *)
+let notes (t : t) (c : camera) (e : entry) : shape list =
+  let a = c.a in
+  let g = ground_of t e in
+  let f = Lazy.force e.file in
+  List.filter_map
+    (fun (l, _, say) ->
+      match say with
+      | None -> None
+      | Some say ->
+          let x0, y0, w, h = Code_ground.box g l in
+          (* the line's end: its last character *)
+          let last = ref 0 in
+          for k = 0 to Code_file.cols - 1 do
+            let ch = Bytes.get f.chars ((l * Code_file.cols) + k) in
+            if ch <> '\000' && ch <> ' ' then last := k + 1
+          done;
+          let cw = if h >= 7. then h /. 2. else w /. 80. in
+          let size = 12. in
+          let start = x0 +. (float_of_int !last *. cw) +. 12. in
+          (* wrapped in the room after the line's end, three lines at most *)
+          let room = int_of_float ((x0 +. w -. start) /. (0.5 *. size)) in
+          if room < 16 then None
+          else
+            let lines = wrap room ("<- " ^ say) in
+            let lines = if List.length lines > 3 then List.filteri (fun k _ -> k < 3) lines else lines in
+            let n = float_of_int (List.length lines) in
+            let tw = 0.5 *. size *. float_of_int (List.fold_left (fun m l -> max m (String.length l)) 0 lines) in
+            let top = y0 +. (h /. 2.) -. (n *. (size +. 2.) /. 2.) in
+            Some
+              (group
+                 ((rectangle (rgb 18 16 36) (tw +. 8.) ((n *. (size +. 2.)) +. 4.)
+                  |> move (sx a (start +. (tw /. 2.))) (sy a (top +. (n *. (size +. 2.) /. 2.)))
+                  |> fade 0.85)
+                 :: List.mapi
+                      (fun k l ->
+                        let lw = 0.5 *. size *. float_of_int (String.length l) in
+                        words (rgb 255 215 70) l |> scale (size /. words_font_size)
+                        |> move (sx a (start +. (lw /. 2.))) (sy a (top +. ((float_of_int k +. 0.5) *. (size +. 2.)))))
+                      lines)))
+    (important t e)
+
 let labels (t : t) (c : camera) (_ : float) : shape list =
   let kept = names t c in
-  List.rev_map (fun n -> n.draw) kept @ hover_card t c kept
+  (match at_ground t c with Some e -> notes t c e | None -> []) @ List.rev_map (fun n -> n.draw) kept @ hover_card t c kept
 
-let style : style = { sname = "v2"; paint; labels; pick = (fun _ _ _ _ _ -> None); unit_at; units = true }
+(* claude: at the ground, the line under a pixel (Code_ground's layout,
+ * not the treemap's): what Enter opens, what the status line says *)
+let pick (t : t) (c : camera) (_ : float) (px : float) (py : float) : (string * int * string) option =
+  match at_ground t c with
+  | Some e -> Option.map (fun l -> (e.path, l, "")) (Code_ground.line_at (ground_of t e) px py)
+  | None -> None
+
+let style : style = { sname = "v2"; paint; labels; pick; unit_at; units = true }

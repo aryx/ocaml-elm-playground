@@ -10,7 +10,11 @@
    clickable (the camera flies to it), and hovering it gives its card.
    A card says what the directories' .codemapconfig say of it
    (Code_guide, written by an LLM, extended by hand), and the counts.
-   Near enough to be read, a file's code, as Map_classic's.
+   Near enough to be read, a file's code, as Map_classic's; and when the
+   unit looked at is a file, the ground level (Code_ground): the whole
+   map is that file, each line as high as it matters, the config's
+   important lines marked in the margin, their words as notes after
+   them (the plan's step 5).
 
    The camera moves a unit at a time (the plan's step 2, Code_units, in
    Code_map.update): the wheel or a click one level in, the wheel back,

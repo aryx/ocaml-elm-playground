@@ -441,7 +441,13 @@ The same patterns serve search (`/` with a pattern) and anchors
    capitals drawn by `Map_v2`, a dot and a name, their card saying why.)
 
 5. **Ground level**: lines' heights by category and weight; tested with
-   a golden frame of TinyInvaders.
+   a golden frame of TinyInvaders. (Done, 2026-09-29: `Code_ground`,
+   the weights, the columns, the painter; `Map_v2` at the ground when the
+   unit is a file and the camera there, the important lines marked in
+   the margin, the config's words as notes after them when the column
+   has room; Enter and the status line through `style.pick`. To come: a
+   note for a line with no room left, names clicked at the ground.)
+
 6. **Street level**: the focus and its associations; edges from
    `Code_names`' resolutions and the config's `links`, bundled
    (`Map_atlas`'s bundles, moved to a module both use).

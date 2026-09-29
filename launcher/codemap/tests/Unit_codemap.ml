@@ -203,6 +203,18 @@ let tests =
               Error "games/.codemapconfig: G.ml: games/G.ml: no def view";
             ]
             found);
+      (* claude: Code_ground.mli's worked example, and the weights *)
+      Testo.create "the ground: lines as high as they matter" (fun () ->
+          let g = Code_ground.layout (Array.append [| 3. |] (Array.make 30 1.)) ~pw:800 ~ph:600 in
+          Alcotest.(check int) "one column" 1 g.cols;
+          Alcotest.(check (float 0.01)) "the unit, 3% kept" (600. /. (33. *. 1.03)) g.unit;
+          Alcotest.(check (float 0.01)) "the header three units" (3. *. g.unit) g.places.(0).h;
+          let f = Code_file.make "a.ml" "(* A comment. *)\n\nlet f x =\n  x + 1\n" in
+          Alcotest.(check (list (float 0.001))) "a comment, a blank, a header (important: weight 2), a statement, the last newline" [ 0.8; 0.35; 4.5; 1.; 0.35 ]
+            (Array.to_list (Code_ground.weights f ~important:[ (2, 2) ]));
+          let big = Code_ground.layout (Array.make 1000 1.) ~pw:1600 ~ph:800 in
+          Alcotest.(check bool) "a long file in columns, each 80 characters wide at least" true
+            (big.cols > 1 && big.colw >= 40. *. big.unit));
       (* claude: the repository's own configs: no mistake (tinybox
        * codemap -check . says the same); a file changed since it was
        * described is the checker's warning, not a failure: editing a
