@@ -307,7 +307,7 @@ let tests =
           has "A game: the heart is march.";
           has "def:march, line 5";
           has "Uses: k/Kit.ml (1)";
-          has "A program: it has a main.");
+          has "A program: its entry (a main, Cap.main).");
       Testo.create "a config's mistakes" (fun () ->
           let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
           Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");
