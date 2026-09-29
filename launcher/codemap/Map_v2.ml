@@ -319,7 +319,69 @@ let names (t : t) (c : camera) : name list =
           let w = float_of_int (x1 - x0) and h = float_of_int (y1 - y0) in
           let cx = (float_of_int x0 +. float_of_int x1) /. 2. and cy = (float_of_int y0 +. float_of_int y1) /. 2. in
           let is_dir, name = match p.node with Dir (n, _) -> (true, n) | File (n, _, _) -> (false, n) in
-
+          (* claude: a directory looked at, a file big enough on the map:
+           * its name on a tab at its top, its card (what the configs say
+           * of it), its table of contents (its sections where they are) --
+           * what tells files apart, readable *)
+          let card_file =
+            match p.node with
+            | File (_, _, e) when (match t.placed.(t.focus).node with Dir _ -> true | File _ -> false) && w >= 105. && h >= 70. && not (outside t p) -> Some e
+            | _ -> None
+          in
+          (match card_file with
+          | Some e ->
+              let col = archi t.colours p.path in
+              let fx0 = float_of_int x0 and fy0 = float_of_int y0 in
+              let box, shape = tab a (lighter col) 15. (fx0 +. 3.) (fy0 +. 3.) name in
+              cands := { node = i; nbox = box; nrank = 700.; draw = shape; said = None } :: !cands;
+              (* the card, under the tab, wrapped to the block *)
+              (match Option.bind (Code_guide.file_note t.guide e.path) (fun n -> n.summary) with
+              | Some said ->
+                  let size = 13. in
+                  let chars = max 12 (int_of_float ((w -. 16.) /. (0.5 *. size))) in
+                  (* a narrow block, a line more *)
+                  let lines = List.filteri (fun k _ -> k < if w < 180. then 4 else 3) (wrap chars said) in
+                  let n = float_of_int (List.length lines) in
+                  let top = fy0 +. 28. in
+                  let lw = List.fold_left (fun m l -> Float.max m (0.5 *. size *. float_of_int (String.length l))) 0. lines in
+                  let bh = n *. (size +. 3.) in
+                  let draw =
+                    group
+                      ((rectangle (rgb 16 14 32) (lw +. 10.) (bh +. 6.) |> move (sx a (fx0 +. 6. +. (lw /. 2.))) (sy a (top +. (bh /. 2.))) |> fade 0.85)
+                      :: List.mapi
+                           (fun k l ->
+                             let tw = 0.5 *. size *. float_of_int (String.length l) in
+                             words ink l |> scale (size /. words_font_size) |> move (sx a (fx0 +. 8. +. (tw /. 2.))) (sy a (top +. ((float_of_int k +. 0.5) *. (size +. 3.)))))
+                           lines)
+                  in
+                  cands := { node = i; nbox = (fx0 +. 4., top -. 3., fx0 +. 12. +. lw, top +. bh +. 3.); nrank = 820.; draw; said = None } :: !cands
+              | None -> ());
+              (* the sections, each where it is in the columns *)
+              (match t.geometry.(i) with
+              | Some g ->
+                  let f = Lazy.force e.file in
+                  let r, gg, b = Highlight_code.rgb Comment_section in
+                  List.iter
+                    (fun (l, title, (cat : Highlight_code.category)) ->
+                      let telling = String.length title < 36 && title <> "" && title.[0] <> '-' && title.[0] <> '*' && not (String.contains title '/') in
+                      if cat = Comment_section && l > 0 && telling then begin
+                        let lx, ly = line_pos p.rect g l in
+                        let px = to_px c lx +. 4. and py = to_py c ly in
+                        let size = 12. in
+                        let tw = 0.5 *. size *. float_of_int (String.length title + 2) in
+                        let text = "* " ^ title in
+                        let draw =
+                          group
+                            [
+                              rectangle (rgb 16 14 32) (tw +. 6.) (size +. 4.) |> move (sx a (px +. (tw /. 2.))) (sy a py) |> fade 0.8;
+                              words (rgb r gg b) text |> scale (size /. words_font_size) |> move (sx a (px +. (tw /. 2.) +. 2.)) (sy a py);
+                            ]
+                        in
+                        if px +. tw < float_of_int x1 then cands := { node = i; nbox = (px, py -. (size /. 2.) -. 2., px +. tw +. 6., py +. (size /. 2.) +. 2.); nrank = 400.; draw; said = None } :: !cands
+                      end)
+                    f.defs
+              | None -> ())
+          | None ->
           let len = float_of_int (max 1 (String.length name)) in
           let cap = if not is_dir then 16. else match p.depth with 1 -> 64. | 2 -> 36. | _ -> 24. in
           let across = Float.min (w /. (0.55 *. len)) (Float.min (h /. 2.5) cap) in
@@ -339,7 +401,7 @@ let names (t : t) (c : camera) : name list =
             in
             let nrank = if is_dir then 1000. -. (100. *. float_of_int p.depth) +. size else size in
             cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw; said = None } :: !cands
-          end
+          end)
       | _ -> ())
     t.placed;
   let overlaps (a0, b0, a1, b1) (c0, d0, c1, d1) = a0 < c1 && c0 < a1 && b0 < d1 && d0 < b1 in

@@ -19,7 +19,10 @@
    first (its kits), roads from each use to its definition (step 6);
    tinybox codemap <dir> focus=<path> opens the map on a unit.
 
-   At the ground and the street, a click shows a definition's body readable
+   At the region level (a directory looked at), a file big enough shows
+   its name on a tab, its card (what the configs say of it) and its table
+   of contents (its sections' titles where they are). At the ground and
+   the street, a click shows a definition's body readable
    over the map (a peek: the name's under the mouse, found elsewhere if
    defined elsewhere; else the line's own definition), a click or
    Escape closing it.
