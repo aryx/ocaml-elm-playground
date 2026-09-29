@@ -1449,7 +1449,8 @@ let layer_groups (t : t) : (string * layer list) list =
   ("kept", t.layers) :: guide
 
 let layers_shapes (t : t) (c : camera) : shape list =
-  match List.nth_opt (layer_groups t) t.layer_group with
+  (* claude: -1, none (List.nth_opt raises on it) *)
+  match if t.layer_group < 0 then None else List.nth_opt (layer_groups t) t.layer_group with
   | None | Some (_, []) -> []
   | Some (group, layers) ->
     let a = c.a in
