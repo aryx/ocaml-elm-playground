@@ -15,8 +15,9 @@ val host : < Cap.fork ; Cap.exec ; Cap.wait ; .. > -> string list -> Tinybox_men
  * relative to it; not what is under a name starting with . or _ (.git,
  * _build), nor under a symbolic link to a directory (xix's principia/,
  * principia again), nor what its .codemapignore leaves out -- with its
- * .codemapignore and .codemapconfig read (Code_config) and its projects'
- * tops (a .git or a dune-project in them, Code_names.find), or the
- * config's mistake *)
-val directory_sources :
-  < Cap.readdir ; Cap.open_in ; .. > -> string -> (Code_config.t * string list * (string * string) list, string) result
+ * .codemapignore read (Code_config), its projects' tops (a .git or a
+ * dune-project in them, Code_names.find), and claude: every directory's
+ * .codemapconfig, evaluated as jsonnet (Code_guide), and their mistakes *)
+type directory = { roots : string list; sources : (string * string) list; guide : Code_guide.t; mistakes : string list }
+
+val directory_sources : < Cap.readdir ; Cap.open_in ; .. > -> string -> directory

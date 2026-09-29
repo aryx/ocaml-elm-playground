@@ -159,11 +159,23 @@ let within (x0, y0, x1, y1) x y = x >= x0 && x < x1 && y >= y0 && y < y1
 let unit_at (t : t) (c : camera) (_ : float) (px : float) (py : float) : int option =
   Option.map (fun n -> n.node) (List.find_opt (fun n -> within n.nbox px py) (names t c))
 
-(* a directory's card: its path, and what it holds *)
+(* claude: words cut into lines of at most [width] characters *)
+let wrap (width : int) (text : string) : string list =
+  let words = List.filter (( <> ) "") (String.split_on_char ' ' text) in
+  let lines, last =
+    List.fold_left
+      (fun (lines, cur) w -> if cur = "" then (lines, w) else if String.length cur + 1 + String.length w > width then (cur :: lines, w) else (lines, cur ^ " " ^ w))
+      ([], "") words
+  in
+  List.rev (if last = "" then lines else last :: lines)
+
+(* a directory's or a file's card: its path, what its config says of it
+ * (Code_guide), and what it holds *)
 let card (t : t) (i : int) : string list =
   let p = t.placed.(i) in
+  let said = function Some s -> wrap 48 s | None -> [] in
   match p.node with
-  | File (_, _, e) -> [ e.path; lines_text e.nlines ]
+  | File (_, _, e) -> (e.path :: said (Option.bind (Code_guide.file_note t.guide e.path) (fun n -> n.summary))) @ [ lines_text e.nlines ]
   | Dir (_, kids) ->
       let prefix = p.path ^ "/" in
       let n = String.length prefix in
@@ -173,8 +185,9 @@ let card (t : t) (i : int) : string list =
           (0, 0) t.entries
       in
       let subdirs = List.length (List.filter (function Treemap.Dir _ -> true | File _ -> false) kids) in
-      [
-        prefix;
+      [ prefix ]
+      @ said (Code_guide.dir_summary t.guide p.path)
+      @ [
         Printf.sprintf "%d files, %s" files (lines_text lines);
         (if subdirs = 0 then "no subdirectory" else Printf.sprintf "%d subdirector%s" subdirs (if subdirs = 1 then "y" else "ies"));
         "click: fly into it";

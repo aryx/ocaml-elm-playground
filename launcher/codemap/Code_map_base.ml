@@ -79,6 +79,7 @@ type t = {
   mutable flight : flight option; (* claude: a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* claude: the layout's point under the mouse, when on the map (view's) *)
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
+  guide : Code_guide.t; (* claude: what the directories' .codemapconfig say (plan_codemap_v2.md) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }
@@ -139,7 +140,7 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ?(numbered = false) ?(colours = []) ?(roots = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout a Ordered entries in
@@ -148,7 +149,7 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ~(style : style) ~(ar
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
     back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None;
-    focus = 0; wheel_debt = 0.; wheel_at = 0. }
+    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries

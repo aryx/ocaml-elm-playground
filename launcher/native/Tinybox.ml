@@ -102,9 +102,10 @@ let columns (names : string list) : string =
   Buffer.contents b
 
 let usage =
-  "usage: tinybox [-platform flags | chosen=<program> | code=<program> | list | codemap <dir> | <program> [args] | <program> -tty]\n\
+  "usage: tinybox [-platform flags | chosen=<program> | code=<program> | list | codemap [-check] <dir> | <program> [args] | <program> -tty]\n\
   \  chosen=, code=: the menu on a program, or in its code map\n\
   \  codemap <dir>: the code map of a directory's OCaml and C files\n\
+  \  codemap -check <dir>: what its .codemapconfig files say that does not hold\n\
   \  <program>: its name, case-insensitive, \"Tiny\" optional, or a unique part of it\n\
   \  args: the program's own, e.g. -debug-keys, artwork=shapes\n"
 
@@ -147,12 +148,35 @@ let () =
           let dir = !codemap_dir in
           let stop msg = eprint caps (Printf.sprintf "tinybox codemap: %s\n" msg); exit 2 in
           match Tinybox_native.directory_sources caps dir with
-          | Error e -> stop e
-          | Ok (_, _, []) -> stop (Printf.sprintf "no OCaml nor C file under %s" dir)
-          | Ok (config, roots, sources) ->
+          | { sources = []; _ } -> stop (Printf.sprintf "no OCaml nor C file under %s" dir)
+          | { roots; sources; guide; mistakes } ->
+              (* claude: a config's mistake said, the map drawn without it *)
+              List.iter (fun m -> eprint caps (Printf.sprintf "tinybox codemap: %s\n" m)) mistakes;
               (* its name: the directory's own, not "." *)
               let name = Filename.basename (if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir) in
-              Codemap.run_directory ~colours:(Code_config.colours config) ~roots ~name ~sources ()))
+              Codemap.run_directory ~guide ~colours:(Code_guide.colours guide) ~roots ~name ~sources ()))
+
+(* claude: tinybox codemap -check <dir>: what its .codemapconfig files
+ * say that does not hold (Code_guide.check), the warnings after; exits 1
+ * on a mistake *)
+let check_directory (caps : < Cap.readdir ; Cap.open_in ; Cap.stdout ; Cap.stderr ; .. >) (dir : string) : unit =
+  let d = Tinybox_native.directory_sources caps dir in
+  let results =
+    List.map (fun m -> Error m) d.mistakes
+    @ Code_guide.check d.guide
+        ~file:(fun p -> Option.map (fun text -> (Code_file.make p text, text)) (List.assoc_opt p d.sources))
+        ~exists:(fun p -> Sys.file_exists (Filename.concat dir p))
+  in
+  let errors = List.filter_map (function Error e -> Some e | Ok _ -> None) results in
+  let warnings = List.filter_map (function Ok w -> Some w | Error _ -> None) results in
+  List.iter (fun e -> eprint caps ("error: " ^ e ^ "\n")) errors;
+  List.iter (fun w -> eprint caps ("warning: " ^ w ^ "\n")) warnings;
+  print caps
+    (Printf.sprintf "%d config%s, %d mistake%s, %d warning%s\n" (List.length (Code_guide.dirs d.guide))
+       (if List.length (Code_guide.dirs d.guide) = 1 then "" else "s")
+       (List.length errors) (if List.length errors = 1 then "" else "s")
+       (List.length warnings) (if List.length warnings = 1 then "" else "s"));
+  if errors <> [] then exit 1
 
 let () =
   let invoked = Filename.remove_extension (Filename.basename Sys.argv.(0)) in
@@ -161,6 +185,7 @@ let () =
   | _ :: args when String.lowercase_ascii invoked <> "tinybox" -> start invoked args
   | [ _; "list" ] -> list_programs ()
   (* claude: a directory's code map, with the platform's flags if any *)
+  | [ _; "codemap"; "-check"; dir ] -> Cap.main (fun caps -> check_directory caps dir)
   | exe :: "codemap" :: dir :: flags ->
       codemap_dir := dir;
       Program.run codemap ~argv:(Array.of_list (exe :: flags))

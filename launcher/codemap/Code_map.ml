@@ -44,8 +44,8 @@ let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
   { t with style; algo; placed; geometry; painted = None; lens = None; focus = 0 }
 
 (* a map in the chosen style *)
-let make ?numbered ?colours ?roots ~area ~title ~marked entries : t =
-  let t = Code_map_base.make ?numbered ?colours ?roots ~style:!chosen ~area ~title ~marked entries in
+let make ?numbered ?colours ?roots ?guide ~area ~title ~marked entries : t =
+  let t = Code_map_base.make ?numbered ?colours ?roots ?guide ~style:!chosen ~area ~title ~marked entries in
   if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
 
 (*****************************************************************************)

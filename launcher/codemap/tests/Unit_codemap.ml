@@ -150,28 +150,66 @@ let tests =
           Alcotest.(check (list string)) "module B = M" [ "B"; "R"; "Scratch_blocks"; "Scratch_run" ]
             (Code_file.modules_used "module B = Scratch_blocks\nmodule R = Scratch_run\nlet x = B.f R.g"));
       (* claude: Code_config.mli's worked example *)
-      Testo.create "a directory's .codemapignore and .codemapconfig" (fun () ->
-          match
-            Code_config.make ~ignore:(Some "# hi\n/gitlog.txt\ntest/\n*_tests.c\n")
-              ~config:(Some {|{ "colors": { "kernel": "#e08030", "MISC/BIG": "#606060" } }|})
-          with
-          | Error e -> Alcotest.fail e
-          | Ok c ->
-              Alcotest.(check (list bool)) "gitlog.txt, kernel/test/ out; test.c, kernel/gitlog.txt in; lib/io_tests.c out"
-                [ true; true; false; false; true ]
-                [
-                  Code_config.ignored c "gitlog.txt" ~dir:false;
-                  Code_config.ignored c "kernel/test" ~dir:true;
-                  Code_config.ignored c "test.c" ~dir:false;
-                  Code_config.ignored c "kernel/gitlog.txt" ~dir:false;
-                  Code_config.ignored c "lib/io_tests.c" ~dir:false;
-                ];
-              Alcotest.(check (list (pair string (list int)))) "the colours"
-                [ ("kernel", [ 224; 128; 48 ]); ("MISC/BIG", [ 96; 96; 96 ]) ]
-                (List.map (fun (p, (r, g, b)) -> (p, [ r; g; b ])) (Code_config.colours c)));
-      Testo.create "a config's mistake" (fun () ->
-          Alcotest.(check (result unit string)) "not a colour" (Error {|kernel: "orange" is no #rrggbb|})
-            (Result.map ignore (Code_config.make ~ignore:None ~config:(Some {|{ "colors": { "kernel": "orange" } }|}))));
+      Testo.create "a directory's .codemapignore" (fun () ->
+          let c = Code_config.make ~ignore:(Some "# hi\n/gitlog.txt\ntest/\n*_tests.c\n") in
+          Alcotest.(check (list bool)) "gitlog.txt, kernel/test/ out; test.c, kernel/gitlog.txt in; lib/io_tests.c out"
+            [ true; true; false; false; true ]
+            [
+              Code_config.ignored c "gitlog.txt" ~dir:false;
+              Code_config.ignored c "kernel/test" ~dir:true;
+              Code_config.ignored c "test.c" ~dir:false;
+              Code_config.ignored c "kernel/gitlog.txt" ~dir:false;
+              Code_config.ignored c "lib/io_tests.c" ~dir:false;
+            ]);
+      (* claude: Code_guide: configs in jsonnet, one per directory, what
+       * they say, their anchors found, and the checker's findings *)
+      Testo.create "the configs, read and checked" (fun () ->
+          let src = "(* A game. *)\n\n(****************************************************************************)\n(* Model *)\n(****************************************************************************)\n\ntype model = int\n\n(* one alien per frame *)\nlet march x = x\nlet view m = march m\n" in
+          let files =
+            [
+              (".codemapconfig", "local c = import 'colors.libsonnet'; { title: 'A test', colors: c, dirs: { games: { summary: 'The games.' } } }");
+              ("colors.libsonnet", "{ games: '#e08030' }");
+              ( "games/.codemapconfig",
+                "{ files: { 'G.ml': { summary: 'The game.', digest: '" ^ Code_guide.digest src ^ "',\n"
+                ^ "  capitals: [{ at: 'def:view', say: 'drawn' }], important: [{ at: 'type:model', weight: 3 }, { at: 'comment:\"one alien per frame\"' }, { at: 'section:Model' }] } },\n"
+                ^ "  tours: [{ name: 'a walk', stops: [{ at: 'G.ml:def:march' }] }] }" );
+              ("games/G.ml", src);
+            ]
+          in
+          let guide, mistakes = Code_guide.load ~read:(fun p -> List.assoc_opt p files) [ ".codemapconfig"; "games/.codemapconfig" ] in
+          Alcotest.(check (list string)) "no mistake" [] mistakes;
+          Alcotest.(check (option string)) "the title" (Some "A test") (Code_guide.title guide);
+          Alcotest.(check (option string)) "games/, said by its parent" (Some "The games.") (Code_guide.dir_summary guide "games");
+          Alcotest.(check (option string)) "G.ml" (Some "The game.") (Option.bind (Code_guide.file_note guide "games/G.ml") (fun n -> n.summary));
+          Alcotest.(check (list (pair string (list int)))) "the colours, imported" [ ("games", [ 224; 128; 48 ]) ]
+            (List.map (fun (p, (r, g, b)) -> (p, [ r; g; b ])) (Code_guide.colours guide));
+          let f = Code_file.make "games/G.ml" src in
+          Alcotest.(check (list (result int string))) "anchors: def, type, comment, section, line, a miss"
+            [ Ok 10; Ok 6; Ok 8; Ok 3; Ok 1; Error "games/G.ml: no def update" ]
+            (List.map (Code_guide.find f) [ "def:view"; "type:model"; {|comment:"one alien per frame"|}; "section:Model"; "line:2"; "def:update" ]);
+          (* a file, or a directory: a file under it *)
+          let there fs p = List.exists (fun (q, _) -> q = p || (String.length q > String.length p && String.sub q 0 (String.length p + 1) = p ^ "/")) fs in
+          let check guide = Code_guide.check guide ~file:(fun p -> Option.map (fun s -> (Code_file.make p s, s)) (List.assoc_opt p files)) ~exists:(there files) in
+          Alcotest.(check (list (result string string))) "all holds" [] (check guide);
+          (* the code edited since: view renamed, a line added *)
+          let src' = "(* A game. *)\n\n(****************************************************************************)\n(* Model *)\n(****************************************************************************)\n\ntype model = int\n\n(* one alien per frame *)\nlet march x = x\nlet draw m = march m\n" in
+          let files' = List.map (fun (p, s) -> if p = "games/G.ml" then (p, src') else (p, s)) files in
+          let found =
+            Code_guide.check guide ~file:(fun p -> Option.map (fun s -> (Code_file.make p s, s)) (List.assoc_opt p files')) ~exists:(there files')
+          in
+          Alcotest.(check (list (result string string))) "a stale digest, an anchor lost"
+            [
+              Ok ("games/.codemapconfig: G.ml: changed since it was described (digest now " ^ Code_guide.digest src' ^ ")");
+              Error "games/.codemapconfig: G.ml: games/G.ml: no def view";
+            ]
+            found);
+      Testo.create "a config's mistakes" (fun () ->
+          let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
+          Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");
+          Alcotest.(check (list string)) "a misspelt field"
+            [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, views, layers)" ]
+            (load "{ summery: 'x' }");
+          Alcotest.(check (list string)) "jsonnet's own" [ "d/.codemapconfig:1: expected ,, not b" ] (load "{ a: 1 b: 2 }"));
       (* claude: Code_layers' worked example *)
       Testo.create "layers: the users above the used" (fun () ->
           let tree = Treemap.of_paths [ ("games/A.ml", 10., ()); ("playground/P.ml", 10., ()); ("libs/L.ml", 10., ()) ] in

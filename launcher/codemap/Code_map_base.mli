@@ -61,6 +61,7 @@ type t = {
   mutable flight : flight option; (* a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* the layout's point under the mouse, when on the map, for a style's labels *)
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
+  guide : Code_guide.t; (* claude: what the directories' .codemapconfig say (plan_codemap_v2.md) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }
@@ -109,6 +110,7 @@ val make :
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->
   ?roots:string list ->
+  ?guide:Code_guide.t ->
   style:style ->
   area:float * float * int * int ->
   title:string ->

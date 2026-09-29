@@ -8,8 +8,8 @@
    name, the programmer's own choice: large, a region's over its
    subdirectories', standing up when its block is tall and narrow,
    clickable (the camera flies to it), and hovering it gives its card.
-   The cards say the counts for now; their words will come from the
-   directories' .codemapconfig, written by an LLM (the plan's step 4).
+   A card says what the directories' .codemapconfig say of it
+   (Code_guide, written by an LLM, extended by hand), and the counts.
    Near enough to be read, a file's code, as Map_classic's.
 
    The camera moves a unit at a time (the plan's step 2, Code_units, in

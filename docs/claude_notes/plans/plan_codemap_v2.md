@@ -421,7 +421,13 @@ The same patterns serve search (`/` with a pattern) and anchors
 3b. **The config, version 2**: `Code_config` reads the new fields,
    per directory, merged from the root down; anchors resolved; the
    checker (`-check`), run in `make test`; tinybox embeds the configs
-   with the sources (`Tinybox_sources`).
+   with the sources (`Tinybox_sources`). (Done, 2026-09-29, but the
+   embedding and `make test`'s check, which come with step 4's configs:
+   `Code_guide` reads every directory's config, strictly, its colours
+   among the rest (`Code_config` keeping `.codemapignore`); anchors
+   `def:`, `type:`, `module:`, `section:`, `comment:"..."`, `line:`;
+   `tinybox codemap -check <dir>`; the map's title and cards from it.)
+
 4. **The pilot's configs, written by hand with the LLM**: the root,
    `games/`, `games/shmup/`, `gamekits/`, `gamekits/shmup/`; the map's
    title, cards and capitals from them.

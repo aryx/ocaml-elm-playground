@@ -41,9 +41,11 @@ val make_own :
 
 (* claude: the map of a directory's files, [sources] (read from the disk,
    their paths relative to it), named [name]: all of them, no program to
-   start from, w doing nothing; [colours], its .codemapconfig's
-   (Code_config); [roots], its projects' tops (Code_names.find) *)
+   start from, w doing nothing; [guide], what its .codemapconfig files say
+   (Code_guide: its title, the cards' words); [colours], theirs;
+   [roots], its projects' tops (Code_names.find) *)
 val of_directory :
+  ?guide:Code_guide.t ->
   ?colours:(string * (int * int * int)) list ->
   ?roots:string list ->
   area:float * float * int * int ->
@@ -54,6 +56,7 @@ val of_directory :
 
 (* ... as a program of its own, in a window: tinybox codemap <dir> *)
 val run_directory :
+  ?guide:Code_guide.t ->
   ?colours:(string * (int * int * int)) list -> ?roots:string list -> name:string -> sources:(string * string) list -> unit -> unit
 
 (* the map of the program's own code alone, for a glance (tinybox's

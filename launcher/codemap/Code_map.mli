@@ -33,11 +33,13 @@ type t
    [entries], the order to read them in; [colours] (a directory's
    .codemapconfig's, Code_config) the colours of the parts it names, over
    ours, the roles' and the hashed hues; [roots] the projects' tops, for
-   finding a name defined elsewhere (Code_names.find) *)
+   finding a name defined elsewhere (Code_names.find); claude: [guide]
+   what the directories' .codemapconfig say (Code_guide) *)
 val make :
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->
   ?roots:string list ->
+  ?guide:Code_guide.t ->
   area:float * float * int * int ->
   title:string ->
   marked:string list ->
