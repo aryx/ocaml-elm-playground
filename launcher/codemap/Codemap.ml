@@ -188,6 +188,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
         match Code_map.update computer ~pressed ~arrow t.map with
         (* claude: from a selection, back to the map it was chosen from *)
         | _, Close -> ( match t.scope with Selection (_, _, before) -> Some before | _ -> None)
+        | map, Up -> ( match t.scope with Selection (_, _, before) -> Some before | _ -> Some { t with map })
         | map, Stay -> Some { t with map }
         | map, Select (what, set) ->
             let scope = Selection (what, set, { t with map }) in

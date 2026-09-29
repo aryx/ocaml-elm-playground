@@ -198,7 +198,9 @@ let rank_of (t : t) : Code_rank.t =
   match t.rank with
   | Some r -> r
   | None ->
-      let r = Code_rank.compute ~roots:t.roots (files_of t) in
+      (* claude: over the files beyond too (a program's map's, a folder
+       * laid out alone's): its users are wherever they are *)
+      let r = Code_rank.compute ~roots:t.roots (files_of t @ List.map (fun (e : entry) -> (e.path, e.file)) t.beyond) in
       t.rank <- Some r;
       r
 

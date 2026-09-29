@@ -20,4 +20,24 @@
       related: ['../unix/Http_server.mli', '../../../apps/internet/site/'],
     },
   },
+  skeletons: [
+    {
+      name: 'A web server: step and wait, a request answered',
+      bones: [
+        { at: 'tiny_httpd.ml', role: 'the program: a root, a port, then step and wait forever' },
+        { at: '../unix/Http_server.ml:def:step', role: 'a step: accept, read, answer, write, close' },
+        { at: '../unix/Http_server.ml:def:wait', role: 'select: until a socket is ready' },
+        { at: '../protocols/Http.ml:def:parse_request', role: 'the bytes to a request, or Incomplete' },
+        { at: 'tiny_httpd.ml:def:handler', role: 'a request to its answer: a file, a listing, CGI' },
+      ],
+      joints: [
+        { from: 'tiny_httpd.ml', to: '../unix/Http_server.ml:def:step', say: 'the handler, logged' },
+        { from: '../unix/Http_server.ml:def:step', to: '../unix/Http_server.ml:def:wait', say: 'nothing more now' },
+        { from: '../unix/Http_server.ml:def:wait', to: '../unix/Http_server.ml:def:step', say: 'a socket ready' },
+        { from: '../unix/Http_server.ml:def:step', to: '../protocols/Http.ml:def:parse_request', say: "a connection's inbox" },
+        { from: '../protocols/Http.ml:def:parse_request', to: 'tiny_httpd.ml:def:handler', say: 'a request' },
+        { from: 'tiny_httpd.ml:def:handler', to: '../unix/Http_server.ml:def:step', say: 'the response, to write' },
+      ],
+    },
+  ],
 }

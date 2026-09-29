@@ -23,7 +23,7 @@ open Playground
  * were apart (plan_codemap_google_maps.md, step 0) *)
 include Code_map_base
 
-type action = Stay | Open of Code_file.t * int | Close | Select of string * string list
+type action = Stay | Open of Code_file.t * int | Close | Select of string * string list | Up
 
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
@@ -546,7 +546,24 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     else (None, clicked)
   in
   let target = match jumped_to with Some c -> c | None -> target in
-  let moved = if units then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
+  (* claude: up from the map's top (a folder laid out anew, below): back
+   * to the map it was taken from (Codemap) *)
+  let up_from_top = units && t.focus = 0 && t.peek = None && (pressed "Backspace" || pressed "-" || (mouse.mrdown && not t.before_right) || mouse.mwheel < 0.) in
+  let moved = if units && not up_from_top then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
+  (* claude: a folder that would leave much of the screen shaded (tall
+   * and narrow, or small and wide: the author, "lots of shaded space on
+   * the left and right") is laid out anew, alone, the screen its
+   * (Select, as the search's selections) *)
+  let wasteful i =
+    match t.placed.(i).node with
+    | Dir _ when i <> 0 ->
+        let r = t.placed.(i).rect in
+        let k = Float.min (float_of_int a.pw /. r.w) (float_of_int a.ph /. r.h) in
+        r.w *. k *. r.h *. k /. float_of_int (a.pw * a.ph) < 0.65
+    | _ -> false
+  in
+  let zoom = match moved with Some i when wasteful i -> Some t.placed.(i).path | _ -> None in
+  let moved = if zoom <> None then None else moved in
   let target, clicked =
     match moved with
     | Some i ->
@@ -647,6 +664,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   in
   let target = clamp_cam target in
   let cam = if cam_now then target else ease t.cam target in
+  (* claude: the folder laid out anew, or back up from the top *)
+  let action = match (zoom, action) with Some p, Stay -> Select (p, [ p ]) | None, Stay when up_from_top -> Up | _ -> action in
   ({ t with target; cam; before_right = mouse.mrdown }, action)
 
 (* claude: the search (/, Code_search, drawn by Map_v2): typed letters

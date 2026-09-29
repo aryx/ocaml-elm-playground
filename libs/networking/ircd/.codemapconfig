@@ -12,4 +12,24 @@
       related: ['../unix/Irc_server.mli', '../protocols/Irc.mli', '../../../apps/internet/TinyIRC.ml'],
     },
   },
+  skeletons: [
+    {
+      name: 'An IRC server: wait and step, a line a command',
+      bones: [
+        { at: 'tiny_ircd.ml', role: 'the program: a port, then wait and step forever' },
+        { at: '../unix/Irc_server.ml:def:wait', role: 'select: until a client speaks' },
+        { at: '../unix/Server.ml:def:step', role: "the WebSocket loop's events: joined, a message, left" },
+        { at: '../unix/Irc_server.ml:def:step', role: 'a user per connection, a line at a time' },
+        { at: '../protocols/Irc.ml:def:parse', role: 'a line to a message: prefix, command, params' },
+        { at: '../unix/Irc_server.ml:def:command', role: 'NICK, JOIN, PRIVMSG: the rules of the server' },
+      ],
+      joints: [
+        { from: 'tiny_ircd.ml', to: '../unix/Irc_server.ml:def:wait', say: 'forever' },
+        { from: '../unix/Irc_server.ml:def:wait', to: '../unix/Irc_server.ml:def:step', say: 'a socket ready' },
+        { from: '../unix/Server.ml:def:step', to: '../unix/Irc_server.ml:def:step', say: 'the events' },
+        { from: '../unix/Irc_server.ml:def:step', to: '../protocols/Irc.ml:def:parse', say: 'each line' },
+        { from: '../protocols/Irc.ml:def:parse', to: '../unix/Irc_server.ml:def:command', say: 'a message' },
+      ],
+    },
+  ],
 }

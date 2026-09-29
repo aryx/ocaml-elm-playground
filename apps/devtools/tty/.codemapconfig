@@ -11,4 +11,32 @@
     'TinyTurboPascal.ml': { digest: '5b203b64cf3a',
       summary: "TinyTurboPascal in a real terminal: the terminal's colours for the PC's, its box characters." },
   },
+  // claude: a Tui program in a real terminal: the file hands the
+  // program to Tty_unix's loop, which feeds it keys and ticks and writes
+  // only the characters that changed
+  local tty(file, kit, name) = {
+    local k = '../../../appkits/editor/' + kit,
+    local run = '../../../libs/terminal/unix/Tty_unix.ml:def:run',
+    local refresh = '../../../libs/terminal/Curses.ml:def:refresh',
+    name: name + ': a Tui program, run by Tty_unix in this terminal',
+    bones: [
+      { at: file, role: 'the program: Cap.main, stdin and stdout' },
+      { at: run, role: 'raw mode, then the loop: keys, a tick, the screen' },
+      { at: k + ':def:update', role: 'a key: model -> model' },
+      { at: k + ':def:view', role: 'a screen of characters' },
+      { at: refresh, role: 'only the cells that changed, as bytes' },
+    ],
+    joints: [
+      { from: file, to: run, say: 'the program' },
+      { from: run, to: k + ':def:update', say: 'each key, each tick' },
+      { from: run, to: k + ':def:view', say: 'the next model' },
+      { from: k + ':def:view', to: refresh, say: 'the next screen' },
+      { from: refresh, to: run, say: 'bytes to stdout' },
+    ],
+  },
+  skeletons: [
+    tty('TinyVi.ml', 'Tui_vi.ml', 'vi'),
+    tty('TinyEmacs.ml', 'Tui_emacs.ml', 'Emacs'),
+    tty('TinyTurboPascal.ml', 'Tui_turbo.ml', 'Turbo Pascal'),
+  ],
 }

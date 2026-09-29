@@ -122,7 +122,8 @@ let street_of (t : t) (e : entry) : Code_street.t =
   | Some (p, w, h, m, s) when p = e.path && w = a.pw && h = a.ph && m = t.street_mode -> s
   | _ ->
       let f = Lazy.force e.file in
-      let file p = List.find_map (fun (x : entry) -> if x.path = p then Some (Lazy.force x.file) else None) t.entries in
+      (* claude: its panels may be beyond the map (a folder laid out alone) *)
+      let file p = List.find_map (fun (x : entry) -> if x.path = p then Some (Lazy.force x.file) else None) (t.entries @ t.beyond) in
       let mode = street_mode t in
       let uses = if mode = Users then [] else Code_street.uses ~index:(index_of t) ~roots:t.roots ~path:e.path f in
       (* what uses it: the files linked to it (Code_rank, every file of the

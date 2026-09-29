@@ -14,4 +14,24 @@
       related: ['../unix/Mail_server.mli', '../mail/Mbox.mli', '../../../apps/internet/TinyEudora.ml'],
     },
   },
+  skeletons: [
+    {
+      name: 'A mail server: SMTP in, POP3 out, the maildrops kept',
+      bones: [
+        { at: 'tiny_maild.ml', role: 'the program: ports, domain, spool, then wait and step' },
+        { at: 'tiny_maild.ml:def:read_spool', role: 'the maildrops, from user.mbox files' },
+        { at: '../unix/Mail_server.ml:def:step', role: "a step: SMTP's connections, then POP3's" },
+        { at: '../unix/Mail_server.ml:def:smtp_line', role: 'HELO, MAIL FROM, RCPT TO, DATA: a mail delivered' },
+        { at: '../protocols/Smtp.ml:def:parse_command', role: 'a line to an SMTP command' },
+        { at: 'tiny_maild.ml:def:write_spool', role: 'a maildrop changed, written back' },
+      ],
+      joints: [
+        { from: 'tiny_maild.ml:def:read_spool', to: 'tiny_maild.ml', say: 'the maildrops' },
+        { from: 'tiny_maild.ml', to: '../unix/Mail_server.ml:def:step', say: 'forever, every 0.1 s' },
+        { from: '../unix/Mail_server.ml:def:step', to: '../unix/Mail_server.ml:def:smtp_line', say: 'each line' },
+        { from: '../unix/Mail_server.ml:def:smtp_line', to: '../protocols/Smtp.ml:def:parse_command', say: 'the line' },
+        { from: '../unix/Mail_server.ml:def:smtp_line', to: 'tiny_maild.ml:def:write_spool', say: 'changed: the new maildrop' },
+      ],
+    },
+  ],
 }

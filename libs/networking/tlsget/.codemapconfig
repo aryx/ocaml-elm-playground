@@ -13,4 +13,25 @@
       related: ['../unix/Tls_client.mli', '../tls/Tls13.mli'],
     },
   },
+  skeletons: [
+    {
+      name: 'An https:// fetch: the handshake, then a GET',
+      bones: [
+        { at: 'tls_get.ml', role: 'the program: a URL, the handshake shown, a GET' },
+        { at: '../protocols/Url.ml:def:parse', role: 'the URL: host, port, path' },
+        { at: '../unix/Tls_client.ml:def:connect', role: 'a socket, the ClientHello sent' },
+        { at: '../unix/Tls_client.ml:def:step', role: "the socket's bytes to the machine, its answer back" },
+        { at: '../tls/Tls13.ml:def:received', role: 'the pure machine: records in, records out' },
+        { at: '../unix/Tls_client.ml:def:exchange', role: 'a request sent, the answer read' },
+      ],
+      joints: [
+        { from: 'tls_get.ml', to: '../protocols/Url.ml:def:parse', say: 'argv' },
+        { from: 'tls_get.ml', to: '../unix/Tls_client.ml:def:connect', say: 'host, port' },
+        { from: 'tls_get.ml', to: '../unix/Tls_client.ml:def:step', say: 'until Open' },
+        { from: '../unix/Tls_client.ml:def:step', to: '../tls/Tls13.ml:def:received', say: 'bytes read' },
+        { from: '../tls/Tls13.ml:def:received', to: '../unix/Tls_client.ml:def:step', say: 'the answer to write' },
+        { from: 'tls_get.ml', to: '../unix/Tls_client.ml:def:exchange', say: 'a GET' },
+      ],
+    },
+  ],
 }

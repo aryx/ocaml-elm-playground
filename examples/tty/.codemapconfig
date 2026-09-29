@@ -7,4 +7,25 @@
     'TextmodeSnake.ml': { digest: '214fd38a37d1',
       summary: "Snake in the terminal you type this in: Tui_snake's program run by Tty_unix." },
   },
+  skeletons: [
+    {
+      name: 'Snake: a Tui program, run by Tty_unix in this terminal',
+      bones: [
+        { at: 'TextmodeSnake.ml', role: 'the program: Cap.main, stdin and stdout' },
+        { at: '../../libs/terminal/unix/Tty_unix.ml:def:run', role: 'raw mode, then the loop: keys, a tick, the screen' },
+        { at: '../../appkits/tui/Tui_snake.ml:def:update', role: 'a key or a tick: model -> model' },
+        { at: '../../appkits/tui/Tui_snake.ml:def:move', role: 'the snake a cell on, eats or crashes' },
+        { at: '../../appkits/tui/Tui_snake.ml:def:view', role: 'a screen of characters' },
+        { at: '../../libs/terminal/Curses.ml:def:refresh', role: 'only the cells that changed, as bytes' },
+      ],
+      joints: [
+        { from: 'TextmodeSnake.ml', to: '../../libs/terminal/unix/Tty_unix.ml:def:run', say: 'Tui_snake.program' },
+        { from: '../../libs/terminal/unix/Tty_unix.ml:def:run', to: '../../appkits/tui/Tui_snake.ml:def:update', say: 'each key, each tick' },
+        { from: '../../appkits/tui/Tui_snake.ml:def:update', to: '../../appkits/tui/Tui_snake.ml:def:move', say: 'a period gone' },
+        { from: '../../libs/terminal/unix/Tty_unix.ml:def:run', to: '../../appkits/tui/Tui_snake.ml:def:view', say: 'the next model' },
+        { from: '../../appkits/tui/Tui_snake.ml:def:view', to: '../../libs/terminal/Curses.ml:def:refresh', say: 'the next screen' },
+        { from: '../../libs/terminal/Curses.ml:def:refresh', to: '../../libs/terminal/unix/Tty_unix.ml:def:run', say: 'bytes to stdout' },
+      ],
+    },
+  ],
 }

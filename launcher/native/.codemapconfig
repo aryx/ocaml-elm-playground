@@ -38,4 +38,25 @@
       ],
     },
   },
+  skeletons: [
+    {
+      name: 'tinybox: a command line to a program, BusyBox\'s way',
+      bones: [
+        { at: 'Tinybox.ml:comment:"BusyBox\'s way: tinybox under another name"', role: 'the entry: the command line dispatched' },
+        { at: '../../libs/core/Program.ml:def:main', role: "every program's main, recorded, not started" },
+        { at: 'Tinybox.ml:def:resolve', role: 'a name found: mario is TinyMario' },
+        { at: 'Tinybox.ml:def:start', role: 'the program, or its terminal version' },
+        { at: '../../libs/core/Program.ml:def:run', role: 'a recorded main run with its own argv' },
+        { at: '../menu/Tinybox_menu.ml:def:run', role: 'the menu: one more program, the default' },
+      ],
+      joints: [
+        { from: 'Tinybox.ml:comment:"BusyBox\'s way: tinybox under another name"', to: 'Tinybox.ml:def:start', say: 'a name and its arguments' },
+        { from: 'Tinybox.ml:def:start', to: 'Tinybox.ml:def:resolve', say: 'the query' },
+        { from: 'Tinybox.ml:def:start', to: '../../libs/core/Program.ml:def:run', say: 'the name, the arguments' },
+        { from: '../../libs/core/Program.ml:def:main', to: '../../libs/core/Program.ml:def:run', say: 'the entries collected' },
+        { from: 'Tinybox.ml:comment:"BusyBox\'s way: tinybox under another name"', to: '../../libs/core/Program.ml:def:run', say: 'no name: the menu' },
+        { from: '../../libs/core/Program.ml:def:run', to: '../menu/Tinybox_menu.ml:def:run', say: "the menu's main" },
+      ],
+    },
+  ],
 }

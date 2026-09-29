@@ -58,7 +58,8 @@ type action =
   | Stay
   | Open of Code_file.t * int (* its line, from 0 *)
   | Close
-  | Select of string * string list (* claude: directories and files to see together (a search's name//, or shift+Enter), and what to call them *)
+  | Select of string * string list (* claude: directories and files to see together (a search's name//, or shift+Enter; a folder flown into, laid out anew), and what to call them *)
+  | Up (* claude: up from the map's top: back to the map it was taken from *)
 
 (* keys as Code_view's; the mouse; Escape closes. claude: / opens the
    search (Map_v2's), which takes the keys while open *)

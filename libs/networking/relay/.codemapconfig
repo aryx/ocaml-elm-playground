@@ -12,4 +12,22 @@
       related: ['../unix/Relay.mli', '../unix/Relay_client.mli'],
     },
   },
+  skeletons: [
+    {
+      name: 'The relay: seats, each packet copied to the others',
+      bones: [
+        { at: 'relay_server.ml', role: 'the program: a port, players, then wait and step' },
+        { at: '../unix/Relay.ml:def:listen', role: 'a port listened on, the seats empty' },
+        { at: '../unix/Relay.ml:def:step', role: 'a player seated, a packet forwarded' },
+        { at: '../unix/Server.ml:def:step', role: "the WebSocket loop's events: joined, a message, left" },
+        { at: '../protocols/Websocket.ml:def:decode', role: 'the bytes to frames' },
+      ],
+      joints: [
+        { from: 'relay_server.ml', to: '../unix/Relay.ml:def:listen', say: 'port, players' },
+        { from: 'relay_server.ml', to: '../unix/Relay.ml:def:step', say: 'forever' },
+        { from: '../unix/Server.ml:def:step', to: '../unix/Relay.ml:def:step', say: 'the events' },
+        { from: '../protocols/Websocket.ml:def:decode', to: '../unix/Server.ml:def:step', say: 'a message' },
+      ],
+    },
+  ],
 }
