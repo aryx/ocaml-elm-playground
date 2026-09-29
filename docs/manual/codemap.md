@@ -74,6 +74,8 @@ turn red and its users green.
 ```
 tinybox codemap <dir>            the map of a directory (tinybox codemap ~/ix)
 tinybox codemap . focus=<path>   opened on a folder or file
+tinybox codemap . def=<name>     opened on a definition, peeked at
+                                 (focus=<file> line=<n>: the one there)
 tinybox                          the menu: s (or a click on the code under
                                  a program's preview) opens the program's map
 tinybox codemap -check <dir>     the configs checked (section 12)
@@ -88,6 +90,23 @@ The map reads every source file under the directory (OCaml's `.ml`,
 `.mli`, `.mll`, `.mly`, and C's `.c`, `.h`), skipping what a
 `.codemapignore` excludes (gitignore's syntax), and every
 `.codemapconfig` and `*.libsonnet` it finds.
+
+**On a web page.** A project's site can carry its map:
+
+```
+make codemap-web DIR=~/github/ix OUT=~/github/ix/docs
+```
+
+writes `codemap.html`, `codemap.bc.js` (the map, the same for every
+project) and `codemap_data.txt` (the directory's code and configs as one
+file, made by `make_codemap_data`; run again when the code changes).
+The page takes the same flags in its URL, so that a document can link to
+a part of the code in the map rather than to GitHub's file view:
+`codemap.html?focus=version_control`,
+`codemap.html?focus=kernel/proc.c&line=120`, `codemap.html?def=diff`
+(`data=` another bundle). The page must be served (GitHub Pages, or
+`python3 -m http.server` to try), not opened as a file: it fetches its
+data.
 
 ## 3. The levels
 
