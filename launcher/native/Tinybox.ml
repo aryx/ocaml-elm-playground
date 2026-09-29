@@ -177,11 +177,15 @@ let check_directory (caps : < Cap.readdir ; Cap.open_in ; Cap.stdout ; Cap.stder
   let warnings = List.filter_map (function Ok w -> Some w | Error _ -> None) results in
   List.iter (fun e -> eprint caps ("error: " ^ e ^ "\n")) errors;
   List.iter (fun w -> eprint caps ("warning: " ^ w ^ "\n")) warnings;
+  (* claude: and what the configs miss (Code_facts.coverage) *)
+  let missing = Code_facts.coverage ~guide:d.guide ~sources:d.sources in
+  List.iter (fun m -> eprint caps ("missing: " ^ m ^ "\n")) missing;
   print caps
-    (Printf.sprintf "%d config%s, %d mistake%s, %d warning%s\n" (List.length (Code_guide.dirs d.guide))
+    (Printf.sprintf "%d config%s, %d mistake%s, %d warning%s, %d missing\n" (List.length (Code_guide.dirs d.guide))
        (if List.length (Code_guide.dirs d.guide) = 1 then "" else "s")
        (List.length errors) (if List.length errors = 1 then "" else "s")
-       (List.length warnings) (if List.length warnings = 1 then "" else "s"));
+       (List.length warnings) (if List.length warnings = 1 then "" else "s")
+       (List.length missing));
   if errors <> [] then exit 1
 
 let () =

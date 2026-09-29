@@ -148,10 +148,36 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
       if defs <> [] then begin
         let scores = List.sort (fun a b -> compare b a) (List.map (fun (_, _, _, _, s) -> s) defs) in
         let top = match List.nth_opt scores (min 4 (List.length scores - 1)) with Some s -> s | None -> infinity in
-        pr "Definitions (anchor, line, uses here / from other files in N files; * the most used):\n\n";
+        (* claude: which top-level definitions of the file call each one
+         * (its uses' enclosing definitions): whether a heart is reached
+         * from update or from view, the skeleton's joint (the agents'
+         * lesson: a capital is not always on update's path) *)
+        let tops = List.filter_map (fun (l, _, (c : Highlight_code.category)) -> match c with Def_function | Def_value | Def_type | Def_module -> Some l | _ -> None) f.defs |> List.sort_uniq compare in
+        let name_of l = List.find_map (fun (l', n, _) -> if l' = l then Some n else None) f.defs in
+        let enclosing line = List.fold_left (fun acc l -> if l <= line then Some l else acc) None tops in
+        let callers (l : int) (n : string) : string list =
+          let own = List.find_opt (fun (o : Highlight_code.occurrence) -> o.bound_at = (o.line, o.col) && o.len = String.length n) (if l < Array.length f.names then f.names.(l) else []) in
+          match own with
+          | None -> []
+          | Some o ->
+              Code_file.uses f o
+              |> List.filter_map (fun (u : Highlight_code.occurrence) -> match enclosing u.line with Some e when e <> l -> name_of e | _ -> None)
+              |> List.sort_uniq compare
+        in
+        (* the names defined twice: def: finds the first *)
+        let twice = List.filter (fun (_, n, _, _, _) -> List.length (List.filter (fun (_, m, _, _, _) -> m = n) defs) > 1) defs |> List.map (fun (_, n, _, _, _) -> n) |> List.sort_uniq compare in
+        if twice <> [] then pr "Defined twice (def: finds the first; the second needs another anchor): %s.\n\n" (String.concat ", " twice);
+        (* a program's Model-View-Update names, those the template assumes *)
+        if List.exists (fun (_, n, _) -> n = "main") f.defs then begin
+          let has k n = List.exists (fun (_, m, kind, _, _) -> m = n && kind = k) defs in
+          let say k n = Printf.sprintf "%s:%s %s" k n (if has k n then "yes" else "NO") in
+          pr "The template's names (skeletons.libsonnet): %s, %s, %s, %s.\n\n" (say "type" "model") (say "def" "initial_model") (say "def" "update") (say "def" "view")
+        end;
+        pr "Definitions (anchor, line, uses here / from other files in N files; * the most used; called by: the file's definitions using it):\n\n";
         List.iter
           (fun (l, n, k, (u : Code_rank.use), s) ->
-            pr "- %s%s:%s, line %d, %d / %d in %d%s\n" (if s >= top then "* " else "") k n (l + 1) u.own u.others u.files
+            pr "- %s%s:%s, line %d, %d / %d in %d%s%s\n" (if s >= top then "* " else "") k n (l + 1) u.own u.others u.files
+              (match callers l n with [] -> "" | cs -> "; called by " ^ String.concat ", " (List.filteri (fun i _ -> i < 6) cs))
               (match Code_rank.users rank p l n with [] -> "" | us -> " (from " ^ String.concat ", " (List.map (fun (q, k) -> Printf.sprintf "%s %d" (Filename.basename q) k) (List.filteri (fun i _ -> i < 3) us)) ^ ")"))
           defs;
         pr "\n"
@@ -164,3 +190,37 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
       if List.exists (fun (_, n, _) -> n = "main") f.defs then pr "A program: it has a main.\n\n")
     mine;
   Buffer.contents b
+
+(* claude: what the configs miss, as -check says it (the author, after the
+ * first pass left the Playground's core without a capital and most games
+ * without a skeleton: "lessons learned from those missings?"): a program
+ * with no skeleton; a hub (named by a twentieth of the project or more)
+ * with no capital, in its .ml or its .mli *)
+let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : string list =
+  let fans = Code_deps.fan_in sources in
+  let fan p = Option.value (Hashtbl.find_opt fans (String.capitalize_ascii (Filename.remove_extension (Filename.basename p)))) ~default:0 in
+  let total = List.length (List.filter (fun (p, _) -> Filename.check_suffix p ".ml") sources) in
+  let hub p = fan p >= max 30 (total / 20) in
+  let described p = Code_guide.file_note guide p <> None in
+  let capitals p = match Code_guide.file_note guide p with Some n -> n.capitals <> [] | None -> false in
+  let twin p = if Filename.check_suffix p ".mli" then Filename.remove_extension p ^ ".ml" else Filename.remove_extension p ^ ".mli" in
+  (* only where configs are written: a directory whose config describes files *)
+  let in_scope p = List.exists (fun (d : Code_guide.dir_note) -> d.dir = (match Filename.dirname p with "." -> "" | x -> x) && d.notes <> []) (Code_guide.dirs guide) in
+  let programs =
+    List.filter_map
+      (fun (p, src) ->
+        if Filename.check_suffix p ".ml" && in_scope p && (contains src "\nlet main " || contains src "\nlet main=") && described p && Code_guide.skeletons_of guide p = [] then
+          Some (p ^ ": a program with no skeleton (skeletons.libsonnet: game, drawn or mvu, one line)")
+        else None)
+      sources
+  in
+  let hubs =
+    List.filter_map
+      (fun (p, _) ->
+        let main = Filename.check_suffix p ".mli" || not (List.mem_assoc (twin p) sources) in
+        if main && in_scope p && hub p && not (capitals p || capitals (twin p)) then
+          Some (Printf.sprintf "%s: a hub (named by %d files) with no capital: its main types and functions are the map's" p (fan p))
+        else None)
+      sources
+  in
+  programs @ hubs

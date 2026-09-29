@@ -24,3 +24,9 @@ val brief : guide:Code_guide.t -> sources:(string * string) list -> dir:string -
 (* a source's header comment: its first comment that is not a copyright,
    at most [max] lines *)
 val header : ?max:int -> string -> string list
+
+(* claude: what the configs miss: a program (a file with a top-level
+   main) with no skeleton, a hub with no capital, in the
+   directories whose config describes files; tinybox codemap -check says
+   them *)
+val coverage : guide:Code_guide.t -> sources:(string * string) list -> string list

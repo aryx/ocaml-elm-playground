@@ -59,6 +59,15 @@ that is the game's heart (TinyInvaders' `march`), not `update` and
 `view` -- every game has them, so as capitals they would crowd the map
 and say nothing; they are `important`, and `links`.
 
+### What is missing, checked
+
+`tinybox codemap -check .` says what the configs miss ("missing:"): a
+program (a top-level `main`) with no skeleton; a hub with no capital,
+in its `.ml` or its `.mli` (only where a directory's config describes
+files). The first pass left the Playground's core without a capital and
+most games without a skeleton, found only by the author looking: a pass
+is finished when -check says 0 missing.
+
 ### Centrality, not size (the author, 2026-09-29)
 
 "Playground.computer, Playground.game ... are arguably the most
@@ -111,6 +120,23 @@ bones' definitions lit in the shaded file.
   default; name a game's skeleton for what it adds. `skeletons.game(file,
   heart, role)` is MVU and the game's heart reached from `update`, one
   line a game (named arguments with `=`: `model='type:game'`).
+- Lessons of the pass that gave every program its skeleton (the agents'
+  reports), each now in the brief or the template:
+  - The heart is on the program's path: the brief's "called by" says
+    which definitions call it; from `update`, `skeletons.game`; from
+    `view` (a 2.5D game's trick, a 3D game's world), `skeletons.drawn`;
+    in a kit, `mvu` and a bone in the kit joined from `update`.
+  - The capital is not always the heart: a capital may be data (a
+    course's table) or a drawing; the heart is what the rules or the
+    picture run through.
+  - "The template's names" line says which of `type:model`,
+    `def:initial_model`, `def:update`, `def:view` a program has: give
+    its own where it says NO (apps: `init='def:initial'`; a first state
+    written inside `app`: `init='def:app'`).
+  - "Defined twice": `def:` finds the first; for the second, a
+    `comment:` near it, or `line:` with a comment saying why.
+  - A program written on a way (Teletype, Textmode) has no update or
+    view of its own: a shape of its own, the program, the way, the app.
 - Every program gets one: each game and app of a genre's or category's
   config, not a few examples (the author, missing TinyMissileCommand's:
   "I thought the libsonnet would help for that"). The template makes it

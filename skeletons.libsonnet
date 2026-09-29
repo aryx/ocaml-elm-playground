@@ -31,4 +31,15 @@
       bones+: [{ at: file + ':' + heart, role: role }],
       joints+: [{ from: file + ':' + update, to: file + ':' + heart, say: say }],
     },
+
+  // claude: a game whose heart is in its picture, reached from view, not
+  // update (the 2.5D games' tricks, a 3D game's world handed to the
+  // z-buffer): game's joint from update would be false (the brief's
+  // "called by" says which)
+  drawn(file, heart, role, say='drawn with', model='type:model', init='def:initial_model', update='def:update', view='def:view')::
+    self.mvu(file, model, init, update, view) + {
+      name: 'Model-View-Update, and its heart: ' + std.split(heart, ':')[1],
+      bones+: [{ at: file + ':' + heart, role: role }],
+      joints+: [{ from: file + ':' + view, to: file + ':' + heart, say: say }],
+    },
 }

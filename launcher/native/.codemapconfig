@@ -4,7 +4,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'tinybox itself: every program linked in and collected, one run by name, and the menu as native host.',
   files: {
-    'Tinybox.ml': { digest: 'b6c07bba019b',
+    'Tinybox.ml': { digest: 'a18c49e4e22e',
       summary: 'The multi-call binary: the menu, list, a program by any part of its name, codemap of a directory.',
       capitals: [{ at: 'def:start', say: 'a program run with its own command line' }],
       important: [
