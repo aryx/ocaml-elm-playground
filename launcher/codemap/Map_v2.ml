@@ -448,19 +448,19 @@ let hover_card (t : t) (c : camera) (kept : name list) : shape list =
                 | title, None -> (title, [ "not described yet" ], false))
           in
           let ts = 13. and size = 16. and gap = 6. in
-          let width s z = 0.5 *. z *. float_of_int (String.length s) in
+          let width s z = text_width z s in
           let w = 24. +. Float.max (width title ts) (List.fold_left (fun m l -> Float.max m (width l size)) 0. body) in
           let h = 18. +. ts +. (float_of_int (List.length body) *. (size +. gap)) in
           let x0 = Float.min (mx +. 18.) (float_of_int a.pw -. w -. 4.) and y0 = Float.min (my +. 18.) (float_of_int a.ph -. h -. 4.) in
           let col = lighter (archi t.colours t.placed.(n.node).path) in
           [ rectangle (rgb 18 16 36) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.96 ]
           @ frame a col x0 y0 (x0 +. w) (y0 +. h) 1.5
-          @ [ label a col ts (x0 +. (w /. 2.)) (y0 +. 6. +. (ts /. 2.)) title ]
+          @ [ label a col ts (x0 +. 12. +. (width title ts /. 2.)) (y0 +. 6. +. (ts /. 2.)) title ]
           @ List.mapi
               (fun k l ->
                 let y = y0 +. 12. +. ts +. (float_of_int k *. (size +. gap)) +. (size /. 2.) in
-                (* claude: centred: the font is proportional, a left edge unknown *)
-                label a (if described then ink else dim) size (x0 +. (w /. 2.)) y l)
+                (* claude: on their left, their widths estimated (text_width) *)
+                label a (if described then ink else dim) size (x0 +. 12. +. (width l size /. 2.)) y l)
               body)
 
 (* claude: at the ground, what the config says of an important line, a

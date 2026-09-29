@@ -215,6 +215,9 @@ val dim : Playground.color
 val frame : area -> Playground.color -> float -> float -> float -> float -> float -> Playground.shape list
 
 (* words centred at a pixel of the map, [size] high *)
+(* the width of words [size] high, estimated (the font is never measured) *)
+val text_width : float -> string -> float
+
 val label : area -> ?alpha:Playground.number -> Playground.color -> float -> float -> float -> string -> Playground.shape
 val basename : string -> string
 

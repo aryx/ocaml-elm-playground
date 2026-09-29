@@ -471,6 +471,22 @@ let frame (a : area) (color : color) (x0 : float) (y0 : float) (x1 : float) (y1 
 let label (a : area) ?(alpha = 1.) (color : color) (size : float) (px : float) (py : float) (s : string) : shape =
   words color s |> scale (size /. words_font_size) |> move (sx a px) (sy a py) |> fade alpha
 
+(* claude: the width of words [size] high, estimated: the font is the
+ * backend's sans-serif, never measured, so each character by its class,
+ * after Helvetica's widths (thousandths of the size) -- close enough to
+ * align lines on their left *)
+let text_width (size : float) (s : string) : float =
+  let w = function
+    | 'i' | 'j' | 'l' | '\'' | '!' | '|' | '.' | ',' | ':' | ';' | '`' -> 240
+    | 'f' | 't' | 'r' | 'I' | '(' | ')' | '[' | ']' | '/' | '-' | ' ' -> 300
+    | 'm' | 'w' | 'M' | 'W' | '@' | '%' -> 860
+    | 'A' .. 'Z' -> 690
+    | _ -> 530
+  in
+  let n = ref 0 in
+  String.iter (fun c -> n := !n + w c) s;
+  size *. float_of_int !n /. 1000.
+
 let basename (path : string) : string = match String.rindex_opt path '/' with Some i -> String.sub path (i + 1) (String.length path - i - 1) | None -> path
 
 (* claude: labels placed greedily, the most important first, each only
