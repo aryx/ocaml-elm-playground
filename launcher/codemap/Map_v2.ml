@@ -1156,7 +1156,10 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
     | Some e -> (
         let mine (s : Code_guide.skeleton) =
           let n = List.length s.bones and here = List.length (List.filter (fun (b : Code_guide.bone) -> b.bpath = e.path) s.bones) in
-          here > 0 && 2 * here >= n
+          (* claude: half, a tie, only for its own config's files (the
+           * author: x on Playground.mli went through every example's
+           * still and scene3d, each a bone in it and one at home) *)
+          here > 0 && (2 * here > n || (2 * here = n && s.sdir = Filename.dirname e.path) || (2 * here = n && s.sdir = "" && not (String.contains e.path '/')))
         in
         match List.filter mine all with [] -> Option.to_list (derived_file t e) | l -> l)
     | None -> (
