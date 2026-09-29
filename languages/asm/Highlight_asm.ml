@@ -76,7 +76,10 @@ let analyze (src : string) : analysis =
           while !j < n && (l.[!j] = ' ' || l.[!j] = '\t') do incr j done;
           let next = if !j < n then Some l.[!j] else None in
           if !first && next = Some ':' then (add y s text Def_function; i := !j + 1)
-          else if !first && next = Some '=' then (add y s text Def_value; first := false)
+          (* claude: NAME = value, an assembler's constant: a definition
+           * for the names, but drawn as a constant, not as large as a
+           * label (a file's structure is its labels) *)
+          else if !first && next = Some '=' then (add y s text Constructor; first := false)
           else if !first then begin
             add y s text (if text.[0] = '.' then Keyword_module else if List.mem (String.lowercase_ascii text) jumps then Keyword_control else Keyword);
             first := false
@@ -90,18 +93,18 @@ let analyze (src : string) : analysis =
   let triples = Array.map (fun t -> (t.line, t.col, t.text)) toks in
   (* the file's labels and values, by their text *)
   let defs = Hashtbl.create 64 in
-  Array.iteri (fun i t -> if (t.cat = Def_function || t.cat = Def_value) && not (Hashtbl.mem defs t.text) then Hashtbl.replace defs t.text i) toks;
+  Array.iteri (fun i t -> if (t.cat = Def_function || (t.cat = Constructor && t.col = 0)) && not (Hashtbl.mem defs t.text) then Hashtbl.replace defs t.text i) toks;
   let binds = Hashtbl.create 64 in
   let definitions = ref [] and references = ref [] in
   Array.iteri
     (fun i t ->
       match t.cat with
-      | Def_function | Def_value when Hashtbl.find_opt defs t.text = Some i ->
+      | Def_function | Constructor when Hashtbl.find_opt defs t.text = Some i ->
           Hashtbl.replace binds i i;
           definitions := definition ~name:(strip t.text) triples i Value 3 :: !definitions
       | Global -> (
           match Hashtbl.find_opt defs t.text with
-          | Some d -> Hashtbl.replace binds i d; t.cat <- (if toks.(d).cat = Def_value then Constructor else Local)
+          | Some d -> Hashtbl.replace binds i d; t.cat <- (if toks.(d).cat = Constructor then Constructor else Local)
           | None when t.text.[0] <> '.' ->
               references := { (reference triples i [] Value) with rname = strip t.text } :: !references
           | None -> ())
