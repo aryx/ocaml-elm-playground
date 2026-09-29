@@ -23,7 +23,7 @@
         { at: 'def:trick', say: '"the trick of this game", marked', weight: 1 },
       ],
     },
-    'Code_file.ml': { digest: '03a06756c09a',
+    'Code_file.ml': { digest: 'd43d92f5d276',
       summary: "OCaml's or C's highlighter run (plain text if it fails), its spans laid into the grid a byte a cell, the tricks marked.",
     },
     'Codemap.mli': { digest: 'd16de88ffb6e',
@@ -69,7 +69,7 @@
         { at: 'def:morph_from', say: 'a new layout animated from the old', weight: 1 },
       ],
     },
-    'Code_map.ml': { digest: 'bef96ad03c73',
+    'Code_map.ml': { digest: 'c7e436fcd972',
       summary: "What every style shares: flights, the names lit and clicked, peeks, search, tours, the reading glass.",
       important: [
         { at: 'def:update_map', say: 'the keys and the mouse, a unit at a time', weight: 3 },
@@ -201,7 +201,7 @@
         { at: 'def:find_in', say: 'a reference to its definitions, and whether sure' },
       ],
     },
-    'Code_names.ml': { digest: '53e149f8bf4d',
+    'Code_names.ml': { digest: '412d071ce707',
       summary: "Modules found by file name, opens tried last first; C's definitions before declarations, nearest first.",
       important: [
         { at: 'def:find_ml', say: "OCaml's rule: M.x, then the opens", weight: 2 },

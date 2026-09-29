@@ -136,6 +136,15 @@ let tries (f : Code_file.t) (r : Highlight_code.reference) : (string * string) l
   | m :: rest -> (m, String.concat "." (rest @ [ r.rname ])) :: (match List.rev rest with n :: _ -> [ (n, r.rname) ] | [] -> [])
 
 let find_ml ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.reference) =
+  (* claude: a module's files: when one is in the use's own directory
+   * (its Lexer.mll beside it), only that one module -- a name not found
+   * there is unresolved, not another Lexer's (the author, at ~/ix:
+   * languages/ml's Lexer.token found in languages/c) *)
+  let nearest_files m =
+    let all = Hashtbl.find_all ix.ml m in
+    let here = List.filter (fun (p, _) -> Filename.dirname p = Filename.dirname from) all in
+    if here <> [] then here else all
+  in
   (* the first place, in that order, that defines it *)
   let rec first = function
     | [] -> []
@@ -150,7 +159,7 @@ let find_ml ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.refe
                 | d :: _ -> [ candidate p d ((if other p then 1 else 0), - shared p from) (other p) ]
                 | [] -> []
               else [])
-            (Hashtbl.find_all ix.ml m)
+            (nearest_files m)
         in
         match cs with [] -> first rest | cs -> cs)
   in
@@ -188,8 +197,11 @@ let find_c ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.refer
   let top p = match String.index_opt p '/' with Some i -> String.sub p 0 i | None -> "" in
   let mine = lazy (header_closure ix from) in
   let declares h = match Hashtbl.find_opt ix.cfiles h with Some lf -> List.exists (fun (d : Highlight_code.definition) -> d.dname = r.rname) (Lazy.force lf).definitions | None -> false in
+  (* a top-level library (lib/, libc/, lib_core/): what programs link *)
+  let top_library p = let t = top p in String.length t >= 3 && String.sub t 0 3 = "lib" in
   let linkable p =
     top p = top from
+    || top_library p
     || List.mem p (Lazy.force mine)
     || (let theirs = header_closure ix p in List.exists (fun h -> List.mem h theirs) (Lazy.force mine))
   in

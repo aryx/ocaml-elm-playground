@@ -207,7 +207,12 @@ let open_peek (t : t) (file_of : string -> Code_file.t option) ((p, l) : string 
         for i = 0 to n - m do if String.sub str i m = sub then incr k done;
         !k
       in
-      let opens l = let t = text l in count "(*" t + count "/*" t and closes l = let t = text l in count "*)" t + count "*/" t in
+      (* claude: each language its own markers: an OCaml file writing
+       * libc/*.s in a comment is no C comment opened (the author, at
+       * ~/ix's TinyAssembler.ml: every peek grew back to the header) *)
+      let ml = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
+      let opens l = let t = text l in if ml then count "(*" t else count "/*" t
+      and closes l = let t = text l in if ml then count "*)" t else count "*/" t in
       (* the comments' depth at each line's start, the file read once *)
       let n = Code_file.nlines g in
       let depth = Array.make (n + 1) 0 in
@@ -633,6 +638,15 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
    * to the map it was taken from (Codemap) *)
   let up_from_top = units && t.focus = 0 && t.peek = None && (pressed "Backspace" || pressed "-" || (mouse.mrdown && not t.before_right) || mouse.mwheel < 0.) in
   let moved = if units && not up_from_top then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
+  (* claude: going in, a folder holding a single unit goes on to it (the
+   * author, at Linux 0.01's init/: three clicks to reach main.c) *)
+  let moved =
+    match moved with
+    | Some i when List.mem t.focus (Code_units.ancestors t.placed i) ->
+        let rec down i = match Code_units.children t.placed i with [ j ] -> down j | _ -> i in
+        Some (down i)
+    | m -> m
+  in
   (* claude: a folder that would leave much of the screen shaded (tall
    * and narrow, or small and wide: the author, "lots of shaded space on
    * the left and right") is laid out anew, alone, the screen its

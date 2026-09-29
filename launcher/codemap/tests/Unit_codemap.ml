@@ -72,7 +72,7 @@ let tests =
                 ("lib/fmt.c", "int print(char *f) { return 0; }\n");
               ]
           in
-          Alcotest.(check string) "error: its own program's definition" "rc/subr.c:2 lib/error.c:1 sam/error.c:1 !" (where c "rc/exec.c" "error");
+          Alcotest.(check string) "error: its own program's definition (sam's, another program's, not linkable)" "rc/subr.c:2 lib/error.c:1 !" (where c "rc/exec.c" "error");
           Alcotest.(check string) "print: the library's" "lib/fmt.c:1 !" (where c "rc/exec.c" "print");
           let ml =
             files
@@ -86,7 +86,7 @@ let tests =
           in
           Alcotest.(check string) "M.x: the .ml, then the .mli" "games/Road.ml:1 games/Road.mli:1 !" (where ml "games/Main.ml" "curve");
           Alcotest.(check string) "a bare name, from an open" "games/Road.ml:2 games/Road.mli:2 !" (where ml "games/Main.ml" "straight");
-          Alcotest.(check string) "two Parser.ml: the nearest" "games/Parser.ml:1 tools/Parser.ml:1 !" (where ml "games/Main.ml" "parse");
+          Alcotest.(check string) "two Parser.ml: the one beside it, alone" "games/Parser.ml:1 !" (where ml "games/Main.ml" "parse");
           let ml2 =
             files
               [
@@ -104,8 +104,8 @@ let tests =
           let p =
             files [ ("src/main.c", "int f(void) { return helper(1); }\n"); ("src/vendor/h.c", "int helper(int x) { return x; }\n"); ("tools/h.c", "int helper(int x) { return x; }\n") ]
           in
-          Alcotest.(check string) "without roots: the nearest path" "src/vendor/h.c:1 tools/h.c:1 !" (where p "src/main.c" "helper");
-          Alcotest.(check string) "with roots: its own project first" "tools/h.c:1 src/vendor/h.c:1(other) !"
+          Alcotest.(check string) "without roots: the nearest path, tools/ not linkable" "src/vendor/h.c:1 !" (where p "src/main.c" "helper");
+          Alcotest.(check string) "with roots: another project last (tools/ not linkable)" "src/vendor/h.c:1(other) !"
             (where ~roots:[ ""; "src/vendor" ] p "src/main.c" "helper"));
       (* claude: Code_rank.mli's worked example *)
       Testo.create "a definition's population" (fun () ->

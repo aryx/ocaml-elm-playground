@@ -71,6 +71,28 @@ let make (path : string) (src : string) : t =
       in
       { an with references = an.references @ extra }
   in
+  (* claude: an ocamllex file's entries (rule token = parse, and comment
+   * = parse) and an ocamlyacc file's %start symbols: the functions the
+   * generated module exports, so Lexer.token is found in its Lexer.mll
+   * (the author, at ~/ix: languages/ml's CLI calling its Lexer.token,
+   * resolved into languages/c's Lexer.ml) *)
+  let generated =
+    let lex = Filename.check_suffix path ".mll" and yacc = Filename.check_suffix path ".mly" in
+    if not (lex || yacc) then []
+    else
+      String.split_on_char '\n' src
+      |> List.mapi (fun y l -> (y, l))
+      |> List.concat_map (fun (y, l) ->
+             let words = List.filter (( <> ) "") (String.split_on_char ' ' (String.map (fun c -> if c = '\t' then ' ' else c) l)) in
+             let at name = match String.index_opt l name.[0] with Some c -> c | None -> 0 in
+             match words with
+             | ("rule" | "and") :: name :: rest when lex && List.mem "parse" (rest @ []) || (lex && (match words with ("rule" | "and") :: _ :: _ -> String.length l > 0 && (l.[0] = 'r' || l.[0] = 'a') | _ -> false)) ->
+                 let name = List.hd (String.split_on_char '(' name) in
+                 [ ({ dname = name; dspace = Value; dline = y; dcol = at name; drank = 3 } : Highlight_code.definition) ]
+             | "%start" :: names when yacc -> List.map (fun name -> ({ dname = name; dspace = Value; dline = y; dcol = at name; drank = 3 } : Highlight_code.definition)) names
+             | _ -> [])
+  in
+  let an = if generated = [] then an else { an with definitions = an.definitions @ generated } in
   let lines = an.spans and occurrences = an.occurrences in
   let n = Array.length lines in
   let grid = Bytes.make (n * cols) '\000' in
@@ -128,6 +150,8 @@ let make (path : string) (src : string) : t =
   (* claude: the names defined elsewhere, by line (level 3) *)
   let refs = Array.make n [] in
   List.iter (fun (r : Highlight_code.reference) -> if r.rline >= 0 && r.rline < n then refs.(r.rline) <- r :: refs.(r.rline)) an.references;
+  (* the generated entries as definitions too, for anchors (def:token) *)
+  List.iter (fun (d : Highlight_code.definition) -> if not (List.exists (fun (l, n, _) -> l = d.dline && n = d.dname) !defs) then defs := (d.dline, d.dname, Highlight_code.Def_function) :: !defs) generated;
   { path; lines; grid; chars; defs = List.rev !defs; marks; names; uses; definitions = an.definitions; refs; opens = an.opens; includes = an.includes }
 
 let nlines (f : t) : int = Array.length f.lines
