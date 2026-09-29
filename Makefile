@@ -254,19 +254,23 @@ js:
 
 # claude: a directory's code map as a web page, for a project's site (the
 # author's ix, xix, principia): make codemap-web DIR=~/github/ix
-# OUT=~/github/ix/docs writes there codemap.html, codemap.bc.js (the map,
-# the same for every project, launcher/codemap/web) and codemap_data.txt
-# (the directory's code, make_codemap_data); a link to
-# codemap.html?focus=<path>, &line=<n> or ?def=<name> opens the map there
-CODEMAP_NAME=$(notdir $(abspath $(DIR)))
+# PAGE=~/github/ix/docs. The big files go to the assets repository, as
+# the games' (not to pollute the project's): $(ASSETS)/js/codemap/
+# codemap.bc.js (the map, the same for every project,
+# launcher/codemap/web) and $(ASSETS)/codemap/<name>.txt (the directory's
+# code, make_codemap_data); the project's site gets only codemap.html,
+# which names them. A link to codemap.html?focus=<path>, &line=<n> or
+# ?def=<name> opens the map there; to try it before the assets are
+# pushed: ?data=<a local bundle>. NAME defaults to DIR's name.
+NAME ?= $(notdir $(abspath $(DIR)))
 codemap-web:
-	@test -n "$(DIR)" -a -n "$(OUT)" || (echo "usage: make codemap-web DIR=<project> OUT=<site dir>"; exit 2)
+	@test -n "$(DIR)" -a -n "$(PAGE)" || (echo "usage: make codemap-web DIR=<project> PAGE=<its site's dir> [NAME=<name>]"; exit 2)
 	dune build launcher/codemap/web/Codemap_web.bc.js launcher/codegen/make_codemap_data.exe --profile=release-js
-	mkdir -p $(OUT)
-	install -m 644 _build/default/launcher/codemap/web/Codemap_web.bc.js $(OUT)/codemap.bc.js
-	./_build/default/launcher/codegen/make_codemap_data.exe $(DIR) > $(OUT)/codemap_data.txt
-	printf '<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset="utf-8">\n    <title>%s: code map</title>\n    <style>body { margin: 0; background: #0e0c1c; }</style>\n    <script src="codemap.bc.js"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
-	  $(CODEMAP_NAME) > $(OUT)/codemap.html
+	mkdir -p $(ASSETS)/js/codemap $(ASSETS)/codemap $(PAGE)
+	install -m 644 _build/default/launcher/codemap/web/Codemap_web.bc.js $(ASSETS)/js/codemap/codemap.bc.js
+	./_build/default/launcher/codegen/make_codemap_data.exe $(DIR) $(NAME) > $(ASSETS)/codemap/$(NAME).txt
+	printf '<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset="utf-8">\n    <title>%s: code map</title>\n    <style>body { margin: 0; background: #0e0c1c; }</style>\n    <script>var codemap_data = "%s";</script>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
+	  $(NAME) $(ASSETS_URL)/codemap/$(NAME).txt $(ASSETS_URL)/js/codemap/codemap.bc.js > $(PAGE)/codemap.html
 
 ###############################################################################
 # Developer targets

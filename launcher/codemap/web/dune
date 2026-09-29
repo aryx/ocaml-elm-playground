@@ -9,6 +9,7 @@
    elm_core elm_playground
    tinybox_codemap tinybox_codedeps
    web_fetch ; the bundle's request
+   ojs ; the page's codemap_data
    elm_playground_web ; implem of virtual elm_playground
  )
  (modes js)

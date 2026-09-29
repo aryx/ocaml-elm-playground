@@ -91,22 +91,46 @@ The map reads every source file under the directory (OCaml's `.ml`,
 `.codemapignore` excludes (gitignore's syntax), and every
 `.codemapconfig` and `*.libsonnet` it finds.
 
-**On a web page.** A project's site can carry its map:
+**On a web page.** A project's site can carry its map, and its
+documents can then link to a part of the code in the map rather than
+to GitHub's file view:
 
 ```
-make codemap-web DIR=~/github/ix OUT=~/github/ix/docs
+make codemap-web DIR=~/github/ix PAGE=~/github/ix/docs
 ```
 
-writes `codemap.html`, `codemap.bc.js` (the map, the same for every
-project) and `codemap_data.txt` (the directory's code and configs as one
-file, made by `make_codemap_data`; run again when the code changes).
-The page takes the same flags in its URL, so that a document can link to
-a part of the code in the map rather than to GitHub's file view:
-`codemap.html?focus=version_control`,
-`codemap.html?focus=kernel/proc.c&line=120`, `codemap.html?def=diff`
-(`data=` another bundle). The page must be served (GitHub Pages, or
-`python3 -m http.server` to try), not opened as a file: it fetches its
-data.
+makes three files. Only the page goes to the project; the two big ones
+go to the assets repository (`~/github/assets`, `ASSETS=` to change it),
+as the games' pages do, so as not to fill the project with generated
+megabytes:
+
+| file | what | where |
+|---|---|---|
+| `codemap.html` | the page, naming the two others | `PAGE` (ix's `docs/`) |
+| `codemap.bc.js` | the map, the same program for every project (`launcher/codemap/web`, 0.75 MB) | `assets/js/codemap/` |
+| `<name>.txt` | the directory's code and configs as one file (`make_codemap_data`, ix's 3.7 MB, compressed on the way) | `assets/codemap/` |
+
+Run it again when the code or its configs change, and push both
+repositories, the assets first. `NAME=` names the bundle (the
+directory's name by default), so that xix and principia get their own
+beside ix's.
+
+The page's URL says where the map opens, with the flags `tinybox
+codemap` takes:
+
+```
+codemap.html?focus=version_control                a folder
+codemap.html?focus=version_control/Commands.ml    a file, flown to
+codemap.html?focus=kernel/proc.c&line=120         the definition at that line, peeked at
+codemap.html?def=diff                             a definition by name (under focus= if given)
+codemap.html?data=<url>                           another bundle
+```
+
+The page must be served, not opened as a file, since it fetches its
+data. The page names its data by an absolute URL (`https://aryx.github.io/assets/...`), so before the assets are
+pushed, try it with a local server and `?data=` pointing at the local
+bundle; `aryx.github.io/assets` and a project's `aryx.github.io/ix`
+being one site, the browser lets the page fetch it.
 
 ## 3. The levels
 
