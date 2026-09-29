@@ -25,7 +25,7 @@ type file_note = {
 type tour = { name : string; stops : item list }
 type bone = { bat : string; bpath : string; banchor : string; role : string }
 type joint = { jfrom : string; jto : string; jsay : string option }
-type skeleton = { sname : string; bones : bone list; joints : joint list }
+type skeleton = { sname : string; sdir : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
 type dir_note = {
@@ -133,9 +133,13 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
               opt_list w fs "bones" (fun w v ->
                   let fs = fields w [ "at"; "role" ] v in
                   let at = match opt_str w fs "at" with Some s -> s | None -> bad "%s: at, its anchor" w in
+                  let role = match opt_str w fs "role" with Some r -> r | None -> bad "%s: its role" w in
                   match split at with
-                  | Some p, anchor -> { bat = at; bpath = under dir p; banchor = anchor; role = (match opt_str w fs "role" with Some r -> r | None -> bad "%s: its role" w) }
-                  | None, _ -> bad "%s: %s: a bone names its file ('File.ml:def:x')" w at)
+                  | Some p, anchor -> { bat = at; bpath = under dir p; banchor = anchor; role }
+                  (* a whole file or directory: its path, no anchor *)
+                  | None, p ->
+                      let p = if String.length p > 1 && p.[String.length p - 1] = '/' then String.sub p 0 (String.length p - 1) else p in
+                      { bat = at; bpath = under dir p; banchor = ""; role })
             in
             let joints =
               opt_list w fs "joints" (fun w v ->
@@ -143,7 +147,7 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
                   let bone k = match opt_str w fs k with Some s when List.exists (fun b -> b.bat = s) bones -> s | Some s -> bad "%s.%s: %s is none of the bones" w k s | None -> bad "%s: its %s" w k in
                   { jfrom = bone "from"; jto = bone "to"; jsay = opt_str w fs "say" })
             in
-            { sname = need "name"; bones; joints });
+            { sname = need "name"; sdir = dir; bones; joints });
       views =
         opt_list where fs "views" (fun w v ->
             let fs = fields w [ "name"; "files"; "of"; "with" ] v in
@@ -284,7 +288,12 @@ let check (t : t) ~(file : string -> (Code_file.t * string) option) ~(exists : s
             tr.stops)
         d.tours;
       List.iter
-        (fun s -> List.iter (fun b -> anchor (Printf.sprintf "%s: skeleton %S" conf s.sname) b.bpath b.banchor) s.bones)
+        (fun s ->
+          List.iter
+            (fun b ->
+              let where = Printf.sprintf "%s: skeleton %S" conf s.sname in
+              if b.banchor = "" then (if not (exists b.bpath) then err "%s: %s not found" where b.bpath) else anchor where b.bpath b.banchor)
+            s.bones)
         d.skeletons;
       List.iter (fun (name, _) -> if not (exists (under d.dir name)) then err "%s: dirs: %s not found" conf name) d.subdirs;
       List.iter

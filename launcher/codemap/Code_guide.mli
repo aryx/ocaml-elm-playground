@@ -65,7 +65,13 @@ type tour = { name : string; stops : item list }
    [banchor] the anchor in it *)
 type bone = { bat : string; bpath : string; banchor : string; role : string }
 type joint = { jfrom : string; jto : string; jsay : string option }
-type skeleton = { sname : string; bones : bone list; joints : joint list }
+
+(* [sdir]: the directory of the config that says it, its level: a
+   repository's skeleton at the root, a file's in its directory. A bone
+   may be a whole file or directory, a path with no anchor ('games/',
+   'Playground.mli': [banchor] ""), an architecture's parts seen from
+   afar *)
+type skeleton = { sname : string; sdir : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
 type dir_note = {
