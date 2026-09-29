@@ -24,6 +24,16 @@ project's path.
    notes, `tinybox codemap -facts <project> .` (its top folders, their
    sizes). Decide who the reader is and what they came for: to learn an
    OS's paths, a compiler's passes, a library's API, a game's rules.
+   **Look for the project's own explanations of itself** (the author,
+   ~/principia): an architecture diagram on its web site, a walkthrough
+   ("The Journey of ls": a command traced function by function through
+   every layer), a book's "Software architecture" section printing a
+   call chain. They are the skeletons and the tours, already judged by
+   the author: copy their layers, their colours and their chains before
+   inventing any. And decide what is off the map: vendored or
+   compatibility code, build copies, symlinked duplicates, `node_modules`
+   -- a `.codemapignore` line each (the project may already have one,
+   its lines commented out).
 2. **Write the root config yourself, first** (`<project>/.codemapconfig`):
    the `title` (the project in a sentence), `colors` per top folder,
    and the skeletons that cross the whole project -- its layers (a
@@ -50,7 +60,20 @@ project's path.
    file, the manual's section 12, the root config and the libsonnet to
    read (not edit), its area, and the rule to create only new configs
    in its area and edit no source. Ask each for its LESSONS: what the
-   brief, the checks or this file got wrong for this codebase.
+   brief, the checks or this file got wrong for this codebase. Write the
+   brief once, in a file each agent reads (~/principia's is kept in
+   `docs/claude_notes/codemap_brief_principia.md`: start from it), and
+   say in it: where the project's own explanations are (step 1); the
+   item fields (`at`, `say`, `weight`; `role` in a bone; `from`, `to`,
+   `say` in a joint, whose ends must be bones of its skeleton); that
+   every directory holding a source needs its own config (a parent's
+   `files:` or `dirs:` cannot describe a file below it); a scratch
+   directory of its own per agent (ten agents in one directory overwrite
+   each other's facts); and to run `-facts` in the background, one
+   directory at a time (each run analyses the whole project: 20 to 60 s
+   with ten agents running). Ten agents did ~/principia's 2,200 files
+   in about half an hour; each may fork a few of its own (twenty at most
+   at once).
 5. **Check until done.** `tinybox codemap -check <project>` from the
    tools' repository: 0 mistakes, 0 warnings, 0 missing. Then look at
    the map (earth, a region, a file, `x`, `l`, `g`) as the reader
@@ -228,7 +251,8 @@ the tools or here:
   - an `external` or `Callback.register` pairs OCaml with its C: the
     brief does not cross that boundary;
   - assembly (`.s`, `.tm`) is not a source: a boot skeleton jumps from
-    C to OCaml, the assembly named in a role;
+    C to OCaml, the assembly named in a role (Plan 9's `.s` is read:
+    see ~/principia's lessons);
   - a C prototype counts as a definition, `def:` may land on it: check
     the line;
   - an `.mli` over implementations in subdirectories (`arm/`,
@@ -242,6 +266,131 @@ the tools or here:
 - `\'` inside a single-quoted jsonnet string does parse; double quotes
   remain the clearer choice. An unclosed `comment:"...` gives a
   confusing "no comment saying" error: check the quotes first.
+
+### What ~/principia taught (its first pass, 2026-09-29)
+
+Ten agents wrote ~/principia's 310 configs (2,200 C, header and
+assembly files, Plan 9 as literate books) in half an hour, from a root
+config and a brief written first. Their reports, general first, then
+C's, then the tools' still to fix:
+
+- **The project explains itself; use it.** The best skeletons came
+  from the author's own: the web site's "Software Architecture of Plan
+  9" diagram gave the root's layers and colours (a book a box, a colour
+  a kind: tools, toolchain, libraries, kernel, graphics and network);
+  "The Journey of ls" gave two chains and the root's tour, function by
+  function; each book's `\section{Software architecture}` printed its
+  program's call chain (5c's `main -> compile -> yyparse -> codgen ->
+  gen -> cgen -> regopt -> peep -> outcode`, rc's, mk's, mothra's trace
+  of a request). Where the book was a stub (networking, games), the
+  summaries came from the code's headers, and read thinner.
+- **Every directory holding a source needs its own config.** A file's
+  note is read only from its own directory's config, and a folder's
+  skeleton only from its own: a parent's `files: { 'a/b.c': ... }` is
+  silently ignored, and `dirs:` describes a directory, not its files.
+  `dirs:` is for directories without sources (build output, docs).
+- **A module's skeleton counts when most of its bones are in it.** A
+  chain across files, two bones in each, leaves every file "missing":
+  give the big ones a skeleton of their own besides. A whole-file bone
+  (a path) counts toward its file -- the only honest skeleton of a file
+  that is one table (`optab.c`, `enam.c`, tcs's Unicode maps). A
+  program's `cmd` skeleton covers its module too.
+- **A joint's ends must be bones of its skeleton**, and one bad joint
+  makes the whole config unread: every file under it shows "missing".
+  Read the first mistake line before anything else; `-check` reports
+  only the first bad anchor of a config, so fix and rerun.
+- **Shapes the agents wrote again and again** (make them the project's
+  libsonnet's, before splitting): `module(file, name, steps)`, a file's
+  own chain with its anchors bare (six agents defined it as a local);
+  a star, `calls(name, center, callees)`, for a `main` calling ten
+  initializations (`chain` forces a joint between neighbours); a
+  dispatch through a table of functions (`devtab`, a `Dev`, lib9p's
+  `Srv`, `fcalls[]`, printf's `ocvt`); a 9P server (main, the
+  `read9pmsg` loop, the handlers); `cmd` with no default role for main
+  (a third of Plan 9's commands parse no flags, or by hand); a
+  one-line-file helper for forty trivial files.
+- **Name the real code's findings in important lines.** The pass found
+  Plan 9's own bugs and stale comments (libthread's `tprivfree` never
+  unlocking `privlock`; `fastrand.c` saying X9.17 over a ChaCha
+  generator; two libsec programs calling functions libsec lacks): a
+  reader will wonder, the note answers.
+
+C, Plan 9's (anchors):
+
+- **The syncweb markers are the best anchors of a literate project**:
+  `comment:"function [[mountio]]"`, `comment:"struct [[Node]]"`,
+  `comment:"function [[_vsvc]](arm)"` -- exact, they survive edits, and
+  they reach assembly functions and struct bodies that `def:` and
+  `type:` miss. Copy the marker's words exactly (its kind, struct or
+  type or enum; its name, which may differ from the label's).
+- **`def:` on Plan 9 C**: static functions are declared at the top of
+  the file, so a name is "defined twice"; `def:` prefers the body (rank
+  3) and mostly lands right, but not always (tcp.c, devmnt.c's
+  `mountio`, rio's fsys.c): check the line the facts give, and when in
+  doubt use the marker, or `code:"name(Type arg"` -- the body's
+  signature with its parameters' names, which prototypes omit. `type:X`
+  lands on `typedef struct X X;`, not the struct: the marker, or
+  `code:"struct X{"` when the brace is on its line. Enum constants are
+  no `def:`: `code:`.
+- **`code:"words"`**: the first line of code (not comment) holding the
+  words -- in the manual's table now. Whitespace is exact and a tab is
+  not matched: pick words without the alignment. Keep quotes out (`\"`
+  is not unescaped). In a `.s` file, a phrase with `(` or `*` does not
+  match (`_main(SB)`): take a word of the line (`code:"setR12"`).
+- **Assembly**: Plan 9's `TEXT name(SB)` symbols are not definitions,
+  but its plain labels (`_vswitch:`, `_f32loop:`) are, and its `/* */`
+  comments are comments: anchor a function by its marker. (~/ix's "not
+  a source" is ~/ix's `.tm`; Plan 9's `.s` is read.)
+- **Invisible, say it in the joints**: calls through function
+  pointers (the kernel's `sched`, `error`, `print`, pointers that
+  `main` fills, `core/portfns.c`; `devtab`; `Proto`, `Medium`,
+  `Ether`; rio's channels), yacc actions (`cc.y` calling `codgen`, `a.y`
+  calling `outcode`: `.y` files are not sources, so neither is a
+  `main` in `hoc.y`), rc scripts (git9's commands), and the mkfile's
+  cross-directory builds (5c compiling `../cc2/pgen.c`).
+
+The tools, fixed after the pass (2026-09-29):
+
+- An `#include` counts for a header, never a same-named `.c` (lib_gui's
+  `draw.c` had 172 files, `<draw.h>`'s now 288); as near, the path
+  sharing more directory names wins (an x86 file's `"dat.h"` is
+  `core/386/`'s); `include/security/auth.h` and Linux 0.01's `errno.h`,
+  `string.h`, `sys/stat.h` became the hubs they are.
+- A C name resolves in its own top folder before a library (the
+  kernel's `qlock` for the kernel, libc's for the programs), and two
+  files are one program by a header they share only when it is not the
+  system's (one included from six top folders or more: `libc.h`), so
+  troff no longer "uses" sam's `linep`.
+- `threadmain` is a program; a parent's `files:` naming `sub/x.c` is a
+  mistake, no longer ignored; `code:` is in the manual.
+
+The tools, still to fix (the facts and the check lie here; read past
+them):
+
+- `<u.h>` goes to MIPS's for a file of no architecture: the mkfile's
+  `$objtype` decides, which no path says. An assembly file's register
+  words resolve to random C (`memmove.s` "uses" libmemdraw's `arc.c`):
+  the "Uses:" of a `.s` file are noise. A kernel and its `user/`
+  programs share a top folder, so names still cross between them.
+- A structural mistake (a joint's end no bone) stops the config's
+  reading at the first: every file under it shows "missing", and one
+  run shows one such mistake. The anchors' mistakes are all reported.
+- Top folders and directories without sources are never reported
+  missing: write them.
+- **Missing is incremental**: describing files reveals programs the
+  first check did not list. Check until two runs agree.
+- **The facts' header** can be a syncweb marker, commented-out code or
+  a license repeated in every file; section banners in C headers come
+  two characters short (no `section:` there). Prototype-only headers
+  (`portfns_*.h`) list their prototypes as definitions used 0 times.
+- **Not built, still demanded**: rc's `unix.c`, mk's `Posix.c`, an
+  empty `.s`, a generated `proctab.c` or yacc's output, troff's
+  `tmac.s` (macros, not assembly) -- say so in the summary, skeleton
+  them briefly.
+- **`.gitignore` is not read**: `node_modules/` and generated files
+  come in unless `.codemapignore` names them.
+- `-facts` takes one directory and analyses the whole project each
+  time; `.y` files are not read, so a yacc action's calls are unseen.
 
 ### Centrality, not size (the author, 2026-09-29)
 
@@ -419,6 +568,8 @@ matter most, 1 for the rest. Five to ten per file.
 
 - An apostrophe inside a single-quoted string ends it: write "its
   ghosts' ways" in double quotes.
+- The map's jsonnet has no `std.findSubstr` (`std.startsWith`,
+  `std.endsWith`, `std.filter` are there).
 - A function's named arguments are `name=value`, a field's `name: value`.
 - A text with an apostrophe inside a quoted anchor reads best in double
   quotes, its inner quotes escaped (`\'` also parses):
@@ -428,6 +579,9 @@ matter most, 1 for the rest. Five to ten per file.
 
 - A directory with its own config needs no line in its parent's `dirs:`:
   its own summary is the one shown; a parent's line for it would drift.
+- A directory holding a source needs its own config: its files' notes
+  and its skeleton are read only there (a parent's `files:` naming
+  `sub/x.c` is ignored without a word).
 - A skeleton may have bones in other directories (`../../libs/audio/`):
   they hold when checked from the repository's root, which is how to
   check (`tinybox codemap -check .`); checked alone, the directory
