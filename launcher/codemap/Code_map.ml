@@ -23,7 +23,7 @@ open Playground
  * were apart (plan_codemap_google_maps.md, step 0) *)
 include Code_map_base
 
-type action = Stay | Open of Code_file.t * int | Close | Select of string * string list | Up
+type action = Stay | Open of Code_file.t * int | Close | Select of string * string list | Up | Tied of string * string list * string list
 
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
@@ -727,7 +727,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: the folder laid out anew, or back up from the top *)
   let action =
     match (with_ties, zoom, action) with
-    | Some (h, set), _, Stay -> Select (Printf.sprintf "%s and what it is tied to: %s" h (String.concat ", " (List.tl set)), set)
+    | Some (h, users, uses), _, Stay -> Tied (h, users, uses)
     | None, Some p, Stay -> Select (p, [ p ])
     | None, None, Stay when up_from_top -> Up
     | _ -> action

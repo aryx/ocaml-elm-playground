@@ -533,7 +533,7 @@ let card (t : t) (i : int) : string * string list option =
 (* claude: the unit whose name is under the mouse, and the files tied to
  * it, its users and what it uses (shift+click: a view of them all, the
  * author: "all the things relevant to the dir") *)
-let unit_with_ties (t : t) (c : camera) : (string * string list) option =
+let unit_with_ties (t : t) (c : camera) : (string * string list * string list) option =
   match t.pointer with
   | None -> None
   | Some (u, v) -> (
@@ -550,13 +550,10 @@ let unit_with_ties (t : t) (c : camera) : (string * string list) option =
             let rec go acc = function x :: r, y :: r' when x = y -> go (x :: acc) (r, r') | _, y :: _ -> List.rev (y :: acc) | _ -> List.rev acc in
             String.concat "/" (go [] (parts h, parts q))
           in
-          let tied =
-            List.filter_map
-              (fun (src, dst, _) -> if inside dst && not (inside src) then Some (side src) else if inside src && not (inside dst) then Some (side dst) else None)
-              (Code_rank.links (rank_of t))
-            |> List.sort_uniq compare
-          in
-          Some (h, h :: tied)
+          let links = Code_rank.links (rank_of t) in
+          let users = List.filter_map (fun (src, dst, _) -> if inside dst && not (inside src) then Some (side src) else None) links |> List.sort_uniq compare in
+          let uses = List.filter_map (fun (src, dst, _) -> if inside src && not (inside dst) then Some (side dst) else None) links |> List.sort_uniq compare in
+          Some (h, users, uses)
       | _ -> None)
 
 let unit_ties (t : t) (c : camera) (kept : name list) : shape list =

@@ -22,6 +22,10 @@ type scope =
    * all it found), what to call them, and the map they were chosen
    * from, Escape's way back *)
   | Selection of string * string list * t
+  (* claude: a unit and the units tied to it, its users and what it uses,
+   * shown as [tmode] says (d cycling: both, its users, what it uses, it
+   * alone), and the map it came from *)
+  | Tied of { unit : string; users : string list; uses : string list; tmode : int; tbefore : t }
 
 and t = {
   program : string;
@@ -87,6 +91,9 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Uses -> Code_deps.closure sources path
     | Whole | Directory _ -> List.map fst sources
     | Selection (_, set, _) -> List.filter (fun p -> List.exists (fun d -> p = d || Code_search.starts p (d ^ "/")) set) (List.map fst sources)
+    | Tied r ->
+        let set = r.unit :: (match r.tmode with 0 -> r.users @ r.uses | 1 -> r.users | 2 -> r.uses | _ -> []) in
+        List.filter (fun p -> List.exists (fun d -> p = d || Code_search.starts p (d ^ "/")) set) (List.map fst sources)
   in
   let entries = List.filter_map (fun p -> Option.map (entry p) (List.assoc_opt p sources)) paths in
   let n = List.length entries in
@@ -103,18 +110,21 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
         let said = match guide with Some g -> ( match Code_guide.title g with Some s -> Some s | None -> Code_guide.dir_summary g "") | None -> None in
         match said with Some s -> Printf.sprintf "%s: %s   (%s)" name s files | None -> Printf.sprintf "%s: %s" name files)
     | Selection (what, _, _) -> Printf.sprintf "%s   (%s; esc back)" what files
+    | Tied r ->
+        let shown = match r.tmode with 0 -> "its users and what it uses" | 1 -> "its users: " ^ String.concat ", " r.users | 2 -> "what it uses: " ^ String.concat ", " r.uses | _ -> "alone" in
+        Printf.sprintf "%s, %s   (%s; d: next, esc back)" r.unit shown files
   in
   (* claude: numbered in their reading order (Code_deps.closure's), but
    * the whole repository's and a directory's *)
-  let numbered = match scope with Own | Uses -> true | Whole | Directory _ | Selection _ -> false in
+  let numbered = match scope with Own | Uses -> true | Whole | Directory _ | Selection _ | Tied _ -> false in
   (* claude: a program's map resolves its names against every source, the
    * ones it does not draw too (a click on game peeks at Playground's) *)
   let beyond =
     match scope with
-    | Own | Uses | Selection _ -> List.filter_map (fun (p, src) -> if List.mem p paths then None else Some (entry p src)) sources
+    | Own | Uses | Selection _ | Tied _ -> List.filter_map (fun (p, src) -> if List.mem p paths then None else Some (entry p src)) sources
     | Whole | Directory _ -> []
   in
-  let top_kept = match scope with Selection _ -> true | _ -> false in
+  let top_kept = match scope with Selection _ | Tied _ -> true | _ -> false in
   Code_map.make ~fan_in:(fan_in_of sources) ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
@@ -182,13 +192,22 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
       if pressed "Escape" || pressed "Backspace" then Some { t with file = None }
       else Some { t with file = Some (Code_view.update computer ~pressed ~arrow v) }
   | None ->
-      if pressed "w" && (not (Code_map.searching t.map)) && (match t.scope with Directory _ | Selection _ -> false | _ -> true) then
-        let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ | Selection _ -> Own in
+      (* claude: d, the tied view's next mode *)
+      match t.scope with
+      | Tied r when pressed "d" && not (Code_map.searching t.map) ->
+          let rec next m = let m = (m + 1) mod 4 in if (m = 1 && r.users = []) || (m = 2 && r.uses = []) then next m else m in
+          let scope = Tied { r with tmode = next r.tmode } in
+          let map = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope in
+          Code_map.morph_from ~old:t.map map ~now;
+          Some { t with scope; map }
+      | _ ->
+      if pressed "w" && (not (Code_map.searching t.map)) && (match t.scope with Directory _ | Selection _ | Tied _ -> false | _ -> true) then
+        let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ | Selection _ | Tied _ -> Own in
         Some { t with scope; map = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:[] ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         (* claude: from a selection, back to the map it was chosen from *)
-        | _, Close -> ( match t.scope with Selection (_, _, before) -> Some before | _ -> None)
+        | _, Close -> ( match t.scope with Selection (_, _, before) -> Some before | Tied r -> Some r.tbefore | _ -> None)
         (* claude: up from a folder laid out alone: the map it came from,
          * on the folder's parent (not where one was before flying in,
          * which may be deeper) *)
@@ -201,7 +220,13 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
                 Code_map.morph_from ~old:map back ~now;
                 Some { before with map = back }
             | Selection (_, _, before) -> Some before
+            | Tied r -> Some r.tbefore
             | _ -> Some { t with map })
+        | map, Tied (unit, users, uses) ->
+            let scope = Tied { unit; users; uses; tmode = 0; tbefore = { t with map } } in
+            let next = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope in
+            Code_map.morph_from ~old:map next ~now;
+            Some { t with scope; map = next; tour = None }
         | map, Stay -> Some { t with map }
         | map, Select (what, set) ->
             let scope = Selection (what, set, { t with map }) in
