@@ -91,7 +91,34 @@ let partition (w : node -> node -> int) (nodes : node list) : node list =
   loop ();
   let count i = Array.fold_left ( + ) 0 m.(i) in
   let cycle = List.sort (fun i j -> compare (count i) (count j)) (remaining ()) in
-  List.map (fun i -> arr.(i)) (!left @ cycle @ !right)
+  (* claude: then codegraph's hill climbing (Dependencies_matrix_build):
+   * an element moved to wherever the uses above the diagonal drop the
+   * most, again until none does -- a cycle's members ordered by what
+   * least goes against the layers, not by a count alone (Linux 0.01's
+   * init, which uses everything, came first) *)
+  let order = Array.of_list (!left @ cycle @ !right) in
+  let k = Array.length order in
+  let upper o = let sum = ref 0 in for a = 0 to k - 1 do for b = a + 1 to k - 1 do sum := !sum + m.(o.(a)).(o.(b)) done done; !sum in
+  let moved o i j =
+    let l = Array.to_list o in
+    let x = o.(i) in
+    let rest = List.filteri (fun p _ -> p <> i) l in
+    Array.of_list (List.filteri (fun p _ -> p < j) rest @ [ x ] @ List.filteri (fun p _ -> p >= j) rest)
+  in
+  let best = ref order and score = ref (upper order) and improved = ref true and passes = ref 0 in
+  while !improved && !passes < 20 && k <= 80 do
+    improved := false;
+    incr passes;
+    for i = 0 to k - 1 do
+      for j = 0 to k - 1 do
+        if i <> j then
+          let o = moved !best i j in
+          let sc = upper o in
+          if sc < !score then (best := o; score := sc; improved := true)
+      done
+    done
+  done;
+  List.map (fun i -> arr.(i)) (Array.to_list !best)
 
 (*****************************************************************************)
 (* Expanding *)

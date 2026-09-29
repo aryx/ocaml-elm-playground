@@ -143,7 +143,7 @@
         { at: 'def:toggle', say: 'a row expanded into its parts', weight: 2 },
       ],
     },
-    'Code_dsm.ml': { digest: 'be6704f8ecbc',
+    'Code_dsm.ml': { digest: '0650b156582c',
       summary: "The rows partitioned as codegraph does, the used before their users, a cycle's between; the matrix counted.",
       capitals: [
         { at: 'def:partition', say: 'the layers: a clean architecture lower-triangular' },
