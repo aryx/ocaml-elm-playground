@@ -31,8 +31,9 @@
  * Keys: the arrows, Tab and Shift-Tab (the next section, across both
  * shelves), g and a (the games' and the apps' first section), Enter
  * (play), / (search every program by name, original and line; Escape
- * leaves it). The mouse: a click chooses, a double click plays, the
- * wheel scrolls, the tabs and arrows at the top are buttons.
+ * leaves it). The mouse: a click chooses, a double click plays (so does
+ * a click on the preview), the wheel scrolls, the tabs and arrows at the
+ * top are buttons.
  *
  * Groups and filters, after Batocera's and RetroBox's (the catalogue's
  * Year, Platform and Players columns): b groups the programs by genre
@@ -525,6 +526,9 @@ let update (host : host) (computer : computer) (m : model) : model =
     else if near (left_edge +. 90., 452.) at ~w:190. ~h:44. then tinybox_code host computer.screen m
     else if near games_tab at ~w:90. ~h:36. then to_shelf m true
     else if near apps_tab at ~w:80. ~h:36. then to_shelf m false
+    (* claude: a click on the preview plays the program (the author: "when
+     * we click on the preview we should also run the game") *)
+    else if near (shot_x, shot_y) at ~w:shot ~h:shot then start host m
     else if in_code_area at then open_code host computer.screen m
     else if near prev_arrow at ~w:40. ~h:40. then to_section m (step_section m (-1))
     else if near next_arrow at ~w:40. ~h:40. then to_section m (step_section m 1)

@@ -14,7 +14,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:run', weight: 2 },
       ],
     },
-    'Tinybox_menu.ml': { digest: '233e4616a505',
+    'Tinybox_menu.ml': { digest: 'e39b392da52a',
       summary: 'A Playground game whose world is the catalogue: groups, filters, the grid, the panel, the code map.',
       capitals: [{ at: 'def:update', say: 'the menu as a game: keys to groups, Enter to play' }],
       important: [
