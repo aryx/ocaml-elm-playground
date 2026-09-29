@@ -518,8 +518,9 @@ let names_glow (t : t) (c : camera) (e : entry) : shape list =
                         if h >= 7. || (w.line, w.col) = o.bound_at then None
                         else
                           let text = String.map (fun ch -> if ch = '\000' then ' ' else ch) (Bytes.sub_string f.chars (w.line * Code_file.cols) Code_file.cols) in
-                          let from = max 0 (w.col - 24) in
-                          let snippet = String.trim (String.sub text from (min 64 (String.length text - from))) in
+                          (* a use past the grid's width (a long line, cut) shows the line's end *)
+                          let from = max 0 (min (String.length text) (w.col - 24)) in
+                          let snippet = String.trim (String.sub text from (max 0 (min 64 (String.length text - from)))) in
                           let snippet = (if from > 0 then "... " else "") ^ snippet in
                           let tw = (0.5 *. size *. float_of_int (String.length snippet)) +. 12. in
                           let bw = Float.min tw cwidth and bh = size +. 6. in
