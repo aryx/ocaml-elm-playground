@@ -52,6 +52,10 @@ val make :
 
 (* claude: the map framing a unit by its path, a directory's or a
    file's, at once (tinybox codemap <dir> focus=<path>) *)
+(* claude: [morph_from ~old t ~now]: [t]'s rectangles animated from
+   where [old] shows them (a folder laid out anew, or back) *)
+val morph_from : old:t -> t -> now:float -> unit
+
 (* claude: whether a directory or file (its path) is on the map *)
 val has : t -> string -> bool
 

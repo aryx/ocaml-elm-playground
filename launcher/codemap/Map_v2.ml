@@ -895,6 +895,110 @@ let blood (a : area) (clock : float) (pts : (float * float) list) : shape list =
         [ circle (rgb 40 0 10) 6. |> move (sx a x) (sy a y); circle (rgb r g b) 4.5 |> move (sx a x) (sy a y) ])
     |> List.concat
 
+(* claude: a file's skeleton when no config gives one, derived from its
+ * code: its capitals and important lines (the config's words as roles),
+ * else its definitions the most used within it; a joint from a to b
+ * when a's definition uses b *)
+let derived_file (t : t) (e : entry) : Code_guide.skeleton option =
+  let f = Lazy.force e.file in
+  let n = Code_file.nlines f in
+  let self (l : int) (name : string) =
+    if l < 0 || l >= n then None
+    else List.find_opt (fun (o : Highlight_code.occurrence) -> o.bound_at = (o.line, o.col) && o.len = String.length name) f.names.(l)
+  in
+  let name_of at = match String.index_opt at ':' with Some i -> String.sub at (i + 1) (String.length at - i - 1) | None -> at in
+  let from_config =
+    match Code_guide.file_note t.guide e.path with
+    | Some n ->
+        List.filter_map
+          (fun (it : Code_guide.item) ->
+            match Code_guide.split it.at with
+            | None, at when String.contains at ':' && not (Code_search.starts at "comment:" || Code_search.starts at "line:" || Code_search.starts at "section:") ->
+                Option.map (fun l -> (l, name_of at, at, Option.value it.say ~default:(name_of at))) (capital_line e at)
+            | _ -> None)
+          (n.capitals @ n.important)
+    | None -> []
+  in
+  let by_use =
+    List.filter_map
+      (fun (l, name, (c : Highlight_code.category)) ->
+        let kind = match c with Def_function | Def_value -> Some "def" | Def_type -> Some "type" | _ -> None in
+        match (kind, self l name) with
+        | Some k, Some o -> Some (List.length (Code_file.uses f o), (l, name, k ^ ":" ^ name, name))
+        | _ -> None)
+      f.defs
+    |> List.filter (fun (u, _) -> u > 0)
+    |> List.sort (fun (a, _) (b, _) -> compare b a)
+    |> List.map snd
+  in
+  let seen = Hashtbl.create 16 in
+  let bones =
+    List.filter (fun (l, _, _, _) -> if Hashtbl.mem seen l then false else (Hashtbl.replace seen l (); true)) (from_config @ by_use)
+    |> List.filteri (fun i _ -> i < 7)
+  in
+  if List.length bones < 2 then None
+  else
+    let at_of (_, _, a, _) = e.path ^ ":" ^ a in
+    let joints =
+      List.concat_map
+        (fun ((la, _, _, _) as a) ->
+          let s, en = extent f la in
+          List.filter_map
+            (fun ((lb, nb, _, _) as b) ->
+              if lb = la then None
+              else
+                match self lb nb with
+                | Some o when List.exists (fun (u : Highlight_code.occurrence) -> u.line >= s && u.line <= en) (Code_file.uses f o) ->
+                    Some ({ jfrom = at_of a; jto = at_of b; jsay = None } : Code_guide.joint)
+                | _ -> None)
+            bones)
+        bones
+    in
+    Some
+      {
+        sname = Filename.basename e.path ^ ": its parts, who uses whom (derived)";
+        sdir = Filename.dirname e.path;
+        bones = List.map (fun ((_, _, a, role) as b) -> ({ bat = at_of b; bpath = e.path; banchor = a; role } : Code_guide.bone)) bones;
+        joints;
+      }
+
+(* a folder's, derived: its parts (its files and subfolders) the most
+ * tied, and the uses between them (Code_rank.links) *)
+let derived_dir (t : t) (here : string) : Code_guide.skeleton option =
+  let under p = here = "" || Code_search.starts p (here ^ "/") in
+  let part p =
+    let rest = if here = "" then p else String.sub p (String.length here + 1) (String.length p - String.length here - 1) in
+    let top = match String.index_opt rest '/' with Some i -> String.sub rest 0 i | None -> rest in
+    if here = "" then top else here ^ "/" ^ top
+  in
+  let ties = Hashtbl.create 32 in
+  List.iter
+    (fun (a, b, n) ->
+      if under a && under b then
+        let pa = part a and pb = part b in
+        if pa <> pb then Hashtbl.replace ties (pa, pb) (n + Option.value (Hashtbl.find_opt ties (pa, pb)) ~default:0))
+    (Code_rank.links (rank_of t));
+  let weight = Hashtbl.create 16 in
+  Hashtbl.iter (fun (a, b) n -> List.iter (fun p -> Hashtbl.replace weight p (n + Option.value (Hashtbl.find_opt weight p) ~default:0)) [ a; b ]) ties;
+  let parts = Hashtbl.fold (fun p n acc -> (p, n) :: acc) weight [] |> List.sort (fun (_, a) (_, b) -> compare b a) |> List.filteri (fun i _ -> i < 8) |> List.map fst in
+  if List.length parts < 2 then None
+  else
+    let role p =
+      let said = match Code_guide.file_note t.guide p with Some { summary = Some s; _ } -> Some s | _ -> Code_guide.dir_summary t.guide p in
+      match said with Some s -> (match wrap 40 s with l :: _ -> l | [] -> Filename.basename p) | None -> Filename.basename p
+    in
+    let joints =
+      Hashtbl.fold (fun (a, b) n acc -> if List.mem a parts && List.mem b parts then ({ jfrom = a; jto = b; jsay = Some (Printf.sprintf "%d use%s" n (if n = 1 then "" else "s")) } : Code_guide.joint) :: acc else acc) ties []
+      |> List.sort (fun (x : Code_guide.joint) (y : Code_guide.joint) -> compare x.jsay y.jsay)
+    in
+    Some
+      {
+        sname = (if here = "" then "the whole" else Filename.basename here) ^ ": its parts, who uses whom (derived)";
+        sdir = here;
+        bones = List.map (fun p -> ({ bat = p; bpath = p; banchor = ""; role = role p } : Code_guide.bone)) parts;
+        joints;
+      }
+
 (* claude: the bones drawn last, their dot's place and their role's
  * width, for a hover (bone_card) and a click (Code_map) *)
 let drawn_bones : (Code_guide.bone * float * float * float) list ref = ref []
@@ -936,18 +1040,25 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
         b.banchor <> "" && 2 * here > n
     | [] -> false
   in
+  (* claude: every file and every folder its skeleton (the author): the
+   * configs' for it, else one derived from the code (derived_file,
+   * derived_dir); never an enclosing folder's, whose bones are off the
+   * map (the author, at ~/ix's Mkfile.ml) *)
   let candidates =
     match ground with
-    | Some e -> List.filter (fun (s : Code_guide.skeleton) -> List.exists (fun (b : Code_guide.bone) -> b.bpath = e.path) s.bones) all
-    | None ->
-        (* above the unit, only a skeleton with two bones on the map: one
-         * mostly off it would be stubs *)
-        let seen (s : Code_guide.skeleton) = List.length (List.filter (fun b -> bone_spot b <> None) s.bones) >= 2 in
-        let rec level d =
-          let l = List.filter (fun (s : Code_guide.skeleton) -> s.sdir = d && (not (one_file s)) && (d = here || seen s)) all in
-          match l with [] when d <> "" -> level (parent d) | l -> l
+    | Some e -> (
+        let mine (s : Code_guide.skeleton) =
+          let n = List.length s.bones and here = List.length (List.filter (fun (b : Code_guide.bone) -> b.bpath = e.path) s.bones) in
+          here > 0 && 2 * here >= n
         in
-        level here
+        match List.filter mine all with [] -> Option.to_list (derived_file t e) | l -> l)
+    | None -> (
+        (* only a skeleton with two bones on the map: one mostly off it
+         * would be stubs *)
+        let seen (s : Code_guide.skeleton) = List.length (List.filter (fun b -> bone_spot b <> None) s.bones) >= 2 in
+        match List.filter (fun (s : Code_guide.skeleton) -> s.sdir = here && (not (one_file s)) && seen s) all with
+        | [] -> Option.to_list (derived_dir t here)
+        | l -> l)
   in
   let k = List.length candidates in
   if t.xray_n >= max 1 k then begin

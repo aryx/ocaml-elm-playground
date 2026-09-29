@@ -52,6 +52,46 @@ let make ?fan_in ?top_kept ?numbered ?colours ?roots ?guide ?beyond ?style ~area
 
 (* claude: the map framing a unit by its path (a directory's or a
  * file's), at once *)
+(* claude: the animation from another map to this one (a folder laid
+ * out anew, or back): each rectangle from where it was on the screen,
+ * in the other map, to where it is in this one (Transition, over
+ * graphics_animation); a unit only here grows from its centre *)
+let morph_duration = 0.45
+
+let morph_from ~(old : t) (t : t) ~(now : float) : unit =
+  let rect (r : Treemap.rect) : Transition.rect = { x = r.x; y = r.y; w = r.w; h = r.h } in
+  let where = Hashtbl.create 256 in
+  Array.iter (fun (p : entry Treemap.placed) -> Hashtbl.replace where p.path p.rect) old.placed;
+  (* a rectangle of the old map on the screen, in this map's units *)
+  let across (r : Treemap.rect) : Transition.rect =
+    let px0 = to_px old.cam r.x and py0 = to_py old.cam r.y and px1 = to_px old.cam (r.x +. r.w) and py1 = to_py old.cam (r.y +. r.h) in
+    let u0 = to_u t.cam px0 and v0 = to_v t.cam py0 and u1 = to_u t.cam px1 and v1 = to_v t.cam py1 in
+    { x = u0; y = v0; w = u1 -. u0; h = v1 -. v0 }
+  in
+  let after = Array.to_list (Array.map (fun (p : entry Treemap.placed) -> (p.path, rect p.rect)) t.placed) in
+  let before = List.filter_map (fun (k, _) -> Option.map (fun r -> (k, across r)) (Hashtbl.find_opt where k)) after in
+  t.morph <- Some (Transition.make ~before ~after (), now)
+
+(* the map as it is at [now], its rectangles on their way *)
+let morphed (t : t) ~(now : float) : t =
+  match t.morph with
+  | Some (tr, start) when now < start +. morph_duration ->
+      let p = Timing.at Timing.ease_in_out ((now -. start) /. morph_duration) in
+      let at = Hashtbl.create 256 in
+      List.iter (fun (f : string Transition.frame) -> Hashtbl.replace at f.key f.rect) (Transition.at tr p);
+      let placed =
+        Array.map
+          (fun (q : entry Treemap.placed) ->
+            match Hashtbl.find_opt at q.path with Some (r : Transition.rect) -> { q with rect = { x = r.x; y = r.y; w = Float.max 0.01 r.w; h = Float.max 0.01 r.h } } | None -> q)
+          t.placed
+      in
+      let geometry = Array.mapi (fun i (q : entry Treemap.placed) -> match (q.node, t.geometry.(i)) with File (_, _, e), Some _ -> Some (geometry_of q.rect (max 1 e.nlines)) | _ -> t.geometry.(i)) placed in
+      { t with placed; geometry; painted = None }
+  | Some _ ->
+      t.morph <- None;
+      t
+  | None -> t
+
 let has (t : t) (path : string) : bool = Array.exists (fun (p : entry Treemap.placed) -> p.path = path) t.placed
 
 let focus_on (t : t) (path : string) : t =
@@ -888,7 +928,11 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
    * each) would make it stutter; it comes the frame after the camera
    * stops *)
   let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
-  let still = t.last = Some c in
+  (* claude: a relayout under way: the rectangles on their way, painted
+   * quickly each frame *)
+  let moving_layout = t.morph <> None in
+  let t = let (Time now) = computer.time in morphed t ~now in
+  let still = t.last = Some c && not moving_layout in
   t.last <- Some c;
   t.moving <- not still;
   let want = if still then q else Float.min q 0.5 in

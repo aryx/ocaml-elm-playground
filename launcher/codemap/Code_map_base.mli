@@ -76,6 +76,7 @@ type t = {
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
   mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
   fan_in : (string, int) Hashtbl.t Lazy.t; (* claude: each module's fan-in, the files naming it (Code_deps.fan_in): how central *)
+  mutable morph : (string Transition.t * float) option; (* claude: the layout's rectangles moving from another layout's places, since a time (Transition: a folder laid out anew) *)
   top_kept : bool; (* claude: a lone top directory drawn, not merged into the root (relayout): a selection's *)
   beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)

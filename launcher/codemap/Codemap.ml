@@ -173,6 +173,7 @@ let go (t : t) (tour : (int * int) option) : t =
       { t with tour; file = Some (Code_view.make ~line ~lit:line (Lazy.force e.file)) }
 
 let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t option =
+  let (Time now) = computer.time in
   if pressed "n" && not (Code_map.searching t.map) then Some (go t (next_stop t))
   else if pressed "p" && t.tour <> None && not (Code_map.searching t.map) then Some (go t (prev_stop t))
   else
@@ -196,13 +197,18 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
             | Selection (_, [ p ], before) ->
                 let parent = match Filename.dirname p with "." -> "" | d -> d in
                 let rec up q = if q = "" then Code_map.focus_on before.map "" else if Code_map.has before.map q then Code_map.focus_on before.map q else up (match Filename.dirname q with "." -> "" | d -> d) in
-                Some { before with map = up parent }
+                let back = up parent in
+                Code_map.morph_from ~old:map back ~now;
+                Some { before with map = back }
             | Selection (_, _, before) -> Some before
             | _ -> Some { t with map })
         | map, Stay -> Some { t with map }
         | map, Select (what, set) ->
             let scope = Selection (what, set, { t with map }) in
-            Some { t with scope; map = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
+            let next = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope in
+            (* claude: its rectangles moving from where they were *)
+            Code_map.morph_from ~old:map next ~now;
+            Some { t with scope; map = next; tour = None }
         (* a file opened by hand: the tour, if any, left *)
         | map, Open (f, line) -> Some { t with map; file = Some (Code_view.make ~line f); tour = None })
 
