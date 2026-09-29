@@ -546,7 +546,12 @@ The same patterns serve search (`/` with a pattern) and anchors
     files, their own layout, entered from a unit (dependencies, users),
     named in the config; the animated transition.
 11. v2 the default of tinybox's own code map (`s`) too, the other styles
-    kept as alternative views (`m`).
+    kept as alternative views (`m`). (Done, 2026-09-29: the author, "in
+    the tinybox menu, I wonder if we would want to show the v2 view for
+    the file instead of the current view? but still also with the
+    gamekits it depends on as before": a program's map opens on its
+    file at the ground, its kits at the street (a) and the wheel away;
+    the panel's preview v2 from afar.)
 
 ## Decisions (the author, 2026-09-29)
 

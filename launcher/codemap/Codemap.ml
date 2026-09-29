@@ -90,7 +90,11 @@ let map_of ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (st
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   let sources, guide = guide_of sources in
   let colours = match guide with Some g -> Code_guide.colours g | None -> [] in
-  { program; path; sources; scope = Own; area; map = map_of ~guide ~roots:[] ~colours ~own ~area ~sources ~program ~path ~scope:Own; file = None; tour = None; own; guide }
+  let map = map_of ~guide ~roots:[] ~colours ~own ~area ~sources ~program ~path ~scope:Own in
+  (* claude: in v2, opened on the program's file, at the ground: its kits
+   * a (the street) or the wheel away (plan_codemap_v2.md) *)
+  let map = if Code_map.style_name () = "v2" then Code_map.focus_on map path else map in
+  { program; path; sources; scope = Own; area; map; file = None; tour = None; own; guide }
 
 let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) ~area ~sources ~program ~path
 

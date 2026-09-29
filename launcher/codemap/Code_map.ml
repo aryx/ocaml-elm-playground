@@ -28,7 +28,9 @@ type action = Stay | Open of Code_file.t * int | Close
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
 let styles = [ Map_classic.style; Map_streets.style; Map_atlas.style; Map_v2.style ]
-let chosen = ref Map_classic.style
+(* claude: v2 the default, everywhere (plan_codemap_v2.md, step 11);
+ * the others behind m, zooming freely *)
+let chosen = ref Map_v2.style
 let choose_style (name : string) = match List.find_opt (fun s -> s.sname = name) styles with Some s -> chosen := s | None -> ()
 let style_name () = !chosen.sname
 
@@ -532,7 +534,10 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
     Array.to_list t.placed
     |> List.concat_map (fun (p : entry Treemap.placed) ->
            match p.node with
-           | File (_, _, e) when List.mem e.path t.marked -> ( match clip c p.rect with Some b -> box yellow 3. b | None -> [])
+           (* claude: not on a file in v2 (the ground, the street): the
+            * treemap is not what is on the map *)
+           | File (_, _, e) when List.mem e.path t.marked && not (t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false) -> (
+               match clip c p.rect with Some b -> box yellow 3. b | None -> [])
            | _ -> [])
   in
   (* claude: a style's own place under the mouse (Map_v2's ground: the
