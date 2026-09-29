@@ -81,6 +81,41 @@ project's own shapes go in its own `skeletons.libsonnet` (~/ix's
 for Playground programs, and the brief's template line shows only for
 them.
 
+### What ~/ix taught (its first pass, 2026-09-29)
+
+Six agents wrote ~/ix's 69 configs; their reports, the lessons now in
+the tools or here:
+
+- -check now reports every directory, a program no config describes
+  too; and a directory's own hub (half its other modules name it:
+  mini-rc's `Ast`), not only the project's.
+- A program is also a `let () =` reading `Sys.argv` or registering
+  callbacks, and a kernel's `kmain` (in ~/ix's steps, in `libc.c`).
+- An `.ml` saying `(* See X.mli *)` has its header in its `.mli`: the
+  brief says so rather than show the next comment.
+- A project's template is its own `skeletons.libsonnet`; a linear chain
+  (`cli`) fits a pipeline, not a loop or a fan: extend it with `bones+:`
+  and `joints+:` (a shell's read, parse, eval, again; a commit's walk,
+  save and refs).
+- Still to build (the tools don't do it yet; read the code instead):
+  - an `external` or `Callback.register` pairs OCaml with its C: the
+    brief does not cross that boundary;
+  - assembly (`.s`, `.tm`) is not a source: a boot skeleton jumps from
+    C to OCaml, the assembly named in a role;
+  - a C prototype counts as a definition, `def:` may land on it: check
+    the line;
+  - an `.mli` over implementations in subdirectories (`arm/`,
+    `arm64/`, chosen by a Makefile) is not paired: the `.mli` shows no
+    uses;
+  - a module alias (`module L = Lexer`) hides its uses;
+  - calls through a record of functions (Plan 9's devtab) are
+    invisible to "called by";
+  - the test directories are left out silently: describe them in the
+    parent's `dirs:` anyway.
+- `\'` inside a single-quoted jsonnet string does parse; double quotes
+  remain the clearer choice. An unclosed `comment:"...` gives a
+  confusing "no comment saying" error: check the quotes first.
+
 ### Centrality, not size (the author, 2026-09-29)
 
 "Playground.computer, Playground.game ... are arguably the most
@@ -258,8 +293,8 @@ matter most, 1 for the rest. Five to ten per file.
 - An apostrophe inside a single-quoted string ends it: write "its
   ghosts' ways" in double quotes.
 - A function's named arguments are `name=value`, a field's `name: value`.
-- No `\'` escape: a text with an apostrophe inside a quoted anchor goes
-  in double quotes, its inner quotes escaped:
+- A text with an apostrophe inside a quoted anchor reads best in double
+  quotes, its inner quotes escaped (`\'` also parses):
   `at: "comment:\"MPEG-1's idea: the pixels didn't change\""`.
 
 ## Across configs (learned writing them all at once)
