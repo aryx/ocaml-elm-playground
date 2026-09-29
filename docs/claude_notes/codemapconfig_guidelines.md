@@ -122,6 +122,16 @@ by itself -- do not write them:
   syscalls) will one day give its words in a `layers` rule; until then,
   say it in the summaries.
 
+## What the map does with it (for judging what to write)
+
+What works best, the author says: the earth view (the colours, which a
+config's `colors` may override, the directories' and files' names), the
+skeletons with their roles at every level, the street (`a`: what a file
+uses, what uses it), the glow and the peeks, and the lines' heights.
+So the skeletons' roles and the important lines' notes are where a
+config's words count the most; the region level shows each file's
+`summary` as its card, so write it to be read there, in the block.
+
 ## Notes
 
 An item's `say` is drawn beside its line at the ground and the street,

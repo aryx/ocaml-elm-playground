@@ -87,6 +87,7 @@ type t = {
   mutable xray_n : int; (* claude: which of the skeletons at hand the X-ray shows (x again: the next) *)
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
+  mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
   beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
@@ -157,7 +158,7 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
     back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None;
-    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; beyond }
+    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries

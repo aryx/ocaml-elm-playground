@@ -572,6 +572,56 @@ let line_lit (t : t) (c : camera) (e : entry) : shape list =
  * in a line too thin to read magnified while the mouse is there, a
  * callout (the author: "temporarily magnify the calls") -- not the
  * layout changed, which would move the line under the mouse *)
+(* claude: a name defined elsewhere, hovered at the ground or the street:
+ * the first lines of its definition beside the mouse, readable (the
+ * author: "when we hover a use where the entity is not in the view ... a
+ * simple hover should probably again show the external def"); a click
+ * peeks at all of it *)
+let preview_cache : (string * int * float, Rgba_image.t) Hashtbl.t = Hashtbl.create 16
+
+let preview (t : t) (c : camera) (path : string) (f : Code_file.t) (l : int) (col : int) (mx : float) (my : float) : shape list =
+  match Code_file.ref_at f l col with
+  | None -> []
+  | Some r -> (
+      match Code_names.find_in ~roots:t.roots (index_of t) ~from:path f r with
+      | (cand : Code_names.candidate) :: _, _ -> (
+          match List.find_opt (fun (x : entry) -> x.path = cand.path) (t.entries @ t.beyond) with
+          | None -> []
+          | Some x ->
+              let a = c.a in
+              let g = Lazy.force x.file in
+              let n = Code_file.nlines g in
+              (* its first lines, to a blank line, eight at most *)
+              let rec last k = if k >= n - 1 || k - cand.line >= 7 then k else if Bytes.for_all (fun ch -> ch = '\000' || ch = ' ') (Bytes.sub g.chars ((k + 1) * Code_file.cols) Code_file.cols) then k else last (k + 1) in
+              let first = cand.line and lastl = last cand.line in
+              let lines = lastl - first + 1 in
+              let iw = 560. and ih = float_of_int lines *. 15. in
+              let q = Playground_platform.pixel_ratio () in
+              let img =
+                match Hashtbl.find_opt preview_cache (cand.path, first, q) with
+                | Some img -> img
+                | None ->
+                    let weights = Array.init n (fun k -> if k >= first && k <= lastl then 1. else 0.) in
+                    let lay = Code_ground.layout weights ~pw:(int_of_float iw) ~ph:(int_of_float ih) in
+                    let img = Rgba_image.create ~width:(int_of_float (iw *. q)) ~height:(int_of_float (ih *. q)) in
+                    let bg = (22, 20, 38) in
+                    fill img 0 0 img.width img.height bg;
+                    Code_ground.paint img g (Code_ground.scale lay q) ~bg ~aa:true;
+                    Hashtbl.replace preview_cache (cand.path, first, q) img;
+                    img
+              in
+              let bw = iw +. 16. and bh = ih +. 34. in
+              let x0 = Float.min (mx +. 20.) (float_of_int a.pw -. bw -. 6.) and y0 = Float.min (my +. 20.) (float_of_int a.ph -. bh -. 6.) in
+              let title = Printf.sprintf "%s:%d   (click: all of it)" cand.path (first + 1) in
+              let rr, gg, bb = archi t.colours cand.path in
+              [ rectangle (rgb 22 20 38) bw bh |> move (sx a (x0 +. (bw /. 2.))) (sy a (y0 +. (bh /. 2.))) |> fade 0.97 ]
+              @ frame a (lighter (rr, gg, bb)) x0 y0 (x0 +. bw) (y0 +. bh) 1.5
+              @ [
+                  label a (lighter (rr, gg, bb)) 13. (x0 +. 8. +. (0.25 *. 13. *. float_of_int (String.length title))) (y0 +. 13.) title;
+                  bitmap iw ih img |> move (sx a (x0 +. 8. +. (iw /. 2.))) (sy a (y0 +. 26. +. (ih /. 2.)));
+                ])
+      | [], _ -> [])
+
 let names_glow (t : t) (c : camera) (e : entry) : shape list =
   match t.pointer with
   | None -> []
@@ -595,7 +645,7 @@ let names_glow (t : t) (c : camera) (e : entry) : shape list =
               let x0, _, _, _ = Code_ground.box g l in
               let col = int_of_float ((mx -. x0) /. Code_ground.cell_w g l) in
               match Code_file.name_at f l col with
-              | None -> []
+              | None -> preview t c p f l col mx my
               | Some o ->
                   let occurrences = List.filter (fun (w : Highlight_code.occurrence) -> w.line < Array.length g.places) (Code_file.uses f o) in
                   (* the binding pulsing cyan, the uses yellow *)
@@ -1068,7 +1118,7 @@ let legend (c : camera) : shape list =
  * or the street, Code_map: t.peek): its lines alone laid out by
  * Code_ground, the letters as big as the box allows (18 pixels at most),
  * painted once, at the window's resolution *)
-let peek_cache : ((string * int * int * float) * Rgba_image.t) option ref = ref None
+let peek_images : (string * int * int * float, Rgba_image.t) Hashtbl.t = Hashtbl.create 8
 
 (* the peek on the map: its entry and file, its lines' layout (from the
  * box's inner corner, the window the scroll shows: 17 pixels a line),
@@ -1091,10 +1141,11 @@ type peek = {
   shown_last : int;
 }
 
-let peek_geom (t : t) (c : camera) : peek option =
-  match t.peek with
-  | None -> None
-  | Some (path, first, last) -> (
+(* a peek at a depth in the stack: each one shifted right and down, and
+ * smaller, so that the ones under it show *)
+let geom_of (t : t) (c : camera) ((path, first, last) : string * int * int) (scroll : int) (depth : int) : peek option =
+  let shift = 30. *. float_of_int depth in
+  (
       match entry_of t path with
       | None -> None
       | Some e ->
@@ -1103,17 +1154,20 @@ let peek_geom (t : t) (c : camera) : peek option =
           let n = Code_file.nlines f in
           let first = max 0 first and last = min (n - 1) last in
           let lines = last - first + 1 in
-          let bw = Float.min (float_of_int a.pw -. 80.) 820. and bh = Float.min (float_of_int a.ph -. 60.) ((float_of_int lines *. 17.) +. 56.) in
+          let bw = Float.min (float_of_int a.pw -. 80. -. shift) 820. and bh = Float.min (float_of_int a.ph -. 60. -. shift) ((float_of_int lines *. 17.) +. 56.) in
           let iw = bw -. 24. and ih = bh -. 48. in
           (* the window: as many lines as fit at 17 pixels, from the scroll *)
           let cap = max 1 (int_of_float (ih /. 17.)) in
-          let shown_first = first + max 0 (min t.peek_scroll (lines - cap)) in
+          let shown_first = first + max 0 (min scroll (lines - cap)) in
           let shown_last = min last (shown_first + cap - 1) in
           let weights = Array.init n (fun l -> if l >= shown_first && l <= shown_last then 1. else 0.) in
           let pg = Code_ground.layout weights ~pw:(int_of_float iw) ~ph:(int_of_float ih) in
           let cx = float_of_int a.pw /. 2. and cy = float_of_int a.ph /. 2. in
-          let bx = cx -. (bw /. 2.) and by = cy -. (bh /. 2.) in
+          let bx = cx -. (bw /. 2.) +. shift and by = cy -. (bh /. 2.) +. (shift /. 2.) in
           Some { pe = e; pf = f; pg; bx; by; bw; bh; ix = bx +. 12.; iy = by +. 36.; iw; ih; first; last; shown_first; shown_last })
+
+let peek_geom (t : t) (c : camera) : peek option =
+  match t.peek with Some top -> geom_of t c top t.peek_scroll (List.length t.peek_stack) | None -> None
 
 let inside_peek (pk : peek) (x : float) (y : float) = x >= pk.bx && x < pk.bx +. pk.bw && y >= pk.by && y < pk.by +. pk.bh
 
@@ -1133,42 +1187,55 @@ let glows (t : t) (a : area) (g : Code_ground.t) ((dx, dy) : float * float) (f :
         List.map (move (sx a px) (sy a py)) (Code_view.glow_at t.clock (if binding then rgb 0 225 255 else yellow) ww hh))
     (Code_file.uses f o)
 
+let peek_level (t : t) (c : camera) (q : float) (pk : peek) ~(top : bool) : shape list =
+  let a = c.a in
+  let path = pk.pe.path in
+  let key = (path, pk.shown_first, pk.shown_last, q) in
+  let img =
+    match Hashtbl.find_opt peek_images key with
+    | Some img -> img
+    | None ->
+        let img = Rgba_image.create ~width:(int_of_float (pk.iw *. q)) ~height:(int_of_float (pk.ih *. q)) in
+        let bg = (22, 20, 38) in
+        fill img 0 0 img.width img.height bg;
+        Code_ground.paint img pk.pf (Code_ground.scale pk.pg q) ~bg ~aa:true;
+        Hashtbl.replace peek_images key img;
+        img
+  in
+  let cx = pk.bx +. (pk.bw /. 2.) and cy = pk.by +. (pk.bh /. 2.) in
+  let name = List.fold_left (fun acc (l, nm, _) -> if l = pk.first then Some nm else acc) None pk.pf.defs in
+  let more = pk.shown_first > pk.first || pk.shown_last < pk.last in
+  let hint =
+    (if more then Printf.sprintf "lines %d-%d of %d, the wheel scrolls; " (pk.shown_first - pk.first + 1) (pk.shown_last - pk.first + 1) (pk.last - pk.first + 1) else "")
+    ^ if top then "a name: its definition; outside or Escape: back" else ""
+  in
+  let title = Printf.sprintf "%s:%d%s%s" path (pk.first + 1) (match name with Some nm -> "  " ^ nm | None -> "") (if hint = "" then "" else "   (" ^ hint ^ ")") in
+  let r, g, b = archi t.colours path in
+  [ rectangle (rgb 22 20 38) pk.bw pk.bh |> move (sx a cx) (sy a cy) ]
+  @ frame a (lighter (r, g, b)) pk.bx pk.by (pk.bx +. pk.bw) (pk.by +. pk.bh) (if top then 2. else 1.)
+  @ [
+      label a (lighter (r, g, b)) 14. (pk.bx +. 12. +. (0.25 *. 14. *. float_of_int (String.length title))) (pk.by +. 18.) title;
+      bitmap pk.iw pk.ih img |> move (sx a (pk.ix +. (pk.iw /. 2.))) (sy a (pk.iy +. (pk.ih /. 2.)));
+    ]
+  (* a peek under another, dimmed *)
+  @ if top then [] else [ rectangle (rgb 0 0 0) pk.bw pk.bh |> move (sx a cx) (sy a cy) |> fade 0.35 ]
+
 let peek_shapes (t : t) (c : camera) (q : float) : shape list =
-  match peek_geom t c with
+  match t.peek with
   | None -> []
-  | Some pk ->
+  | Some top ->
       let a = c.a in
-      let path = pk.pe.path in
-      let img =
-        match !peek_cache with
-        | Some (k, img) when k = (path, pk.shown_first, pk.shown_last, q) -> img
-        | _ ->
-            let img = Rgba_image.create ~width:(int_of_float (pk.iw *. q)) ~height:(int_of_float (pk.ih *. q)) in
-            let bg = (22, 20, 38) in
-            fill img 0 0 img.width img.height bg;
-            Code_ground.paint img pk.pf (Code_ground.scale pk.pg q) ~bg ~aa:true;
-            peek_cache := Some ((path, pk.shown_first, pk.shown_last, q), img);
-            img
-      in
-      let cx = pk.bx +. (pk.bw /. 2.) and cy = pk.by +. (pk.bh /. 2.) in
-      let name = List.fold_left (fun acc (l, nm, _) -> if l = pk.first then Some nm else acc) None pk.pf.defs in
-      let more = pk.shown_first > pk.first || pk.shown_last < pk.last in
-      let title =
-        Printf.sprintf "%s:%d%s   (%sclick or Escape: close; Enter: the file)" path (pk.first + 1)
-          (match name with Some nm -> "  " ^ nm | None -> "")
-          (if more then Printf.sprintf "lines %d-%d of %d, the wheel scrolls; " (pk.shown_first - pk.first + 1) (pk.shown_last - pk.first + 1) (pk.last - pk.first + 1) else "")
-      in
-      let r, g, b = archi t.colours path in
       let full_w = float_of_int a.pw and full_h = float_of_int a.ph in
-      [
-        rectangle (rgb 0 0 0) full_w full_h |> move (sx a (full_w /. 2.)) (sy a (full_h /. 2.)) |> fade 0.45;
-        rectangle (rgb 22 20 38) pk.bw pk.bh |> move (sx a cx) (sy a cy);
-      ]
-      @ frame a (lighter (r, g, b)) pk.bx pk.by (pk.bx +. pk.bw) (pk.by +. pk.bh) 2.
-      @ [
-          label a (lighter (r, g, b)) 14. (pk.bx +. 12. +. (0.25 *. 14. *. float_of_int (String.length title))) (pk.by +. 18.) title;
-          bitmap pk.iw pk.ih img |> move (sx a (pk.ix +. (pk.iw /. 2.))) (sy a (pk.iy +. (pk.ih /. 2.)));
-        ]
+      let n = List.length t.peek_stack in
+      let under =
+        List.concat
+          (List.mapi
+             (fun k (pk, scroll) -> match geom_of t c pk scroll (n - 1 - k) with Some g -> peek_level t c q g ~top:false | None -> [])
+             (List.rev t.peek_stack))
+      in
+      (rectangle (rgb 0 0 0) full_w full_h |> move (sx a (full_w /. 2.)) (sy a (full_h /. 2.)) |> fade 0.45)
+      :: under
+      @ match geom_of t c top t.peek_scroll n with Some g -> peek_level t c q g ~top:true | None -> []
 
 (* claude: a name hovered in the peek: its binding and uses glowing in
  * the peek, and outside it on the map, where the same file is laid out *)
@@ -1185,7 +1252,7 @@ let peek_glow (t : t) (c : camera) : shape list =
             let x0, _, _, _ = Code_ground.box pk.pg l in
             let col = int_of_float ((mx -. pk.ix -. x0) /. Code_ground.cell_w pk.pg l) in
             match Code_file.name_at pk.pf l col with
-            | None -> []
+            | None -> preview t c pk.pe.path pk.pf l col mx my
             | Some o ->
                 let outside =
                   match at_ground t c with
@@ -1215,6 +1282,17 @@ let labels (t : t) (c : camera) (q : float) : shape list =
 let pick (t : t) (c : camera) (_ : float) (px : float) (py : float) : (string * int * int) option =
   (* the column under the pixel, in a line of a layout *)
   let col g l = let x0, _, _, _ = Code_ground.box g l in max 0 (int_of_float ((px -. x0) /. Code_ground.cell_w g l)) in
+  match peek_geom t c with
+  | Some pk ->
+      (* a peek open: its line under the pixel, or nothing (a click there
+       * closes it, Code_map) *)
+      if not (inside_peek pk px py) then None
+      else
+        Option.map
+          (fun l -> let x0, _, _, _ = Code_ground.box pk.pg l in (pk.pe.path, l, max 0 (int_of_float ((px -. pk.ix -. x0) /. Code_ground.cell_w pk.pg l))))
+          (Code_ground.line_at pk.pg (px -. pk.ix) (py -. pk.iy))
+      |> (function None when inside_peek pk px py -> Some (pk.pe.path, -2, 0) | r -> r)
+  | None ->
   match at_ground t c with
   | Some e when t.street -> (
       let s = street_of t e in

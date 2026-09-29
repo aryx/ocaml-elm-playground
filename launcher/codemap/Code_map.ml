@@ -130,6 +130,41 @@ let section_extent (f : Code_file.t) (line : int) : int * int =
   let next = match titles with l :: _ -> l - 2 | [] -> Code_file.nlines f - 1 in
   (line, max line next)
 
+(* claude: the definition a click at a line and column of [path]'s file
+ * peeks at: the name's there (its binding), or, defined elsewhere, found
+ * among the sources (the map's, and those beyond it); else the line's
+ * own definition *)
+let peek_where (t : t) (f : Code_file.t) (path : string) (line : int) (col : int) : (string * int) option =
+  match Code_file.name_at f line col with
+  | Some o -> Some (path, fst o.bound_at)
+  | None -> (
+      match Code_file.ref_at f line col with
+      | Some r -> (
+          match Code_names.find_in ~roots:t.roots (index_of t) ~from:path f r with
+          | c :: _, _ -> Some (c.path, c.line)
+          | [], _ ->
+              t.note <- r.rname ^ ": not found";
+              None)
+      | None -> Some (path, line))
+
+(* the peeks: one on top of the others, four at most, each its scroll *)
+let open_peek (t : t) (file_of : string -> Code_file.t option) ((p, l) : string * int) : unit =
+  match file_of p with
+  | Some g ->
+      let first, last = def_extent g l in
+      (match t.peek with Some top -> t.peek_stack <- (top, t.peek_scroll) :: t.peek_stack | None -> ());
+      t.peek <- Some (p, first, last);
+      t.peek_scroll <- 0
+  | None -> ()
+
+let close_peek (t : t) : unit =
+  match t.peek_stack with
+  | (top, scroll) :: rest ->
+      t.peek <- Some top;
+      t.peek_scroll <- scroll;
+      t.peek_stack <- rest
+  | [] -> t.peek <- None
+
 let entries (t : t) : entry list = t.entries
 let number (t : t) (path : string) : int option = Hashtbl.find_opt t.order path
 
@@ -348,8 +383,23 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   (* claude: by units, a move taken, the click with it *)
   (* claude: the wheel with a peek open scrolls it *)
   if t.peek <> None && mouse.mwheel <> 0. then t.peek_scroll <- max 0 (t.peek_scroll - int_of_float (Float.round (3. *. mouse.mwheel)));
-  (* claude: a click with a definition shown (t.peek) only closes it *)
-  let clicked = if clicked && t.peek <> None then (t.peek <- None; false) else clicked in
+  (* claude: a click with a peek open: on a name in it, a peek of its
+   * definition on top (four deep at most); elsewhere, the top one closed *)
+  let clicked =
+    if clicked && t.peek <> None then begin
+      let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
+      (match t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
+      | Some (p, l, col) when col >= 0 && l >= 0 -> (
+          match file_of p with
+          | Some f -> ( match peek_where t f p l col with Some w when List.length t.peek_stack < 3 -> open_peek t file_of w | _ -> ())
+          | None -> ())
+      (* inside the peek, not on a line (its title): nothing *)
+      | Some _ -> ()
+      | None -> close_peek t);
+      false
+    end
+    else clicked
+  in
   let moved = if units then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
   let target, clicked =
     match moved with
@@ -365,7 +415,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
    * lit (plan_codemap_naming.md); Enter opens the file view *)
   let choice = match t.choices with Some cs -> List.find_opt (fun k -> k <= List.length cs && pressed (string_of_int k)) [ 1; 2; 3; 4; 5; 6; 7; 8; 9 ] | None -> None in
   let target, action =
-    if pressed "Escape" && t.peek <> None then (t.peek <- None; (target, Stay))
+    if pressed "Escape" && t.peek <> None then (close_peek t; (target, Stay))
     else if pressed "Escape" && t.choices <> None then (t.choices <- None; (target, Stay))
     else if pressed "Escape" then (target, Close)
     else if choice <> None then (go_to t target (List.nth (Option.get t.choices) (Option.get choice - 1)), Stay)
@@ -399,31 +449,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
                * the map (Map_v2's peek): the name's under the mouse, its
                * own file's or, defined elsewhere, found there; else the
                * definition the line is in *)
-              let index_of_path p = let r = ref None in Array.iteri (fun i (q : entry Treemap.placed) -> if q.path = p then r := Some i) t.placed; !r in
-              let where =
-                if col < 0 then None
-                else
-                match Code_file.name_at f line col with
-                | Some o -> Some (path, fst o.bound_at)
-                | None -> (
-                    match (Code_file.ref_at f line col, index_of_path path) with
-                    | Some r, Some i -> (
-                        match found t i path r with
-                        | c :: _, _ -> Some (c.path, c.line)
-                        | [], _ ->
-                            t.note <- r.rname ^ ": not in this map";
-                            None)
-                    | _ -> Some (path, line))
-              in
-              Option.iter
-                (fun (p, l) ->
-                  match file_of p with
-                  | Some g ->
-                      let first, last = def_extent g l in
-                      t.peek <- Some (p, first, last);
-                      t.peek_scroll <- 0
-                  | None -> ())
-                where;
+              if col >= 0 then Option.iter (open_peek t file_of) (peek_where t f path line col);
               (* a section's title (col -1, Map_v2's table of contents): the
                * whole section *)
               if col < 0 then begin

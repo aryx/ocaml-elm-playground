@@ -407,6 +407,33 @@ repository's X-ray opens at once. To come: organs (the directories'
 summaries as the plates' captions), a config's `layers` adding its own
 words (a kernel's syscalls as lungs), blood along the street's roads.
 
+## What works, the author's word (2026-09-29)
+
+"The earth view, with the color scheme ... and folder names, and
+subfolders, and files when pixel space allows it is very good. The
+skeleton LLM-generated view is also great, at the earth level and
+street level. The street level with 'a' is also great, and the glow,
+peek, use/def is also great and varying height pixel is also very
+useful." The region level is the weak one ("not sure what we can do at
+that level"): its files' code drawn there was unreadable and removed;
+each file's card and table of contents (its sections, a click peeking
+at one) are the current attempt.
+
+The peek grew: a section peeked at, a long peek scrolled by the wheel, a
+name hovered in a peek glowing there and on the map, a name defined
+elsewhere previewed on hover (its first lines) and a peek of a peek on a
+click, four deep; a program's map resolving its names against every
+source (a click on game in TinyInvaders peeks at Playground's).
+
+## Layers and views, next (the author, 2026-09-29)
+
+"We also want at some point to work on those layers and views: layer so
+one can in the codemapconfig give for instance a pattern to find
+Cap.fork and color it in a special way and then run that through the
+codebase and glow/highlight where the match is at the earth level and
+region and street." The plan's step 9 (patterns, regexps first) and 10
+(views), the Cap.fork layer their first test.
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in
