@@ -215,7 +215,10 @@ A layer lights, everywhere at once and at any level, the lines matching
 its rules, each rule in its colour, with a legend at the bottom left.
 The configs define layers (this repository's root: Capabilities, each
 `Cap.*` in its colour); a search can be kept as a layer (ctrl+Enter in
-the search box). `l` cycles: the layers kept, each config's, none.
+the search box). `l` cycles: the layers kept, each config's, then the
+nerves and the lungs (the X-ray's plates 3 and 4 as layers, a colour
+per anatomy rule, so that every line reading the keyboard, or writing
+to the disk, shows at once, with its count), none.
 
 Matches glow slowly, to tell them from capitals. Hovering one shows its
 line and the code around it; a click goes there.

@@ -1989,6 +1989,27 @@ let layer_groups (t : t) : (string * layer list) list =
               (l.lname, List.map (fun (r : Code_guide.rule) -> { lquery = (if r.is_ref then "@" else "\"") ^ r.text; lcolour = r.colour; lsay = r.rsay; lhits = None }) l.rules))
             (Code_guide.layers t.guide)
         in
+        (* claude: the X-ray's nerves and lungs as layers too, derived
+         * from the configs' anatomy rules (the words the X-ray guesses
+         * from without them), a colour a rule (the author: "see all the
+         * code doing io or using mouse or keyboard") *)
+        let derived name (pick : Code_guide.dir_note -> Code_guide.rule list) words =
+          let rules = List.concat_map pick (Code_guide.dirs t.guide) in
+          let queries =
+            if rules = [] then List.map (fun w -> ("\"" ^ w, None)) words
+            else List.map (fun (r : Code_guide.rule) -> ((if r.is_ref then "@" else "\"") ^ r.text, r.rsay)) rules
+          in
+          let queries = List.fold_left (fun acc ((q, _) as x) -> if List.mem_assoc q acc then acc else acc @ [ x ]) [] queries in
+          let n = List.length layer_colours in
+          (name, List.mapi (fun i (q, say) -> { lquery = q; lcolour = List.nth layer_colours (i mod n); lsay = say; lhits = None }) queries)
+        in
+        let g =
+          g
+          @ [
+              derived "nerves: the inputs (the X-ray's 3)" (fun d -> d.nerves) Code_anatomy.nerve_words;
+              derived "lungs: the I/O (the X-ray's 4)" (fun d -> d.lungs) Code_anatomy.lung_words;
+            ]
+        in
         t.guide_layers <- Some g;
         g
   in
