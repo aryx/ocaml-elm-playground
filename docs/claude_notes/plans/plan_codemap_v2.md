@@ -134,6 +134,10 @@ A sketch, `games/shmup/.codemapconfig`:
     },
     'TinyGalaga.ml': { summary: '...' },
   },
+  views: [
+    { name: 'Space Invaders and its kits', files: ['TinyInvaders.ml', '../../gamekits/shmup/'] },
+    { name: 'Who shoots with Shots', of: '../../gamekits/shmup/Shots.ml', with: 'users' },
+  ],
   tours: [
     {
       name: 'How Space Invaders runs',
@@ -185,6 +189,7 @@ The fields:
 | `important` | a file | drawn bigger near the ground; `weight` 1 to 3 |
 | `links` | a file | edges inside it the LLM or the human finds worth showing, bundled with the uses at street level |
 | `tours` | any | named walks, each stop an anchor and a sentence; paths relative to the config |
+| `views` | any | named sets of files and directories shown together, their own layout ("a game and its kits", "the renderer and its users"); paths relative to the config, or a unit and a relation (`{ of: 'Shots.ml', with: 'users' }`) |
 | `layers` | any | pattern rules, their colours and legend, for the directory and below |
 | `colors` | any | the parts' colours (today's field), paths relative to the config |
 | `digest` | a file | its contents' digest when described: the map and the checker say "stale" when it changed |
