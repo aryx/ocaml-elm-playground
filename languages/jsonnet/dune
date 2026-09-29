@@ -1,0 +1,12 @@
+; claude: jsonnet (Jsonnet.mli), JSON's superset, for configuration
+; files (tinybox's .codemapconfig, plan_codemap_v2.md): its own lexer
+; and parser, an evaluator, the part of std configurations need; its
+; value manifested as JSON (Json).
+;
+; Pure OCaml, no Playground (languages/README.md). A private
+; library, installed as part of elm_playground.
+(library
+ (name lang_jsonnet)
+ (package elm_playground)
+ (wrapped false)
+ (libraries lang_json))

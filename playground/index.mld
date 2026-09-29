@@ -364,7 +364,8 @@ and in 3D
 
 Languages as text, parsed and run: a spreadsheet's formulas, BASIC,
 s-expressions, Emacs Lisp, Scheme, Pascal, HyperTalk, Smalltalk-80,
-Scratch, PostScript, JavaScript, and HTML and CSS:
+Scratch, PostScript, JavaScript, HTML and CSS, and JSON and jsonnet
+(the code map's configurations):
 
 {!modules:
     Formula
@@ -384,4 +385,5 @@ Scratch, PostScript, JavaScript, and HTML and CSS:
     Html_lexer Html_tree Dtd Entities Charset Dom Forms Line_mode
     Css Css_syntax Css_values Selectors Cascade Computed Looks Ua_sheet
     Highlight_code Highlight_ml Lexer_ml Token_ml
+    Json Jsonnet Jsonnet_lexer Jsonnet_ast Jsonnet_parse
 }

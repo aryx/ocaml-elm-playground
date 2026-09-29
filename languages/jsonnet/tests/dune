@@ -1,0 +1,4 @@
+; claude: unit tests for jsonnet, run by 'make test'
+(test
+ (name Test)
+ (libraries alcotest testo lang_json lang_jsonnet))

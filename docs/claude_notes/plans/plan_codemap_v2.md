@@ -213,22 +213,19 @@ every anchor resolves, every described file exists, digests are fresh
 
 `languages/jsonnet/` (the author's place for it, 2026-09-29): a
 jsonnet evaluator, pure, its value a `Json.t` (the manifested object).
-After ojsonnet (the author's, in semgrep: `semgrep-pfff-langs/ojsonnet/`,
-4,400 lines, over tree-sitter's parser and semgrep's commons, so not
-taken as is): its desugaring to core jsonnet, and evaluation by
-environments (lazy fields, `self`, `super`, `+` of objects), and the part
-of the standard library configs use (`std.map`, `std.join`,
-`std.format`, `std.objectFields`, ...), grown as configs need it. The
-parser ours, recursive descent as the other languages'.
-`import` given a host function (a file's text by its path), so the
-evaluator stays pure and tinybox's embedded sources serve it too.
+The official spec is the reference, not ojsonnet (the author, 2026-09-29:
+"I actually had bugs in ojsonnet and mismatch with the original jsonnet
+official spec"), which gave only the idea of objects as layers; where
+ours departs from the spec is listed in `Jsonnet.mli`, kept while it is
+enough for the configs. `import` given a host function (a file's text by
+its path), so the evaluator stays pure and tinybox's embedded sources
+serve it too.
 
-Beside `json/`, which it grows from: `Js_lexer` cuts most of jsonnet's
-text already (JSON's, comments, trailing commas); what it lacks, the
-text blocks (`|||`), verbatim strings (`@'...'`) and `$`, is jsonnet's
-own lexer's, or `Js_lexer`'s if they fit there without harming
-JavaScript. A row in `languages/README.md`'s table, used by tinybox's
-code map.
+Beside `json/`, with a lexer of its own (done, 2026-09-29): jsonnet's
+# comments, text blocks and verbatim strings, its operators as runs of
+symbols, and no regular expressions to make a / ambiguous, did not fit
+`Js_lexer` without harming JavaScript. A row in `languages/README.md`'s
+table.
 
 ## codellm: the LLM's evidence, and its guidelines
 
@@ -418,7 +415,9 @@ The same patterns serve search (`/` with a pattern) and anchors
    Wijk's flight to come. Step 1 done too, the same day.)
 3. **jsonnet** (`languages/jsonnet/`): lexer, parser, desugaring,
    evaluator, the standard library's first functions, `import` through a
-   host; tests from the jsonnet spec's examples and ojsonnet's.
+   host; tests from the jsonnet spec's examples and ojsonnet's. (Done,
+   2026-09-29: `Jsonnet_lexer`, `Jsonnet_ast`, `Jsonnet_parse`,
+   `Jsonnet`; 11 tests, the plan's root config among them.)
 3b. **The config, version 2**: `Code_config` reads the new fields,
    per directory, merged from the root down; anchors resolved; the
    checker (`-check`), run in `make test`; tinybox embeds the configs
