@@ -24,6 +24,22 @@ let modules_used (src : string) : string list =
   in
   List.sort_uniq compare (go [] (Lexer_ml.tokens src))
 
+(* claude: how central each module is: the other files naming it (an
+ * open, an include, a qualified name), by module name *)
+let fan_in (sources : (string * string) list) : (string, int) Hashtbl.t =
+  let h = Hashtbl.create 1024 in
+  let paths = Hashtbl.create 4096 in
+  List.iter (fun (p, _) -> Hashtbl.replace paths p ()) sources;
+  List.iter
+    (fun (p, src) ->
+      if Filename.check_suffix p ".ml" || Filename.check_suffix p ".mli" then
+        let self = String.capitalize_ascii (Filename.remove_extension (Filename.basename p)) in
+        (* an .ml and its .mli are one module, counted once: the .ml's *)
+        if Filename.check_suffix p ".ml" || not (Hashtbl.mem paths (Filename.remove_extension p ^ ".ml")) then
+          List.iter (fun m -> if m <> self then Hashtbl.replace h m (1 + Option.value (Hashtbl.find_opt h m) ~default:0)) (modules_used src))
+    sources;
+  h
+
 let count_lines (s : string) : int =
   let n = ref 1 in
   String.iter (fun c -> if c = '\n' then incr n) s;

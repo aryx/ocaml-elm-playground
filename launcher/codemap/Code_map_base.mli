@@ -75,6 +75,7 @@ type t = {
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
   mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
+  fan_in : (string, int) Hashtbl.t Lazy.t; (* claude: each module's fan-in, the files naming it (Code_deps.fan_in): how central *)
   top_kept : bool; (* claude: a lone top directory drawn, not merged into the root (relayout): a selection's *)
   beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
@@ -132,6 +133,7 @@ val fit : area -> Treemap.rect -> camera
 val home : area -> camera
 
 val make :
+  ?fan_in:(string, int) Hashtbl.t Lazy.t ->
   ?top_kept:bool ->
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->

@@ -36,6 +36,7 @@ type t
    finding a name defined elsewhere (Code_names.find); claude: [guide]
    what the directories' .codemapconfig say (Code_guide) *)
 val make :
+  ?fan_in:(string, int) Hashtbl.t Lazy.t ->
   ?top_kept:bool ->
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->

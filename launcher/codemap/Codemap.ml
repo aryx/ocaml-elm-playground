@@ -67,6 +67,18 @@ let entry (path : string) (src : string) : Code_map.entry =
   in
   { path; nlines = Code_deps.count_lines src; file }
 
+(* claude: the sources' fan-in (Code_deps.fan_in), counted once for a
+ * set of sources, when first asked (the capitals ranked by it) *)
+let fan_ins : ((string * string) list * (string, int) Hashtbl.t Lazy.t) list ref = ref []
+
+let fan_in_of (sources : (string * string) list) : (string, int) Hashtbl.t Lazy.t =
+  match List.find_opt (fun (s, _) -> s == sources) !fan_ins with
+  | Some (_, f) -> f
+  | None ->
+      let f = lazy (Code_deps.fan_in sources) in
+      fan_ins := (sources, f) :: !fan_ins;
+      f
+
 let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (string * (int * int * int)) list) ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
     ~(scope : scope) : Code_map.t =
   let paths =
@@ -103,7 +115,7 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Whole | Directory _ -> []
   in
   let top_kept = match scope with Selection _ -> true | _ -> false in
-  Code_map.make ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
+  Code_map.make ~fan_in:(fan_in_of sources) ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   let sources, guide = guide_of sources in

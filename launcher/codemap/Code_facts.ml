@@ -49,10 +49,27 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
   let rank = Code_rank.compute files in
   let links = Code_rank.links rank in
   let count_lines s = List.length (String.split_on_char '\n' s) in
+  (* claude: how central each file is: the files naming its module
+   * (Code_deps.fan_in); what size does not say (the author: games and
+   * apps are like a kernel's device drivers, not its core) *)
+  let fans = Code_deps.fan_in sources in
+  let fan p = Option.value (Hashtbl.find_opt fans (String.capitalize_ascii (Filename.remove_extension (Filename.basename p)))) ~default:0 in
+  let total = List.length (List.filter (fun (p, _) -> Filename.check_suffix p ".ml") sources) in
+  let hub p = fan p >= max 30 (total / 20) in
   pr "# %s\n\n" (if dir = "" then "(the root)" else dir);
   pr "%d files here, %d lines; %d under it in all.\n\n" (List.length mine)
     (List.fold_left (fun n (_, s) -> n + count_lines s) 0 mine)
     (List.length (List.filter (fun (p, _) -> under p) sources));
+  (* the central files first: what the project stands on *)
+  let central = List.filter (fun (p, _) -> fan p > 0) mine |> List.map fst |> List.filter (fun p -> Filename.check_suffix p ".mli" || not (List.mem_assoc (Filename.remove_extension p ^ ".mli") mine)) in
+  let central = List.sort (fun p q -> compare (fan q) (fan p)) central in
+  if central <> [] then begin
+    pr "Named by other files (open, include, a qualified name; of %d .ml files in all), the most central first:\n\n" total;
+    List.iter (fun p -> pr "- %s: %d files%s\n" (Filename.basename p) (fan p) (if hub p then "  <- A HUB: part of the project's core" else "")) (List.filteri (fun i _ -> i < 12) central);
+    pr "\n";
+    if List.exists hub central then
+      pr "A hub is what the project is written with: its main types and functions are capitals of the whole map, whatever its size (guidelines, Capitals: centrality). A program nobody names (a game, an app) is a driver: capitals for it, but it is not the core.\n\n"
+  end;
   (* the configs' words already *)
   (match Code_guide.dir_summary guide dir with Some s -> pr "Said of it already: %s\n\n" s | None -> pr "Nothing said of it yet (no summary in it or its parent's dirs:).\n\n");
   let own = List.find_opt (fun (d : Code_guide.dir_note) -> d.dir = dir) (Code_guide.dirs guide) in
@@ -86,7 +103,8 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
     (fun (p, src) ->
       let f = Lazy.force (List.assoc p files) in
       pr "## %s\n\n" (Filename.basename p);
-      pr "%d lines, digest %s%s.\n\n" (count_lines src) (Code_guide.digest src)
+      pr "%d lines, digest %s, named by %d files%s%s%s.\n\n" (count_lines src) (Code_guide.digest src) (fan p) (if hub p then " (A HUB)" else "")
+        (if fan p = 0 && List.exists (fun (_, n, _) -> n = "main") f.defs then ", a program nobody names (a driver)" else "")
         (match Code_guide.file_note guide p with
         | Some n -> Printf.sprintf "; described (%s)" (match n.summary with Some s -> s | None -> "no summary")
         | None -> "");
@@ -112,7 +130,19 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
         List.filter_map
           (fun (l, n, (c : Highlight_code.category)) ->
             let kind = match c with Def_function -> Some "def" | Def_value -> Some "def" | Def_type -> Some "type" | Def_module -> Some "module" | _ -> None in
-            Option.map (fun k -> (l, n, k, Code_rank.uses rank p l n, Code_rank.score rank p l n c)) kind)
+            (* claude: an .mli's declaration counted as its .ml's definition:
+             * the uses are the .ml's (Playground.mli's game: 219 files,
+             * not 0) *)
+            let impl = Filename.remove_extension p ^ ".ml" in
+            let q, l' =
+              if Filename.check_suffix p ".mli" && List.mem_assoc impl files then
+                let kind_of (c : Highlight_code.category) = match c with Def_type -> 1 | Def_module -> 2 | _ -> 0 in
+                match List.find_opt (fun (_, m, c') -> m = n && kind_of c' = kind_of c) (Lazy.force (List.assoc impl files)).defs with
+                | Some (l', _, _) -> (impl, l')
+                | None -> (p, l)
+              else (p, l)
+            in
+            Option.map (fun k -> (l, n, k, Code_rank.uses rank q l' n, Code_rank.score rank q l' n c)) kind)
           f.defs
       in
       if defs <> [] then begin

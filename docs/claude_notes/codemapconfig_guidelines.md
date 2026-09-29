@@ -59,6 +59,32 @@ that is the game's heart (TinyInvaders' `march`), not `update` and
 `view` -- every game has them, so as capitals they would crowd the map
 and say nothing; they are `important`, and `links`.
 
+### Centrality, not size (the author, 2026-09-29)
+
+"Playground.computer, Playground.game ... are arguably the most
+important types and functions in the whole project yet are not really
+highlighted by anything"; "games and apps are like device drivers in a
+linux kernel; they are not the core of the project". What the project is
+written with matters more than what is written with it:
+
+- The brief (`-facts`) says, for each file, how many files name its
+  module (open, include, a qualified name), and flags A HUB: a file
+  named by a twentieth of the project or more. A hub's main types and
+  functions are capitals of the whole map, whatever its size:
+  Playground.mli's `game`, `computer`, `shape`. The map draws a capital
+  as large as its file is central, and from afar shows only the
+  capitals of files others depend on.
+- An `.mli`'s declarations get their `.ml`'s uses in the brief: read
+  them there (Playground.mli's `game`: 219 files), not the 0 an
+  interface alone would show.
+- A program nobody names (a game, an app: the brief says "a driver")
+  gets its capital, its heart, but is not the core: its capitals are
+  seen from its genre, not from the top.
+- The APIs over the libraries (Audio.mli, Physics.mli, Gui.mli) and the
+  3D API are hubs of their kind too: capitals on what programs call.
+- Describe the hubs first and best: a pass that leaves the core bare
+  (as the first did the playground) has its priorities wrong.
+
 ## Skeletons
 
 The structure the rest hangs on, as in biology: a few definitions, each
@@ -85,6 +111,12 @@ bones' definitions lit in the shaded file.
   default; name a game's skeleton for what it adds. `skeletons.game(file,
   heart, role)` is MVU and the game's heart reached from `update`, one
   line a game (named arguments with `=`: `model='type:game'`).
+- Every program gets one: each game and app of a genre's or category's
+  config, not a few examples (the author, missing TinyMissileCommand's:
+  "I thought the libsonnet would help for that"). The template makes it
+  a line; the names it assumes (`type:model`, `def:initial_model`,
+  `def:update`, `def:view`) are given where a program names them
+  otherwise, after the facts.
 - A skeleton inside one file is that file's: shown at its ground, a
   small dot from afar. A region's skeleton spans files: for a genre,
   what its games share -- the kits (the arcade's: the maze kit under

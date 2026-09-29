@@ -46,8 +46,8 @@ let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
   { t with style; algo; placed; geometry; painted = None; lens = None; focus = 0 }
 
 (* a map in the chosen style *)
-let make ?top_kept ?numbered ?colours ?roots ?guide ?beyond ?style ~area ~title ~marked entries : t =
-  let t = Code_map_base.make ?top_kept ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries in
+let make ?fan_in ?top_kept ?numbered ?colours ?roots ?guide ?beyond ?style ~area ~title ~marked entries : t =
+  let t = Code_map_base.make ?fan_in ?top_kept ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries in
   if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
 
 (* claude: the map framing a unit by its path (a directory's or a

@@ -93,6 +93,7 @@ type t = {
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
   mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
+  fan_in : (string, int) Hashtbl.t Lazy.t; (* claude: each module's fan-in, the files naming it (Code_deps.fan_in): how central *)
   top_kept : bool; (* claude: a lone top directory drawn (relayout) *)
   beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
@@ -170,7 +171,7 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ?(top_kept = false) ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ?(beyond = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(fan_in = lazy (Hashtbl.create 1)) ?(top_kept = false) ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ?(beyond = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout ~top_kept a Ordered entries in
@@ -179,7 +180,7 @@ let make ?(top_kept = false) ?(numbered = false) ?(colours = []) ?(roots = []) ?
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
     back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; tour_on = None; layers = []; layer_group = 0; guide_layers = None; flight = None; pointer = None;
-    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept }
+    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept; fan_in }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries

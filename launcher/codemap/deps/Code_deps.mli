@@ -17,6 +17,12 @@
 (* the modules [src] names: M in M.x, open M, include M, module X = M *)
 val modules_used : string -> string list
 
+(* claude: each module's fan-in: how many files name it (open, include,
+   a qualified name), an .ml and its .mli counted once; what makes a
+   module the project's core rather than one of its programs (the
+   author: games and apps are like a kernel's device drivers) *)
+val fan_in : (string * string) list -> (string, int) Hashtbl.t
+
 val count_lines : string -> int
 
 (* [own program_path p]: [p] is the program's own code -- its folder's,

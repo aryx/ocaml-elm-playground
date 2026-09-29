@@ -9,12 +9,84 @@
     ways: { summary: 'Other ways to program, each building an app for you: Logo, Big Bang, Karel, PuzzleScript, POV-Ray.' },
     platforms: { summary: 'Where an app runs: natively (Cairo, OpenGL), our own rasterizers, the browser.' },
   },
+  // claude: the project's core, what every program is written with:
+  // opened by about 400 of the repository's 1,300 files (the games and
+  // apps being its drivers, the author's word); its capitals the most
+  // central of the whole map
+  files: {
+    'Playground.mli': {
+      summary: "The API every program sees: shapes, colours, the computer (time, mouse, keyboard, screen), and picture, animation, game.",
+      digest: '2db57b57c012',
+      capitals: [
+        { at: 'def:game', say: 'a view, an update and a model make an app: what 219 programs call' },
+        { at: 'type:computer', say: 'what a program is given each frame: mouse, keyboard, screen, time, flags' },
+        { at: 'type:shape', say: 'what a view returns: shapes, moved, rotated, scaled, faded, grouped' },
+      ],
+      important: [
+        { at: 'def:picture', say: 'the simplest app: shapes, no time', weight: 2 },
+        { at: 'def:animation', say: 'shapes as a function of time', weight: 2 },
+        { at: 'type:keyboard', say: 'the keys held, the arrows', weight: 2 },
+        { at: 'def:rgb', say: 'a colour: used 4,500 times', weight: 2 },
+        { at: 'def:move', say: 'where a shape goes: used 2,700 times', weight: 2 },
+      ],
+    },
+    'Playground.ml': {
+      summary: 'The API made: shapes as data, and picture, animation and game each an app, a view and an update over one loop.',
+      digest: 'db9c60cdb80b',
+      capitals: [
+        { at: 'def:game', say: 'the app: an init, an update fed the events, a view' },
+        { at: 'def:game_update', say: 'each event (a key, a tick, a resize) becomes the computer the update sees' },
+      ],
+      important: [
+        { at: 'type:computer', say: 'the record every update and view gets', weight: 3 },
+        { at: 'type:shape', say: 'a shape: its form, and where, turned, scaled, faded', weight: 3 },
+        { at: 'type:app', say: "an app: Elm's init, update, view and subscriptions", weight: 2 },
+      ],
+    },
+    'Playground3d.mli': {
+      summary: 'The 3D API: shapes in space, a camera, lights, and game3d; what the 3D games are written with.',
+      digest: 'dc0ed2190ccc',
+      capitals: [
+        { at: 'def:game3d', say: 'a 3D app: a view of shapes in space, from a camera' },
+        { at: 'type:shape3d', say: 'what a 3D view returns' },
+        { at: 'type:camera', say: 'where the scene is seen from' },
+      ],
+    },
+    'Playground3d.ml': {
+      summary: 'The 3D API made: boxes, spheres, polygons in space, moved and turned, and the camera.',
+      digest: 'c278b9668079',
+      capitals: [
+        { at: 'def:game3d', say: 'the 3D app, over the 2D one' },
+        { at: 'type:shape3d', say: 'a shape in space: a material and a form' },
+      ],
+    },
+    'Playground_platform.mli': {
+      summary: 'The one function the API leaves open, run_app: each platform (Cairo, the rasterizer, the browser) makes it.',
+      digest: '8ba036b29baf',
+      capitals: [{ at: 'def:run_app', say: 'an app run: the virtual module, implemented once per platform' }],
+    },
+    'Playground3d_platform.mli': {
+      summary: "The 3D API's run_app3d, left open the same way: OpenGL, the software rasterizer, WebGL, SVG.",
+      digest: 'bf7e1282e822',
+      capitals: [{ at: 'def:run_app3d', say: 'a 3D app run, per platform' }],
+    },
+    'Gpu_scene.mli': {
+      summary: "What the GPU backends share: a 3D scene's shapes batched by material into vertex arrays.",
+      digest: '74b96a99880e',
+    },
+    'Gpu_scene.ml': {
+      summary: 'Shapes to triangles to vertex floats, grouped by material, for OpenGL and WebGL alike.',
+      digest: 'd47fbcac330d',
+    },
+  },
   skeletons: [
     {
       name: 'One API, several platforms',
       bones: [
-        { at: 'Playground.mli', role: 'the API every program sees: shapes, the computer, game' },
-        { at: 'Playground_platform.mli', role: 'the one function left open: run_app' },
+        { at: 'Playground.mli:def:game', role: 'the API every program calls: a view, an update, a model' },
+        { at: 'Playground.mli:type:computer', role: 'what every update and view is given' },
+        { at: 'Playground.mli:type:shape', role: 'what every view returns' },
+        { at: 'Playground_platform.mli:def:run_app', role: 'the one function left open: run_app' },
         { at: 'platforms/native/', role: 'natively: SDL and Cairo, OpenGL for 3D' },
         { at: 'platforms/software/', role: 'natively, our own rasterizers' },
         { at: 'platforms/web/', role: 'in the browser: the DOM, WebGL' },
@@ -23,13 +95,15 @@
         { at: 'ways/', role: 'other ways to program' },
       ],
       joints: [
-        { from: 'Playground.mli', to: 'Playground_platform.mli', say: 'run by' },
-        { from: 'platforms/native/', to: 'Playground_platform.mli', say: 'implements' },
-        { from: 'platforms/software/', to: 'Playground_platform.mli', say: 'implements' },
-        { from: 'platforms/web/', to: 'Playground_platform.mli', say: 'implements' },
-        { from: 'apis/', to: 'Playground.mli', say: 'built on' },
-        { from: 'layers/', to: 'Playground.mli', say: 'built on' },
-        { from: 'ways/', to: 'Playground.mli', say: 'build an app' },
+        { from: 'Playground.mli:def:game', to: 'Playground.mli:type:computer', say: 'given' },
+        { from: 'Playground.mli:def:game', to: 'Playground.mli:type:shape', say: 'drawn as' },
+        { from: 'Playground.mli:def:game', to: 'Playground_platform.mli:def:run_app', say: 'run by' },
+        { from: 'platforms/native/', to: 'Playground_platform.mli:def:run_app', say: 'implements' },
+        { from: 'platforms/software/', to: 'Playground_platform.mli:def:run_app', say: 'implements' },
+        { from: 'platforms/web/', to: 'Playground_platform.mli:def:run_app', say: 'implements' },
+        { from: 'apis/', to: 'Playground.mli:type:shape', say: 'built on' },
+        { from: 'layers/', to: 'Playground.mli:type:shape', say: 'built on' },
+        { from: 'ways/', to: 'Playground.mli:def:game', say: 'build an app' },
       ],
     },
   ],

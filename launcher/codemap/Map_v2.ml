@@ -263,35 +263,47 @@ let capitals (t : t) (c : camera) : name list =
    * below it: every directory described, all of them at once were a
    * rash of dots; flying in shows the deeper ones *)
   let top = t.placed.(t.focus).path in
-  let depth p = List.length (String.split_on_char '/' p) in
+  let depth p = if p = "" then 0 else List.length (String.split_on_char '/' p) in
   let near path =
     let d = Filename.dirname path in
     let d = if d = "." then "" else d in
     (top = "" && depth d <= 2) || (top <> "" && (d = top || Code_search.starts d (top ^ "/")) && depth d - depth top <= 2)
   in
   (* and a file's first only (the config's main one), fourteen a region
-   * at most (the unit's immediate subdirectories), the biggest files' *)
+   * at most (the unit's immediate subdirectories) *)
   let region p =
     let rest = if top = "" then p else String.sub p (String.length top + 1) (max 0 (String.length p - String.length top - 1)) in
     match String.index_opt rest '/' with Some k -> String.sub rest 0 k | None -> rest
   in
   let seen_file = Hashtbl.create 64 and per_region = Hashtbl.create 16 in
+  let fans = Lazy.force t.fan_in in
+  let fan p = Option.value (Hashtbl.find_opt fans (String.capitalize_ascii (Filename.remove_extension (Filename.basename p)))) ~default:0 in
+  let dir_of p = match Filename.dirname p with "." -> "" | d -> d in
+  let lines p = match Hashtbl.find_opt where p with Some (_, (e : entry)) -> e.nlines | None -> 0 in
+  let sorted = List.stable_sort (fun (p, _) (q, _) -> compare (fan q, lines q) (fan p, lines p)) (Code_guide.capitals t.guide) in
+  (* claude: a module's .ml and .mli naming the same capital: one *)
+  let seen_name = Hashtbl.create 64 in
+  let modname p = Filename.remove_extension p in
   let chosen =
     List.filter
-      (fun (path, _) ->
+      (fun (path, (it : Code_guide.item)) ->
         near path
-        && (not (Hashtbl.mem seen_file path))
+        (* a hub's capitals all (the core's: game, computer, shape) *)
+        && (fan path >= 100 || not (Hashtbl.mem seen_file path))
+        && (not (Hashtbl.mem seen_name (modname path, it.at)))
+        && (Hashtbl.replace seen_name (modname path, it.at) (); true)
         &&
         let r = region path in
         let n = Option.value (Hashtbl.find_opt per_region r) ~default:0 in
         Hashtbl.replace seen_file path ();
         if n >= 14 then false else (Hashtbl.replace per_region r (n + 1); true))
-      (* the biggest files first: a program before its helpers *)
-      (List.stable_sort
-         (fun (p, _) (q, _) ->
-           let lines p = match Hashtbl.find_opt where p with Some (_, (e : entry)) -> e.nlines | None -> 0 in
-           compare (lines q) (lines p))
-         (Code_guide.capitals t.guide))
+      (* claude: the most central first, the files the most files name
+       * (Code_deps.fan_in); and from more than a level above, only a file
+       * some others depend on: a program nobody names is one of the
+       * project's drivers, not its core (the author: "games and apps are
+       * like device drivers in a linux kernel"), its capitals shown from
+       * its genre *)
+      (List.filter (fun (p, _) -> fan p >= 3 || depth (dir_of p) - depth top <= 1) sorted)
   in
   List.filter_map
     (fun (path, (it : Code_guide.item)) ->
@@ -306,15 +318,16 @@ let capitals (t : t) (c : camera) : name list =
                   let label = snd (Code_guide.split it.at) |> fun s -> match String.index_opt s ':' with Some k -> String.sub s (k + 1) (String.length s - k - 1) | None -> s in
                   (* claude: a name too short to say anything from afar (t), its module's with it *)
                   let label = if String.length label <= 2 then String.capitalize_ascii (Filename.remove_extension (Filename.basename path)) ^ "." ^ label else label in
-                  let size = 15. in
+                  (* claude: as large as central: the core's the map's largest *)
+                  let size = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> 15. in
                   let tw = 0.5 *. size *. float_of_int (String.length label) in
                   let x0 = px -. 6. and x1 = px +. 10. +. tw +. 4. in
-                  let dot = circle yellow 5. |> move (sx a px) (sy a py) in
-                  let ring = circle black 7. |> move (sx a px) (sy a py) in
+                  let dot = circle yellow (size /. 3.) |> move (sx a px) (sy a py) in
+                  let ring = circle black ((size /. 3.) +. 2.) |> move (sx a px) (sy a py) in
                   let text = words yellow label |> scale (size /. words_font_size) |> move (sx a (px +. 10. +. (tw /. 2.))) (sy a py) in
                   let shadow = words black label |> scale (size /. words_font_size) |> move (sx a (px +. 11.5 +. (tw /. 2.))) (sy a (py +. 1.5)) |> fade 0.8 in
                   let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ [ "click: to its file" ] in
-                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805.; draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None }
+                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805. +. float_of_int (min 14 (fan path / 10)); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None }
               | None -> None)
           | _ -> None)
       | _ -> None)
@@ -443,7 +456,20 @@ let names (t : t) (c : camera) : name list =
   let overlaps (a0, b0, a1, b1) (c0, d0, c1, d1) = a0 < c1 && c0 < a1 && b0 < d1 && d0 < b1 in
   let on_map (x0, y0, x1, y1) = x0 >= 0. && y0 >= 0. && x1 <= float_of_int a.pw && y1 <= float_of_int a.ph in
   List.fold_left
-    (fun kept n -> if on_map n.nbox && not (List.exists (fun k -> overlaps n.nbox k.nbox) kept) then n :: kept else kept)
+    (fun kept n ->
+      let free box = on_map box && not (List.exists (fun k -> overlaps box k.nbox) kept) in
+      if free n.nbox then n :: kept
+      else if n.said <> None && n.nrank >= 815. && n.nrank < 820. then begin
+        (* claude: a hub's capital (fan-in 100 and more: ranked 815 and up)
+         * that collides is nudged up or down a line or two, the core's
+         * names shown near their place rather than not at all *)
+        let x0, y0, x1, y1 = n.nbox in
+        let h = y1 -. y0 in
+        match List.find_opt (fun dy -> free (x0, y0 +. dy, x1, y1 +. dy)) [ h; -.h; 2. *. h; -2. *. h; 3. *. h; -3. *. h ] with
+        | Some dy -> { n with nbox = (x0, y0 +. dy, x1, y1 +. dy); draw = n.draw |> move 0. (-.dy) } :: kept
+        | None -> kept
+      end
+      else kept)
     []
     (List.stable_sort (fun a b -> compare b.nrank a.nrank) !cands)
 
