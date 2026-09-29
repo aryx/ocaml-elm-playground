@@ -39,7 +39,8 @@ your browser, from the same source file:
 They are all in [CATALOG.md](CATALOG.md), and all in one menu,
 [tinybox](https://aryx.github.io/ocaml-elm-playground/tinybox.html)
 (and [by size](https://aryx.github.io/ocaml-elm-playground/by-size/),
-the smallest first).
+the smallest first). The whole repository can be explored in the
+browser in its [code map](https://aryx.github.io/ocaml-elm-playground/codemap.html).
 
 Almost all of this code, the library as much as the programs, was
 written by an AI, Claude Code, under the author's direction (see the

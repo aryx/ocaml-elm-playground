@@ -209,6 +209,7 @@ website:
 	./_build/default/launcher/codegen/make_tinybox_data.exe sources-file > $(ASSETS)/js/launcher/tinybox_sources.txt
 	printf '<html>\n  <head>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
 	  $(ASSETS_URL)/js/launcher/Tinybox_web.bc.js > docs/tinybox.html
+	make codemap-web DIR=. PAGE=docs NAME=ocaml-elm-playground
 
 # claude: make website, then both repositories committed and pushed: the
 # assets first (the programs, the thumbnails), so that no page points at
@@ -218,14 +219,14 @@ website:
 # is committed: make website builds from the working copy, so a program
 # being written there (another session's, its row already in CATALOG.md)
 # would go out with its page and its code map, its source not on GitHub.
-WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html tinybox.html)
+WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html tinybox.html codemap.html)
 publish:
 	@if [ -n "$$(git status --porcelain -- . ':!docs')" ]; then \
 	  echo "make publish: changes not committed outside docs/ (git status): commit them, or stash them, first"; \
 	  exit 1; \
 	fi
 	make website
-	git -C $(ASSETS) add -A js pngs
+	git -C $(ASSETS) add -A js pngs codemap
 	git -C $(ASSETS) diff --cached --quiet || git -C $(ASSETS) commit -q -m "make publish: the programs of $$(git rev-parse --short HEAD)"
 	git -C $(ASSETS) push -q origin HEAD
 	git add -A $(WEBSITE_PATHS)
