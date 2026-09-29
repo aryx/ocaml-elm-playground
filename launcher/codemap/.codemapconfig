@@ -51,7 +51,7 @@
         { at: 'def:relayout', say: 'the treemap laid out once, in units', weight: 2 },
       ],
     },
-    'Code_map_base.ml': { digest: 'c790db76a7b0',
+    'Code_map_base.ml': { digest: 'aae13fd64c26',
       summary: "The camera's arithmetic, the parts' colours, a file's code painted as SeeSoft's pixels or as letters.",
       important: [
         { at: 'def:paint_code', say: 'a file in miniature, or readable up close', weight: 3 },
