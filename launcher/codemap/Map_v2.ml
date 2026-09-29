@@ -1291,14 +1291,40 @@ let shown (t : t) : string -> bool =
   let panels = match at_ground t t.cam with Some e when t.street -> List.map (fun (p : Code_street.panel) -> p.path) (Code_street.panels (street_of t e)) | _ -> [] in
   fun p -> top = "" || p = top || Code_search.starts p (top ^ "/") || List.mem p panels
 
+(* claude: the files' lines as text, whole (the grid cuts them at
+ * Code_file.cols), for a text search: its spans put back at their
+ * columns *)
+let texts : (string, string array) Hashtbl.t = Hashtbl.create 256
+
+let text_of (e : entry) : string array =
+  match Hashtbl.find_opt texts e.path with
+  | Some a -> a
+  | None ->
+      let f = Lazy.force e.file in
+      let a =
+        Array.map
+          (fun spans ->
+            let b = Buffer.create 80 in
+            List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) spans;
+            Buffer.contents b)
+          f.lines
+      in
+      Hashtbl.replace texts e.path a;
+      a
+
+(* a query's hits among the map's files: names, or, a text search, lines *)
+let query_hits (t : t) (q : string) : Code_search.hit list =
+  match Code_search.text_query q with
+  | Some text -> Code_search.text_matches (List.map (fun (e : entry) -> (e.path, text_of e)) t.entries) text
+  | None -> if String.length q > 0 && q.[0] = '"' then [] else Code_search.matches (search_all t) q
+
 let search_hits (t : t) : Code_search.hit list =
   match t.search with
   | None -> []
   | Some s ->
       if fst s.hits = (s.query, s.here) then snd s.hits
       else
-        let all = search_all t in
-        let hits = Code_search.matches all s.query in
+        let hits = query_hits t s.query in
         let hits = if s.here then (let ok = shown t in List.filter (fun (h : Code_search.hit) -> ok h.path) hits) else hits in
         s.hits <- ((s.query, s.here), hits);
         hits
@@ -1311,7 +1337,7 @@ let search_named (t : t) : string list =
  * only definitions, their files *)
 let search_set (t : t) : string list =
   let hits = search_hits t in
-  let units = List.filter_map (fun (h : Code_search.hit) -> if h.kind <> Def then Some h.path else None) hits in
+  let units = List.filter_map (fun (h : Code_search.hit) -> match h.kind with Dir | File -> Some h.path | Def | Text -> None) hits in
   let paths = if units <> [] then units else List.map (fun (h : Code_search.hit) -> h.path) hits in
   let paths = List.sort_uniq compare paths in
   List.filter (fun p -> not (List.exists (fun d -> d <> p && Code_search.starts p (d ^ "/")) paths)) paths
@@ -1319,13 +1345,11 @@ let search_set (t : t) : string list =
 (* the hits lit where they are on the map, at any level: a directory or
  * file framed, a definition's line marked (a bar at the ground, a dot
  * above it), the chosen one brighter and named *)
-let search_lit (t : t) (c : camera) (s : search) (hits : Code_search.hit list) : shape list =
+let search_lit ?(glow = rgb 255 225 90) ?(chosen : Code_search.hit option) (t : t) (c : camera) (hits : Code_search.hit list) : shape list =
   let a = c.a in
   let ground = at_ground t c <> None in
   let index = Hashtbl.create 64 in
   Array.iteri (fun i (p : entry Treemap.placed) -> Hashtbl.replace index p.path i) t.placed;
-  let chosen = List.nth_opt hits s.sel in
-  let glow = rgb 255 225 90 in
   List.concat
     (List.filteri (fun i _ -> i < 3000) hits
     |> List.map (fun (h : Code_search.hit) ->
@@ -1341,7 +1365,7 @@ let search_lit (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
                        @ frame a glow x0 y0 x1 y1 (if sel then 3. else 1.5)
                    | _ -> [])
                | _ -> [])
-           | Def -> (
+           | Def | Text -> (
                match spot t c h.path h.line with
                | Some (x, y, xe) when ground ->
                    let w = Float.max 30. (xe -. x) in
@@ -1373,9 +1397,10 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
       (List.mapi
          (fun i (hit : Code_search.hit) ->
            let y = y0 +. 44. +. (float_of_int i *. row) +. (row /. 2.) in
-           let kind = match hit.kind with Dir -> "dir" | File -> "file" | Def -> "def" in
-           let name = match hit.kind with Dir -> hit.name ^ "/" | _ -> hit.name in
-           let where = match hit.kind with Def -> Printf.sprintf "%s:%d" hit.path (hit.line + 1) | _ -> hit.path in
+           let kind = match hit.kind with Dir -> "dir" | File -> "file" | Def -> "def" | Text -> "line" in
+           let cut n str = if String.length str > n then String.sub str 0 n ^ "..." else str in
+           let name = match hit.kind with Dir -> hit.name ^ "/" | Text -> Printf.sprintf "%s:%d" (Code_search.basename hit.path) (hit.line + 1) | _ -> hit.name in
+           let where = match hit.kind with Def -> Printf.sprintf "%s:%d" hit.path (hit.line + 1) | Text -> cut 70 hit.name | _ -> hit.path in
            let col = lighter (archi t.colours hit.path) in
            (if i = s.sel then [ rectangle (rgb 60 56 110) (w -. 12.) row |> move (sx a (x0 +. (w /. 2.))) (sy a y) ] else [])
            @ [ left 12. dim (x0 +. 16.) y kind; left 16. (if i = s.sel then yellow else col) (x0 +. 56.) y name; left 13. dim (x0 +. 70. +. text_width 16. name) y where ])
@@ -1386,17 +1411,53 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
         | _ :: _ :: _ -> Printf.sprintf "Enter: the %d directories named so, together   Esc close" (List.length named)
         | _ when hits <> [] ->
             let n = List.length (search_set t) in
-            Printf.sprintf "Enter go   shift+Enter the %d %s together   Tab complete   up/down choose   name// directories so named   / first: here or all   Esc close" n
-              (if List.exists (fun (h : Code_search.hit) -> h.kind <> Def) hits then "found" else "files of these")
-        | _ -> "Tab complete   up/down choose   Enter go   name// every directory so named   / first: here or everywhere   Esc close");
+            Printf.sprintf "Enter go   shift+Enter the %d %s together   ctrl+Enter a layer   Tab complete   \"text   / first: here or all" n
+              (if List.exists (fun (h : Code_search.hit) -> h.kind = Dir || h.kind = File) hits then "found" else "files of these")
+        | _ -> "a name, \"text, name// directories so named   Tab complete   up/down choose   / first: here or all   Esc close");
     ]
+
+(* claude: the layers (plan_codemap_v2.md): searches kept, ctrl+Enter,
+ * each lit in its colour at any level, all at once (the author:
+ * "Cap.fork, Cap.exec ... a layer with different color scheme for each
+ * and get all the capabilities highlighted at the same time"); their
+ * legend in the map's bottom left corner *)
+let layer_colours = [ (245, 85, 85); (80, 205, 245); (120, 230, 110); (250, 165, 50); (225, 115, 235); (245, 240, 95); (110, 130, 255) ]
+
+let layer_hits (t : t) (l : layer) : Code_search.hit list =
+  match l.lhits with
+  | Some h -> h
+  | None ->
+      let h = query_hits t l.lquery in
+      l.lhits <- Some h;
+      h
+
+let layers_shapes (t : t) (c : camera) : shape list =
+  if t.layers = [] || not t.layers_on then []
+  else
+    let a = c.a in
+    let lit = List.concat_map (fun (l : layer) -> let r, g, b = l.lcolour in search_lit ~glow:(rgb r g b) t c (layer_hits t l)) t.layers in
+    let row = 20. in
+    let n = List.length t.layers in
+    let w = 30. +. List.fold_left (fun m (l : layer) -> Float.max m (text_width 14. (Printf.sprintf "%s  %d" l.lquery (List.length (layer_hits t l))))) 0. t.layers in
+    let h = 12. +. (row *. float_of_int n) in
+    let x0 = 10. and y0 = float_of_int a.ph -. h -. 10. in
+    lit
+    @ [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
+    @ List.concat
+        (List.mapi
+           (fun i (l : layer) ->
+             let r, g, b = l.lcolour in
+             let y = y0 +. 6. +. (float_of_int i *. row) +. (row /. 2.) in
+             let str = Printf.sprintf "%s  %d" l.lquery (List.length (layer_hits t l)) in
+             [ circle (rgb r g b) 5. |> move (sx a (x0 +. 12.)) (sy a y); label a ink 14. (x0 +. 22. +. (text_width 14. str /. 2.)) y str ])
+           t.layers)
 
 let search_shapes (t : t) (c : camera) : shape list =
   match t.search with
   | None -> []
   | Some s ->
       let hits = search_hits t in
-      search_lit t c s hits @ search_box t c s hits
+      search_lit ?chosen:(List.nth_opt hits s.sel) t c hits @ search_box t c s hits
 
 let labels (t : t) (c : camera) (q : float) : shape list =
   let kept = names t c in
@@ -1410,6 +1471,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ hover_card t c kept
   @ peek_shapes t c q
   @ peek_glow t c
+  @ layers_shapes t c
   @ search_shapes t c
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,

@@ -151,40 +151,61 @@ let peek_where (t : t) (f : Code_file.t) (path : string) (line : int) (col : int
 let open_peek (t : t) (file_of : string -> Code_file.t option) ((p, l) : string * int) : unit =
   match file_of p with
   | Some g ->
-      let first, last = def_extent g l in
-      (* claude: with the comment just above it, which likely says what it
-       * is (the author), all of it, its blank lines too: from its last
-       * line up to where it opens, (* and *) counted; comments stacked
-       * right above one another with it; not a section's banner *)
-      let text l = String.map (fun c -> if c = '\000' then ' ' else c) (Bytes.sub_string g.chars (l * Code_file.cols) Code_file.cols) in
+      (* claude: a line's text, whole (its spans at their columns) *)
+      let text l =
+        let b = Buffer.create 80 in
+        List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) g.lines.(l);
+        Buffer.contents b
+      in
       let count sub str =
         let n = String.length str and m = String.length sub in
         let k = ref 0 in
         for i = 0 to n - m do if String.sub str i m = sub then incr k done;
         !k
       in
-      let comment_end l =
-        let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
-        l >= 0 && (match first_cat 0 with Some Comment -> true | _ -> false)
+      let opens l = let t = text l in count "(*" t + count "/*" t and closes l = let t = text l in count "*)" t + count "*/" t in
+      (* the comments' depth at each line's start, the file read once *)
+      let n = Code_file.nlines g in
+      let depth = Array.make (n + 1) 0 in
+      for i = 0 to n - 1 do depth.(i + 1) <- max 0 (depth.(i) + opens i - closes i) done;
+      (* claude: a top-level comment clicked (a game's header): the whole
+       * comment, from where it opens to where it closes (the author: "not
+       * just what started at the line clicked"), scrolled if long *)
+      let rec opening_of i = if i > 0 && depth.(i) > 0 then opening_of (i - 1) else i in
+      let rec closing_of i = if i + 1 < n && depth.(i + 1) > 0 then closing_of (i + 1) else i in
+      let top_comment =
+        if l < n && (depth.(l) > 0 || opens l > 0) then
+          let o = opening_of l in
+          let starts_line = String.length (text o) >= 2 && (String.sub (text o) 0 2 = "(*" || String.sub (text o) 0 2 = "/*") in
+          if starts_line then Some (o, closing_of l) else None
+        else None
       in
-      (* the line a comment ending at [l] opens at *)
-      let rec opening l depth =
-        let t = text l in
-        let depth = depth + count "*)" t + count "*/" t - count "(*" t - count "/*" t in
-        if depth <= 0 || l = 0 || l < first - 400 then l else opening (l - 1) depth
+      let first, last =
+        match top_comment with
+        | Some ext -> ext
+        | None ->
+            let first, last = def_extent g l in
+            (* claude: with the comment just above it, which likely says
+             * what it is (the author), all of it, its blank lines too;
+             * comments stacked right above one another with it; not a
+             * section's banner *)
+            let comment_end l =
+              let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
+              l >= 0 && (match first_cat 0 with Some Comment -> true | _ -> false)
+            in
+            (* a banner's rule, (*----*): where a section begins, not a comment *)
+            let rule l =
+              let t = String.trim (text l) in
+              String.length t >= 8 && String.for_all (fun c -> String.contains "(*)-=/ " c) t
+            in
+            let rec up l =
+              if comment_end (l - 1) then
+                let o = opening_of (l - 1) in
+                if List.exists rule (List.init (l - o) (fun k -> o + k)) then l else up o
+              else l
+            in
+            (up first, last)
       in
-      (* a banner's rule, (*----*): where a section begins, not a comment *)
-      let rule l =
-        let t = String.trim (text l) in
-        String.length t >= 8 && String.for_all (fun c -> String.contains "(*)-=/ " c) t
-      in
-      let rec up l =
-        if comment_end (l - 1) then
-          let o = opening (l - 1) 0 in
-          if List.exists rule (List.init (l - o) (fun k -> o + k)) then l else up o
-        else l
-      in
-      let first = up first in
       (match t.peek with Some top -> t.peek_stack <- (top, t.peek_scroll) :: t.peek_stack | None -> ());
       t.peek <- Some (p, first, last);
       t.peek_scroll <- 0
@@ -371,6 +392,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   if pressed "x" then if t.xray then t.xray_n <- t.xray_n + 1 else begin t.xray <- true; t.xray_n <- 0 end;
   (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
   if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
+  (* claude: l, the layers hidden, shown (Map_v2) *)
+  if pressed "l" && t.layers <> [] then t.layers_on <- not t.layers_on;
   (* claude: the style, the next one, for this map and those to come *)
   let before = t.placed in
   let t =
@@ -560,7 +583,7 @@ let search_go (t : t) (h : Code_search.hit) : camera option =
       t.choices <- None;
       t.peek <- None;
       t.peek_stack <- [];
-      (if h.kind = Def then
+      (if h.kind = Def || h.kind = Text then
          let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
          open_peek t file_of (h.path, h.line));
       Some (fit t.target.a t.placed.(i).rect)
@@ -576,6 +599,20 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
       let n = List.length hits in
       let t, action =
         if pressed "Escape" then (t.search <- None; (t, Stay))
+        (* claude: ctrl+Enter, the query kept as a layer, in the next
+         * colour; the same query again, the layer taken off *)
+        else if pressed "Enter" && Set_.mem "Control" computer.keyboard.keys then begin
+          (if List.exists (fun (l : layer) -> l.lquery = s.query) t.layers then t.layers <- List.filter (fun (l : layer) -> l.lquery <> s.query) t.layers
+           else if s.query <> "" then begin
+             let used = List.map (fun (l : layer) -> l.lcolour) t.layers in
+             let lcolour = match List.find_opt (fun c -> not (List.mem c used)) Map_v2.layer_colours with Some c -> c | None -> List.hd Map_v2.layer_colours in
+             t.layers <- t.layers @ [ { lquery = s.query; lcolour; lhits = None } ];
+             t.layers_on <- true
+           end);
+          t.search <- None;
+          t.painted <- None;
+          (t, Stay)
+        end
         (* claude: shift+Enter, all it found together: its directories and
          * files, else the files of its definitions *)
         else if pressed "Enter" && Set_.mem "Shift" computer.keyboard.keys then begin

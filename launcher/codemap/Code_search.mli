@@ -13,12 +13,18 @@
    Ranked: the name itself, then a name it starts, a word of a name it
    starts (after _ or a capital), a name it is inside; at each, the
    directories first, then the files, the definitions; the shallower
-   first. *)
+   first.
 
-type kind = Dir | File | Def
+   A query starting with a double quote searches the text: ("Cap.fork")
+   finds every line containing Cap.fork, the case ignored unless it has
+   a capital (smart case, Emacs's), at least two characters; before the
+   layers of plan_codemap_v2.md, a pattern to try. *)
+
+type kind = Dir | File | Def | Text
 
 (* a thing found: a directory's path (no final slash), a file's, a
-   definition's file and line (from 0); its name, what is matched *)
+   definition's file and line (from 0); its name, what is matched (a
+   line's, its text, trimmed) *)
 type hit = { kind : kind; path : string; line : int; name : string }
 
 (* the things to search: the directories and files by path, the
@@ -44,3 +50,9 @@ val starts : string -> string -> bool
 
 (* a path's last part *)
 val basename : string -> string
+
+(* claude: the text searched for, if the query is a text search *)
+val text_query : string -> string option
+
+(* the lines of files (path, lines) containing a text, at most [limit] *)
+val text_matches : ?limit:int -> (string * string array) list -> string -> hit list

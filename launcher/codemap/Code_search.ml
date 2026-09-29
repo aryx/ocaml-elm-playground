@@ -10,7 +10,7 @@
 
 (* See Code_search.mli *)
 
-type kind = Dir | File | Def
+type kind = Dir | File | Def | Text
 type hit = { kind : kind; path : string; line : int; name : string }
 
 let basename (p : string) : string = match String.rindex_opt p '/' with Some i -> String.sub p (i + 1) (String.length p - i - 1) | None -> p
@@ -52,7 +52,7 @@ let word_start (name : string) (p : string) : bool =
  * definition's directory; and its file itself for a definition *)
 let under (h : hit) : string =
   let dir p = match String.rindex_opt p '/' with Some i -> String.sub p 0 i | None -> "" in
-  String.lowercase_ascii (match h.kind with Dir -> dir h.path | File -> dir h.path | Def -> h.path)
+  String.lowercase_ascii (match h.kind with Dir -> dir h.path | File -> dir h.path | Def | Text -> h.path)
 
 (* the query's path part and name part: "shmup/step" -> "shmup", "step" *)
 let split (text : string) : string * string =
@@ -68,7 +68,7 @@ let score (h : hit) (name : string) : int option =
   else None
 
 let depth (p : string) = List.length (String.split_on_char '/' p)
-let rank_kind = function Dir -> 0 | File -> 1 | Def -> 2
+let rank_kind = function Dir -> 0 | File -> 1 | Def -> 2 | Text -> 3
 
 let matches (all : hit array) (q : string) : hit list =
   let text, slashes = parse (String.lowercase_ascii (String.trim q)) in
@@ -113,3 +113,34 @@ let complete (hits : hit list) (q : string) : string =
         let c = name ^ String.sub c (String.length name) (String.length c - String.length name) in
         let one_dir = List.for_all (fun n -> String.lowercase_ascii n = String.lowercase_ascii c) names && List.exists (fun h -> h.kind = Dir && String.lowercase_ascii h.name = String.lowercase_ascii c) hits in
         (if pre = "" then "" else pre ^ "/") ^ c ^ (if slashes > 0 then String.make slashes '/' else if one_dir then "/" else "")
+
+(*****************************************************************************)
+(* The text *)
+(*****************************************************************************)
+
+let text_query (q : string) : string option =
+  if String.length q >= 1 && q.[0] = '"' then
+    let t = String.sub q 1 (String.length q - 1) in
+    let t = if String.length t > 0 && t.[String.length t - 1] = '"' then String.sub t 0 (String.length t - 1) else t in
+    if String.length t >= 2 then Some t else None
+  else None
+
+let text_matches ?(limit = 5000) (files : (string * string array) list) (text : string) : hit list =
+  let smart = String.exists (fun c -> c >= 'A' && c <= 'Z') text in
+  let norm = if smart then Fun.id else String.lowercase_ascii in
+  let text = norm text in
+  let found = ref [] and n = ref 0 in
+  (try
+     List.iter
+       (fun (path, lines) ->
+         Array.iteri
+           (fun l line ->
+             if contains (norm line) text then begin
+               found := { kind = Text; path; line = l; name = String.trim line } :: !found;
+               incr n;
+               if !n >= limit then raise Exit
+             end)
+           lines)
+       files
+   with Exit -> ());
+  List.rev !found
