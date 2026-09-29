@@ -409,7 +409,13 @@ let search_go (t : t) (h : Code_search.hit) : camera option =
   let found = ref None in
   Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = h.path then found := Some i) t.placed;
   match !found with
-  | None -> None
+  (* claude: a hit beyond the map (a program's map, searching the whole
+   * repository): peeked at where one is *)
+  | None ->
+      (if h.kind = Def || h.kind = Text then
+         let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
+         open_peek t file_of (h.path, h.line));
+      None
   | Some i ->
       t.focus <- i;
       t.jumped <- None;

@@ -523,6 +523,63 @@ let card (t : t) (i : int) : string * string list option =
   | File (_, _, e) -> (e.path, Option.map (wrap 52) (Option.bind (Code_guide.file_note t.guide e.path) (fun n -> n.summary)))
   | Dir _ -> (p.path ^ "/", Option.map (wrap 52) (Code_guide.dir_summary t.guide p.path))
 
+(* claude: a unit's ties, codegraph's at the map's granularity (the
+ * author: "hovering a folder label will display the hovercard and also
+ * its dependencies", "folder to folder, folder to file"): the files
+ * using it and those it uses (Code_rank.links), each grouped as the unit
+ * where it parts from the hovered one -- the child, under their deepest
+ * common folder, on its side: a far file its region, a near one itself.
+ * A road from user to used, green to red, as wide as the uses *)
+let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
+  match t.pointer with
+  | None -> []
+  | Some (u, v) -> (
+      let mx = to_px c u and my = to_py c v in
+      match List.find_opt (fun n -> within n.nbox mx my && n.said = None) kept with
+      | None -> []
+      | Some n ->
+          let h = t.placed.(n.node).path in
+          if n.node = 0 then []
+          else
+            let a = c.a in
+            let inside p = p = h || Code_search.starts p (h ^ "/") in
+            let parts p = String.split_on_char '/' p in
+            (* the unit on [q]'s side where it parts from [h] *)
+            let side q =
+              let rec go acc = function x :: r, y :: r' when x = y -> go (x :: acc) (r, r') | _, y :: _ -> List.rev (y :: acc) | _ -> List.rev acc in
+              String.concat "/" (go [] (parts h, parts q))
+            in
+            let index = Hashtbl.create 256 in
+            Array.iteri (fun i (p : entry Treemap.placed) -> Hashtbl.replace index p.path i) t.placed;
+            let add tbl k n = Hashtbl.replace tbl k (n + Option.value (Hashtbl.find_opt tbl k) ~default:0) in
+            let users = Hashtbl.create 16 and uses = Hashtbl.create 16 in
+            List.iter
+              (fun (src, dst, n) ->
+                if inside dst && not (inside src) then add users (side src) n
+                else if inside src && not (inside dst) then add uses (side dst) n)
+              (Code_rank.links (rank_of t));
+            let top tbl = Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl [] |> List.sort (fun (_, x) (_, y) -> compare y x) |> List.filteri (fun i _ -> i < 12) in
+            let x0, y0, x1, y1 = n.nbox in
+            let hx = (x0 +. x1) /. 2. and hy = (y0 +. y1) /. 2. in
+            let centre k =
+              match Hashtbl.find_opt index k with
+              | Some i -> (match clip c t.placed.(i).rect with Some (a0, b0, a1, b1) -> Some (float_of_int (a0 + a1) /. 2., float_of_int (b0 + b1) /. 2.) | None -> None)
+              | None -> None
+            in
+            let road (ax, ay) (bx, by) n =
+              let dx = bx -. ax and dy = by -. ay in
+              let len = Float.max 1. (Float.hypot dx dy) in
+              let bend = Float.min 80. (0.15 *. len) in
+              let pts = Map_atlas.bspline [| (ax, ay); (((ax +. bx) /. 2.) -. (dy /. len *. bend), ((ay +. by) /. 2.) +. (dx /. len *. bend)); (bx, by) |] in
+              Map_atlas.road a pts (Float.min 9. (1.5 +. (1.5 *. Float.log (float_of_int (n + 1))))) 0.8
+            in
+            let label (x, y) k n col =
+              let str = Printf.sprintf "%s %d" (Filename.basename k) n in
+              [ rectangle (rgb 18 16 36) (text_width 13. str +. 8.) 17. |> move (sx a x) (sy a (y -. 14.)) |> fade 0.85; Code_map_base.label a col 13. x (y -. 14.) str ]
+            in
+            List.concat_map (fun (k, n) -> match centre k with Some p -> road p (hx, hy) n @ label p k n (rgb 90 220 120) | None -> []) (top users)
+            @ List.concat_map (fun (k, n) -> match centre k with Some p -> road (hx, hy) p n @ label p k n (rgb 250 80 70) | None -> []) (top uses))
+
 (* the card of the name under the mouse, beside it, on the map: its path,
  * and its description, readable; "not described yet" where no config
  * says anything of it (the configs to write) *)
@@ -1528,19 +1585,29 @@ let peek_glow (t : t) (c : camera) : shape list =
  * and top-level definitions (every file lexed, once, the first query); its
  * hits, among the files shown only when [here] (the unit looked at, and
  * at the street its panels) *)
+(* claude: the definitions that are types, for the search's type: *)
+let types : (string * int, unit) Hashtbl.t = Hashtbl.create 256
+
 let search_all (t : t) : Code_search.hit array =
   match t.search_all with
   | Some a -> a
   | None ->
       let dirs = Array.to_list t.placed |> List.filter_map (fun (p : entry Treemap.placed) -> match p.node with Dir _ when p.path <> "" -> Some p.path | _ -> None) in
-      let files = List.map (fun (e : entry) -> e.path) t.entries in
+      (* claude: the sources beyond the map too (a program's map: the rest
+       * of the repository), a hit there peeked at *)
+      let all_entries = t.entries @ t.beyond in
+      let files = List.map (fun (e : entry) -> e.path) all_entries in
       let defs =
         List.concat_map
           (fun (e : entry) ->
             List.filter_map
-              (fun (l, n, (cat : Highlight_code.category)) -> match cat with Def_function | Def_value | Def_type | Def_module -> Some (e.path, l, n) | _ -> None)
+              (fun (l, n, (cat : Highlight_code.category)) ->
+                match cat with
+                | Def_function | Def_value | Def_module -> Some (e.path, l, n)
+                | Def_type -> Hashtbl.replace types (e.path, l) (); Some (e.path, l, n)
+                | _ -> None)
               (Lazy.force e.file).defs)
-          t.entries
+          all_entries
       in
       let views = List.map (fun (v : Code_guide.view) -> v.vname) (Code_guide.views t.guide) in
       let tours = List.map (fun (tr : Code_guide.tour) -> tr.name) (Code_guide.tours t.guide) in
@@ -1576,25 +1643,61 @@ let text_of (e : entry) : string array =
       a
 
 (* a query's hits among the map's files: names, or, a text search, lines *)
+(* claude: a query's prefix, as VS Code's (the author): file:, dir:,
+ * def:, type:, view:, tour:, text: (the lines' text, as a double
+ * quote), ref: (the code's references, as @); none, every kind *)
+let prefixes = [ "file:"; "dir:"; "def:"; "type:"; "view:"; "tour:"; "text:"; "ref:" ]
+
+let split_prefix (q : string) : string option * string =
+  match List.find_opt (fun p -> Code_search.starts (String.lowercase_ascii q) p) prefixes with
+  | Some p -> (Some p, String.sub q (String.length p) (String.length q - String.length p))
+  | None -> (None, q)
+
+(* what a query searches, said in the box *)
+let query_mode (q : string) : string =
+  match split_prefix q with
+  | Some "text:", _ -> "the lines' text"
+  | Some "ref:", _ -> "the code's references"
+  | Some p, _ -> String.sub p 0 (String.length p - 1) ^ "s by name"
+  | None, _ when Code_search.text_query q <> None -> "the lines' text"
+  | None, _ when Code_search.ref_query q <> None -> "the code's references"
+  | None, _ -> "names: dirs, files, definitions, views, tours"
+
 let query_hits (t : t) (q : string) : Code_search.hit list =
-  match (Code_search.text_query q, Code_search.ref_query q) with
-  | Some text, _ -> Code_search.text_matches (List.map (fun (e : entry) -> (e.path, text_of e)) t.entries) text
-  (* claude: @name, the lines referring to it (Code_file.refs) *)
-  | None, Some name ->
-      Code_search.ref_matches
-        (List.map
-           (fun (e : entry) ->
-             let f = Lazy.force e.file in
-             let refs = Array.to_list f.refs |> List.concat_map (List.map (fun (r : Highlight_code.reference) -> (r.rline, String.concat "." (r.rpath @ [ r.rname ])))) in
-             (e.path, refs, text_of e))
-           t.entries)
-        name
-  | None, None ->
-      if String.length q > 0 && (q.[0] = '"' || q.[0] = '@') then []
-      else
-        let top = t.placed.(t.focus).path in
-        let near p = top <> "" && (p = top || Code_search.starts p (top ^ "/")) in
-        Code_search.matches ~near (search_all t) q
+  let every = t.entries @ t.beyond in
+  let text_search text = Code_search.text_matches (List.map (fun (e : entry) -> (e.path, text_of e)) every) text in
+  let ref_search name =
+    Code_search.ref_matches
+      (List.map
+         (fun (e : entry) ->
+           let f = Lazy.force e.file in
+           let refs = Array.to_list f.refs |> List.concat_map (List.map (fun (r : Highlight_code.reference) -> (r.rline, String.concat "." (r.rpath @ [ r.rname ])))) in
+           (e.path, refs, text_of e))
+         every)
+      name
+  in
+  let names q =
+    let top = t.placed.(t.focus).path in
+    let near p = top <> "" && (p = top || Code_search.starts p (top ^ "/")) in
+    Code_search.matches ~near (search_all t) q
+  in
+  match split_prefix q with
+  | Some "text:", rest -> if String.length rest >= 2 then text_search rest else []
+  | Some "ref:", rest -> if String.length rest >= 2 then ref_search rest else []
+  | Some p, rest ->
+      let keep (h : Code_search.hit) =
+        match (p, h.kind) with
+        | "file:", File | "dir:", Dir | "view:", View | "tour:", Tour -> true
+        | "def:", Def -> not (Hashtbl.mem types (h.path, h.line))
+        | "type:", Def -> Hashtbl.mem types (h.path, h.line)
+        | _ -> false
+      in
+      List.filter keep (names rest)
+  | None, _ -> (
+      match (Code_search.text_query q, Code_search.ref_query q) with
+      | Some text, _ -> text_search text
+      | None, Some name -> ref_search name
+      | None, None -> if String.length q > 0 && (q.[0] = '"' || q.[0] = '@') then [] else names q)
 
 let search_hits (t : t) : Code_search.hit list =
   match t.search with
@@ -1664,20 +1767,20 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
   let named = search_named t in
   let h = 50. +. (row *. float_of_int (max 1 (List.length shown_hits))) +. 30. in
   let left size col x y str = label a col size (x +. (text_width size str /. 2.)) y str in
-  let where = if s.here then (match t.placed.(t.focus).path with "" -> "the files shown" | p -> "in " ^ p ^ (match t.placed.(t.focus).node with Dir _ -> "/" | File _ -> "")) else "everywhere" in
+  let where0 = if s.here then (match t.placed.(t.focus).path with "" -> "the files shown" | p -> "in " ^ p ^ (match t.placed.(t.focus).node with Dir _ -> "/" | File _ -> "")) else "everywhere" in
   let caret = if Float.rem t.clock 1. < 0.5 then "|" else " " in
   [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.97 ]
   @ frame a yellow x0 y0 (x0 +. w) (y0 +. h) 2.
   @ [ left 20. yellow (x0 +. 14.) (y0 +. 22.) ("/ " ^ s.query ^ caret) ]
-  @ [ left 13. dim (x0 +. w -. 14. -. text_width 13. (where ^ "   " ^ string_of_int (List.length hits) ^ " found")) (y0 +. 22.) (where ^ "   " ^ string_of_int (List.length hits) ^ " found") ]
-  @ (if s.query = "" then [ left 15. dim (x0 +. 20.) (y0 +. 50. +. (row /. 2.)) "a directory, a file or a definition: its name, or a part of it" ]
+  @ [ left 13. dim (x0 +. w -. 14. -. text_width 13. (query_mode s.query ^ ", " ^ where0 ^ "   " ^ string_of_int (List.length hits) ^ " found")) (y0 +. 22.) (query_mode s.query ^ ", " ^ where0 ^ "   " ^ string_of_int (List.length hits) ^ " found") ]
+  @ (if s.query = "" then [ left 15. dim (x0 +. 20.) (y0 +. 50. +. (row /. 2.)) "a name, or a part of it; or first file: dir: def: type: view: tour: text: ref:" ]
      else if hits = [] then [ left 15. dim (x0 +. 20.) (y0 +. 50. +. (row /. 2.)) "nothing of that name" ]
      else [])
   @ List.concat
       (List.mapi
          (fun i (hit : Code_search.hit) ->
            let y = y0 +. 44. +. (float_of_int i *. row) +. (row /. 2.) in
-           let kind = match hit.kind with Dir -> "dir" | File -> "file" | Def -> "def" | Text -> "line" | View -> "view" | Tour -> "tour" in
+           let kind = match hit.kind with Dir -> "dir" | File -> "file" | Def -> if Hashtbl.mem types (hit.path, hit.line) then "type" else "def" | Text -> "line" | View -> "view" | Tour -> "tour" in
            let cut n str = if String.length str > n then String.sub str 0 n ^ "..." else str in
            let name = match hit.kind with Dir -> hit.name ^ "/" | Text -> Printf.sprintf "%s:%d" (Code_search.basename hit.path) (hit.line + 1) | _ -> hit.name in
            let where =
@@ -1918,6 +2021,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ List.rev_map (fun n -> n.draw) kept
   (* the legend when a plate other than the skeleton is on *)
   @ (if t.xray then skeleton_shapes t c @ anatomy_shapes t c @ (if List.exists (fun s -> s <> Code_anatomy.Skeleton) !Code_anatomy.shown then legend c else []) else [])
+  @ unit_ties t c kept
   @ hover_card t c kept
   @ peek_shapes t c q
   @ peek_glow t c
