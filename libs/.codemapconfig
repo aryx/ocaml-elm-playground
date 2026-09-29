@@ -1,0 +1,34 @@
+// libs/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The from-scratch libraries, for teaching: pixels, samples, bodies, bytes; never the Playground.',
+  // how the libraries stand on each other (README.md): little, and
+  // never on the Playground above them
+  skeletons: [
+    {
+      name: 'What stands on what',
+      bones: [
+        { at: 'core/', role: "Elm's core: floats, colours, Cmd and Sub" },
+        { at: 'random/', role: 'seeded numbers, the same everywhere' },
+        { at: 'compression/', role: "the formats' codes: Huffman, DEFLATE, LZW" },
+        { at: 'networking/', role: 'protocols as bytes, the netcode, the sockets' },
+        { at: 'graphics/', role: 'the rasterizers, the image and video formats' },
+        { at: 'audio/', role: 'the synthesizer and the audio formats' },
+        { at: 'gui/', role: 'widgets and the four architectures' },
+        { at: 'terminal/', role: 'the VT100, the tty, curses' },
+      ],
+      joints: [
+        { from: 'networking/', to: 'core/', say: 'stands on' },
+        { from: 'networking/', to: 'random/', say: 'stands on' },
+        { from: 'graphics/', to: 'compression/', say: "its formats' codes" },
+        { from: 'graphics/', to: 'core/', say: 'stands on' },
+        { from: 'graphics/', to: 'audio/', say: "a video's sound" },
+        { from: 'graphics/', to: 'networking/', say: 'an image downloaded' },
+        { from: 'audio/', to: 'compression/', say: "MP3's codes" },
+        { from: 'gui/', to: 'core/', say: 'colours' },
+        { from: 'terminal/', to: 'random/', say: "Talk's seeded numbers" },
+      ],
+    },
+  ],
+}

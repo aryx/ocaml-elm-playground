@@ -1,0 +1,42 @@
+// apps/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The applications that made computing history, by category, each a Playground program like a game.',
+  dirs: {
+    office: { summary: 'VisiCalc to TinyOffice: spreadsheets, word processors, HyperCard, and the parts they embed.' },
+    gamedev: { summary: "The game-making tools: a sprite editor and a map editor over TinyMario's XPM files." },
+    media: { summary: 'The media players: every format the repository reads, and Winamp with its equalizer.' },
+    music: { summary: "Synthesizers, drum machines and studios: the Minimoog to Reason's rack, each a voice of its own." },
+    internet: { summary: 'Programs that talk to other computers: IRC, mail, and the browsers from Mosaic to Firefox.' },
+    pim: { summary: 'Personal information managers: a clock, a calendar, the Palm Pilot, and money.' },
+    system: { summary: 'The system programs: a VT100 terminal and the shell behind it.' },
+    devtools: { summary: 'Programming environments: BASIC, vi and Emacs, Turbo Pascal, Smalltalk-80, Scratch, DrScheme.' },
+    graphics: { summary: 'Picture programs: MacPaint, MacDraw, Deluxe Paint, Photoshop, Blender.' },
+    cad: { summary: 'Drawings that are models: Sketchpad, AutoCAD, SketchUp.' },
+    education: { summary: 'Programs made for a learner of a subject: a planetarium, a physics lab.' },
+  },
+  skeletons: [
+    {
+      name: 'The applications and what they share',
+      bones: [
+        { at: 'office/', role: 'documents: sheets, text, cards, parts embedded' },
+        { at: 'devtools/', role: 'programming environments, each running a language' },
+        { at: 'music/', role: 'instruments and studios over the synthesizer' },
+        { at: 'internet/', role: 'browsers and chat, over the protocols' },
+        { at: '../appkits/', role: "what several applications share" },
+        { at: '../languages/', role: 'the languages the environments run' },
+        { at: '../playground/', role: 'the library each is written with' },
+      ],
+      joints: [
+        { from: 'office/', to: '../appkits/', say: 'share' },
+        { from: 'devtools/', to: '../appkits/', say: 'share' },
+        { from: 'devtools/', to: '../languages/', say: 'run' },
+        { from: 'internet/', to: '../appkits/', say: 'share' },
+        { from: 'internet/', to: '../languages/', say: 'run' },
+        { from: 'music/', to: '../playground/', say: 'written with' },
+        { from: '../appkits/', to: '../playground/', say: 'written with' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,99 @@
+// games/rpg/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md; its facts:
+// tinybox codemap -facts . games/rpg)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Role-playing and dungeons: a character who grows, through a dungeon of many rooms.',
+  files: {
+    'TinyRogue.ml': { digest: 'e137a79bc697',
+      summary: 'Rogue (Toy, Wichman and Arnold, 1980): a dungeon made anew each game, time in turns, the Amulet below.',
+      capitals: [
+        { at: 'def:generate', say: 'a level from a seed: rooms, corridors, monsters' },
+        { at: 'def:turn', say: "your move, then the monsters'" },
+      ],
+      important: [
+        { at: 'type:level', weight: 2 },
+        { at: 'type:game', say: 'the level, the hero, what has been seen', weight: 3 },
+        { at: 'def:generate', weight: 3 },
+        { at: 'def:turn', weight: 3 },
+        { at: 'def:visible', say: 'the lit room you stand in', weight: 2 },
+        { at: 'def:look', say: 'what you see joins what you have seen', weight: 2 },
+        { at: 'def:monsters_turn', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:turn' },
+        { from: 'def:turn', to: 'def:monsters_turn' },
+        { from: 'def:turn', to: 'def:look' },
+      ],
+      related: ['web/TinyRogue.html', '../../tests/2d/golden/TinyRogue.png'],
+    },
+    'TinyDiablo.ml': { digest: '1bf5083d52ab',
+      summary: 'Diablo (Blizzard North, 1996): Rogue in real time, clicked from one fixed angle, and the dark.',
+      capitals: [{ at: 'def:path_to', say: 'a click: the projection inverted, then A*' }],
+      important: [
+        { at: 'def:iso', say: 'the isometric projection (the kit)', weight: 3 },
+        { at: 'def:dig', say: 'a dungeon from an LFSR', weight: 2 },
+        { at: 'def:path_to', weight: 3 },
+        { at: 'def:lit', say: 'the dark: dimmer with distance', weight: 2 },
+        { at: 'def:chase', weight: 1 },
+      ],
+    },
+    'TinyDungeonMaster.ml': { digest: '92d983547429',
+      summary: 'Dungeon Master (FTL Games, 1987): a grid walked in real time, seen as nested frames, no projection.',
+      capitals: [{ at: 'def:at', say: 'the slots: where a cell goes on the screen' }],
+      important: [
+        { at: 'comment:"The slots: where a cell goes on the screen -- the trick of this game,"', weight: 3 },
+        { at: 'def:at', say: 'a unit at distance z, in pixels', weight: 3 },
+        { at: 'def:depths', say: 'farthest first: the order everything is drawn', weight: 2 },
+        { at: 'def:front_face', weight: 2 },
+        { at: 'def:side_face', weight: 2 },
+        { at: 'def:light', say: 'the torch burning down', weight: 1 },
+        { at: 'def:step_monsters', weight: 1 },
+      ],
+    },
+    'TinyGauntlet2.ml': { digest: 'fda54dfb3ea2',
+      summary: 'Gauntlet II (Ed Logg, Atari Games, 1986): four heroes, generators spawning crowds, health as the clock.',
+      capitals: [{ at: 'def:step_generators', say: 'monsters as a flow, not a set' }],
+      important: [
+        { at: 'def:step_generators', weight: 3 },
+        { at: 'def:drain_every', say: 'health drains: the clock', weight: 2 },
+        { at: 'def:greedy_step', say: 'each chases alone...', weight: 2 },
+        { at: 'def:field_step', say: '...or all down one flow field', weight: 2 },
+      ],
+    },
+    'TinyHades.ml': { digest: 'e864b571643b',
+      summary: 'Hades (Supergiant, 2020): a chamber at a time, a boon from a god after each, death paying for the next run.',
+      capitals: [{ at: 'def:take_boon', say: 'a boon: numbers changed for a run' }],
+      important: [
+        { at: 'type:boon', weight: 2 },
+        { at: 'def:take_boon', weight: 3 },
+        { at: 'def:new_run', say: 'the roguelite: what death keeps', weight: 3 },
+        { at: 'def:dash_safe', say: 'the invulnerable frames of the dash', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.game('TinyRogue.ml', 'def:turn', "a turn: yours, then the monsters'", say='each key') + {
+      bones+: [{ at: 'TinyRogue.ml:def:generate', role: 'a level from a seed' }],
+      joints+: [{ from: 'TinyRogue.ml:def:generate', to: 'TinyRogue.ml:def:initial_model', say: 'the dungeon' }],
+    },
+  ],
+  tours: [
+    {
+      name: 'How Rogue plays',
+      stops: [
+        { at: 'TinyRogue.ml:def:roll', say: 'Randomness from a seed kept in the model.' },
+        { at: 'TinyRogue.ml:def:generate', say: 'A level: rooms dug, joined by corridors, filled.' },
+        { at: 'TinyRogue.ml:type:game', say: 'The game: the level, the hero, the map remembered.' },
+        { at: 'TinyRogue.ml:def:visible', say: 'Seeing: the lit room, or the squares next to you.' },
+        { at: 'TinyRogue.ml:def:turn', say: 'Time moves only when you do: then every monster moves.' },
+        { at: 'TinyRogue.ml:def:attack', say: 'A fight: rolled dice.' },
+        { at: 'TinyRogue.ml:def:view_game', say: 'The screen of letters: what you see and what you saw.' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'Diablo and its projection', files: ['TinyDiablo.ml', '../../gamekits/isometric/'] },
+  ],
+}

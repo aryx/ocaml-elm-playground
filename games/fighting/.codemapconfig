@@ -1,0 +1,81 @@
+// games/fighting/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md; its facts:
+// tinybox codemap -facts . games/fighting)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Beat 'em ups and fighting games: moves timed in frames, a hitbox meeting a hurtbox.",
+  files: {
+    'TinyFinalFight.ml': { digest: '534a6f39bf91',
+      summary: 'Final Fight (Capcom, 1989): a street walked in depth, waves of thugs, combos chained.',
+      capitals: [{ at: 'def:same_line', say: 'the belt: blows land only near the same depth' }],
+      important: [
+        { at: 'type:fighter', say: 'a fighter: where on the street, and in which move', weight: 3 },
+        { at: 'def:same_line', weight: 3 },
+        { at: 'def:blow', say: 'a move active and not yet landed, on a hurtbox', weight: 2 },
+        { at: 'def:chain', say: 'a punch in the recovery: the combo', weight: 2 },
+        { at: 'def:waves', say: 'the street as a list of waves, the screen locked', weight: 1 },
+        { at: 'def:update_street', weight: 1 },
+      ],
+    },
+    'TinyStreetFighter.ml': { digest: 'c0aea9d500f2',
+      summary: 'Street Fighter II (Capcom, 1991): one screen, best of three rounds, a fireball from a quarter circle.',
+      capitals: [
+        { at: 'def:strike', say: "the attacker's active frame on the defender's hurtbox" },
+        { at: 'def:quarter_circle', say: 'a special move read from the input history' },
+      ],
+      important: [
+        { at: 'type:attack', say: 'a move: its startup, active and recovery frames', weight: 3 },
+        { at: 'type:fighter', weight: 2 },
+        { at: 'def:strike', weight: 3 },
+        { at: 'def:quarter_circle', weight: 3 },
+        { at: 'def:blocking', say: 'holding back is blocking, high or low', weight: 2 },
+        { at: 'def:hitstop', say: 'both frozen a few frames: the blow felt', weight: 2 },
+        { at: 'def:computer_input', say: 'the computer plays through the same inputs', weight: 1 },
+        { at: 'def:update_fight', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:update_fight' },
+        { from: 'def:update_fight', to: 'def:step_fighter' },
+        { from: 'def:update_fight', to: 'def:strike' },
+      ],
+      related: ['web/TinyStreetFighter.html', '../../tests/2d/golden/TinyStreetFighter.png'],
+    },
+    'TinyVirtuaFighter.ml': { digest: '1cfd363326bb',
+      summary: 'Virtua Fighter (Sega AM2, 1993), in 3D: fighters of boxes on a raised ring, and the ring-out.',
+      capitals: [{ at: 'def:poses_of', say: 'a move as keyframed poses of a skeleton' }],
+      important: [
+        { at: 'def:poses_of', weight: 3 },
+        { at: 'def:off_ring', say: 'the other way to win: knocked off the ring', weight: 3 },
+        { at: 'def:strike', weight: 2 },
+        { at: 'def:camera_for', say: 'one camera framing two fighters', weight: 2 },
+        { at: 'def:step_round', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.game('TinyStreetFighter.ml', 'def:strike', 'a blow: hitbox against hurtbox', say='each active frame') + {
+      bones+: [{ at: '../../gamekits/brawler/Frame_data.ml', role: "the moves' frames (the kit)" }],
+      joints+: [{ from: 'TinyStreetFighter.ml:def:update', to: '../../gamekits/brawler/Frame_data.ml', say: 'the move now' }],
+    },
+  ],
+  tours: [
+    {
+      name: 'How Street Fighter II fights',
+      stops: [
+        { at: 'TinyStreetFighter.ml:type:attack', say: 'A move is frames: startup, active, recovery.' },
+        { at: 'TinyStreetFighter.ml:type:fighter', say: 'A fighter: where, facing whom, in which state, how hurt.' },
+        { at: 'TinyStreetFighter.ml:def:quarter_circle', say: 'The fireball: down, down-forward, forward, found in the history.' },
+        { at: 'TinyStreetFighter.ml:def:blocking', say: 'No block button: holding back is the guard.' },
+        { at: 'TinyStreetFighter.ml:def:strike', say: 'Only the active frames hurt, and only on the hurtbox.' },
+        { at: 'TinyStreetFighter.ml:def:hitstop', say: 'The world stops for a blow: why it feels solid.' },
+        { at: 'TinyStreetFighter.ml:def:computer_input', say: 'The computer presses keys too: same rules for both.' },
+        { at: 'TinyStreetFighter.ml:def:view', say: 'The picture: stick figures posed by their state.' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'The fighters and their kit', files: ['TinyFinalFight.ml', 'TinyStreetFighter.ml', '../../gamekits/brawler/'] },
+    { name: 'Virtua Fighter and its skeleton', files: ['TinyVirtuaFighter.ml', '../../gamekits/brawler/3d/'] },
+  ],
+}

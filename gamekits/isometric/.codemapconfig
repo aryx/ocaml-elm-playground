@@ -1,0 +1,29 @@
+// gamekits/isometric/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The isometric kit: a world seen from one fixed angle, the shadow that gives back height, the sort.',
+  files: {
+    'Isometric.mli': { digest: 'f1da4873c867',
+      summary: 'Three world axes on two screen ones: the projection, the shadow, back to front, the line of sight.',
+      important: [
+        { at: 'type:t', say: 'where a unit of x, of z, and of height goes on screen', weight: 3 },
+        { at: 'def:project', weight: 3 },
+        { at: 'def:shadow', say: 'the height thrown away, given back by a shadow', weight: 3 },
+        { at: 'def:sorted', say: 'back to front: the painter', weight: 2 },
+        { at: 'def:sight', say: 'a screen point back to the ground: a click', weight: 2 },
+      ],
+    },
+    'Isometric.ml': { digest: '96df555b5065',
+      summary: 'Two lines of projection, a depth to sort by, and their inverse.',
+      important: [
+        { at: 'def:project', weight: 2 },
+        { at: 'def:depth', weight: 2 },
+        { at: 'def:ground', say: 'the projection inverted on the ground', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: projected and back again." },
+  },
+}

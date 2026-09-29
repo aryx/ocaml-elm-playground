@@ -1,0 +1,27 @@
+// libs/graphics/videos/mpeg_system/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'An .mpg demultiplexed: its MPEG-1 video and its audio pulled apart, with their start times.',
+  files: {
+    'Mpeg_system.mli': { digest: '7a4d9405a0eb',
+      summary: "MPEG-1's part 1 (1993): packs and packets interleaving video and sound, as a Video CD reads them.",
+      capitals: [
+        { at: 'def:of_string', say: 'the file split into its streams' },
+      ],
+      important: [
+        { at: 'comment:"packet  00 00 01 E0"', say: 'PTS and DTS: when shown, when decoded', weight: 2 },
+        { at: 'type:stream', weight: 2 },
+        { at: 'def:of_string', weight: 3 },
+      ],
+    },
+    'Mpeg_system.ml': { digest: '6bd44976fa2b',
+      summary: "Start codes walked, each packet's stuffing and timestamps skipped, its bytes appended to its stream.",
+      important: [
+        { at: 'def:pts', say: '33 bits in three pieces, marker bits between', weight: 1 },
+        { at: 'def:payload', weight: 2 },
+        { at: 'def:of_string', weight: 3 },
+      ],
+    },
+  },
+}

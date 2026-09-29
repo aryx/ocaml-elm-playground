@@ -1,0 +1,9 @@
+// libs/physics/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'A rigid-body physics engine from scratch, in 2D and in 3D: bodies, hitboxes, contacts, stacking.',
+  dirs: {
+    tests: { summary: "The engines' unit tests: integrators against exact answers, collisions, piles, joints, orbits." },
+  },
+}

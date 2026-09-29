@@ -1,0 +1,107 @@
+// languages/lisp/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "A small Emacs Lisp: dynamic scope, the specpdl, macros, its state threaded through eval; TinyEmacs's.",
+  files: {
+    'Lisp.mli': { digest: 'af4903723c2f',
+      summary: "The values: one structure for programs and data, nil the empty list and false; nothing mutated.",
+      important: [
+        { at: 'type:t', say: 'a Lisp value: code and data alike', weight: 3 },
+        { at: 'comment:"[+|.]-->[1|.]-->[2|nil]"', say: 'a program as cons cells', weight: 2 },
+        { at: 'def:truthy', say: 'anything but nil is true', weight: 1 },
+      ],
+    },
+    'Lisp.ml': { digest: 'a7571806c6de',
+      summary: 'The values, and how they print: lists, dotted tails, strings quoted.',
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:show', weight: 1 },
+      ],
+    },
+    'Lisp_read.mli': { digest: '2a27dbaed99a',
+      summary: "The reader: Sexpr_read's Emacs dialect, its tree turned into Emacs's values.",
+      important: [
+        { at: 'def:read', weight: 2 },
+        { at: 'def:read_all', weight: 1 },
+      ],
+    },
+    'Lisp_read.ml': { digest: 'dd97e17e31b2',
+      summary: 'A character becomes its code, a list conses ending with nil or the dotted tail.',
+      important: [
+        { at: 'def:of_sexpr', say: 'the neutral tree into Emacs values', weight: 3 },
+      ],
+    },
+    'Lisp_eval.mli': { digest: 'fc1537a0ee5e',
+      summary: "McCarthy's eval, Emacs's way: dynamic scope by shallow binding, the state a value, errors keeping their changes.",
+      capitals: [
+        { at: 'def:eval', say: "a case per kind of expression, McCarthy's" },
+      ],
+      important: [
+        { at: 'type:state', say: 'variables, functions, specpdl, the host: one value', weight: 3 },
+        { at: 'type:subr', say: 'a built-in: state and arguments in, value and state out', weight: 2 },
+        { at: 'def:protect', say: 'an error, keeping the changes made before it', weight: 2 },
+        { at: 'def:define_subr', say: 'how a host adds its functions', weight: 2 },
+        { at: 'def:apply', weight: 1 },
+      ],
+    },
+    'Lisp_eval.ml': { digest: '96624227b492',
+      summary: 'The evaluator: eval and apply, the special forms, the built-ins; let as specbind and unbind_to.',
+      capitals: [
+        { at: 'def:eval', say: 'symbol, special form, macro or call' },
+        { at: 'def:bind', say: 'dynamic scope: the old value saved on the specpdl' },
+      ],
+      important: [
+        { at: 'type:state', weight: 3 },
+        { at: 'def:eval', weight: 3 },
+        { at: 'def:apply', say: 'parameters bound dynamically, unbound after', weight: 3 },
+        { at: 'def:bind', weight: 2 },
+        { at: 'def:unbind_to', say: 'the specpdl popped: old values put back', weight: 2 },
+        { at: 'def:special', say: 'the forms whose arguments are not evaluated first', weight: 2 },
+        { at: 'comment:"the state when the last signal was raised"', say: 'the one mutable cell, and why', weight: 1 },
+        { at: 'def:load', weight: 1 },
+      ],
+      links: [
+        { from: 'def:eval', to: 'def:special' },
+        { from: 'def:eval', to: 'def:apply' },
+        { from: 'def:apply', to: 'def:bind' },
+        { from: 'def:apply', to: 'def:unbind_to' },
+      ],
+    },
+    'Lisp_prelude.mli': { digest: '32a3ad498702',
+      summary: 'The part of the language written in itself: when, unless, dolist, push as macros, built with list and cons.',
+      important: [
+        { at: 'comment:"(when c a b)   expands to"', say: 'a macro: code to code', weight: 2 },
+      ],
+    },
+    'Lisp_prelude.ml': { digest: 'edb6f66c2c27',
+      summary: 'The macros, as Lisp text loaded at creation.',
+      important: [
+        { at: 'def:text', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Emacs Lisp: read, eval, apply',
+      bones: [
+        { at: 'Lisp_read.ml:def:read', role: 'text into values' },
+        { at: 'Lisp_eval.ml:def:eval', role: 'an expression, a case per kind' },
+        { at: 'Lisp_eval.ml:def:special', role: 'the special forms: if, let, setq...' },
+        { at: 'Lisp_eval.ml:def:apply', role: 'a function called, its parameters bound' },
+        { at: 'Lisp_eval.ml:def:bind', role: 'dynamic binding on the specpdl' },
+        { at: 'Lisp_eval.ml:type:state', role: 'the state, threaded through all' },
+      ],
+      joints: [
+        { from: 'Lisp_read.ml:def:read', to: 'Lisp_eval.ml:def:eval', say: 'the code' },
+        { from: 'Lisp_eval.ml:def:eval', to: 'Lisp_eval.ml:def:special', say: 'a form' },
+        { from: 'Lisp_eval.ml:def:eval', to: 'Lisp_eval.ml:def:apply', say: 'the arguments' },
+        { from: 'Lisp_eval.ml:def:apply', to: 'Lisp_eval.ml:def:eval', say: 'the body' },
+        { from: 'Lisp_eval.ml:def:apply', to: 'Lisp_eval.ml:def:bind', say: 'the parameters' },
+      ],
+    },
+  ],
+  dirs: {
+    tests: { summary: 'Lisp read and run: dynamic scope, macros, condition-case, errors keeping state.' },
+  },
+}

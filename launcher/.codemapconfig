@@ -1,0 +1,38 @@
+// launcher/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'tinybox, every program in one binary after BusyBox: its menu, natively and on the web, and this code map.',
+  skeletons: [
+    {
+      name: "tinybox's parts",
+      bones: [
+        { at: 'native/', role: 'the binary: every program linked in, one chosen by name' },
+        { at: 'menu/', role: 'the menu, a Playground game over a host' },
+        { at: 'web/', role: 'the menu in a browser: a host with no program' },
+        { at: 'catalogue/', role: 'CATALOG.md read: the rows the menu shows' },
+        { at: 'codegen/', role: 'at build time: the catalogue and thumbnails embedded' },
+        { at: 'codemap/', role: 'the code map, s in the menu' },
+        { at: 'website/', role: "the site's index pages, from the same catalogue" },
+      ],
+      joints: [
+        { from: 'native/', to: 'menu/', say: 'hosts' },
+        { from: 'web/', to: 'menu/', say: 'hosts' },
+        { from: 'catalogue/', to: 'codegen/', say: 'the rows' },
+        { from: 'codegen/', to: 'menu/', say: 'the data, embedded' },
+        { from: 'menu/', to: 'codemap/', say: "a program's code" },
+        { from: 'native/', to: 'codemap/', say: 'tinybox codemap <dir>' },
+        { from: 'catalogue/', to: 'website/', say: 'the rows' },
+      ],
+    },
+  ],
+  dirs: {
+    native: { summary: 'tinybox itself: the programs collected, one run by name, and the native host of the menu.' },
+    menu: { summary: "The menu: the catalogue on two shelves, a screenshot each, Enter to play; the same on the web." },
+    web: { summary: "The menu in a browser: a program started by loading its page, the sources fetched." },
+    catalogue: { summary: 'CATALOG.md read as data: the programs, their sections, what the menu filters by.' },
+    codegen: { summary: "Build time: the catalogue and each program's first golden frame, as OCaml for the menu." },
+    codemap: { summary: "tinybox's code map: a codebase as a map, flown a unit at a time, the configs' words on it." },
+    website: { summary: "The website's index pages, a card per program, from CATALOG.md." },
+  },
+}

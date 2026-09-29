@@ -1,0 +1,31 @@
+// appkits/tui/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Full-screen text-mode programs as Model-View-Update, run by the Textmode way or a real terminal.',
+  files: {
+    'Tui_snake.mli': { digest: '31dc6bbcc736',
+      summary: "Snake in characters, after BSD's worm(6): it runs on time, so it cannot wait for a key.",
+      important: [
+        { at: 'def:program', say: 'init, update, view: a Tui program', weight: 3 },
+        { at: 'type:model', weight: 1 },
+      ],
+    },
+    'Tui_snake.ml': { digest: 'cb8eec11f0f2',
+      summary: 'Snake: a move per tenth of a second, turns from the arrows or h j k l, drawn with Curses.',
+      capitals: [
+        { at: 'def:update', say: 'a key or a tick: time drives it, not the input' },
+      ],
+      important: [
+        { at: 'type:model', weight: 3 },
+        { at: 'def:move', weight: 2 },
+        { at: 'def:update', weight: 3 },
+        { at: 'comment:"as many moves as periods passed"', say: 'a slow frame catches up', weight: 2 },
+        { at: 'def:view', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:move' },
+      ],
+    },
+  },
+}

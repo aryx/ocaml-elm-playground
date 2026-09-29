@@ -1,0 +1,30 @@
+// libs/graphics/images/ilbm/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The Amiga's IFF ILBM read and written: bitplanes and colour cycling, TinyDeluxePaint's files.",
+  files: {
+    'Ilbm.mli': { digest: '80f07dd6944e',
+      summary: "Electronic Arts' IFF (1985): chunks RIFF and PNG copied; pixels spread over bitplanes, a bit each.",
+      capitals: [
+        { at: 'type:t', say: 'colour numbers, a palette, cycling ranges' },
+      ],
+      important: [
+        { at: 'comment:"but *bitplanes*, as the Amiga"', say: 'a bit of each pixel in each plane', weight: 2 },
+        { at: 'type:range', say: "Deluxe Paint's colour cycling", weight: 2 },
+        { at: 'type:t', weight: 3 },
+        { at: 'def:plane_rows', weight: 1 },
+        { at: 'def:encode', weight: 1 },
+        { at: 'def:decode', weight: 2 },
+      ],
+    },
+    'Ilbm.ml': { digest: '4ffbdeaabed3',
+      summary: "Rows split into plane-rows and back, big-endian chunks, ByteRun1 compression.",
+      important: [
+        { at: 'def:plane_rows', say: 'a colour number, a bit in each plane', weight: 3 },
+        { at: 'def:encode', weight: 2 },
+        { at: 'def:decode', weight: 2 },
+      ],
+    },
+  },
+}

@@ -1,0 +1,17 @@
+// launcher/web/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "tinybox's menu in a browser: no program linked in, one started by loading its own page.",
+  files: {
+    'Tinybox_web.ml': { digest: '21efd9c8fc96',
+      summary: "The web host: a program's page loaded, thumbnails and sources fetched from the assets repository.",
+      important: [
+        { at: 'def:go', say: 'the child process is the page: Back returns', weight: 3 },
+        { at: 'def:fetch_sources', say: 'the sources for the code map, fetched once asked', weight: 2 },
+        { at: 'def:host', weight: 3 },
+        { at: 'def:assets', weight: 1 },
+      ],
+    },
+  },
+}

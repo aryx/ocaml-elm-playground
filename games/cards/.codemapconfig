@@ -1,0 +1,46 @@
+// games/cards/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md; its facts:
+// tinybox codemap -facts . games/cards)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Card games: a deck of 52 and the rules of a patience played with it.',
+  files: {
+    'TinyFreeCell.ml': { digest: '91e2fd4ccc0b',
+      summary: "FreeCell (Paul Alfille, 1978; Windows, 1995): every card face up, four free cells, Microsoft's numbered deals.",
+      capitals: [{ at: 'def:capacity', say: 'the supermove: how many cards move at once' }],
+      important: [
+        { at: 'type:game', say: 'the columns, the free cells, the foundations', weight: 3 },
+        { at: 'def:capacity', say: '(1 + free cells) * 2 ^ empty columns', weight: 3 },
+        { at: 'def:goes_on', say: 'one lower, the other colour', weight: 2 },
+        { at: 'def:move_cards', weight: 2 },
+        { at: 'def:deal_of_flags', say: 'deal=N: the same deal on every computer', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:move_cards' },
+        { from: 'def:move_cards', to: 'def:capacity' },
+      ],
+      related: ['web/TinyFreeCell.html', '../../tests/2d/golden/TinyFreeCell.png'],
+    },
+    'TinySolitaire.ml': { digest: 'c1e3e22bbe58',
+      summary: "Solitaire, Klondike (Wes Cherry, Microsoft, 1990): the stock, hidden cards, the patience that taught the mouse.",
+      capitals: [{ at: 'def:uncover', say: 'a face-down card turned over when freed' }],
+      important: [
+        { at: 'type:game', say: 'columns half hidden, the stock, the waste, the foundations', weight: 3 },
+        { at: 'def:turn', say: 'the stock turned onto the waste, or back', weight: 2 },
+        { at: 'def:uncover', weight: 2 },
+        { at: 'def:move_cards', weight: 2 },
+        { at: 'def:new_game', say: "Microsoft's deals, dealt the Klondike way", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.game('TinyFreeCell.ml', 'def:capacity', 'the supermove: a run moved at once', say='how many may move') + {
+      bones+: [{ at: '../../gamekits/cards/Cards.ml:def:deal', role: "Microsoft's numbered deal (the kit)" }],
+      joints+: [{ from: '../../gamekits/cards/Cards.ml:def:deal', to: 'TinyFreeCell.ml:def:initial_model', say: 'the 52 cards' }],
+    },
+  ],
+  views: [
+    { name: 'The patiences and their cards', files: ['TinyFreeCell.ml', 'TinySolitaire.ml', '../../gamekits/cards/'] },
+  ],
+}

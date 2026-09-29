@@ -1,0 +1,15 @@
+// launcher/codegen/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Build time: what tinybox's menu shows, the catalogue and the thumbnails, made OCaml.",
+  files: {
+    'make_tinybox_data.ml': { digest: '4aba2dd185f7',
+      summary: 'CATALOG.md and the golden frames, halved into thumbnails, written as one module for the menu.',
+      important: [
+        { at: 'def:thumbnail', say: 'a golden frame made small', weight: 2 },
+        { at: 'def:halve', weight: 1 },
+      ],
+    },
+  },
+}

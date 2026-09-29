@@ -1,0 +1,23 @@
+// libs/audio/formats/wav/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'WAV, the PPM of sound: samples on disk, what the golden tests compare and any player plays.',
+  files: {
+    'Wav.mli': { digest: 'dc933dc23bad',
+      summary: 'WAV files: a 44-byte RIFF header, then 16-bit samples; written, and read whatever their form.',
+      important: [
+        { at: 'def:to_string', weight: 2 },
+        { at: 'def:of_string', say: 'stereo mixed down, resampled to 44,100', weight: 2 },
+        { at: 'def:write_stereo', weight: 1 },
+      ],
+    },
+    'Wav.ml': { digest: 'b49e9f50a590',
+      summary: "WAV written byte by byte, and read by walking the RIFF's chunks.",
+      important: [
+        { at: 'def:to_string_channels', weight: 2 },
+        { at: 'def:chunks', say: 'fmt and data found among any chunks', weight: 2 },
+      ],
+    },
+  },
+}

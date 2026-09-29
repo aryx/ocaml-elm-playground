@@ -1,0 +1,53 @@
+// appkits/diagram/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Visio's smart shapes: a page of shapes whose geometry is formulas, connectors routed around them (TinyVisio).",
+  files: {
+    'Diagram.mli': { digest: '02de5e07a447',
+      summary: "Each shape a small spreadsheet, Visio's ShapeSheet; glue is a formula naming another shape's cells.",
+      capitals: [
+        { at: 'def:set_formula', say: 'names turned into cells of one sheet' },
+        { at: 'def:glue', say: 'a connector end follows by formula' },
+      ],
+      important: [
+        { at: 'comment:"User.Head     = MIN(0.5, Width*0.5)"', say: "the arrow's head stays its size", weight: 3 },
+        { at: 'comment:"so when the shape moves, the engine"', say: 'nothing here moves a connector', weight: 3 },
+        { at: 'type:master', say: 'a stencil entry: size, cells, outline', weight: 2 },
+        { at: 'type:shape', weight: 2 },
+        { at: 'def:set_formula', weight: 2 },
+        { at: 'def:glue', weight: 2 },
+        { at: 'def:route', weight: 1 },
+      ],
+    },
+    'Diagram.ml': { digest: '199876ab6034',
+      summary: 'The page as one sheet of appkits/sheet: shape n is column n, a cell a row.',
+      important: [
+        { at: 'type:t', say: 'the sheet does the work; shapes name its cells', weight: 3 },
+        { at: 'def:masters', say: 'the stencil: boxes whose outlines are formulas', weight: 2 },
+        { at: 'def:translate', say: 'PinX, Sheet.3!PinX into cell references', weight: 3 },
+        { at: 'def:glue', weight: 2 },
+        { at: 'def:delete', say: 'glued ends frozen to their values', weight: 1 },
+      ],
+      related: ['../tests/Unit_diagram.ml'],
+    },
+    'Ortho_route.mli': { digest: 'a2789aaeac2c',
+      summary: "A connector's route in right angles around the boxes: a visibility graph, then Dijkstra.",
+      capitals: [
+        { at: 'def:route', say: 'fewest bends among the shortest' },
+      ],
+      important: [
+        { at: 'comment:"orthogonal visibility graph"', say: 'where a route may turn: the boxes\' edge lines', weight: 3 },
+        { at: 'comment:"a price for each turn"', say: 'the node is a place and a direction', weight: 2 },
+        { at: 'def:route', weight: 2 },
+      ],
+    },
+    'Ortho_route.ml': { digest: 'a070e512d827',
+      summary: 'The graph of line crossings outside the boxes, searched with a heap; corners kept only.',
+      important: [
+        { at: 'def:route', weight: 3 },
+        { at: 'def:simplify', say: 'the corners only', weight: 1 },
+      ],
+    },
+  },
+}

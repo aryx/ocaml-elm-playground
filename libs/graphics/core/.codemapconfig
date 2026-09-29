@@ -1,0 +1,86 @@
+// libs/graphics/core/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The grid of pixels every rasterizer writes into, and the few operations on whole grids.',
+  files: {
+    'Framebuffer.mli': { digest: 'f8c18dac9742',
+      summary: 'A framebuffer: one 32-bit 0xAARRGGBB int per pixel, y down; colours in, alpha apart.',
+      capitals: [
+        { at: 'type:t', say: 'what everything in graphics/ draws into' },
+      ],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'def:fill_span', say: 'a row of pixels at once: what Fill produces', weight: 3 },
+        { at: 'def:plot', weight: 2 },
+        { at: 'def:blend', say: 'Porter-Duff over, one channel at a time', weight: 2 },
+      ],
+    },
+    'Framebuffer.ml': { digest: '13f59a4732bc',
+      summary: 'Framebuffers over a Bigarray; an opaque span filled in one go, the common case.',
+      important: [
+        { at: 'def:blend', weight: 2 },
+        { at: 'def:fill_span', say: 'clipped, then opaque spans filled whole', weight: 3 },
+        { at: 'def:plot', say: 'one pixel written directly (Opti)', weight: 2 },
+      ],
+    },
+    'Blit.mli': { digest: '2ccfcd7cefec',
+      summary: 'An image drawn moved, scaled and rotated: BitBLT generalized by inverse mapping.',
+      capitals: [
+        { at: 'def:draw', say: 'a sprite or photo through an affine transform' },
+      ],
+      important: [
+        { at: 'comment:"Forward or inverse?"', say: 'why each screen pixel looks back into the image', weight: 3 },
+        { at: 'def:sample_nearest', weight: 1 },
+        { at: 'def:sample_bilinear', say: 'the four texels around, weighted', weight: 2 },
+        { at: 'def:draw', weight: 2 },
+      ],
+    },
+    'Blit.ml': { digest: '657fbbd69922',
+      summary: 'Inverse mapping, simple (a matrix product a pixel) and fast (forward differencing).',
+      important: [
+        { at: 'def:covered_box', say: 'only the pixels the corners may cover', weight: 2 },
+        { at: 'def:draw_simple', say: 'the idea: each pixel centre mapped back', weight: 3 },
+        { at: 'def:draw_fast', say: 'one step in x is one constant step in the image', weight: 3 },
+      ],
+    },
+    'Matting.mli': { digest: '2a97ecefee05',
+      summary: 'Transparency recovered from two opaque renders, over black and over white, for a GPU to blend.',
+      important: [
+        { at: 'comment:"The trick: draw it twice"', say: 'a = 1 - (W - B)/255, B already premultiplied', weight: 3 },
+        { at: 'def:premultiplied_rgba', weight: 2 },
+      ],
+    },
+    'Matting.ml': { digest: '1da16027b3c8',
+      summary: "Matting's two renders turned into premultiplied RGBA bytes, the OpenGL HUD's texture.",
+      important: [
+        { at: 'def:premultiplied_rgba', weight: 2 },
+      ],
+    },
+    'Opti.mli': { digest: 'f9223cdae196',
+      summary: 'The switch between optimized code and the simpler original kept beside it, the "o" key.',
+      capitals: [
+        { at: 'def:enabled', say: 'simple or fast: every optimization checks it' },
+      ],
+      important: [
+        { at: 'def:enabled', weight: 3 },
+        { at: 'comment:"Code checking [enabled]"', say: 'where the optimizations are', weight: 2 },
+      ],
+    },
+    'Opti.ml': { digest: '17f2efbe6062', summary: 'The switch itself: a reference, on by default.' },
+    'Pixelate.mli': { digest: '723c7c1e404e',
+      summary: 'Drawing at a lower resolution, each small pixel shown as a k by k block: 9 times less work at k = 3.',
+      important: [
+        { at: 'def:draw', say: 'the game drawn small, then blown up', weight: 3 },
+        { at: 'def:nearest', weight: 2 },
+      ],
+    },
+    'Pixelate.ml': { digest: '486216777429',
+      summary: "Pixelation's factors, and a block's first row copied down to the others (Opti).",
+      important: [
+        { at: 'def:nearest_simple', weight: 2 },
+        { at: 'def:nearest_rows', say: 'a row made once, then copied whole', weight: 2 },
+      ],
+    },
+  },
+}

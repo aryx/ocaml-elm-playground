@@ -1,0 +1,30 @@
+// libs/graphics/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Rendering from scratch, one idea per module: pixels, 2D and 3D rasterizers, ray tracing, image and video formats.',
+  dirs: {
+    tests: { summary: 'Unit tests of every rasterizer and format, their fixtures (PngSuite, GIFs, JPEGs), node checks, a ray tracing benchmark.' },
+  },
+  skeletons: [
+    {
+      name: 'From pixels up',
+      bones: [
+        { at: 'core/', role: 'the framebuffer every other part writes into' },
+        { at: '2d/', role: 'shapes filled and stroked, antialiased' },
+        { at: '3d/', role: 'triangles projected, clipped, z-buffered, shaded' },
+        { at: '3d/raytrace/', role: 'the other way to 3D: a ray per pixel' },
+        { at: 'images/', role: 'pictures read from their bytes' },
+        { at: 'imaging/', role: "a picture processed: Photoshop's filters" },
+        { at: 'videos/', role: 'pictures moving: frames decoded at their times' },
+      ],
+      joints: [
+        { from: '2d/', to: 'core/', say: 'draws into' },
+        { from: '3d/', to: 'core/', say: 'draws into' },
+        { from: '3d/raytrace/', to: '3d/', say: 'shares its geometry' },
+        { from: 'imaging/', to: 'images/', say: 'processes' },
+        { from: 'videos/', to: 'images/', say: 'frames as pictures' },
+      ],
+    },
+  ],
+}

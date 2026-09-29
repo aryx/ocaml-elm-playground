@@ -1,0 +1,26 @@
+// gamekits/brawler/3d/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The 3D brawler kit: a fighter as a skeleton of boxes, poses interpolated between keyframes.',
+  files: {
+    'Skeleton.mli': { digest: '1406928a9b5c',
+      summary: 'A skeleton of boxes, its pose the angles of its joints: hierarchical transforms, the stick figure in 3D.',
+      important: [
+        { at: 'type:limb', weight: 2 },
+        { at: 'type:pose', say: 'the angles of every joint', weight: 3 },
+        { at: 'def:lerp', say: 'a move: keyframes and the poses between', weight: 2 },
+        { at: 'def:draw', say: 'each box placed by its parents', weight: 2 },
+        { at: 'def:hand', say: 'where the hand is: a sword, a shield, a hitbox', weight: 2 },
+      ],
+    },
+    'Skeleton.ml': { digest: '31e2530669dd',
+      summary: 'The joints composed down the tree, each limb a box carried by the one above.',
+      important: [
+        { at: 'def:jointed', say: 'a child carried by its parent: the transform composed', weight: 3 },
+        { at: 'def:figure', weight: 2 },
+        { at: 'def:mix', weight: 1 },
+      ],
+    },
+  },
+}

@@ -1,0 +1,29 @@
+// libs/graphics/videos/fli/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Autodesk Animator's FLI and FLC read and written: a frame stored as what changed since the last.",
+  files: {
+    'Fli.mli': { digest: '68963a3eca8d',
+      summary: "Jim Kent's format (1989), DOS games' cut-scenes: a first frame run-length coded, then deltas.",
+      capitals: [
+        { at: 'def:of_string', say: 'the file as a Movie, frames applied in turn' },
+      ],
+      important: [
+        { at: 'comment:"The idea: the first frame is stored whole"', say: 'a still background costs nothing', weight: 3 },
+        { at: 'type:format', weight: 1 },
+        { at: 'def:of_string', weight: 2 },
+        { at: 'def:to_string', weight: 2 },
+      ],
+    },
+    'Fli.ml': { digest: 'a9a46bf0333b',
+      summary: "The chunk kinds (palettes, BRUN, LC, DELTA_FLC) applied to a state; the writer: a BRUN frame, then deltas.",
+      important: [
+        { at: 'def:apply', say: "a frame's chunks on the palette and pixels", weight: 3 },
+        { at: 'def:changed_packets', say: 'skip the unchanged, copy or repeat the rest', weight: 2 },
+        { at: 'def:delta_flc_chunk', weight: 2 },
+        { at: 'def:add_frame', weight: 1 },
+      ],
+    },
+  },
+}

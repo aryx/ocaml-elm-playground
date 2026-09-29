@@ -1,0 +1,60 @@
+// apps/education/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Programs made for a learner of a subject: the sky of a place and time, a physics lab that measures.',
+  files: {
+    'TinyStellarium.ml': { digest: 'dc706e705e32',
+      summary: 'Stellarium (Fabien Chereau, 2001): the sky of a place at an instant, the stars, Sun, Moon and planets, time sped up.',
+      capitals: [
+        { at: 'def:bodies', say: 'the sky at an instant: catalogued, precessed, turned, tilted' },
+      ],
+      important: [
+        { at: 'type:sky', say: 'the place, the instant, the rate, where you look', weight: 3 },
+        { at: 'def:bodies', weight: 3 },
+        { at: 'comment:"What it teaches is appkits/astronomy"', say: 'the pipeline: sphere, sidereal time, latitude', weight: 2 },
+        { at: 'def:to_screen', say: 'the stereographic projection: circles stay circles', weight: 2 },
+        { at: 'def:places', say: 'Paris to the pole: the same stars, not the same half', weight: 1 },
+        { at: 'def:ground', say: 'the outside of the horizon circle', weight: 1 },
+        { at: 'def:update', weight: 1 },
+        { at: 'def:view', weight: 1 },
+      ],
+      links: [
+        { from: 'def:view', to: 'def:bodies' },
+        { from: 'def:view', to: 'def:to_screen' },
+      ],
+      related: ['web/TinyStellarium.html', '../../tests/2d/golden/TinyStellarium.png', '../../appkits/astronomy/Celestial.mli'],
+    },
+    'TinyInteractivePhysics.ml': { digest: 'ac8fe7bdc018',
+      summary: 'Interactive Physics (Knowledge Revolution, 1989): bodies drawn and tied, run, measured; the tape rewound.',
+      capitals: [
+        { at: 'def:measure', say: 'the meters: energies and momentum, what it teaches' },
+        { at: 'type:lab', say: 'the tape: every frame a world, kept in an array' },
+      ],
+      important: [
+        { at: 'type:drawing', say: 'what is drawn: bodies, and what ties them', weight: 3 },
+        { at: 'type:lab', weight: 3 },
+        { at: 'def:build', say: 'the drawing made a Physics world, joints and all', weight: 2 },
+        { at: 'def:tick', say: 'the springs pushed as forces, then the world moves', weight: 2 },
+        { at: 'def:spring_force', say: "Hooke's law with damping, in newtons", weight: 1 },
+        { at: 'def:inertia', say: 'the textbook formulas: turning counts too', weight: 1 },
+        { at: 'def:measure', weight: 3 },
+        { at: 'def:labs', say: 'pendulum, spring, ramp, collision', weight: 1 },
+        { at: 'def:update', weight: 1 },
+        { at: 'def:meters', say: 'the energies plotted frame by frame', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:run' },
+        { from: 'def:update', to: 'def:tick' },
+        { from: 'def:tick', to: 'def:spring_force' },
+        { from: 'def:measure', to: 'def:inertia' },
+        { from: 'def:view', to: 'def:meters' },
+      ],
+      related: ['web/TinyInteractivePhysics.html', '../../tests/2d/golden/TinyInteractivePhysics.png', '../../playground/apis/Physics.mli'],
+    },
+  },
+  dirs: {
+    software: { summary: 'The same programs on the software rasterizer, for the golden frames.' },
+    web: { summary: 'The programs compiled to JavaScript, and their pages.' },
+  },
+}

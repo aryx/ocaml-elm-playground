@@ -1,0 +1,28 @@
+// gamekits/lightcycles/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Tron's light cycles as a model and an update with no picture; the games draw it in 2D and 3D.",
+  files: {
+    'Lightcycles.mli': { digest: 'a15274d215af',
+      summary: 'The arena, the cycles and their trails, the crashes, the rounds, and the computer players.',
+      important: [
+        { at: 'type:cycle', say: 'a cycle: where, which way, its trail', weight: 2 },
+        { at: 'type:model', weight: 2 },
+        { at: 'def:update', say: 'the whole game: the pictures are the games\'', weight: 3 },
+        { at: 'def:computer_turn', say: 'the computer: the most room', weight: 2 },
+        { at: 'def:voronoi', say: 'the cells each cycle reaches first', weight: 2 },
+      ],
+    },
+    'Lightcycles.ml': { digest: '2dd2624ae155',
+      summary: 'The rules, and two computer players: a flood fill counting room, and a search over Voronoi territory.',
+      capitals: [{ at: 'def:search_turn', say: 'a search whose score is territory' }],
+      important: [
+        { at: 'def:room', say: 'the flood fill: cells reachable', weight: 2 },
+        { at: 'def:voronoi', weight: 3 },
+        { at: 'def:search_turn', weight: 3 },
+        { at: 'def:step_round', weight: 2 },
+      ],
+    },
+  },
+}

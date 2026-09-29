@@ -1,0 +1,36 @@
+// appkits/sheet/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The spreadsheets' engine: cells as a graph, recomputed downstream in Kahn's order (TinyVisiCalc to TinyExcel).",
+  files: {
+    'Sheet.mli': { digest: '6e4be25d409f',
+      summary: "A sheet is a graph, not a grid: a change recomputes what reads it, in topological order; a cycle found, not looped on.",
+      capitals: [
+        { at: 'def:set', say: 'a cell typed into, and all it reaches' },
+      ],
+      important: [
+        { at: 'type:value', weight: 2 },
+        { at: 'type:t', weight: 3 },
+        { at: 'def:set', weight: 3 },
+        { at: 'def:recalculated', say: 'how many cells the change reached', weight: 1 },
+        { at: 'def:recalculate', say: "VisiCalc's way: by rows or columns, no graph", weight: 2 },
+      ],
+    },
+    'Sheet.ml': { digest: '4affc4b31afd',
+      summary: "Formulas evaluated over the cells, the reverse edges kept, Kahn's algorithm over what a change reaches.",
+      capitals: [
+        { at: 'def:recompute', say: "Kahn's algorithm; what is left is a cycle" },
+      ],
+      important: [
+        { at: 'def:eval', weight: 2 },
+        { at: 'def:downstream', say: 'the change walks forwards through the graph', weight: 2 },
+        { at: 'def:recompute', weight: 3 },
+        { at: 'def:store', say: 'the reverse edges moved: the graph is only as right as this', weight: 3 },
+        { at: 'def:set', weight: 2 },
+        { at: 'def:recalculate', say: 'the 1979 way, to compare', weight: 1 },
+      ],
+      related: ['../tests/Unit_sheet.ml'],
+    },
+  },
+}

@@ -1,0 +1,114 @@
+// languages/basic/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "BASIC as the home computers had it, Integer and Applesoft: read, run as a Talk program; TinyBasic's.",
+  files: {
+    'Basic_parse.mli': { digest: 'f3d74e59d321',
+      summary: "Two BASICs, one grammar: Microsoft's, of which Tiny BASIC's is a part.",
+      important: [
+        { at: 'comment:"line       ::= [number] statement"', say: 'the grammar, a line of statements', weight: 3 },
+        { at: 'type:stmt', say: 'PRINT, INPUT, GOTO, GOSUB, FOR... and the prompt\'s', weight: 3 },
+        { at: 'type:expr', weight: 2 },
+        { at: 'def:parse_line', weight: 2 },
+      ],
+    },
+    'Basic_parse.ml': { digest: '1fcb66187c89',
+      summary: "A line read by recursive descent over its characters, keywords found inside names as the cruncher did.",
+      capitals: [
+        { at: 'def:parse_line', say: 'a typed line: its number and statements' },
+      ],
+      important: [
+        { at: 'def:keyword', say: 'a keyword even inside a name: FORI=1TO9', weight: 3 },
+        { at: 'def:expr', say: 'precedence as a ladder of functions', weight: 2 },
+        { at: 'def:statement', say: 'a statement by its first keyword', weight: 2 },
+        { at: 'def:print_items', say: "PRINT's items, ; and , between", weight: 1 },
+        { at: 'def:parse_line', weight: 2 },
+      ],
+      links: [
+        { from: 'def:parse_line', to: 'def:statements' },
+        { from: 'def:statement', to: 'def:expr' },
+      ],
+    },
+    'Basic_run.mli': { digest: 'e8692fb5f8ce',
+      summary: 'The whole machine: a program counter, a GOSUB stack, a FOR stack, DATA, the variables; two dialects of arithmetic.',
+      capitals: [
+        { at: 'def:run', say: 'a program run, as a Talk conversation' },
+      ],
+      important: [
+        { at: 'type:dialect', say: 'Integer wraps at 16 bits, Applesoft floats', weight: 3 },
+        { at: 'type:program', weight: 2 },
+        { at: 'def:direct', say: 'a line without a number, done at once', weight: 2 },
+      ],
+    },
+    'Basic_run.ml': { digest: 'ab85301cca2d',
+      summary: 'The interpreter: a Talk.step per statement, so INPUT waits and Control-C stops the program.',
+      capitals: [
+        { at: 'def:exec', say: 'one statement: what comes next' },
+      ],
+      important: [
+        { at: 'type:machine', say: 'the whole machine, one per RUN', weight: 3 },
+        { at: 'type:value', weight: 1 },
+        { at: 'def:eval', weight: 2 },
+        { at: 'def:go', say: 'the program counter moved: line, statement', weight: 2 },
+        { at: 'def:exec', weight: 3 },
+        { at: 'def:report', say: "an error in the dialect's own words", weight: 1 },
+        { at: 'def:run', weight: 2 },
+      ],
+      links: [
+        { from: 'def:run', to: 'def:go' },
+        { from: 'def:go', to: 'def:exec' },
+        { from: 'def:exec', to: 'def:eval' },
+      ],
+    },
+    'Basic_session.mli': { digest: '5dae2a7345fd',
+      summary: "BASIC as met in 1977: one prompt that is the editor, the calculator and the shell; RUN a child, BREAK stopping it.",
+      important: [
+        { at: 'def:session', weight: 3 },
+      ],
+    },
+    'Basic_session.ml': { digest: '778ac5801c44',
+      summary: 'The prompt: a numbered line into the program, else done; LIST, RUN, FP, INT and the disk commands.',
+      capitals: [
+        { at: 'def:session', say: 'the prompt: > for Integer, ] for Applesoft' },
+      ],
+      important: [
+        { at: 'def:session', weight: 3 },
+        { at: 'comment:"the Apple II\'s prompts"', say: 'which BASIC you are in', weight: 1 },
+      ],
+    },
+    'Basic_disk.mli': { digest: 'ddf56f4d2514',
+      summary: "The floppy: programs in the style of David Ahl's books, each marked I or A, as DOS 3.3's CATALOG listed them.",
+      important: [
+        { at: 'type:file', weight: 2 },
+        { at: 'def:catalog', weight: 1 },
+      ],
+    },
+    'Basic_disk.ml': { digest: 'c1aab7905496',
+      summary: 'The listings: GUESS, BAGELS, MANDEL, SIERPINSKI, SINE, MATCHES, ANIMAL, LUNAR.',
+      important: [
+        { at: 'def:guess', say: 'checked line by line against Tty_guess', weight: 2 },
+        { at: 'def:mandel', say: 'the Mandelbrot set in characters', weight: 1 },
+        { at: 'def:files', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A line of BASIC, typed and run',
+      bones: [
+        { at: 'Basic_session.ml:def:session', role: 'the prompt: editor, calculator, shell' },
+        { at: 'Basic_parse.ml:def:parse_line', role: 'a line read into statements' },
+        { at: 'Basic_run.ml:def:run', role: 'RUN: a machine made from the program' },
+        { at: 'Basic_run.ml:def:exec', role: 'a statement done, the next chosen' },
+        { at: 'Basic_run.ml:def:eval', role: "an expression's value" },
+      ],
+      joints: [
+        { from: 'Basic_session.ml:def:session', to: 'Basic_parse.ml:def:parse_line', say: 'each line typed' },
+        { from: 'Basic_session.ml:def:session', to: 'Basic_run.ml:def:run', say: 'the program, spawned' },
+        { from: 'Basic_run.ml:def:run', to: 'Basic_run.ml:def:exec', say: 'statement by statement' },
+        { from: 'Basic_run.ml:def:exec', to: 'Basic_run.ml:def:eval', say: 'expressions' },
+      ],
+    },
+  ],
+}

@@ -1,0 +1,32 @@
+// libs/networking/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Networking from scratch, for teaching: the protocols as bytes in, bytes out; sockets apart.',
+  dirs: {
+    tests: { summary: "The .mlis' worked examples, the RFCs' own; the netcode through Sim_net's bad networks; real certificates." },
+  },
+  // the folders and how they lean on each other (README.md's diagram)
+  skeletons: [
+    {
+      name: 'Pure protocols, sockets apart',
+      bones: [
+        { at: 'protocols/', role: "other people's standards as bytes: HTTP, IRC, mail" },
+        { at: 'mail/', role: "mail's formats, read with no network" },
+        { at: 'tls/', role: 'TLS 1.3, what https:// runs inside' },
+        { at: 'netcode/', role: 'keeping copies of a game in step' },
+        { at: 'unix/', role: 'the sockets, natively: the only system calls' },
+        { at: 'relay/', role: 'the servers, programs over unix/' },
+        { at: '../../playground/apis/Multiplayer.ml', role: 'where games meet the netcode' },
+      ],
+      joints: [
+        { from: 'protocols/', to: 'mail/', say: 'carries' },
+        { from: 'netcode/', to: 'protocols/', say: 'writes with Wire' },
+        { from: 'unix/', to: 'protocols/', say: 'speaks' },
+        { from: 'unix/', to: 'tls/', say: 'wraps a socket' },
+        { from: 'relay/', to: 'unix/', say: 'stands on' },
+        { from: '../../playground/apis/Multiplayer.ml', to: 'netcode/', say: 'stands on' },
+      ],
+    },
+  ],
+}

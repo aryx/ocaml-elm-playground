@@ -1,0 +1,9 @@
+// libs/graphics/videos/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Video read and written from scratch, a library per format: raw, FLI, AVI, MPEG-1 and its system stream.',
+  dirs: {
+    tests: { summary: "The video formats' tests, a clip made once by ffmpeg from our frames, and an MPEG-1 benchmark." },
+  },
+}

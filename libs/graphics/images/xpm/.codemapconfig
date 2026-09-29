@@ -1,0 +1,28 @@
+// libs/graphics/images/xpm/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "XPM read and written: a picture as C strings, a character a pixel -- the sprites' and maps' format.",
+  files: {
+    'Xpm.mli': { digest: '2be480b5f219',
+      summary: "X11's icons (Bull, 1989) as text: a palette of characters and rows of them, visible in the source.",
+      capitals: [
+        { at: 'def:parse', say: "how Sprite and Tilemap read their art" },
+      ],
+      important: [
+        { at: 'type:t', say: 'the palette and the rows, kept as characters', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:print', say: "TinyAseprite's and TinyTiled's saving", weight: 2 },
+      ],
+    },
+    'Xpm.ml': { digest: '259c5f1e4f0b',
+      summary: 'The strings found in the C, colours by hex or name, and the picture printed back.',
+      important: [
+        { at: 'def:strings', weight: 1 },
+        { at: 'def:color_value', weight: 1 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:print', weight: 2 },
+      ],
+    },
+  },
+}

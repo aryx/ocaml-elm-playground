@@ -1,0 +1,27 @@
+// launcher/catalogue/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'CATALOG.md read: a page for people, on conventions strict enough for a program.',
+  files: {
+    'Catalogue.mli': { digest: '73521aa1dc21',
+      summary: 'The catalogue as data: two parts, sections with their definitions, a row per program.',
+      important: [
+        { at: 'type:program', say: 'a row: name, source, look, year, original, what it brought', weight: 3 },
+        { at: 'type:section', weight: 2 },
+        { at: 'def:parse', weight: 3 },
+        { at: 'def:golden_frame', say: 'its screenshot, by convention', weight: 1 },
+      ],
+    },
+    'Catalogue.ml': { digest: '619eb072ef89',
+      summary: "Markdown's inline marks taken off, rows split, sections gathered.",
+      important: [
+        { at: 'def:program_of_row', weight: 2 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'The catalogue read and checked against the programs.' },
+  },
+}

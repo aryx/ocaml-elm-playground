@@ -1,0 +1,28 @@
+// appkits/slides/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'A presentation typed as an outline, and the slides made from it: TinyPowerPoint.',
+  files: {
+    'Outline.mli': { digest: '9fb38858450c',
+      summary: "PowerPoint's outline (1987): titles against the edge, points indented; slides are a view of it.",
+      capitals: [
+        { at: 'def:parse', say: 'the outline is the presentation' },
+      ],
+      important: [
+        { at: 'type:slide', say: 'a title and its points, by level', weight: 3 },
+        { at: 'comment:"So the outline is the presentation"', say: 'slides computed again, never kept', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:slide_at', say: 'which slide the caret is in', weight: 1 },
+      ],
+    },
+    'Outline.ml': { digest: '766c1952209d',
+      summary: 'Lines read by their indentation, two spaces a level; offsets mapped to slides and back.',
+      important: [
+        { at: 'def:indent', say: 'a tab counts as two spaces', weight: 1 },
+        { at: 'def:parse', weight: 3 },
+      ],
+      related: ['../tests/Unit_slides.ml'],
+    },
+  },
+}

@@ -1,0 +1,58 @@
+// libs/graphics/images/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Image files read by our own decoders, a library a format, loaded and cached for the native platforms.',
+  files: {
+    'Image_decode.mli': { digest: 'b4d72af95695',
+      summary: "The native 2D platforms' images: a file or URL decoded to RGBA, cached, animated GIFs by time.",
+      capitals: [
+        { at: 'def:decode_string', say: 'the format told by its first bytes' },
+      ],
+      important: [
+        { at: 'def:decode_string', weight: 3 },
+        { at: 'def:image_of_url', say: 'cached, failure too: never blocks twice', weight: 2 },
+        { at: 'type:animation', weight: 1 },
+        { at: 'def:frame_at', weight: 1 },
+        { at: 'def:preload', say: 'loaded before the game, not mid-frame', weight: 2 },
+      ],
+    },
+    'Image_decode.ml': { digest: '3e2e3e6c5a20',
+      summary: 'Magic bytes to PNG, GIF or JPEG; why no OCaml image library was kept; the caches.',
+      important: [
+        { at: 'comment:"considered, and why none was kept"', say: "imagelib's LZW bug, stb_image's age, camlimages' C", weight: 3 },
+        { at: 'def:decode_string', weight: 3 },
+        { at: 'def:image_of_url_exn', weight: 1 },
+        { at: 'def:animation_of_url', weight: 1 },
+      ],
+    },
+    'Texture_decode.mli': { digest: '96a8beabf202',
+      summary: "The 3D backends' textures, as Image_decode: a path or URL decoded, cached, preloaded.",
+      important: [
+        { at: 'def:load', weight: 2 },
+        { at: 'def:preload', weight: 1 },
+      ],
+    },
+    'Texture_decode.ml': { digest: 'f879ceed8b03',
+      summary: 'Textures loaded through Image_decode, also from base64 data embedded in a program.',
+      important: [
+        { at: 'def:load_with', weight: 2 },
+        { at: 'def:load_base64_exn', weight: 1 },
+      ],
+    },
+    'Download.mli': { digest: '32e2d4032b36',
+      summary: 'An image file from the disk, or over http(s) by our own client and TLS 1.3.',
+      important: [
+        { at: 'def:grant', say: 'the network, if the program was given it', weight: 2 },
+        { at: 'def:local_file', weight: 2 },
+      ],
+    },
+    'Download.ml': { digest: 'b7364405ed3c',
+      summary: 'The network capability kept in a reference, set once by the platform; a URL fetched to a file.',
+      important: [
+        { at: 'def:granted', say: 'set deep in drawing, where no capability is passed', weight: 2 },
+        { at: 'def:local_file', weight: 2 },
+      ],
+    },
+  },
+}

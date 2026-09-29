@@ -1,0 +1,60 @@
+// libs/audio/signal/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The samples, below everything: what a digital sound is, mixed, resampled, taken apart by the FFT.',
+  files: {
+    'Signal.mli': { digest: '2a6a62d82e6f',
+      summary: 'A digital sound: floats from -1 to 1, 44,100 a second, nothing above Nyquist.',
+      capitals: [
+        { at: 'type:t', say: 'a sound: a float array, every layer speaks it' },
+      ],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'type:stereo', weight: 2 },
+        { at: 'def:rate', weight: 2 },
+        { at: 'def:alias', say: 'where a frequency above Nyquist folds to', weight: 2 },
+      ],
+    },
+    'Signal.ml': { digest: '34be975a6d1e', summary: 'Samples: the rate, durations in samples, a float to a 16-bit integer.' },
+    'Mix.mli': { digest: '2e7c23f5b30b',
+      summary: 'Sounds at once: added, turned down in decibels, and bent smoothly near the limits (tanh).',
+      important: [
+        { at: 'def:add', say: 'sounds at once: air pressures add', weight: 2 },
+        { at: 'def:of_decibels', say: 'the ear hears ratios', weight: 2 },
+        { at: 'def:soft_clip', say: 'tanh: squeezed, not cut flat', weight: 3 },
+        { at: 'def:limit', weight: 1 },
+      ],
+    },
+    'Mix.ml': { digest: '7df2897b7bc5', summary: 'Mixing: sums, gains, decibels and clipping, sample by sample.' },
+    'Resample.mli': { digest: '288a62c2a852',
+      summary: "A recording played faster or at another rate: nearest, linear or cubic, as an image scaled.",
+      important: [
+        { at: 'type:kind', say: "nearest is Paula's grit, cubic the smoothest", weight: 3 },
+        { at: 'def:read', say: 'a sample between two samples', weight: 2 },
+        { at: 'def:to_rate', weight: 1 },
+      ],
+    },
+    'Resample.ml': { digest: '2ee36e9aa480',
+      summary: 'Resampling: the three ways to read between samples, Catmull-Rom the cubic one.',
+      important: [
+        { at: 'def:read', weight: 3 },
+      ],
+    },
+    'Spectrum.mli': { digest: '0e1b5dae8d31',
+      summary: 'Which frequencies a sound contains: the DFT, and the FFT that checks against it, with a window.',
+      important: [
+        { at: 'def:dft', say: 'the definition: N^2, for the tests', weight: 2 },
+        { at: 'def:fft', say: 'Cooley-Tukey: N log N', weight: 3 },
+        { at: 'def:hann', say: 'a window, so the edges add no frequencies', weight: 1 },
+        { at: 'def:of_signal', weight: 1 },
+      ],
+    },
+    'Spectrum.ml': { digest: 'ed589167ab00',
+      summary: 'The Fourier transforms: the plain sum, and the recursive butterfly.',
+      important: [
+        { at: 'def:fft', say: 'even and odd halves, combined', weight: 3 },
+      ],
+    },
+  },
+}

@@ -1,0 +1,68 @@
+// libs/audio/formats/mod/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The Amiga's MOD: a song that carries its own instruments, played on Paula's four channels.",
+  files: {
+    'Mod.mli': { digest: '531ad4094585',
+      summary: "The module file (Soundtracker, 1987; ProTracker's form): samples, patterns of cells, the order.",
+      capitals: [
+        { at: 'type:song', say: 'instruments, patterns, the order they play in' },
+      ],
+      important: [
+        { at: 'type:instrument', weight: 2 },
+        { at: 'type:cell', say: 'a note: instrument, period, effect', weight: 3 },
+        { at: 'type:song', weight: 3 },
+        { at: 'def:periods', say: "the notes as Paula's periods", weight: 1 },
+        { at: 'def:of_string', weight: 1 },
+      ],
+    },
+    'Mod.ml': { digest: 'b8b1a8c96adc',
+      summary: 'MOD read and written, big-endian; a cell packed in four bytes; periods named as notes.',
+      important: [
+        { at: 'def:cell_of_bytes', say: 'four bytes, the fields split across nibbles', weight: 2 },
+        { at: 'def:of_string', weight: 2 },
+        { at: 'def:rate', say: "Paula's clock over the period", weight: 1 },
+      ],
+    },
+    'Paula.mli': { digest: '81eed6e9a379',
+      summary: "One of Paula's channels: 8-bit samples read at a period, each byte held, never filtered.",
+      important: [
+        { at: 'type:reading', say: "Paula's hold, or ours: linear, cubic", weight: 2 },
+        { at: 'def:trigger', weight: 1 },
+        { at: 'def:next', weight: 2 },
+      ],
+    },
+    'Paula.ml': { digest: '5543fcbec512',
+      summary: 'A channel stepped at the period\'s rate, looping its sample.',
+      important: [
+        { at: 'def:next', weight: 3 },
+      ],
+    },
+    'Mod_player.mli': { digest: '6e2cf7abc925',
+      summary: 'A MOD player: ticks and rows, cells read, the effects acting tick by tick, four channels panned.',
+      capitals: [
+        { at: 'def:fill', say: 'the song, as the next block of samples' },
+      ],
+      important: [
+        { at: 'def:create', weight: 1 },
+        { at: 'def:fill', weight: 3 },
+        { at: 'def:tick_samples', say: 'a tick: 2.5 / tempo seconds', weight: 1 },
+      ],
+    },
+    'Mod_player.ml': { digest: 'd036256f7ff7',
+      summary: "The player: a row's cells at tick 0, the effects on the other ticks, the channels summed.",
+      important: [
+        { at: 'def:play_cell', say: 'tick 0: a new note, instrument, effect', weight: 3 },
+        { at: 'def:effect_tick', say: 'the other ticks: slides, vibrato, arpeggio', weight: 2 },
+        { at: 'def:tick', weight: 2 },
+        { at: 'def:fill', weight: 2 },
+      ],
+      links: [
+        { from: 'def:fill', to: 'def:tick' },
+        { from: 'def:tick', to: 'def:play_cell' },
+        { from: 'def:tick', to: 'def:effect_tick' },
+      ],
+    },
+  },
+}

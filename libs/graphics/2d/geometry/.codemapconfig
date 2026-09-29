@@ -1,0 +1,51 @@
+// libs/graphics/2d/geometry/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The 2D maths shared by the rasterizer, SVG, physics and games: vectors, affine transforms, curves.',
+  files: {
+    'Vec2.mli': { digest: '9cbad84e6b47',
+      summary: 'Vectors and points as float pairs: the 2D twin of Vec3, used by physics most of all.',
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:cross', say: 'the z of the 3D cross: which side, how much', weight: 2 },
+      ],
+    },
+    'Vec2.ml': { digest: '8c1630efaf6d', summary: 'The vector operations, one line each.' },
+    'Affine.mli': { digest: 'e7e10f8f4415',
+      summary: 'Moves, rotations and scalings as six numbers, composed by multiplying: why a group is cheap.',
+      capitals: [
+        { at: 'type:t', say: 'a 3x3 matrix in homogeneous coordinates' },
+      ],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'def:compose', say: 'one transform after another: a product', weight: 3 },
+        { at: 'def:apply', weight: 1 },
+        { at: 'def:invert', say: "Blit's inverse mapping needs it", weight: 2 },
+      ],
+    },
+    'Affine.ml': { digest: 'f04977a9472e', summary: 'The six numbers multiplied, applied and inverted.' },
+    'Curve.mli': { digest: '0751c4febb01',
+      summary: 'Curves as cubics (Bézier, Catmull-Rom), flattened into polylines, and walked at constant speed.',
+      capitals: [
+        { at: 'def:flatten', say: 'nothing draws a curve: it becomes a polyline' },
+      ],
+      important: [
+        { at: 'def:cubic', weight: 1 },
+        { at: 'def:catmull_rom', say: 'through its points, not pulled towards them', weight: 2 },
+        { at: 'def:cubic_of_catmull_rom', weight: 1 },
+        { at: 'def:flatten', weight: 3 },
+        { at: 'def:through', weight: 2 },
+        { at: 'def:at', say: 'where the curve is s pixels along: paths', weight: 3 },
+      ],
+    },
+    'Curve.ml': { digest: '7c03bbb2c7ab',
+      summary: 'De Casteljau subdivision until within a tenth of a pixel; lengths measured for walking.',
+      important: [
+        { at: 'def:flatten', say: 'halves found with midpoints only', weight: 3 },
+        { at: 'def:measure', weight: 1 },
+        { at: 'def:at', weight: 2 },
+      ],
+    },
+  },
+}

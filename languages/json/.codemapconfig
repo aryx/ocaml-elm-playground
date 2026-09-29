@@ -1,0 +1,26 @@
+// languages/json/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "JSON read over JavaScript's lexer, only the grammar here; what jsonnet manifests into.",
+  files: {
+    'Json.mli': { digest: 'a611d2c20b6b',
+      summary: "JSON is JavaScript's literals alone: so JavaScript's lexer cuts it, comments and trailing commas taken.",
+      important: [
+        { at: 'type:t', say: 'a JSON value, what jsonnet evaluates to', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:member', say: "an object's field, by name", weight: 1 },
+      ],
+    },
+    'Json.ml': { digest: '9eef7d777b1e',
+      summary: "A recursive descent of five rules over Js_lexer's tokens.",
+      important: [
+        { at: 'comment:"value := object | array"', say: 'the whole grammar', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'JSON read: values, escapes, comments, errors.' },
+  },
+}

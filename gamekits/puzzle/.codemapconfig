@@ -1,0 +1,47 @@
+// gamekits/puzzle/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The puzzle kit: pushing on a grid, undo for free, and Sokoban: its rules, its file format, a solver.',
+  files: {
+    'Push.mli': { digest: '3e8fa34f2d69',
+      summary: "Sokoban's one move: step, and push what is in front; Baba Is You pushes a whole row.",
+      important: [{ at: 'def:chain', say: 'the row pushed, or nothing moves', weight: 3 }],
+    },
+    'Push.ml': { digest: '3e8d6475bf4d',
+      summary: 'The chain of pushed things, found cell by cell.',
+      important: [{ at: 'def:chain', weight: 2 }],
+    },
+    'Puzzle_undo.mli': { digest: 'e93278474610',
+      summary: 'The states before: in a pure program undo is free, every state a value kept.',
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:record', weight: 2 },
+        { at: 'def:undo', weight: 2 },
+      ],
+    },
+    'Puzzle_undo.ml': { digest: '76d6b83228cf',
+      summary: 'A stack of states.' },
+    'Sokoban.mli': { digest: 'f3ceee17947b',
+      summary: 'What TinySokoban and its editor share: the rules, the .xsb format, the checks, and a solver.',
+      important: [
+        { at: 'type:board', weight: 2 },
+        { at: 'def:step', say: 'a move: walk, or push one box', weight: 3 },
+        { at: 'def:of_xsb', say: "the players' own format since the 1990s", weight: 2 },
+        { at: 'def:problems', say: 'what a text editor cannot check', weight: 2 },
+        { at: 'def:solve', say: 'a breadth-first search: the level proved', weight: 3 },
+      ],
+    },
+    'Sokoban.ml': { digest: 'eb6671fb24ef',
+      summary: 'The rules, the format read and written, and the solver over pushes.',
+      important: [
+        { at: 'def:step', weight: 2 },
+        { at: 'def:key', say: 'a position as a key: seen once', weight: 2 },
+        { at: 'def:solve', weight: 3 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: pushes, undo, the levels solved." },
+  },
+}

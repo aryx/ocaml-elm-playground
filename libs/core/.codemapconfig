@@ -1,0 +1,108 @@
+// libs/core/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Elm's core, the part the Playground's programs need: float arithmetic, colors, Cmd and Sub.",
+  files: {
+    'Basics.ml': { digest: 'f0f020f1439b',
+      summary: "Elm's Basics: +, -, * and / on floats by default (the ints' are +.., -..), clamp, angles.",
+      capitals: [
+        { at: 'def:+', say: 'every program opens it: + is a float +' },
+      ],
+      important: [
+        { at: 'comment:"prefer float operators as default"', say: 'why a game says x + 1. and never +.', weight: 3 },
+        { at: 'def:/..', say: "the ints' operators, renamed out of the way", weight: 2 },
+        { at: 'def:clamp', weight: 1 },
+        { at: 'def:degrees_to_radians', weight: 1 },
+      ],
+    },
+    'Color.ml': { digest: '41f632141d3f',
+      summary: "Elm's colors as RGB triples: the playground's palette, light, dark and plain.",
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:rgb', say: 'clamped to 0..255', weight: 2 },
+      ],
+    },
+    'Keyboard.ml': { digest: 'e141e4eb6302', summary: "A key, as Elm names it: a string (\"ArrowLeft\", \"a\")." },
+    'Time.ml': { digest: '12d97078cc4f', summary: "Elm's Time.Posix: the milliseconds since the epoch, as an opaque value." },
+    'Set.ml': { digest: 'c64d7e9ba7f2', summary: "Elm's Set spelling (insert, remove) over Set_, for the keys held down." },
+    'Set_.mli': { digest: 'e1130b8be1bc', summary: "OCaml's stdlib sets without the functor: polymorphic, compared with compare." },
+    'Set_.ml': { digest: '3bde649c1c45', summary: "The stdlib's balanced trees, copied and made polymorphic." },
+    'Cmd.mli': { digest: '118b555675ee',
+      summary: "Elm's commands: what a pure update asks the platform to do, answered later as a message.",
+      capitals: [
+        { at: 'type:t', say: 'a wish, not an action: the platform performs it' },
+      ],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'comment:"A program\'s [update] is pure: it can\'t download a file, it can only"', say: 'why commands exist', weight: 2 },
+        { at: 'type:http_response', weight: 1 },
+        { at: 'def:batch', weight: 1 },
+      ],
+    },
+    'Cmd.ml': { digest: '76dfa3c879e6',
+      summary: 'Commands, as Cmd.mli says: an HTTP GET carrying Cap.network, or several, or none.',
+      important: [
+        { at: 'type:t', weight: 3 },
+      ],
+    },
+    'Sub.ml': { digest: 'ed3374a42089',
+      summary: "Elm's subscriptions: which events a program listens to, and each event turned into its message.",
+      capitals: [
+        { at: 'def:event_to_msgopt', say: "a platform's event, as the program's message" },
+      ],
+      important: [
+        { at: 'type:onesub', say: 'what a program may listen to', weight: 3 },
+        { at: 'type:event', say: 'what a platform reports', weight: 3 },
+        { at: 'def:event_to_msgopt', say: 'the first subscription that wants it wins', weight: 3 },
+        { at: 'comment:"the three an application needs and a game never did"', say: 'typing, wheel, double click: for apps', weight: 1 },
+        { at: 'def:on_animation_frame', weight: 1 },
+      ],
+      links: [
+        { from: 'def:event_to_msgopt', to: 'def:find_map_opt' },
+      ],
+    },
+    'Program.mli': { digest: '0cb1b6bc2ebd',
+      summary: "A program's entry point: run at once in its own executable, only recorded inside tinybox.",
+      capitals: [
+        { at: 'def:main', say: 'how every game and app ends' },
+      ],
+      important: [
+        { at: 'def:main', weight: 3 },
+        { at: 'def:run', say: "tinybox runs the one chosen, with its own argv", weight: 2 },
+        { at: 'def:argv', say: 'the command line, the right one in tinybox too', weight: 2 },
+      ],
+    },
+    'Program.ml': { digest: '042995e49152',
+      summary: 'Entries kept in a list while tinybox collects them; argv refused at a top level.',
+      capitals: [
+        { at: 'def:main', say: 'run now, or recorded under its name' },
+      ],
+      important: [
+        { at: 'def:main', weight: 3 },
+        { at: 'def:argv', weight: 2 },
+        { at: 'comment:"read while tinybox is still collecting"', say: 'the mistake tinybox list catches', weight: 2 },
+        { at: 'def:run', weight: 1 },
+      ],
+      related: ['tests/Unit_program.ml', '../../launcher/native/Tinybox.ml'],
+    },
+    'Base64.mli': { digest: '2fe7b92147ec',
+      summary: 'Bytes written as text, 6 bits a character: embedded textures, the WebSocket handshake, mail.',
+      important: [
+        { at: 'def:encode', weight: 2 },
+        { at: 'def:decode', say: 'skips what is not in the alphabet', weight: 2 },
+      ],
+    },
+    'Base64.ml': { digest: '6002f400e895',
+      summary: 'Base64, as Base64.mli says: a table of the 64 characters and its inverse.',
+      important: [
+        { at: 'def:value', say: 'a character back to its 6 bits', weight: 2 },
+        { at: 'def:encode', weight: 1 },
+      ],
+      related: ['tests/Unit_base64.ml'],
+    },
+  },
+  dirs: {
+    tests: { summary: 'Unit tests: base64, the calendars, the clock, repeating events, Program.main.' },
+  },
+}

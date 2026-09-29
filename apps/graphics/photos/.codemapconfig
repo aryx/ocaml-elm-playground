@@ -1,0 +1,12 @@
+// apps/graphics/photos/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "TinyPhotoshop's photographs, NASA's Blue Marble and Aldrin on the Moon, embedded by dune.",
+  files: {
+    'Photos.mli': { digest: '3dcf349b4bf9',
+      summary: 'The two JPEGs as strings, generated from the files beside it; make_photos.sh made them once.',
+      related: ['make_photos.sh', '../TinyPhotoshop.ml'],
+    },
+  },
+}

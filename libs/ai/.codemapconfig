@@ -1,0 +1,9 @@
+// libs/ai/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Game AI from scratch, for teaching: a folder per question a game asks of its AI.',
+  dirs: {
+    tests: { summary: "Each .mli's worked example checked, and the promises: alpha-beta agrees with minimax." },
+  },
+}

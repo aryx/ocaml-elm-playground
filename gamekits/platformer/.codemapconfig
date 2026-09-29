@@ -1,0 +1,51 @@
+// gamekits/platformer/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The platformer kit: a box moved against tiles, ladders climbed, and curved ground felt by sensors.',
+  files: {
+    'Tile_move.mli': { digest: 'd0476199368f',
+      summary: "Mario's world: a box moved a pixel at a time against solid tiles, x then y; it never goes wrong.",
+      important: [
+        { at: 'def:hits', say: 'does the box overlap a solid tile', weight: 2 },
+        { at: 'def:move_by', say: 'a pixel at a time, x then y, stopped when blocked', weight: 3 },
+        { at: 'def:on_ground', weight: 2 },
+      ],
+    },
+    'Tile_move.ml': { digest: 'c5ceb8ed5628',
+      summary: 'The pixel-by-pixel move, in a few lines.',
+      important: [{ at: 'def:move_by', weight: 2 }],
+    },
+    'Ladder.mli': { digest: 'bbe869f98264',
+      summary: 'Climbing ladder tiles, as Donkey Kong, Lode Runner and Rick Dangerous do: grabbed, climbed, stood on.',
+      important: [
+        { at: 'def:reach', say: 'a ladder within reach: snap to its column', weight: 2 },
+        { at: 'def:on_top', say: 'the top of a ladder holds you: not solid, but a floor', weight: 3 },
+        { at: 'def:climb', weight: 2 },
+      ],
+    },
+    'Ladder.ml': { digest: 'ecbd8fd6a8f1',
+      summary: 'Ladder tiles found by their column centre, and climbed.',
+      important: [{ at: 'def:ladder_at', weight: 2 }],
+    },
+    'Slope.mli': { digest: '7805e4c0b892',
+      summary: "Sonic's way: tiles with a surface, felt by sensors, the hero's mode turning round the loop.",
+      important: [
+        { at: 'type:surface', say: 'a tile as a height per column, and its angle', weight: 3 },
+        { at: 'type:mode', say: 'floor, right wall, ceiling, left wall', weight: 3 },
+        { at: 'def:mode_of', say: 'the ground angle picks the mode', weight: 2 },
+        { at: 'def:ground', say: 'a sensor: the ground under a point, in the mode', weight: 3 },
+      ],
+    },
+    'Slope.ml': { digest: 'c0c900d8d80a',
+      summary: 'The tiles (block, slope, ring) as heights, and the sensors that read them.',
+      important: [
+        { at: 'def:ring', say: 'the loop, as tiles', weight: 2 },
+        { at: 'def:ground', weight: 3 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: moves blocked, ladders climbed, sensors read." },
+  },
+}

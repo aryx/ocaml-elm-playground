@@ -1,0 +1,103 @@
+// languages/scratch/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Scratch (MIT, 2007) and Snap! (Berkeley, 2011): blocks as specs, their text, projects run as green threads; TinyScratch's and TinySnap's.",
+  files: {
+    'Scratch_blocks.mli': { digest: 'f968b639fe21',
+      summary: 'What each block says and what shape it has: no syntax errors because the shapes say where a block fits.',
+      capitals: [
+        { at: 'type:spec', say: "a block's words, slots and shape" },
+      ],
+      important: [
+        { at: 'comment:"(  when flag clicked  )"', say: 'hats, stacks, C blocks, reporters drawn', weight: 3 },
+        { at: 'type:shape', say: 'the grammar is the shapes', weight: 3 },
+        { at: 'type:spec', weight: 2 },
+        { at: 'type:block', say: 'a block used: its opcode and its arguments', weight: 2 },
+        { at: 'type:script', weight: 1 },
+      ],
+    },
+    'Scratch_blocks.ml': { digest: '424db1ceb120',
+      summary: "The table of specs, Scratch 2's then Snap!'s, one line a block as Scratch 3's opcodes are; custom blocks by template.",
+      important: [
+        { at: 'def:define', say: 'a spec from its template text', weight: 2 },
+        { at: 'def:specs', say: "Scratch's blocks, one line each", weight: 3 },
+        { at: 'def:snap_specs', say: "Snap!'s additions: lists, rings, custom", weight: 2 },
+        { at: 'def:spec', say: 'an opcode to its spec', weight: 1 },
+      ],
+    },
+    'Scratch_text.mli': { digest: '2c2dc31e2473',
+      summary: 'The scratchblocks notation of the forums: read by matching a line against the templates, and printed back.',
+      important: [
+        { at: 'comment:"Reading it is matching"', say: 'no grammar: the templates are it', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:print', weight: 1 },
+      ],
+    },
+    'Scratch_text.ml': { digest: '54d1133424de',
+      summary: 'Printing, then reading: a line tokenized into words and bracketed slots, fitted to a spec.',
+      capitals: [
+        { at: 'def:fit', say: "a line's words and slots matched to a spec" },
+      ],
+      important: [
+        { at: 'def:tokenize', say: 'brackets read inside out; < a bracket or less-than', weight: 2 },
+        { at: 'def:fit', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Scratch_run.mli': { digest: '544f239bcfdd',
+      summary: "A project run: sprites on a 480 by 360 stage, each script a green thread yielding at a loop's end or a wait.",
+      capitals: [
+        { at: 'def:step', say: "a frame: every thread run to its next yield" },
+      ],
+      important: [
+        { at: 'comment:"Scratch\'s threads are green threads"', say: 'concurrency without locks, and why', weight: 3 },
+        { at: 'type:value', say: "numbers, text, booleans, Snap!'s lists and rings", weight: 2 },
+        { at: 'type:sprite', weight: 1 },
+        { at: 'type:t', say: 'the stage: sprites, threads, the heap', weight: 2 },
+        { at: 'def:green_flag', weight: 1 },
+      ],
+    },
+    'Scratch_run.ml': { digest: '42de92803698',
+      summary: "The heap, values, evaluation and a thread's frames: loops yield, custom blocks return, rings close over their env.",
+      capitals: [
+        { at: 'def:run', say: 'a thread run until it yields' },
+      ],
+      important: [
+        { at: 'type:frame', say: "what a thread does next: its continuation", weight: 3 },
+        { at: 'type:t', weight: 2 },
+        { at: 'def:eval', say: 'a slot: a literal, a reporter, a ring', weight: 2 },
+        { at: 'def:call', say: "a ring called: Snap!'s closures", weight: 2 },
+        { at: 'def:exec', say: 'a command block: the frames after it', weight: 2 },
+        { at: 'def:run', weight: 3 },
+        { at: 'def:step', weight: 2 },
+      ],
+      links: [
+        { from: 'def:step', to: 'def:run' },
+        { from: 'def:run', to: 'def:exec' },
+        { from: 'def:exec', to: 'def:eval' },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'Scratch: blocks, text, threads',
+      bones: [
+        { at: 'Scratch_blocks.mli:type:spec', role: "the blocks' table: words, slots, shape" },
+        { at: 'Scratch_text.ml:def:parse', role: 'text into scripts, by the templates' },
+        { at: 'Scratch_run.ml:def:step', role: 'a frame of the stage' },
+        { at: 'Scratch_run.ml:def:run', role: 'a green thread, to its next yield' },
+        { at: 'Scratch_run.ml:def:exec', role: 'a block done' },
+      ],
+      joints: [
+        { from: 'Scratch_blocks.mli:type:spec', to: 'Scratch_text.ml:def:parse', say: 'the templates' },
+        { from: 'Scratch_text.ml:def:parse', to: 'Scratch_run.ml:def:step', say: 'the scripts' },
+        { from: 'Scratch_run.ml:def:step', to: 'Scratch_run.ml:def:run', say: 'each thread' },
+        { from: 'Scratch_run.ml:def:run', to: 'Scratch_run.ml:def:exec', say: 'block by block' },
+      ],
+    },
+  ],
+  dirs: {
+    tests: { summary: 'Scripts read and printed, projects run: threads, broadcasts, lists, custom blocks, rings.' },
+  },
+}

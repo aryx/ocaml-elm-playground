@@ -1,0 +1,32 @@
+// appkits/nls/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Engelbart's NLS (SRI, 1968): a document as a tree of numbered statements, for TinyNLS.",
+  files: {
+    'Nls_doc.mli': { digest: '21e6d9d7c763',
+      summary: 'A tree of statements: branches moved whole, views of the first levels, links by name or number.',
+      capitals: [
+        { at: 'type:statement', say: 'a paragraph with statements below it' },
+      ],
+      important: [
+        { at: 'comment:"NLS held it as a **tree**"', say: 'structure you edit, not just see', weight: 3 },
+        { at: 'type:statement', weight: 3 },
+        { at: 'comment:"permanent name, its SID"', say: 'numbers move, SIDs never do', weight: 2 },
+        { at: 'def:move', say: 'a branch moved as one', weight: 2 },
+        { at: 'def:visible', say: 'a view: the outline, nothing changed', weight: 2 },
+        { at: 'def:find', say: 'a link: by name or by number', weight: 1 },
+      ],
+    },
+    'Nls_doc.ml': { digest: 'c546b63d19c9',
+      summary: 'Numbers computed from the path, digits and letters alternating; branches placed and removed.',
+      important: [
+        { at: 'def:of_outline', say: 'indented lines into the tree', weight: 2 },
+        { at: 'def:number_of_path', say: '1b1: levels alternate digits and letters', weight: 3 },
+        { at: 'def:move', weight: 2 },
+        { at: 'def:visible', weight: 1 },
+      ],
+      related: ['../tests/Unit_nls.ml'],
+    },
+  },
+}

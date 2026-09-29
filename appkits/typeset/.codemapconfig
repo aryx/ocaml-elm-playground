@@ -1,0 +1,36 @@
+// appkits/typeset/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Where to break a paragraph: greedy, and Knuth and Plass's whole paragraph at once (TinyMosaic, TypesetParagraph).",
+  files: {
+    'Linebreak.mli': { digest: 'bf44ef86e179',
+      summary: "Line breaking greedy, blind to the next line, or TeX's: the best breaks of the whole paragraph (Knuth-Plass, 1981).",
+      capitals: [
+        { at: 'def:optimal', say: 'the whole paragraph scored, TeX-style' },
+      ],
+      important: [
+        { at: 'type:word', say: 'a box, and the glue after it', weight: 2 },
+        { at: 'type:params', say: 'how far glue stretches and shrinks', weight: 2 },
+        { at: 'type:line', weight: 1 },
+        { at: 'def:greedy', say: "every browser's: rivers of white", weight: 2 },
+        { at: 'def:optimal', weight: 3 },
+      ],
+    },
+    'Linebreak.ml': { digest: '126700eb2acb',
+      summary: 'A line scored by its badness and demerits; greedy fills lines, optimal is dynamic programming over the breaks.',
+      capitals: [
+        { at: 'def:optimal', say: 'best.(j): the least demerits up to word j' },
+      ],
+      important: [
+        { at: 'def:ratio', say: 'how much the glue must stretch or shrink', weight: 2 },
+        { at: 'def:badness_of', say: "TeX's 100 r^3", weight: 2 },
+        { at: 'def:demerits_of', weight: 1 },
+        { at: 'def:greedy', weight: 2 },
+        { at: 'def:optimal', weight: 3 },
+        { at: 'comment:"a single word is always allowed, even too wide"', say: "TeX's overfull box", weight: 1 },
+      ],
+      related: ['../../examples/TypesetParagraph.ml', '../tests/Unit_typeset.ml'],
+    },
+  },
+}

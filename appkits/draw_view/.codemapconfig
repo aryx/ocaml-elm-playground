@@ -1,0 +1,22 @@
+// appkits/draw_view/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "A drawing's figures as Playground shapes, for TinyMacDraw and the office's drawing part.",
+  files: {
+    'Figure_shapes.mli': { digest: '3d4db1beff6f',
+      summary: 'Figures drawn: a fill as a grey, outlines as thin turned rectangles, text by Stroke_text.',
+      important: [
+        { at: 'def:figure', say: "one figure, in the drawing's coordinates", weight: 3 },
+        { at: 'def:segment', weight: 1 },
+      ],
+    },
+    'Figure_shapes.ml': { digest: '55c4e92c99da',
+      summary: 'Each kind of figure as shapes; a pen stroke as a rectangle turned along it.',
+      important: [
+        { at: 'def:segment', say: 'a stroke: a thin rectangle, turned', weight: 2 },
+        { at: 'def:figure', weight: 3 },
+      ],
+    },
+  },
+}

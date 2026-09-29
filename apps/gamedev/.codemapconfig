@@ -1,0 +1,66 @@
+// apps/gamedev/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The game-making tools: a sprite editor and a map editor, both writing TinyMario's XPM files.",
+  files: {
+    'TinyAseprite.ml': { digest: '9921b296a449',
+      summary: "Aseprite (David Capello, 2001): pixel art a frame at a time, the onion skin, played back as drawn.",
+      capitals: [
+        { at: 'def:view_canvas', say: 'the onion skin: the frame before, faint, under this one' },
+      ],
+      important: [
+        { at: 'type:frame', say: "a frame is an XPM's rows: a character a pixel", weight: 3 },
+        { at: 'type:editor', say: 'the frames, the palette, the cursor, the brush', weight: 3 },
+        { at: 'def:paint', say: 'the pixel under the cursor becomes a character', weight: 2 },
+        { at: 'def:export', say: "every frame written back as the game's XPM", weight: 2 },
+        { at: 'def:pick', say: "a palette swap: the NES's Luigi out of Mario", weight: 1 },
+        { at: 'def:resize', say: "every frame at once: a sprite's frames are one size", weight: 1 },
+        { at: 'def:view_canvas', weight: 2 },
+        { at: 'def:update', weight: 1 },
+        { at: 'def:view', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:paint' },
+        { from: 'def:update', to: 'def:export' },
+        { from: 'def:view', to: 'def:view_canvas' },
+      ],
+      related: ['web/TinyAseprite.html', '../../tests/2d/golden/TinyAseprite.png'],
+    },
+    'TinyTiled.ml': { digest: 'c9c8d251963e',
+      summary: "Tiled (Thorbjorn Lindeijer, 2008): a level as a grid of characters, painted, scrolled, exported.",
+      capitals: [
+        { at: 'def:cell', say: 'a cell drawn as its colour and character, not as the game draws it' },
+      ],
+      important: [
+        { at: 'type:editor', say: 'the level as a Tilemap, a camera over it', weight: 3 },
+        { at: 'comment:"That is the whole trick of a generic map editor"', say: 'it knows the level, not the game', weight: 3 },
+        { at: 'def:paint', weight: 2 },
+        { at: 'def:resize', say: 'columns added on the right, where a level grows', weight: 1 },
+        { at: 'def:export', say: 'mario_level.xpm, to copy over the game', weight: 2 },
+        { at: 'def:minimap', say: "a second camera, as TinyDefender's scanner", weight: 2 },
+        { at: 'def:update', weight: 1 },
+        { at: 'def:view', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:paint' },
+        { from: 'def:view', to: 'def:cell' },
+        { from: 'def:view', to: 'def:minimap' },
+      ],
+      related: ['web/TinyTiled.html', '../../tests/2d/golden/TinyTiled.png'],
+    },
+  },
+  skeletons: [
+    skeletons.game('TinyAseprite.ml', 'def:paint', 'a pixel painted: a character in a row', say='a key or a click') + {
+      name: 'Aseprite: Model-View-Update, a pixel painted',
+    },
+  ],
+  views: [
+    { name: 'The editors and what reads their files', files: ['TinyAseprite.ml', 'TinyTiled.ml', '../../playground/layers/Sprite.ml', '../../playground/layers/Tilemap.ml'] },
+  ],
+  dirs: {
+    software: { summary: 'The same programs on the software rasterizer, for the golden frames.' },
+    web: { summary: 'The programs compiled to JavaScript, and their pages.' },
+  },
+}

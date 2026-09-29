@@ -1,0 +1,34 @@
+// appkits/file_menu/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The File menu every application shares: New, Open, Save, Save As, Export, and their dialogs.',
+  files: {
+    'File_menu.mli': { digest: 'f55fbca8c77d',
+      summary: 'Documents saved as values behind a named, versioned line; saving needs a capability.',
+      capitals: [
+        { at: 'type:caps', say: 'no capability, no saving: the type says so' },
+        { at: 'def:menu_in', say: 'the menu an application puts in its bar' },
+      ],
+      important: [
+        { at: 'type:caps', weight: 3 },
+        { at: 'comment:"the authority to"', say: "the store reached only through the app's main", weight: 2 },
+        { at: 'type:t', say: 'the name, the dialog open, what was said', weight: 2 },
+        { at: 'type:result', weight: 2 },
+        { at: 'def:command', weight: 1 },
+        { at: 'def:busy', say: 'a dialog up takes the input', weight: 2 },
+        { at: 'def:dialog', weight: 1 },
+        { at: 'def:autosave', weight: 1 },
+      ],
+    },
+    'File_menu.ml': { digest: 'ec26771291a3',
+      summary: "The commands over document/Saved and the platform's store, the dialogs drawn with Gui.",
+      important: [
+        { at: 'def:save', weight: 2 },
+        { at: 'def:open_', weight: 2 },
+        { at: 'def:command', say: 'an item chosen: a dialog, or a save at once', weight: 3 },
+        { at: 'def:dialog', say: 'every frame while up, instead of the app', weight: 2 },
+      ],
+    },
+  },
+}

@@ -1,0 +1,28 @@
+// gamekits/adventure/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The adventure kit: a world as data, and the player's sentences answered by rules.",
+  files: {
+    'Adventure.mli': { digest: '004daa77a674',
+      summary: 'An adventure is nearly all model: rooms, objects somewhere, flags, and a rule per thing to try.',
+      important: [
+        { at: 'type:place', say: 'where an object is: a room, carried, inside another', weight: 2 },
+        { at: 'type:world', say: 'the whole game state: places, flags, the room you are in', weight: 3 },
+        { at: 'type:sentence', say: 'verb, object, with what: parsed or clicked', weight: 3 },
+        { at: 'type:rule', say: 'when it applies, and what it does', weight: 3 },
+        { at: 'def:run', say: 'the first rule that matches answers', weight: 2 },
+      ],
+    },
+    'Adventure.ml': { digest: '669416695cbb',
+      summary: 'The world as association lists, and run: the rules tried in order.',
+      important: [
+        { at: 'def:matches', weight: 2 },
+        { at: 'def:run', weight: 3 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: sentences run against a small world." },
+  },
+}

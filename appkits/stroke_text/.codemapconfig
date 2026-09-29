@@ -1,0 +1,26 @@
+// appkits/stroke_text/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Letters drawn as Hershey's strokes in a look: bold, italic, underline for the office apps and TinyMosaic.",
+  files: {
+    'Stroke_text.mli': { digest: '219a4475c990',
+      summary: 'A look is a change to the pen, not a second font; what is measured is what is drawn.',
+      capitals: [
+        { at: 'def:glyph', say: 'a letter drawn stroke by stroke, in a look' },
+      ],
+      important: [
+        { at: 'comment:"a look is then a change to the *pen*"', say: 'bold a thicker pen, italic a shear', weight: 3 },
+        { at: 'def:metrics', say: 'the widths from the same glyphs', weight: 2 },
+        { at: 'def:glyph', weight: 2 },
+      ],
+    },
+    'Stroke_text.ml': { digest: '6d705bb5c9bb',
+      summary: "Each stroke a thin rectangle, sheared for italic; outside ASCII, Hershey's '?'.",
+      important: [
+        { at: 'def:glyph', weight: 3 },
+        { at: 'def:metrics', weight: 1 },
+      ],
+    },
+  },
+}

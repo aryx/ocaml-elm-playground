@@ -1,0 +1,27 @@
+// libs/graphics/gpu/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "What the GPU backends (OpenGL, WebGL) share: meshes kept on the GPU while their shapes don't change.",
+  files: {
+    'Mesh_cache.mli': { digest: '29fd0a1d0f37',
+      summary: 'Retained mode under an immediate-mode API: a cached shape built and uploaded once, freed when unseen.',
+      capitals: [
+        { at: 'def:find_or_build', say: 'draw again, or build and upload once' },
+      ],
+      important: [
+        { at: 'comment:"Retained mode is the classic fix"', say: "display lists, vertex buffers: OpenGL's history", weight: 2 },
+        { at: 'type:t', weight: 2 },
+        { at: 'def:find_or_build', weight: 3 },
+        { at: 'def:sweep', say: 'the meshes not seen this frame freed', weight: 3 },
+      ],
+    },
+    'Mesh_cache.ml': { digest: 'c908ab830021',
+      summary: 'A table from shape ids to meshes, each marked when used, swept once a frame.',
+      important: [
+        { at: 'def:find_or_build', weight: 2 },
+        { at: 'def:sweep', weight: 2 },
+      ],
+    },
+  },
+}

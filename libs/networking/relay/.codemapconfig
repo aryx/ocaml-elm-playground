@@ -1,0 +1,15 @@
+// libs/networking/relay/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "relay_server: the multiplayer relay, each player's packets copied to the others.",
+  files: {
+    'relay_server.ml': { digest: '3ee0f821ef53',
+      summary: 'Relay as a program: a port, a number of players, then wait and step, the seats printed.',
+      important: [
+        { at: 'comment:"a native player and a browser in the same duel"', say: 'WebSocket: a browser plays a native program', weight: 2 },
+      ],
+      related: ['../unix/Relay.mli', '../unix/Relay_client.mli'],
+    },
+  },
+}

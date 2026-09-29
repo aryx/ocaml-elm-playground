@@ -1,0 +1,47 @@
+// languages/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+//
+// claude: no dirs: here, since every language directory has a config of
+// its own, whose summary is the one the map shows (Code_guide.mli)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Languages as text, read and run, each made for a program or a few; what they touch outside is a host record.",
+  skeletons: [
+    {
+      name: 'The languages and what they share',
+      bones: [
+        { at: 'sexpr/', role: 'the reader the Lisps share' },
+        { at: 'lisp/', role: "Emacs Lisp: TinyEmacs's" },
+        { at: 'scheme/', role: "Scheme on a CESK machine: TinyDrScheme's" },
+        { at: 'javascript/', role: "TinyFirefox's scripts" },
+        { at: 'json/', role: "JSON over JavaScript's lexer" },
+        { at: 'jsonnet/', role: 'the code map configs, read' },
+        { at: 'html/', role: "the browsers' pages, read into a tree" },
+        { at: 'css/', role: 'the looks of that tree' },
+        { at: 'ocaml/', role: "the code map's colours for OCaml" },
+        { at: 'c/', role: 'and for C' },
+      ],
+      joints: [
+        { from: 'lisp/', to: 'sexpr/', say: 'reads with' },
+        { from: 'scheme/', to: 'sexpr/', say: 'reads with' },
+        { from: 'json/', to: 'javascript/', say: 'lexed by' },
+        { from: 'jsonnet/', to: 'json/', say: 'manifests into' },
+        { from: 'css/', to: 'html/', say: 'styles the tree of' },
+      ],
+    },
+    {
+      name: 'A language run: text, then a machine',
+      bones: [
+        { at: 'formula/', role: 'recursive descent, the parser to know first' },
+        { at: 'basic/', role: 'an interpreter as a Talk program' },
+        { at: 'pascal/', role: 'one pass to P-code, a stack machine' },
+        { at: 'smalltalk/', role: 'bytecodes over an object table' },
+        { at: 'postscript/', role: 'three stacks, a step at a time' },
+        { at: 'hypertalk/', role: 'messages up a path of objects' },
+        { at: 'scratch/', role: 'blocks run as green threads' },
+      ],
+      // claude: no joints: each stands alone, its only ties to its program
+      joints: [],
+    },
+  ],
+}

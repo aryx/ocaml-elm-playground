@@ -1,0 +1,6 @@
+// libs/code/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Code itself as the object, whatever its language: the ground codemap and codegraph stand on.",
+}

@@ -1,0 +1,28 @@
+// libs/graphics/images/gif/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "GIF read: 256 colours, LZW, and animation as an afterthought, the web's for thirty years.",
+  files: {
+    'Gif.mli': { digest: '51998ca4c71d',
+      summary: "CompuServe's GIF (1987, 1989): palettes, LZW, interlaced rows, frames with delays and disposal.",
+      capitals: [
+        { at: 'def:animation', say: 'the frames composed as a browser shows them' },
+      ],
+      important: [
+        { at: 'type:frame', weight: 2 },
+        { at: 'def:frames', weight: 1 },
+        { at: 'def:animation', weight: 3 },
+        { at: 'def:decode', say: 'the first frame', weight: 1 },
+      ],
+    },
+    'Gif.ml': { digest: 'dd81fb570768',
+      summary: 'The blocks walked to frames (LZW from compression/), then composed over each other by disposal.',
+      important: [
+        { at: 'def:interlaced_rows', say: 'every 8th, 8th from 4, 4th, 2nd', weight: 2 },
+        { at: 'def:frames', weight: 3 },
+        { at: 'def:animation', say: 'disposal: keep, clear, or restore', weight: 3 },
+      ],
+    },
+  },
+}

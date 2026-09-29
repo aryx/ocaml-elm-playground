@@ -1,0 +1,68 @@
+// libs/graphics/images/jpeg/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Baseline JPEG read and written: what the eye doesn't see thrown away, the rest Huffman-coded.",
+  files: {
+    'Dct.mli': { digest: '8f4fca8f4f03',
+      summary: 'The discrete cosine transform: an 8x8 block as 64 cosine patterns, and back; shared with MPEG-1.',
+      capitals: [
+        { at: 'def:idct_aan', say: 'the fast inverse every decoder here uses' },
+      ],
+      important: [
+        { at: "comment:\"The forward transform (the encoder's)\"", weight: 1 },
+        { at: 'def:fdct', weight: 2 },
+        { at: 'def:idct', say: 'the formula as written: the reference', weight: 2 },
+        { at: 'def:idct_aan', weight: 3 },
+      ],
+    },
+    'Dct.ml': { digest: 'af68995974a7',
+      summary: "The formula with a table of cosines, and Arai, Agui and Nakajima's fast 1D pass, columns then rows.",
+      important: [
+        { at: 'def:cosines', weight: 1 },
+        { at: 'def:idct', weight: 2 },
+        { at: 'def:aan_scale', say: 'the factors AAN leaves out, applied once first', weight: 2 },
+        { at: 'def:idct_1d', say: "libjpeg's flow graph: even part, odd part", weight: 3 },
+      ],
+    },
+    'Jpeg.mli': { digest: '8f0b61ce1f6b',
+      summary: 'JPEG (T.81, 1992) and its JFIF file: YCbCr, subsampling, DCT, quantization, zigzag, Huffman.',
+      capitals: [
+        { at: 'def:decode', say: "the encoder's pipeline run backwards" },
+      ],
+      important: [
+        { at: 'comment:"The encoder, which the decoder runs backwards:"', say: 'the whole pipeline in one line', weight: 3 },
+        { at: 'def:decode', weight: 3 },
+        { at: 'def:zigzag', say: 'low frequencies first, so zeros run', weight: 2 },
+      ],
+    },
+    'Jpeg.ml': { digest: 'a4ab088bf9d1',
+      summary: 'Segments parsed, scans read bit by bit (byte stuffing, restarts), blocks decoded, upsampled, to RGB.',
+      important: [
+        { at: 'type:frame', weight: 1 },
+        { at: 'type:reader', say: 'bits, skipping the 00 after an FF', weight: 2 },
+        { at: 'def:decode_block', say: 'DC difference, AC runs, dequantize, IDCT', weight: 3 },
+        { at: 'def:upsample', weight: 1 },
+        { at: 'def:to_rgba', say: 'YCbCr to RGB, JFIF constants', weight: 2 },
+        { at: 'def:decode_scan', weight: 2 },
+        { at: 'def:decode', weight: 2 },
+      ],
+    },
+    'Jpeg_encode.mli': { digest: '32c4cf00b55a',
+      summary: "A baseline JPEG written: quantization is all the encoder decides, quality only libjpeg's scale.",
+      important: [
+        { at: 'comment:"is where the file gets small and the picture loses"', weight: 3 },
+        { at: 'def:scaled', say: 'quality 1 to 100 as a table scale', weight: 2 },
+        { at: 'def:encode', weight: 2 },
+      ],
+    },
+    'Jpeg_encode.ml': { digest: 'cabae92a6fa7',
+      summary: "Annex K's tables and Huffman codes, a block coded, the file's segments written.",
+      important: [
+        { at: 'def:codes', say: "canonical codes from the standard's counts", weight: 2 },
+        { at: 'def:encode_block', say: 'DCT, quantize, zigzag, runs, codes', weight: 3 },
+        { at: 'def:encode', weight: 2 },
+      ],
+    },
+  },
+}

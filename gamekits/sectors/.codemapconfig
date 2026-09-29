@@ -1,0 +1,30 @@
+// gamekits/sectors/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The sectors kit: a level as Doom describes one, a floor plan of sectors joined by lines.",
+  files: {
+    'Sectors.mli': { digest: 'ed674d73643e',
+      summary: 'Sectors of floor, ceiling and light, the walls between them; where you are, and moving through.',
+      important: [
+        { at: 'type:sector', say: 'a region: floor, ceiling, light', weight: 3 },
+        { at: 'type:line', say: 'a wall, or a step between two sectors', weight: 3 },
+        { at: 'def:make', say: 'the lines found from the polygons', weight: 2 },
+        { at: 'def:sector_at', weight: 2 },
+        { at: 'def:move', say: 'walls stop you, low steps are climbed', weight: 2 },
+        { at: 'def:outpost', say: "the level both Dooms play", weight: 1 },
+      ],
+    },
+    'Sectors.ml': { digest: '1d91f8d6d935',
+      summary: 'Loops cut into lines, shared edges become two-sided, and the outpost built.',
+      important: [
+        { at: 'def:cut', weight: 2 },
+        { at: 'def:make', weight: 2 },
+        { at: 'def:move', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: lines found, moves stopped." },
+  },
+}

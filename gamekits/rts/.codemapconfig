@@ -1,0 +1,25 @@
+// gamekits/rts/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The strategy kit: a unit told where to go, and how it gets there on the tiles.",
+  files: {
+    'Orders.mli': { digest: '159851d80c28',
+      summary: 'The grid as a search problem, three kinds of order (a path, the nearest, a field), and the walking.',
+      important: [
+        { at: 'def:problem', say: 'the tile map as a Pathfind problem', weight: 2 },
+        { at: 'def:path', say: 'go there: A*', weight: 3 },
+        { at: 'def:nearest', say: 'the goal a question: the nearest gold', weight: 3 },
+        { at: 'def:field', say: 'one flow field for a crowd', weight: 3 },
+        { at: 'def:advance', say: 'walking between tiles', weight: 1 },
+      ],
+    },
+    'Orders.ml': { digest: 'aea3cb425eff',
+      summary: 'The orders over the AI library: A*, Dijkstra with no estimate, a field walked downhill.',
+      important: [
+        { at: 'def:nearest', weight: 2 },
+        { at: 'def:downhill', weight: 2 },
+      ],
+    },
+  },
+}

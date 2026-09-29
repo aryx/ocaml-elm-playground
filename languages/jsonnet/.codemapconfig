@@ -1,0 +1,102 @@
+// languages/jsonnet/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Jsonnet (Google, 2014), JSON with functions and objects that inherit: what these .codemapconfig files are read with.",
+  files: {
+    'Jsonnet.mli': { digest: 'aafd3e5d84ec',
+      summary: 'Lazy evaluation, objects as layers, late-bound self and super; the official spec the reference, not ojsonnet.',
+      capitals: [
+        { at: 'def:eval', say: "a program's text to its JSON" },
+      ],
+      important: [
+        { at: 'comment:"Objects are layers."', say: 'inheritance: p over o, self the whole', weight: 3 },
+        { at: 'comment:"local base = { x: 1, y: self.x + 1"', say: 'late binding, worked out', weight: 2 },
+        { at: 'def:eval', weight: 2 },
+      ],
+    },
+    'Jsonnet.ml': { digest: '08690856f288',
+      summary: "The evaluator: values lazy, an object its layers and a cache, fields found from the top layer down; std's part.",
+      capitals: [
+        { at: 'def:get', say: "a field: the highest layer's, +: adding the one under" },
+      ],
+      important: [
+        { at: 'type:value', say: 'arrays and arguments lazy', weight: 2 },
+        { at: 'type:obj', say: 'an object: its layers, lowest first, and a cache', weight: 3 },
+        { at: 'type:env', say: 'what code sees: variables, self, super, $', weight: 3 },
+        { at: 'def:eval', weight: 2 },
+        { at: 'def:field_env', say: 'self the whole object, super the layers under', weight: 2 },
+        { at: 'def:get', weight: 3 },
+        { at: 'def:super', weight: 1 },
+        { at: 'def:manifest', say: 'the value into JSON, hidden fields left out', weight: 2 },
+        { at: 'def:std', say: 'the part of std configurations need', weight: 1 },
+      ],
+      links: [
+        { from: 'def:eval', to: 'def:field' },
+        { from: 'def:field', to: 'def:get' },
+        { from: 'def:get', to: 'def:field_env' },
+      ],
+    },
+    'Jsonnet_ast.mli': { digest: '2ecf8bab014c',
+      summary: 'A program as a tree, the sugar taken off by the parser: methods are functions, e { } is e + { }.',
+      important: [
+        { at: 'type:expr', weight: 3 },
+        { at: 'type:member', say: 'fields, locals, asserts', weight: 2 },
+        { at: 'type:visibility', say: ': :: :::', weight: 1 },
+      ],
+    },
+    'Jsonnet_ast.ml': { digest: 'bef37e707f2a',
+      summary: 'The tree, as Jsonnet_ast.mli says.',
+    },
+    'Jsonnet_lexer.mli': { digest: 'cb34949e8eff',
+      summary: "Its own lexer, not JavaScript's: # comments, ||| text blocks, verbatim strings, operators as runs of symbols.",
+      important: [
+        { at: 'type:kind', weight: 2 },
+        { at: 'def:tokenize', weight: 2 },
+      ],
+    },
+    'Jsonnet_lexer.ml': { digest: 'ac7825ceb906',
+      summary: 'The text cut into tokens, strings decoded to UTF-8.',
+      important: [
+        { at: 'def:tokenize', weight: 2 },
+        { at: 'def:is_op_char', say: 'an operator is any run of these', weight: 1 },
+      ],
+    },
+    'Jsonnet_parse.mli': { digest: '66424c65c80f',
+      summary: "The spec's grammar by recursive descent, a function per level of precedence; imports resolved against the file.",
+      important: [
+        { at: 'comment:"expr    := local binds ; expr"', say: 'the grammar', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Jsonnet_parse.ml': { digest: '5c0b0757ed75',
+      summary: 'The parser: the binary operators as a table of levels, the sugar removed as it reads.',
+      important: [
+        { at: 'def:levels', say: 'precedence as a list, lowest first', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:resolve', say: "an import's path, relative to the file", weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A jsonnet file to JSON',
+      bones: [
+        { at: 'Jsonnet_lexer.ml:def:tokenize', role: 'text into tokens' },
+        { at: 'Jsonnet_parse.ml:def:parse', role: 'tokens into a tree, sugar off' },
+        { at: 'Jsonnet.ml:def:eval', role: 'the tree evaluated, lazily' },
+        { at: 'Jsonnet.ml:def:get', role: "a field found in the object's layers" },
+        { at: 'Jsonnet.ml:def:manifest', role: 'the value as JSON' },
+      ],
+      joints: [
+        { from: 'Jsonnet_lexer.ml:def:tokenize', to: 'Jsonnet_parse.ml:def:parse', say: 'the tokens' },
+        { from: 'Jsonnet_parse.ml:def:parse', to: 'Jsonnet.ml:def:eval', say: 'the tree' },
+        { from: 'Jsonnet.ml:def:eval', to: 'Jsonnet.ml:def:get', say: 'o.f' },
+        { from: 'Jsonnet.ml:def:eval', to: 'Jsonnet.ml:def:manifest', say: 'the value' },
+      ],
+    },
+  ],
+  dirs: {
+    tests: { summary: "Jsonnet's examples: inheritance, self and super, comprehensions, std, errors." },
+  },
+}

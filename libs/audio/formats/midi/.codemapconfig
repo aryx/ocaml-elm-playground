@@ -1,0 +1,28 @@
+// libs/audio/formats/midi/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'MIDI files: not sound but what a player does, messages with their times, read and written.',
+  files: {
+    'Midi.mli': { digest: '90ab9c3fe33b',
+      summary: 'MIDI (1983): status and data bytes, running status, variable-length times; a file to a score.',
+      capitals: [
+        { at: 'def:parse', say: 'a file to notes with starts and lengths' },
+      ],
+      important: [
+        { at: 'type:note', say: 'a note on and its note off, paired', weight: 3 },
+        { at: 'def:vlq', say: "times in 7-bit groups, the high bit 'more'", weight: 2 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:of_tune', say: 'an ABC tune written as a MIDI file', weight: 1 },
+      ],
+    },
+    'Midi.ml': { digest: '91669b72fbde',
+      summary: "MIDI read: a track's events, running status kept, ticks to seconds through the tempo.",
+      important: [
+        { at: 'def:track_events', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:of_tune', weight: 1 },
+      ],
+    },
+  },
+}

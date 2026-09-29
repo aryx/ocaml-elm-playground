@@ -1,0 +1,58 @@
+// appkits/sketch/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Sketchpad's kit (Sutherland, 1963) for TinySketchpad: shared points, constraints kept by relaxation, instances.",
+  files: {
+    'Sketch.mli': { digest: 'fed675b115a3',
+      summary: 'A drawing as a model: items standing on shared points, constraints, instances of other sheets.',
+      capitals: [
+        { at: 'type:sheet', say: 'points, items on them, constraints, instances' },
+      ],
+      important: [
+        { at: 'type:item', say: 'a line is two point ids, not two positions', weight: 3 },
+        { at: 'type:constr', say: 'what should hold, kept by Relax', weight: 3 },
+        { at: 'type:instance', say: "a master placed: blocks' and classes' ancestor", weight: 2 },
+        { at: 'type:sheet', weight: 2 },
+        { at: 'def:merge', say: 'two points made one: joined, not coinciding', weight: 2 },
+        { at: 'def:strokes', say: 'what is drawn, instances expanded', weight: 1 },
+        { at: 'def:aim', say: 'what the pen is near', weight: 1 },
+      ],
+      related: ['../tests/Unit_sketch.ml'],
+    },
+    'Sketch.ml': { digest: 'dcd332957ae1',
+      summary: 'Sheets edited, instances expanded to strokes to a bounded depth, the pen aimed at the nearest.',
+      important: [
+        { at: 'def:merge', weight: 2 },
+        { at: 'def:instance_strokes', say: 'a master drawn moved, scaled, turned', weight: 2 },
+        { at: 'def:strokes_depth', say: 'a sheet placed in itself stops somewhere', weight: 1 },
+        { at: 'def:nearest', weight: 1 },
+      ],
+    },
+    'Relax.mli': { digest: 'd45f6ea100ff',
+      summary: "Sutherland's relaxation: a point at a time moved by least squares on numerical derivatives, swept until still.",
+      capitals: [
+        { at: 'def:sweep', say: 'Gauss-Seidel: one point at a time, the others still' },
+      ],
+      important: [
+        { at: 'def:error_of', say: 'a constraint is only its error: zero when it holds', weight: 3 },
+        { at: 'def:sweep', weight: 3 },
+        { at: 'def:solve', weight: 2 },
+      ],
+    },
+    'Relax.ml': { digest: 'd00af13e6475',
+      summary: 'Each kind of constraint as an error, and the sweep: derivatives by trying, normal equations, damping.',
+      important: [
+        { at: 'def:error_with', say: 'every constraint, an error in lengths', weight: 2 },
+        { at: 'def:h', say: 'the trial move: derivatives by trying', weight: 2 },
+        { at: 'def:lambda', say: "Levenberg's damping: the shortest move", weight: 2 },
+        { at: 'def:sweep', weight: 3 },
+        { at: 'comment:"make the equations nearly singular and the move huge"', say: 'a move no longer than the worst error', weight: 2 },
+      ],
+      links: [
+        { from: 'def:solve', to: 'def:sweep' },
+        { from: 'def:sweep', to: 'def:error_with' },
+      ],
+    },
+  },
+}

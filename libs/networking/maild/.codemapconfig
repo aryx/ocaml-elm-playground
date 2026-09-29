@@ -1,0 +1,17 @@
+// libs/networking/maild/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "tiny_maild: TinyEudora's mail server, SMTP in and POP3 out, a maildrop per user.",
+  files: {
+    'tiny_maild.ml': { digest: '9d9eef629049',
+      summary: "Mail_server as a program: its ports, domain and passwords, the maildrops kept as mbox files.",
+      important: [
+        { at: 'def:users', say: 'passwords checked, or anyone let in', weight: 1 },
+        { at: 'def:read_spool', say: 'the mail survives the server: user.mbox', weight: 2 },
+        { at: 'def:write_spool', say: 'rewritten each time a maildrop changes', weight: 2 },
+      ],
+      related: ['../unix/Mail_server.mli', '../mail/Mbox.mli', '../../../apps/internet/TinyEudora.ml'],
+    },
+  },
+}

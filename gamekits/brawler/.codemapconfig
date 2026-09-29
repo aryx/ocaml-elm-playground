@@ -1,0 +1,52 @@
+// gamekits/brawler/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The brawler kit: a fight timed in frames, boxes that hit and get hit, fighters as stick figures.',
+  files: {
+    'Frame_data.mli': { digest: '4a8c543271d7',
+      summary: "A move frame by frame: startup, active, recovery; and who may act first after it lands.",
+      important: [
+        { at: 'type:move', say: 'three counts of frames: a jab is 3 + 2 + 6', weight: 3 },
+        { at: 'def:phase', say: 'which part of the move a frame is in', weight: 3 },
+        { at: 'def:advantage_on_hit', say: 'the frames gained: what makes a combo', weight: 2 },
+      ],
+    },
+    'Frame_data.ml': { digest: 'd1648f4f43e4',
+      summary: 'Frame data, as its .mli says: a few subtractions.',
+      important: [{ at: 'def:phase', weight: 2 }],
+    },
+    'Hitbox.mli': { digest: '1102c26b6ee0',
+      summary: 'The boxes that hit and the boxes that get hit: games test boxes, not fists against bodies.',
+      important: [
+        { at: 'type:box', weight: 2 },
+        { at: 'def:place', say: 'a box turned with the facing', weight: 2 },
+        { at: 'def:overlap', say: 'a hitbox meeting a hurtbox: a blow', weight: 3 },
+      ],
+    },
+    'Hitbox.ml': { digest: 'adea28268a56',
+      summary: 'Boxes placed, tested for overlap, and drawn for debugging.',
+      important: [{ at: 'def:overlap', weight: 2 }],
+    },
+    'Stickman.mli': { digest: '9a413968b9d4',
+      summary: 'Fighters as stick figures: a pose is the angles of the limbs, a move a few poses in between.',
+      important: [
+        { at: 'type:pose', say: 'a pose: an angle per limb', weight: 3 },
+        { at: 'def:lerp', say: 'poses in between: the animation', weight: 2 },
+        { at: 'def:hand', say: 'where the fist is: the hitbox follows', weight: 2 },
+        { at: 'def:draw', weight: 1 },
+      ],
+    },
+    'Stickman.ml': { digest: 'be60d39a29b4',
+      summary: 'The limbs chained from the hips: forward kinematics in a few lines.',
+      important: [
+        { at: 'def:joints', say: 'the angles become points', weight: 2 },
+        { at: 'def:draw', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    '3d': { summary: 'A fighter as a skeleton of boxes, poses interpolated between keyframes (Virtua Fighter).' },
+    tests: { summary: "The kit's tests: phases, overlaps, poses." },
+  },
+}

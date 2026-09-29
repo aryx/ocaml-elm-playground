@@ -1,0 +1,23 @@
+// libs/networking/httpd/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "tiny_httpd: a directory served on the web, after CERN's and NCSA's, for TinyMosaic offline.",
+  files: {
+    'tiny_httpd.ml': { digest: 'b64ecae61c4c',
+      summary: 'A web server over Http_server: files, directory listings, CGI programs, the Common Log Format.',
+      capitals: [
+        { at: 'def:handler', say: 'a request to its answer: 403, a file, a listing, 404' },
+      ],
+      important: [
+        { at: 'def:segments', say: '".." refused: the first attack every server met', weight: 3 },
+        { at: 'def:content_type', say: 'guessed from the extension; the browser believes it', weight: 2 },
+        { at: 'def:listing', say: "NCSA's \"Index of /\"", weight: 1 },
+        { at: 'def:cgi', say: 'a program run, the request in its environment', weight: 2 },
+        { at: 'def:handler', weight: 3 },
+        { at: 'def:log_line', say: 'the log format every server still writes', weight: 1 },
+      ],
+      related: ['../unix/Http_server.mli', '../../../apps/internet/site/'],
+    },
+  },
+}

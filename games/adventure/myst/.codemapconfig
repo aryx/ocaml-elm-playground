@@ -1,0 +1,38 @@
+// games/adventure/myst/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "TinyMyst's island as data: its scenes, its cards, their scripts, and the stills made once.",
+  files: {
+    'Myst_island.mli': { digest: '3880472c45bb',
+      summary: 'The island shared by the game, the stills maker and the test: a HyperCard stack of twelve cards.',
+      important: [
+        { at: 'type:card', say: 'a place and a way of looking: a camera', weight: 3 },
+        { at: 'type:fields', say: "the stack's state: the switches, the books", weight: 2 },
+        { at: 'def:scene', say: 'what the ray tracer draws for a card', weight: 3 },
+        { at: 'def:button_scripts', say: 'what a click does, in HyperTalk', weight: 2 },
+        { at: 'def:stills', say: 'every card in every state it can show', weight: 1 },
+      ],
+    },
+    'Myst_island.ml': { digest: '93ee823f9e53',
+      summary: 'The island built of solids and materials, the library inside, and the cards and scripts over it.',
+      important: [
+        { at: 'def:island', weight: 3 },
+        { at: 'def:library_room', weight: 1 },
+        { at: 'def:cards', weight: 2 },
+        { at: 'def:stack_script', say: 'the stack-wide HyperTalk handlers', weight: 2 },
+        { at: 'def:scene_of', weight: 2 },
+      ],
+    },
+    'Myst_stills.mli': { digest: '1b3e53171700',
+      summary: 'The stills, by name, as JPEG bytes: the module generated at build time.' },
+    'make_stills.ml': { digest: '79bae4a60924',
+      summary: "The stills ray traced once, as Cyan's were overnight, written as JPEGs into stills/." },
+    'make_stills_ml.ml': { digest: '53546b63ad32',
+      summary: 'A build-time script: the JPEGs made into one OCaml list, Myst_stills.' },
+  },
+  dirs: {
+    tests: { summary: 'The stills checked against the scene they were rendered from.' },
+    stills: { summary: 'The JPEGs, one per card and state.' },
+  },
+}

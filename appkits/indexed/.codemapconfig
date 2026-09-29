@@ -1,0 +1,49 @@
+// appkits/indexed/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Deluxe Paint's pictures: colour numbers and a palette, brushes cut from the picture, colour cycling (TinyDeluxePaint).",
+  files: {
+    'Indexed.mli': { digest: '95ab7a4eb8fb',
+      summary: "A picture of colour numbers, as the Amiga's: painting writes numbers, the palette is apart.",
+      capitals: [
+        { at: 'def:cut', say: "a brush cut from the picture: Deluxe Paint's idea" },
+      ],
+      important: [
+        { at: 'type:t', say: 'numbers, not colours', weight: 3 },
+        { at: 'def:change', say: 'drawn on a copy: the undo keeps the old', weight: 2 },
+        { at: 'type:brush', weight: 2 },
+        { at: 'def:cut', weight: 2 },
+        { at: 'def:symmetric', say: 'each dot n times: a kaleidoscope', weight: 1 },
+        { at: 'def:line_dots', say: "Bresenham's", weight: 1 },
+        { at: 'def:fill', weight: 1 },
+      ],
+    },
+    'Indexed.ml': { digest: '7aebdc3a4210',
+      summary: 'Dots, brushes stamped with the background transparent, lines, rectangles, ellipses, flood fill.',
+      important: [
+        { at: 'def:stamp', weight: 2 },
+        { at: 'def:line', weight: 1 },
+        { at: 'def:fill_ellipse', weight: 1 },
+      ],
+      related: ['../tests/Unit_indexed.ml'],
+    },
+    'Cycling.mli': { digest: 'dc3ea10d46f5',
+      summary: 'The palette turning: a range of colours moves along, the picture unchanged, and waterfalls run.',
+      capitals: [
+        { at: 'def:palette_at', say: 'animation without touching a pixel' },
+      ],
+      important: [
+        { at: 'def:palette_at', weight: 3 },
+        { at: 'def:turn', weight: 1 },
+      ],
+    },
+    'Cycling.ml': { digest: 'da78132558a5',
+      summary: "A range turned by some steps, the ILBM file's ranges at a time.",
+      important: [
+        { at: 'def:turn', weight: 2 },
+        { at: 'def:palette_at', weight: 2 },
+      ],
+    },
+  },
+}

@@ -1,0 +1,11 @@
+// apps/internet/site/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md); threads.js, about:threads'
+// script (comments folded as Hacker News' hn.js folds them, in ES5 for our
+// engine), is not a source the map reads, so it has no entry here
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The browsers' built-in site, the about: pages: a page per lesson, from HTML 2.0 to scripts and CSS.",
+  dirs: {
+    'cgi-bin': { summary: "A CGI program for tiny_httpd: a form's query answered by a shell script." },
+  },
+}

@@ -1,0 +1,14 @@
+// apps/devtools/tty/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The text-mode tools in the terminal you type in: the same Tui programs, run by Tty_unix.',
+  files: {
+    'TinyVi.ml': { digest: '8f4adde32804',
+      summary: "TinyVi in a real terminal: Tui_vi's program in raw mode, its files on a disk in memory." },
+    'TinyEmacs.ml': { digest: '4840614d4897',
+      summary: "TinyEmacs in a real terminal: Tui_emacs's program, curses' bytes to stdout." },
+    'TinyTurboPascal.ml': { digest: '5b203b64cf3a',
+      summary: "TinyTurboPascal in a real terminal: the terminal's colours for the PC's, its box characters." },
+  },
+}

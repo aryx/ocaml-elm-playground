@@ -1,0 +1,27 @@
+// libs/graphics/videos/movie/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'A video as a player sees it, whatever its format: frames decoded on demand at their times.',
+  files: {
+    'Movie.mli': { digest: '072dfb1c5c62',
+      summary: 'Pictures with start times, given one at a time: delta frames need the one before, so seeking is costly.',
+      capitals: [
+        { at: 'def:sequential', say: 'a forward-only decoder, its last state kept' },
+      ],
+      important: [
+        { at: 'type:t', say: 'what every video reader here returns', weight: 3 },
+        { at: 'comment:"frame 100 needs frame 99"', say: 'why players seek to key frames', weight: 2 },
+        { at: 'def:sequential', weight: 3 },
+        { at: 'def:index_at', say: 'the frame playing at a time', weight: 2 },
+      ],
+    },
+    'Movie.ml': { digest: '0e22373fe7e9',
+      summary: 'Frames from a list, or from a decoder restarted from the start when asked to go back.',
+      important: [
+        { at: 'def:sequential', say: 'the frame before kept: one step back is free', weight: 3 },
+        { at: 'def:index_at', weight: 1 },
+      ],
+    },
+  },
+}

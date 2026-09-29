@@ -1,0 +1,50 @@
+// libs/graphics/font/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Text drawn without a font library: Hershey's pen strokes (1967), and the VGA's 8 by 16 bitmaps (1987).",
+  files: {
+    'Hershey.mli': { digest: '45f8812d34f8',
+      summary: "A vector font for pen plotters: each letter a few lines, so text is only lines to draw.",
+      capitals: [
+        { at: 'def:layout', say: 'a string as strokes, placed letter after letter' },
+      ],
+      important: [
+        { at: 'comment:"format: every coordinate is one character"', say: "JHF: a coordinate a character, from 'R'", weight: 3 },
+        { at: 'type:glyph', weight: 2 },
+        { at: 'def:units_per_em', say: 'the size a letter is scaled from', weight: 1 },
+        { at: 'def:layout', weight: 2 },
+      ],
+    },
+    'Hershey.ml': { digest: 'e761da0907ad',
+      summary: "The JHF lines (fonts/futural.jhf, embedded by dune) decoded lazily into strokes, laid out by width.",
+      important: [
+        { at: 'def:coordinate', say: "a character's distance from 'R'", weight: 2 },
+        { at: 'def:decode_glyph', say: '" R" lifts the pen', weight: 3 },
+        { at: 'def:layout', weight: 1 },
+      ],
+    },
+    'Vga_font.mli': { digest: '40676406def1',
+      summary: "The PC's text mode font: code page 437, a character 16 bytes, text drawn by copying bits.",
+      capitals: [
+        { at: 'def:bit', say: 'is this pixel of this character lit?' },
+      ],
+      important: [
+        { at: 'def:row', weight: 2 },
+        { at: 'def:bit', weight: 3 },
+        { at: 'def:of_unicode', say: 'None outside code page 437', weight: 2 },
+        { at: 'def:decode', weight: 1 },
+      ],
+    },
+    'Vga_font.ml': { digest: '5a64fced6231',
+      summary: 'The 256 glyphs and the Unicode map, parsed at startup from fonts/vga8x16.txt, embedded by dune.',
+      important: [
+        { at: 'def:glyphs', weight: 2 },
+        { at: 'def:of_unicode', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    fonts: { summary: "The fonts' data as text: Hershey's JHF and the VGA's bitmaps, with where they come from." },
+  },
+}

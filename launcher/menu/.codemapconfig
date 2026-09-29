@@ -1,0 +1,51 @@
+// launcher/menu/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "tinybox's menu: every program on two shelves, a section at a time, the chosen one live; Enter to play.",
+  files: {
+    'Tinybox_menu.mli': { digest: '94bd2a0b297c',
+      summary: 'The menu, the same natively and in a browser; what differs is its host.',
+      important: [
+        { at: 'type:host', say: 'what the platform gives: start, thumbnails, sources, preview', weight: 3 },
+        { at: 'type:sources', weight: 1 },
+        { at: 'type:preview', say: 'the chosen program, run by the menu in its panel', weight: 2 },
+        { at: 'def:run', weight: 2 },
+      ],
+    },
+    'Tinybox_menu.ml': { digest: '233e4616a505',
+      summary: 'A Playground game whose world is the catalogue: groups, filters, the grid, the panel, the code map.',
+      capitals: [{ at: 'def:update', say: 'the menu as a game: keys to groups, Enter to play' }],
+      important: [
+        { at: 'type:model', say: 'the shelf, the group, the filters, the chosen one', weight: 3 },
+        { at: 'def:groups', say: 'by section, by year, by size: the groupings', weight: 2 },
+        { at: 'def:passes', say: 'the filters: decade, platform, look', weight: 1 },
+        { at: 'def:start', say: 'Enter: the host plays it', weight: 2 },
+        { at: 'def:open_code', say: "s: the program's code map", weight: 2 },
+        { at: 'def:update', weight: 3 },
+        { at: 'def:details', say: 'the panel: the original, what it brought', weight: 1 },
+        { at: 'def:view', weight: 2 },
+      ],
+      links: [
+        { from: 'def:run', to: 'def:update' },
+        { from: 'def:run', to: 'def:view' },
+        { from: 'def:update', to: 'def:start' },
+        { from: 'def:update', to: 'def:open_code' },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.mvu('Tinybox_menu.ml', init='def:initial') + {
+      name: 'The menu: Model-View-Update over a host',
+      bones+: [
+        { at: 'Tinybox_menu.mli:type:host', role: 'the platform: native or web' },
+        { at: 'Tinybox_menu.ml:def:start', role: 'a program chosen, started by the host' },
+      ],
+      joints+: [
+        { from: 'Tinybox_menu.ml:def:update', to: 'Tinybox_menu.ml:def:start', say: 'Enter' },
+        { from: 'Tinybox_menu.ml:def:start', to: 'Tinybox_menu.mli:type:host', say: 'play' },
+      ],
+    },
+  ],
+}

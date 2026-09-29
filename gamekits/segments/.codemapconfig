@@ -1,0 +1,42 @@
+// gamekits/segments/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The Descent kit: a mine of boxes and the openings where they touch, and a ship that points anywhere.',
+  files: {
+    'Segments.mli': { digest: 'b8fb805f0b9f',
+      summary: 'A mine as Descent describes one: a handful of boxes, and the openings where two touch.',
+      important: [
+        { at: 'type:segment', say: 'a box of the mine', weight: 3 },
+        { at: 'type:opening', say: 'where two boxes touch: a portal', weight: 3 },
+        { at: 'def:make', weight: 2 },
+        { at: 'def:move', say: 'flying through the openings, stopped by the rock', weight: 2 },
+      ],
+    },
+    'Segments.ml': { digest: '8d2a6f975d77',
+      summary: 'Boxes axis by axis, their overlaps found, and the rock between them.',
+      important: [
+        { at: 'def:overlap', weight: 2 },
+        { at: 'def:make', weight: 2 },
+        { at: 'def:mine', weight: 1 },
+      ],
+    },
+    'Sixdof.mli': { digest: 'd3bd1f7e90d2',
+      summary: 'Which way a ship points when it can point anywhere: three axes, turned, never three angles.',
+      important: [
+        { at: 'type:t', say: 'ahead, up, right', weight: 3 },
+        { at: 'def:turn', say: 'pitch, yaw, roll: each about its own axis', weight: 3 },
+      ],
+    },
+    'Sixdof.ml': { digest: '8cd66ea1b7c4',
+      summary: 'Two axes turned in their own plane, then straightened.',
+      important: [
+        { at: 'def:rotate', weight: 2 },
+        { at: 'def:straighten', say: 'the drift taken out', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: openings found, turns kept square." },
+  },
+}

@@ -1,0 +1,26 @@
+// libs/terminal/unix/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'A Tui program run in a real terminal (xterm, the macOS Terminal): native only.',
+  files: {
+    'Tty_unix.mli': { digest: '74143a425f63',
+      summary: 'Raw mode, the alternate screen, the cursor hidden, all undone on the way out.',
+      capitals: [
+        { at: 'def:run', say: 'the same program as on the playground, in xterm' },
+      ],
+      important: [
+        { at: 'def:run', weight: 3 },
+        { at: 'comment:"raw mode (termios: ICANON, ECHO and ISIG off): the tty\'s line"', say: "the kernel's line discipline turned off", weight: 2 },
+      ],
+    },
+    'Tty_unix.ml': { digest: 'c0764d960fdb',
+      summary: 'The loop: keys waited for a twentieth of a second, a tick, the difference written to stdout.',
+      important: [
+        { at: 'def:run', weight: 3 },
+        { at: 'comment:"a pause (the process stopped, Control-Z) isn\'t time played"', weight: 1 },
+        { at: 'def:available', say: 'what stdin has, without blocking', weight: 1 },
+      ],
+    },
+  },
+}

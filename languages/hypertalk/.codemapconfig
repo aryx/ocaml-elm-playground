@@ -1,0 +1,45 @@
+// languages/hypertalk/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "HyperCard's language (Apple, 1987): handlers answering messages up the path; TinyHyperCard's and TinyMyst's.",
+  files: {
+    'Hypertalk.mli': { digest: '6fbdfcca44cc',
+      summary: 'Scripts of handlers, every value a string, and the message path: inheritance without classes.',
+      capitals: [
+        { at: 'def:send', say: 'a message sent up the path: button to stack' },
+      ],
+      important: [
+        { at: 'comment:"button  ->  card  ->  background"', say: 'where a message goes when unanswered', weight: 3 },
+        { at: 'type:world', say: 'the cards and fields: the host gives them', weight: 3 },
+        { at: 'type:script', weight: 1 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Hypertalk.ml': { digest: '20499834630b',
+      summary: 'Words and lines read into handlers, then run: send finds a handler, pass goes on up.',
+      capitals: [
+        { at: 'def:send_depth', say: 'the message path walked, pass going on' },
+      ],
+      important: [
+        { at: 'type:stmt', say: 'put, add, go, answer, if, repeat, pass', weight: 2 },
+        { at: 'type:expr', weight: 1 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'type:world', say: 'the host: fields, cards, dialogs', weight: 2 },
+        { at: 'comment:"every value is a string; these are its readings"', say: 'numbers and booleans read from strings', weight: 2 },
+        { at: 'def:send_depth', weight: 3 },
+        { at: 'type:flow', say: 'a handler ends, or passes its message on', weight: 2 },
+        { at: 'def:exec', weight: 1 },
+        { at: 'comment:"a message sent by a statement starts from this object"', say: 'your own commands: messages too', weight: 2 },
+      ],
+      links: [
+        { from: 'def:send_depth', to: 'def:run' },
+        { from: 'def:run', to: 'def:exec' },
+        { from: 'def:exec', to: 'def:eval' },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'Scripts parsed and run against a world of strings: the path, pass, loops.' },
+  },
+}

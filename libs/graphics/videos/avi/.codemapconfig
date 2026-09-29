@@ -1,0 +1,28 @@
+// libs/graphics/videos/avi/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "AVI read and written: the container apart from the codec, Motion JPEG frames and PCM sound.",
+  files: {
+    'Avi.mli': { digest: 'd6c6aed81911',
+      summary: "Video for Windows (1992): a RIFF file like WAV, headers, streams, the frames and their index.",
+      capitals: [
+        { at: 'def:of_string', say: 'a Movie and its sound from the chunks' },
+      ],
+      important: [
+        { at: 'comment:"A video file is two things easy to confuse"', say: 'codec versus container', weight: 3 },
+        { at: 'type:header', weight: 1 },
+        { at: 'def:of_string', weight: 2 },
+        { at: 'def:to_string', weight: 1 },
+      ],
+    },
+    'Avi.ml': { digest: '95746c9589c1',
+      summary: 'RIFF chunks found and nested lists walked; MJPG frames decoded by Jpeg when asked; the writer.',
+      important: [
+        { at: 'def:chunks', weight: 2 },
+        { at: 'def:of_string', say: 'only MJPG, and PCM sound', weight: 3 },
+        { at: 'def:to_string', weight: 2 },
+      ],
+    },
+  },
+}

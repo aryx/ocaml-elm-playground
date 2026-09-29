@@ -1,0 +1,31 @@
+// libs/graphics/images/png/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "PNG read and written: each pixel predicted from its neighbours, the differences DEFLATEd.",
+  files: {
+    'Png.mli': { digest: '0ce5849c995e',
+      summary: "PNG, born of GIF's LZW patent in 1995: chunks, filters, interlacing; every colour type read.",
+      capitals: [
+        { at: 'def:decode', say: 'chunks, inflate, unfilter, pixels' },
+      ],
+      important: [
+        { at: "comment:\"The file (numbers big-endian, unlike GIF's):\"", weight: 1 },
+        { at: 'def:decode', weight: 3 },
+        { at: 'def:encode', say: 'the filter a row that costs least', weight: 2 },
+        { at: 'def:paeth', say: 'left, up or up-left: the nearest guess', weight: 2 },
+      ],
+    },
+    'Png.ml': { digest: '30c3277f0ae3',
+      summary: 'Chunks split, the five filters undone row by row, Adam7 passes, bit depths to RGBA; the writer.',
+      important: [
+        { at: 'def:predict', say: 'the five filters: none, left, up, average, Paeth', weight: 3 },
+        { at: 'def:unfilter', weight: 2 },
+        { at: 'def:adam7', say: 'seven passes, a blurry picture first', weight: 1 },
+        { at: 'def:decode', weight: 3 },
+        { at: 'def:cost', say: 'small differences compress: a guess', weight: 2 },
+        { at: 'def:encode', weight: 2 },
+      ],
+    },
+  },
+}

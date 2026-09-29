@@ -1,0 +1,85 @@
+// libs/graphics/videos/mpeg1/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'MPEG-1 video decoded (I, P and B pictures) and encoded (I and P): pixels that moved, not changed.',
+  files: {
+    'Mpeg1.mli': { digest: 'd57860485699',
+      summary: 'MPEG-1 video (1993): macroblocks intra or moved by a vector plus a residual; I, P, B, reordered.',
+      capitals: [
+        { at: 'def:of_string', say: 'a stream to a Movie, in display order' },
+      ],
+      important: [
+        { at: "comment:\"MPEG-1's idea: the pixels didn't change\"", say: 'they moved: a vector and a residual', weight: 3 },
+        { at: 'type:kind', say: 'I alone, P forward, B both ways', weight: 3 },
+        { at: 'type:how', say: 'what each macroblock did, for the "a" view', weight: 2 },
+        { at: 'def:of_string', weight: 2 },
+        { at: 'def:prediction', say: 'a block moved, at half a pixel', weight: 2 },
+      ],
+    },
+    'Mpeg1.ml': { digest: '1cbde4ed845c',
+      summary: 'Sequence, pictures, slices, macroblocks and blocks decoded; motion compensated; B frames reordered.',
+      capitals: [
+        { at: 'def:slice', say: 'the macroblocks: predicted, then corrected' },
+      ],
+      important: [
+        { at: 'type:sequence', weight: 1 },
+        { at: 'def:prediction', say: 'half-pixel positions averaged', weight: 3 },
+        { at: 'def:predict_macroblock', say: 'forward, backward, or both averaged', weight: 2 },
+        { at: 'def:block', say: 'DC predicted, AC runs, dequantize, IDCT', weight: 2 },
+        { at: 'def:slice', weight: 3 },
+        { at: 'def:picture', weight: 2 },
+        { at: 'def:of_string', say: 'decode order to display order', weight: 2 },
+      ],
+      links: [
+        { from: 'def:picture', to: 'def:slice' },
+        { from: 'def:slice', to: 'def:predict_macroblock' },
+        { from: 'def:slice', to: 'def:block' },
+      ],
+    },
+    'Mpeg1_vlc.mli': { digest: '35b43bb6591f',
+      summary: "Annex B's variable-length codes as the standard prints them, each a lesson in what is common in video.",
+      important: [
+        { at: 'def:motion_code', say: '"1": no change, things move together', weight: 2 },
+        { at: 'type:coefficient', say: '(run, level), EOB, escape', weight: 2 },
+        { at: 'def:dct_next', weight: 1 },
+      ],
+    },
+    'Mpeg1_vlc.ml': { digest: '554760a2ef98', summary: 'The tables, string codes to values, read with compression/Vlc.' },
+    'Motion.mli': { digest: 'd79bd54b6007',
+      summary: "Motion estimation, where encoders compete: full or three-step search by SAD, refined to half a pixel.",
+      capitals: [
+        { at: 'def:estimate', say: 'the vector for a macroblock' },
+      ],
+      important: [
+        { at: 'type:search', say: 'full: exact, dear; logarithmic: may miss', weight: 3 },
+        { at: 'def:sad', say: 'the cheapest measure of alike', weight: 2 },
+        { at: 'def:estimate', weight: 3 },
+      ],
+    },
+    'Motion.ml': { digest: '2f13042f745e',
+      summary: 'SAD at whole and half pixels, the window searched, the best refined.',
+      important: [
+        { at: 'def:sad_whole', weight: 1 },
+        { at: 'def:estimate', weight: 3 },
+      ],
+    },
+    'Mpeg1_encode.mli': { digest: '6442b52d871f',
+      summary: "An I and P encoder: the decisions a decoder never sees, predicting from its own reconstruction.",
+      important: [
+        { at: 'comment:"the one rule an encoder must not break"', say: 'else the picture drifts, P after P', weight: 3 },
+        { at: 'def:encode', say: 'quantizer, GOP, search, range', weight: 2 },
+        { at: 'type:stats', weight: 1 },
+      ],
+    },
+    'Mpeg1_encode.ml': { digest: '8fa7da739bd9',
+      summary: 'Bits written by the decoding tables reversed; macroblocks chosen intra, moved, or skipped.',
+      important: [
+        { at: 'def:lookup', say: "the decoder's tables, looked up backwards", weight: 1 },
+        { at: 'def:coefficients', weight: 2 },
+        { at: 'def:reconstruct', say: 'the same IDCT and rounding as the decoder', weight: 3 },
+        { at: 'def:encode', weight: 3 },
+      ],
+    },
+  },
+}

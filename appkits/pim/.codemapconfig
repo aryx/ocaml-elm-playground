@@ -1,0 +1,56 @@
+// appkits/pim/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The calendar and address book as files: iCalendar events and to-dos, vCard cards (TinyCalendar, TinyPalmPilot, TinyEudora).',
+  files: {
+    'Ics.mli': { digest: 'bedebe683835',
+      summary: "iCalendar (RFC 5545) read leniently and written: the subset a calendar and a to-do list use.",
+      capitals: [
+        { at: 'type:event', say: 'a meeting: when, how long, how it repeats' },
+        { at: 'def:of_string', say: 'three layers: lines, content lines, values' },
+      ],
+      important: [
+        { at: 'comment:"Three layers, each in its function below"', weight: 3 },
+        { at: 'type:moment', say: 'a date, or a time UTC or floating', weight: 2 },
+        { at: 'type:event', weight: 3 },
+        { at: 'type:todo', weight: 1 },
+        { at: 'def:occurrences', say: 'a repeating event, its dates in a range', weight: 2 },
+        { at: 'def:unfold', say: "75 bytes a line: e-mail's limit", weight: 1 },
+        { at: 'comment:"Read leniently, as the RFC asks"', weight: 1 },
+      ],
+    },
+    'Ics.ml': { digest: '4e750702fa8e',
+      summary: 'Lines unfolded, content lines split, dates and RRULEs parsed, components built.',
+      important: [
+        { at: 'def:fold', say: 'never inside a UTF-8 character', weight: 2 },
+        { at: 'def:content_line', weight: 2 },
+        { at: 'def:rule_of_string', say: 'RRULE into core/time Recur', weight: 2 },
+        { at: 'def:event_of', say: 'no DTSTART, no event', weight: 1 },
+        { at: 'def:of_string', weight: 3 },
+      ],
+      related: ['../tests/Unit_ics.ml'],
+    },
+    'Vcard.mli': { digest: '4dadf0b1f7e3',
+      summary: "vCard 3.0, iCalendar's sibling read with its layers; new: structured values split on ';'.",
+      capitals: [
+        { at: 'type:card', say: 'a person: name, phones, e-mails, addresses' },
+      ],
+      important: [
+        { at: 'type:card', weight: 3 },
+        { at: 'type:name', say: 'N: family;given;additional;prefix;suffix', weight: 1 },
+        { at: 'def:structured', say: 'split first, unescape after', weight: 3 },
+        { at: 'def:of_string', weight: 2 },
+      ],
+    },
+    'Vcard.ml': { digest: '91d770d0d7a7',
+      summary: "Cards read property by property over Ics's lines, written back; names sorted as shown.",
+      important: [
+        { at: 'def:structured', weight: 3 },
+        { at: 'def:property', say: 'one line into the card', weight: 2 },
+        { at: 'def:display_name', weight: 1 },
+      ],
+      related: ['../tests/Unit_vcard.ml'],
+    },
+  },
+}

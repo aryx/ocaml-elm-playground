@@ -1,0 +1,27 @@
+// gamekits/cards/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The cards kit: the 52 cards, Microsoft's numbered deals, and a card drawn.",
+  files: {
+    'Cards.mli': { digest: '57ea7baffaca',
+      summary: "What the card games share: cards numbered as FreeCell numbers them, a deal by number, a card drawn.",
+      important: [
+        { at: 'type:card', weight: 2 },
+        { at: 'def:deal', say: 'deal N: the same on every computer', weight: 3 },
+        { at: 'def:face', say: 'a card drawn: its suit as shapes', weight: 2 },
+        { at: 'def:fanned', weight: 1 },
+      ],
+    },
+    'Cards.ml': { digest: '09e819abc9a5',
+      summary: "Microsoft's random generator written out, deal 1 the worked example; suits drawn as shapes.",
+      important: [
+        { at: 'def:deal', say: "the C library's rand, as FreeCell called it", weight: 3 },
+        { at: 'def:suit_shape', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: deal 1 dealt as Microsoft's." },
+  },
+}

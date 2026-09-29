@@ -1,0 +1,63 @@
+// games/programming/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md; its facts:
+// tinybox codemap -facts . games/programming)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Programming games: you win by writing the program that plays.',
+  files: {
+    'TinyCoreWar.ml': { digest: '7a067859638e',
+      summary: 'Core War (Dewdney and Jones, 1984): two Redcode programs in one circular memory, each trying to make the other die.',
+      capitals: [
+        { at: 'def:step', say: "MARS: one instruction of the warrior whose turn it is" },
+        { at: 'def:assemble', say: 'Redcode assembled, the mistakes on their lines' },
+      ],
+      important: [
+        { at: 'type:instr', say: 'an instruction: opcode, two fields, their modes', weight: 3 },
+        { at: 'type:mars', say: 'the machine: the core, the warriors and their processes', weight: 3 },
+        { at: 'def:step', weight: 3 },
+        { at: 'def:assemble', weight: 2 },
+        { at: 'def:classics', say: 'the Imp, the Dwarf, the Mice: each beats the next', weight: 2 },
+        { at: 'def:wrap', say: 'addresses modulo the core: memory as a circle', weight: 1 },
+        { at: 'def:run', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:assemble' },
+        { from: 'def:update', to: 'def:run' },
+        { from: 'def:run', to: 'def:step' },
+      ],
+      related: ['web/TinyCoreWar.html', '../../tests/2d/golden/TinyCoreWar.png'],
+    },
+    'TinyKarel.ml': { digest: '795938e3f740',
+      summary: "Karel the Robot (Richard Pattis, Stanford, 1981): Pattis's language typed in, the robot doing what you said.",
+      capitals: [{ at: 'def:parse', say: 'recursive descent; the first mistake and its line' }],
+      important: [
+        { at: 'type:program', say: 'a program: new words defined, then the main one', weight: 3 },
+        { at: 'def:parse', weight: 3 },
+        { at: 'def:levels', say: 'the newspaper, the harvest, the stairs, the maze', weight: 2 },
+        { at: 'def:start', say: 'the program handed to the Karel way to run', weight: 2 },
+        { at: 'def:skeleton', say: 'what the editor starts with', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.game('TinyCoreWar.ml', 'def:step', 'MARS: one instruction a turn', say='the battle run'),
+  ],
+  tours: [
+    {
+      name: 'How Core War runs',
+      stops: [
+        { at: 'TinyCoreWar.ml:type:instr', say: 'Redcode: an opcode and two fields, each with its mode.' },
+        { at: 'TinyCoreWar.ml:def:assemble', say: 'The text assembled; a label, END, a mistake on its line.' },
+        { at: 'TinyCoreWar.ml:def:classics', say: 'The classic warriors, a few lines each.' },
+        { at: 'TinyCoreWar.ml:type:mars', say: 'The machine: one core, two queues of processes.' },
+        { at: 'TinyCoreWar.ml:def:step', say: 'One instruction a turn; executing a DAT kills the process.' },
+        { at: 'TinyCoreWar.ml:def:run', say: 'Turns until one side has no process left, or a draw.' },
+        { at: 'TinyCoreWar.ml:def:view', say: 'The core drawn as cells, coloured by who wrote them.' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'Karel and its way', files: ['TinyKarel.ml', '../../playground/ways/Karel.ml'] },
+  ],
+}

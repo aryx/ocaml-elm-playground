@@ -1,0 +1,32 @@
+// libs/graphics/images/svg/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The small part of SVG that logos and icons use, parsed and drawn by the 2D rasterizer.",
+  files: {
+    'Svg.mli': { digest: 'b739753cf7b1',
+      summary: "A picture as shapes (W3C, 2001), sharp at any size: XML read, shapes to contours, filled and stroked.",
+      capitals: [
+        { at: 'def:render', say: 'an SVG to pixels, at the size asked' },
+      ],
+      important: [
+        { at: 'type:node', say: "a browser's inline <svg> gives the same", weight: 2 },
+        { at: 'def:parse', weight: 2 },
+        { at: 'def:sniff', weight: 1 },
+        { at: 'def:render', weight: 3 },
+      ],
+    },
+    'Svg.ml': { digest: '6ee3b9cbc023',
+      summary: "A small XML reader; every shape and path command to polygons; Fill and Stroke paint them.",
+      important: [
+        { at: 'def:parse_xml', weight: 2 },
+        { at: 'def:transform', say: 'the transform attribute to an Affine', weight: 1 },
+        { at: 'def:arc', say: "endpoint form to centre: the spec's appendix", weight: 2 },
+        { at: 'def:path', say: 'd: M L H V C S Q T A Z, flattened', weight: 3 },
+        { at: 'def:styled', say: 'inherited fill, stroke, opacity', weight: 1 },
+        { at: 'def:paint_contours', say: 'Fill.polygons_aa, Stroke.contours', weight: 2 },
+        { at: 'def:render', weight: 2 },
+      ],
+    },
+  },
+}

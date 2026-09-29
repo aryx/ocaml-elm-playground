@@ -1,0 +1,34 @@
+// languages/formula/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The spreadsheet's formulas, VisiCalc's grammar: cells, arithmetic, SUM over ranges; the sheets' language.",
+  files: {
+    'Formula.mli': { digest: '3854fe8421f2',
+      summary: 'What a cell holds and means; the grammar in four lines, and why recursive descent is the parser to know first.',
+      capitals: [
+        { at: 'def:parse', say: 'a formula read: one function per rule' },
+      ],
+      important: [
+        { at: 'comment:"expr    ::= term"', say: "the grammar: a sum made of products", weight: 3 },
+        { at: 'type:expr', say: 'a formula as a tree', weight: 3 },
+        { at: 'type:content', say: 'a number, text or a formula', weight: 2 },
+        { at: 'def:refs', say: 'the cells a formula reads: what to recompute', weight: 2 },
+        { at: 'def:shift', say: 'a formula copied elsewhere: its references moved', weight: 1 },
+      ],
+    },
+    'Formula.ml': { digest: '6161cc24882d',
+      summary: 'Cells named A1 to ZZ99, the tokens, the parser one function per rule, and a formula printed and shifted.',
+      capitals: [
+        { at: 'def:parse', say: 'recursive descent: expr, term, factor, atom' },
+      ],
+      important: [
+        { at: 'def:parse', weight: 3 },
+        { at: 'comment:"that is where precedence comes from"', say: 'precedence is depth in the grammar', weight: 3 },
+        { at: 'def:tokens', say: 'the text cut into numbers, names, operators', weight: 1 },
+        { at: 'def:name_of_cell', weight: 1 },
+        { at: 'def:content_of', say: 'a leading = makes it a formula', weight: 2 },
+      ],
+    },
+  },
+}

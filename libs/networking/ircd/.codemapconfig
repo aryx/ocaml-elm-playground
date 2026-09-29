@@ -1,0 +1,15 @@
+// libs/networking/ircd/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "tiny_ircd: TinyIRC's chat server, users, nicks and channels, for native and browser clients.",
+  files: {
+    'tiny_ircd.ml': { digest: '8caf6f98f71d',
+      summary: "Irc_server's loop as a program: a port and an address to bind, then wait and step forever.",
+      important: [
+        { at: 'comment:"bind (127.0.0.1: this computer only"', say: 'this computer only, unless told 0.0.0.0', weight: 2 },
+      ],
+      related: ['../unix/Irc_server.mli', '../protocols/Irc.mli', '../../../apps/internet/TinyIRC.ml'],
+    },
+  },
+}

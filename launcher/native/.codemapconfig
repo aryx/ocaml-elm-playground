@@ -1,0 +1,41 @@
+// launcher/native/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'tinybox itself: every program linked in and collected, one run by name, and the menu as native host.',
+  files: {
+    'Tinybox.ml': { digest: 'b6c07bba019b',
+      summary: 'The multi-call binary: the menu, list, a program by any part of its name, codemap of a directory.',
+      capitals: [{ at: 'def:start', say: 'a program run with its own command line' }],
+      important: [
+        { at: 'def:programs', say: 'the programs recorded, not started', weight: 2 },
+        { at: 'def:resolve', say: 'mario finds TinyMario: case, Tiny, any unique part', weight: 3 },
+        { at: 'def:start', weight: 3 },
+        { at: 'def:tty_programs', say: 'the editors run in this terminal with -tty', weight: 1 },
+        { at: 'def:menu', weight: 1 },
+      ],
+    },
+    'Tinybox_collect.mli': { digest: 'ec8fe1ca0177',
+      summary: 'Nothing but its initialization: the programs linked after it are recorded instead of started.' },
+    'Tinybox_collect.ml': { digest: '5c1c904ec3bb',
+      summary: 'Program.collect (), called first in the link order.' },
+    'Tinybox_native.mli': { digest: '2952e29de229',
+      summary: "The menu's native host: a process per program started, thumbnails and sources in the binary, previews.",
+      important: [
+        { at: 'def:host', say: 'over the capabilities to fork, exec and wait', weight: 3 },
+        { at: 'def:directory_sources', weight: 1 },
+      ],
+    },
+    'Tinybox_native.ml': { digest: 'd914cd05c88a',
+      summary: 'Thumbnails decoded when first shown, the child process waited for, the chosen one previewed live.',
+      capitals: [{ at: 'def:start_preview', say: "a program's app captured and run in the panel" }],
+      important: [
+        { at: 'def:play', say: 'this same binary, under the program\'s name', weight: 3 },
+        { at: 'def:capture', say: "what a program's main gave, taken once", weight: 2 },
+        { at: 'def:start_preview', weight: 2 },
+        { at: 'def:budget_ms', say: 'the preview kept within a frame budget', weight: 1 },
+        { at: 'def:host', weight: 3 },
+      ],
+    },
+  },
+}

@@ -1,0 +1,109 @@
+// languages/postscript/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "PostScript (Adobe, 1984), a page described as a program: three stacks, the CTM, paths and Bezier curves; TinyPostScript's.",
+  files: {
+    'Ps_lexer.mli': { digest: '47f813ed9f33',
+      summary: 'Almost no syntax, by design: tokens that are data, pushed, or names, executed; postfix, as Forth.',
+      important: [
+        { at: 'comment:"3 4 add 2 mul"', say: 'postfix: the whole evaluation order', weight: 3 },
+        { at: 'type:kind', weight: 2 },
+        { at: 'def:next', weight: 1 },
+      ],
+    },
+    'Ps_lexer.ml': { digest: '951b12adff19',
+      summary: 'The next token from a place in the text, so the machine reads the program as it runs it.',
+      important: [
+        { at: 'def:next', say: 'one token at a time, read as it runs', weight: 3 },
+        { at: 'def:string_body', say: 'parentheses balanced or escaped', weight: 1 },
+      ],
+    },
+    'Ps_graphics.mli': { digest: 'f993e86d7845',
+      summary: 'The three ideas every 2D graphics system kept: the current transformation matrix, the path, Bezier curves.',
+      important: [
+        { at: 'comment:"x\' = a x + c y + tx"', say: 'six numbers take user space to the device', weight: 3 },
+        { at: 'type:matrix', weight: 2 },
+        { at: 'def:concat', say: 'the new transformation first, then the old', weight: 2 },
+        { at: 'def:arc', say: 'arcs as Bezier curves', weight: 1 },
+        { at: 'def:flatten', say: 'curves into lines, by de Casteljau', weight: 2 },
+      ],
+    },
+    'Ps_graphics.ml': { digest: 'bcba9b3d60a1',
+      summary: 'The matrices, arcs as quarter-circle Beziers, and curves flattened by halving them at their midpoints.',
+      capitals: [
+        { at: 'def:bezier', say: "de Casteljau: a curve halved until it's flat" },
+      ],
+      important: [
+        { at: 'type:matrix', weight: 2 },
+        { at: 'def:mid', weight: 1 },
+        { at: 'def:bezier', weight: 3 },
+      ],
+    },
+    'Ps_machine.mli': { digest: 'aa7b3d6815a4',
+      summary: 'Three stacks are the whole language: operands, dictionaries, execution; a procedure is an array marked executable.',
+      capitals: [
+        { at: 'def:step', say: 'one object executed: the machine as a value' },
+      ],
+      important: [
+        { at: 'comment:"operands      the data: 3 4 add leaves 7 here"', say: 'the three stacks', weight: 3 },
+        { at: 'type:value', weight: 2 },
+        { at: 'type:host', say: 'the letters: the host gives their shapes', weight: 1 },
+        { at: 'type:t', weight: 2 },
+      ],
+    },
+    'Ps_machine.ml': { digest: 'a9d7115a0a4f',
+      summary: 'The machine: values, the graphics state, the operators, and a step per object met; control is operators too.',
+      capitals: [
+        { at: 'def:step', say: 'the execution stack popped one object' },
+      ],
+      important: [
+        { at: 'type:gstate', say: 'what gsave saves: the CTM, the path, the colour', weight: 2 },
+        { at: 'type:frame', say: 'the execution stack: text, procedure, loops', weight: 3 },
+        { at: 'type:t', weight: 2 },
+        { at: 'def:apply', say: 'the operators, a case each', weight: 2 },
+        { at: 'def:execute_name', say: 'an operator runs, a procedure is entered', weight: 2 },
+        { at: 'def:step', weight: 3 },
+        { at: 'comment:"the last item leaves the frame first"', say: 'tail calls: recursion keeps no frame', weight: 2 },
+      ],
+      links: [
+        { from: 'def:step', to: 'def:execute_direct' },
+        { from: 'def:execute_direct', to: 'def:execute_name' },
+        { from: 'def:execute_name', to: 'def:apply' },
+      ],
+    },
+    'Ps_disk.mli': { digest: '1df0d9130788',
+      summary: "Programs after the Blue Book's lessons: a star turned, a recursive tree, a pie chart, a curve, the calculator.",
+      important: [
+        { at: 'def:programs', weight: 1 },
+      ],
+    },
+    'Ps_disk.ml': { digest: '97d4eca028ee',
+      summary: "The programs' texts, each fitting a screen of the editor.",
+      important: [
+        { at: 'def:tree', say: 'a recursive procedure, the CTM saved and restored', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A PostScript page, run',
+      bones: [
+        { at: 'Ps_lexer.ml:def:next', role: 'the next token, read as the program runs' },
+        { at: 'Ps_machine.ml:def:step', role: 'one object: pushed, or its name executed' },
+        { at: 'Ps_machine.ml:def:execute_name', role: 'a name looked up in the dictionaries' },
+        { at: 'Ps_machine.ml:def:apply', role: 'an operator applied to the stacks' },
+        { at: 'Ps_graphics.ml:def:flatten', role: 'a path flattened into lines to paint' },
+      ],
+      joints: [
+        { from: 'Ps_lexer.ml:def:next', to: 'Ps_machine.ml:def:step', say: 'each token' },
+        { from: 'Ps_machine.ml:def:step', to: 'Ps_machine.ml:def:execute_name', say: 'a name' },
+        { from: 'Ps_machine.ml:def:execute_name', to: 'Ps_machine.ml:def:apply', say: 'an operator' },
+        { from: 'Ps_machine.ml:def:apply', to: 'Ps_graphics.ml:def:flatten', say: 'fill, stroke: the path' },
+      ],
+    },
+  ],
+  dirs: {
+    tests: { summary: 'The lexer, the stack, the errors, the geometry, and every program on the disk run to its end.' },
+  },
+}

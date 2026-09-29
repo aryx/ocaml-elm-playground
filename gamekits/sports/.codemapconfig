@@ -1,0 +1,33 @@
+// gamekits/sports/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The sports kit: the ball pushed ahead instead of carried, and players pulled to their places.',
+  files: {
+    'Free_ball.mli': { digest: '143449a3c95b',
+      summary: 'The ball that is not yours: run into it and it goes away; dribbling is keeping up.',
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:touch', say: 'a touch pushes it ahead, faster than you run', weight: 3 },
+        { at: 'def:roll', say: 'friction, a frame', weight: 2 },
+      ],
+    },
+    'Free_ball.ml': { digest: 'edefdd108d3d',
+      summary: 'Roll, touch, bounce: the free ball in a few lines.',
+      important: [{ at: 'def:touch', weight: 2 }],
+    },
+    'Formation.mli': { digest: '2c51eeb460e5',
+      summary: 'A team is a shape, not eleven brains: a place each, shifted with the ball.',
+      important: [
+        { at: 'type:spot', say: 'a place as fractions of the half', weight: 2 },
+        { at: 'def:at', say: 'a spot on the pitch, for either end', weight: 2 },
+        { at: 'def:belongs', say: 'the place pulled part of the way to the ball', weight: 3 },
+        { at: 'def:nearest', say: 'the one who goes for the ball', weight: 2 },
+      ],
+    },
+    'Formation.ml': { digest: 'a07847256617',
+      summary: 'Spots placed, pulled towards the ball; the nearest player chosen.',
+      important: [{ at: 'def:belongs', weight: 2 }],
+    },
+  },
+}

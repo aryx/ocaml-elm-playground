@@ -1,0 +1,9 @@
+// libs/audio/formats/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The files sounds and songs are kept in, read by our own code: WAV, MIDI, ABC, MOD, MP2 and MP3.',
+  dirs: {
+    tests: { summary: "The formats' tests: MOD songs played, MP2 and MP3 compared with ffmpeg's decoding." },
+  },
+}

@@ -1,0 +1,37 @@
+// libs/random/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Seeded random numbers, the same natively and in a browser: replays, golden frames, lockstep.',
+  files: {
+    'Lehmer.mli': { digest: '4074a30a77d7',
+      summary: "Lehmer's generator (1949) with Park and Miller's constants: seed' = 16807 * seed mod 2^31 - 1.",
+      capitals: [
+        { at: 'def:next', say: 'the formula: the next seed from this one' },
+      ],
+      important: [
+        { at: 'comment:"The subtle part is computing it at all."', say: 'the web has 32-bit ints: Schrage keeps 31', weight: 3 },
+        { at: 'comment:"One more trap, and a real one: the generator only multiplies, so"', say: 'seeds 1 and 2 start nearly the same game', weight: 3 },
+        { at: 'type:t', weight: 2 },
+        { at: 'def:scramble', say: "a person's seed hashed first", weight: 2 },
+        { at: 'type:state', say: 'a seed in a ref, for code that is not pure', weight: 1 },
+      ],
+    },
+    'Lehmer.ml': { digest: 'da92729a61ab',
+      summary: "The generator, as Lehmer.mli says: Schrage's trick, and MurmurHash3's finalizer for seeds.",
+      capitals: [
+        { at: 'def:next', say: "Schrage's trick: no product past 31 bits" },
+      ],
+      important: [
+        { at: 'def:next', weight: 3 },
+        { at: 'def:q', say: 'm = a q + r, with r < q', weight: 2 },
+        { at: 'def:fmix32', say: 'every bit of the seed stirred into every other', weight: 2 },
+        { at: 'def:to_unit', weight: 1 },
+      ],
+      related: ['tests/Unit_lehmer.ml'],
+    },
+  },
+  dirs: {
+    tests: { summary: "Park and Miller's check value, seeds scrambled, the same numbers everywhere." },
+  },
+}

@@ -1,0 +1,30 @@
+// gamekits/crush/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The Crush kit: a level of 2D slices, played on one or crushed into their union; the rules, whatever draws them.",
+  files: {
+    'Crush.mli': { digest: '5928bc669520',
+      summary: "Crush's rules: a stack of slices, each state a 2D platformer on one tile map built from them.",
+      important: [
+        { at: 'type:level', say: 'slices, front to back', weight: 2 },
+        { at: 'def:plane', say: 'the tile map of a state: one slice, or all crushed', weight: 3 },
+        { at: 'def:crush', say: 'crushed: the union along the line of sight', weight: 3 },
+        { at: 'def:uncrush', weight: 2 },
+        { at: 'def:frame', say: 'a frame, shared by the 2D and the 3D game', weight: 2 },
+      ],
+    },
+    'Crush.ml': { digest: '3aa0fa411749',
+      summary: 'The slices as a 3D grid, the planes cut from it, and the platformer on them.',
+      important: [
+        { at: 'def:project', weight: 2 },
+        { at: 'def:plane', weight: 3 },
+        { at: 'def:crush', weight: 2 },
+        { at: 'def:step', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: planes cut, crushes undone." },
+  },
+}

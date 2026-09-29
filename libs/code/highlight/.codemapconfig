@@ -1,0 +1,31 @@
+// libs/code/highlight/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "What a code view needs from any language: categories and their colours, spans, names and uses.",
+  files: {
+    'Highlight_code.mli': { digest: 'e291fea08be7',
+      summary: "codemap's split (pfff, 2010): colouring is shared, only tokens to categories is a language's.",
+      capitals: [
+        { at: 'type:analysis', say: 'all a highlighter knows of a file' },
+      ],
+      important: [
+        { at: 'type:category', say: "codemap's categories, and Capability", weight: 3 },
+        { at: 'type:analysis', say: 'one parse: spans, occurrences, definitions, references', weight: 3 },
+        { at: 'type:span', say: "a token's piece on one line", weight: 2 },
+        { at: 'type:occurrence', say: 'a name and where it is bound', weight: 2 },
+        { at: 'type:reference', say: 'a name defined in another file', weight: 2 },
+        { at: 'def:lines', weight: 1 },
+      ],
+    },
+    'Highlight_code.ml': { digest: '26ad43c505c8',
+      summary: "The categories' colours (\"pad taste\", on dark), and tokens cut into spans a line each.",
+      important: [
+        { at: 'type:category', weight: 2 },
+        { at: 'def:rgb', say: 'a category to its colour', weight: 2 },
+        { at: 'def:lines', say: 'a token over several lines, a span per line', weight: 2 },
+        { at: 'def:occurrences', weight: 1 },
+      ],
+    },
+  },
+}

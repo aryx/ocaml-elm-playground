@@ -1,0 +1,37 @@
+// libs/graphics/videos/yuv/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Video's pixels, brightness apart from colour, colour at a quarter resolution; and PSNR, the ruler of loss.",
+  files: {
+    'Yuv.mli': { digest: '1b8162566cc2',
+      summary: 'BT.601 luma and colour differences, full or studio range, 4:2:0 planes to and from pictures.',
+      capitals: [
+        { at: 'type:planes', say: 'Y at full size, Cb and Cr at a quarter' },
+      ],
+      important: [
+        { at: 'type:range', say: 'studio: black is 16, the washed-out bug', weight: 3 },
+        { at: 'type:chroma', weight: 1 },
+        { at: 'type:planes', weight: 2 },
+        { at: 'def:of_image', weight: 2 },
+        { at: 'def:to_image', weight: 2 },
+      ],
+    },
+    'Yuv.ml': { digest: '3a548253a80b',
+      summary: 'The conversions, 2x2 colour averaged down, and per-range tables for the way back.',
+      important: [
+        { at: 'def:clamp', say: 'ints, not polymorphic min: no boxing', weight: 1 },
+        { at: 'def:of_image', weight: 2 },
+        { at: 'def:tables_of', weight: 1 },
+        { at: 'def:to_image', weight: 2 },
+      ],
+    },
+    'Psnr.mli': { digest: 'cf654c5c8733',
+      summary: 'How close a lossy picture is to its original, in decibels: 30 watchable, 40 the same.',
+      important: [
+        { at: 'def:psnr', say: '10 log10 (255^2 / MSE)', weight: 2 },
+      ],
+    },
+    'Psnr.ml': { digest: '717cff476b42', summary: 'The mean squared error over red, green and blue, and its decibels.' },
+  },
+}

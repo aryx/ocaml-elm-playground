@@ -1,0 +1,49 @@
+// libs/ai/bots/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Bots that play as a player does: only what it could know, late, through the player's keys.",
+  files: {
+    'Bot.mli': { digest: '3e4af5172f41',
+      summary: 'The loop round a bot\'s mind: sense, decide; fair by delay, rate of thought and aim error.',
+      capitals: [
+        { at: 'def:step', say: 'a frame: sensed now, decided on old senses' },
+      ],
+      important: [
+        { at: 'comment:"Difficulty without cheating"', say: 'the honest knobs, each a number', weight: 3 },
+        { at: 'type:t', say: 'sense, decide, delay, rate, reflex', weight: 3 },
+        { at: 'comment:"The delay is fair for what a bot perceives"', say: 'why a reflex: late for others, not its feet', weight: 2 },
+        { at: 'def:step', weight: 2 },
+        { at: 'def:aim_error', say: 'off at first, settling like a hand', weight: 2 },
+      ],
+    },
+    'Bot.ml': { digest: '67f44d73222b',
+      summary: 'The senses kept for the delay, the decision repeated between changes of mind, the reflex on top.',
+      important: [
+        { at: 'type:running', say: 'the last delay+1 senses, the intent repeated', weight: 2 },
+        { at: 'def:step', weight: 3 },
+        { at: 'def:wobble', say: 'two sines, no Random: replays stay the same', weight: 1 },
+      ],
+    },
+    'Sense.mli': { digest: '1fd5764d38e7',
+      summary: 'What a bot may know of a target: seen, heard, where it was last seen; a type, not a promise.',
+      capitals: [
+        { at: 'type:target', say: "a bot's knowledge of one target" },
+      ],
+      important: [
+        { at: 'comment:"The geometry stays in the game"', say: 'the game measures; this remembers', weight: 2 },
+        { at: 'type:target', weight: 3 },
+        { at: 'def:update', say: 'a frame later, from distance and line of sight', weight: 2 },
+        { at: 'def:forget', say: 'the bot gives up the hunt', weight: 1 },
+        { at: 'def:focus', say: 'which target to think about', weight: 2 },
+      ],
+    },
+    'Sense.ml': { digest: '8e4148673dca',
+      summary: 'A target updated from what the game measured; the last position kept while it hides.',
+      important: [
+        { at: 'def:update', weight: 3 },
+        { at: 'def:focus', weight: 2 },
+      ],
+    },
+  },
+}

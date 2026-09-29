@@ -1,0 +1,55 @@
+// appkits/draw/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "MacDraw's kit: figures that stay objects, to click, move, resize, group; TinyMacDraw's and the office's drawings.",
+  files: {
+    'Figure.mli': { digest: 'fb99168bbf05',
+      summary: 'One object of a drawing -- line, box, oval, text, group: what a drawing program has and a paint one not.',
+      capitals: [
+        { at: 'def:hit', say: 'filled: hit inside; hollow: only near the outline' },
+      ],
+      important: [
+        { at: 'type:t', say: 'a figure, or a group, which is one too', weight: 3 },
+        { at: 'type:box', say: 'two corners, always in order', weight: 1 },
+        { at: 'def:hit', weight: 3 },
+        { at: 'def:fit', say: 'resizing is an affine map of the points', weight: 2 },
+        { at: 'def:drag_handle', weight: 2 },
+        { at: 'def:handles', weight: 1 },
+      ],
+      related: ['../tests/Unit_draw.ml'],
+    },
+    'Figure.ml': { digest: '9f07600c2345',
+      summary: "Hit tests per kind (an oval's by its distance in radii), resizing as a map of the points.",
+      important: [
+        { at: 'def:hit', weight: 3 },
+        { at: 'def:map_points', say: 'moving and resizing, one map of the points', weight: 2 },
+        { at: 'def:fit', weight: 2 },
+        { at: 'def:drag_handle', weight: 1 },
+      ],
+    },
+    'Drawing.mli': { digest: '4e6f35b352eb',
+      summary: 'A drawing: figures back to front with ids that stay theirs; drawn from the start, clicked from the end.',
+      capitals: [
+        { at: 'type:t', say: 'the order is the whole of "in front of"' },
+      ],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'type:id', say: 'a selection is ids, not places in the list', weight: 2 },
+        { at: 'def:at', say: 'hit-tested from the front', weight: 2 },
+        { at: 'def:group', say: "MacDraw's grouping: the frontmost's place", weight: 2 },
+        { at: 'def:to_front', weight: 1 },
+        { at: 'def:align', weight: 1 },
+      ],
+    },
+    'Drawing.ml': { digest: 'b920fcc2fda1',
+      summary: 'Drawings as values: editing returns a new one, so undo is keeping the old.',
+      important: [
+        { at: 'def:at', weight: 2 },
+        { at: 'def:group', weight: 2 },
+        { at: 'def:ungroup', weight: 1 },
+        { at: 'def:align', weight: 1 },
+      ],
+    },
+  },
+}

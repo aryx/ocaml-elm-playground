@@ -1,0 +1,52 @@
+// appkits/embed/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Parts put in documents without the document knowing what they are: OLE's and OpenDoc's idea (TinyOffice, TinyOpenDoc, TinyReface).",
+  files: {
+    'Component.mli': { digest: '89206f263b06',
+      summary: 'A part as a record of functions closing over its state: height, draw, input, menu, save.',
+      capitals: [
+        { at: 'type:part', say: "what COM did with interfaces, as a record" },
+      ],
+      important: [
+        { at: 'type:part', weight: 3 },
+        { at: 'comment:"What COM did with an interface"', say: 'a part is a value; so is a document of them', weight: 3 },
+        { at: 'type:registry', say: 'kinds to loaders: how a saved part comes back', weight: 2 },
+        { at: 'def:placeholder', say: 'an unknown kind kept, not lost', weight: 1 },
+        { at: 'def:draw_in', weight: 1 },
+        { at: 'def:input_in', weight: 1 },
+      ],
+    },
+    'Component.ml': { digest: '50f656c6e226',
+      summary: 'Parts loaded by kind, an unknown one kept as it was; a part drawn scaled into a box.',
+      important: [
+        { at: 'def:placeholder', weight: 2 },
+        { at: 'def:load', weight: 2 },
+        { at: 'section:Scaling', weight: 1 },
+      ],
+    },
+    'Compound.mli': { digest: 'bc261493b67f',
+      summary: "A document made of parts: columns and rows of them, laid out with OpenDoc's frame negotiation.",
+      capitals: [
+        { at: 'type:t', say: 'a tree: parts at the leaves, rows and columns' },
+      ],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'comment:"frame negotiation"', say: 'more room than asked, never less', weight: 3 },
+        { at: 'def:layout', weight: 2 },
+        { at: 'def:resize_row', weight: 1 },
+        { at: 'def:save', weight: 1 },
+      ],
+    },
+    'Compound.ml': { digest: '5476e6a9ba7b',
+      summary: 'The tree walked: widths down, heights up; paths through the Sized wrappers.',
+      important: [
+        { at: 'def:height', say: 'a part asked at a width, never less', weight: 3 },
+        { at: 'def:walk', weight: 2 },
+        { at: 'def:save', weight: 1 },
+      ],
+      related: ['../tests/Unit_embed.ml'],
+    },
+  },
+}

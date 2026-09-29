@@ -1,0 +1,36 @@
+// gamekits/maze/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The maze kit: moving along a grid's corridors, and how the other movers choose their way.",
+  files: {
+    'Grid_move.mli': { digest: '438089bede4d',
+      summary: 'Moving as Pac-Man and Bomberman do: between tile centres, turning only at a centre, a pixel a time.',
+      important: [
+        { at: 'type:mover', weight: 3 },
+        { at: 'def:at_center', say: 'the only place a turn is taken', weight: 2 },
+        { at: 'def:steer', say: 'a turn asked early is kept until it can be taken', weight: 3 },
+        { at: 'def:move_player', weight: 2 },
+      ],
+    },
+    'Grid_move.ml': { digest: '2865a0714858',
+      summary: 'A mover advanced a pixel at a time, wrapping round the sides.',
+      important: [
+        { at: 'def:advance', weight: 2 },
+        { at: 'def:steer', weight: 2 },
+      ],
+    },
+    'Chase.mli': { digest: '6dcba7bed48c',
+      summary: "Pac-Man's ghosts: at each centre, never turning back, the way nearest a target, or one at random.",
+      important: [
+        { at: 'def:ways', say: 'the corridors open, the way back excluded', weight: 2 },
+        { at: 'def:toward', say: 'the ghosts: straight-line distance to a target tile', weight: 3 },
+        { at: 'def:at_random', say: 'frightened: any way', weight: 2 },
+      ],
+    },
+    'Chase.ml': { digest: '3796337f2840',
+      summary: 'Choosing a way: the shortest distance, ties broken in a fixed order.',
+      important: [{ at: 'def:toward', weight: 2 }],
+    },
+  },
+}

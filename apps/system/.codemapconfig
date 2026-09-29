@@ -1,0 +1,31 @@
+// apps/system/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The system programs: a terminal and the shell behind it, what a computer is used through.',
+  files: {
+    'TinyTerminal.ml': { digest: 'a717dc06f59f',
+      summary: "A VT100 (DEC, 1978) and a Unix shell: read a line, run the program named, wait, read again.",
+      capitals: [
+        { at: 'def:shell', say: "the shell's loop: a line, its words, a program spawned" },
+      ],
+      important: [
+        { at: 'def:programs', say: "the commands: appkits/teletype's programs, and BASIC", weight: 3 },
+        { at: 'def:shell', weight: 3 },
+        { at: 'comment:"Running is [spawn]"', say: 'fork, exec and wait in one: why Control-C works', weight: 2 },
+        { at: 'def:colors', say: "SGR's escape sequences, shown", weight: 1 },
+        { at: 'def:view', say: 'the screen in its case, the keyboard lights', weight: 1 },
+        { at: 'def:app', say: 'the Teletype way builds the app', weight: 2 },
+      ],
+      links: [
+        { from: 'def:session', to: 'def:shell' },
+        { from: 'def:shell', to: 'def:programs' },
+      ],
+      related: ['web/TinyTerminal.html', '../../tests/2d/golden/TinyTerminal.png'],
+    },
+  },
+  dirs: {
+    software: { summary: 'The same program on the software rasterizer, for the golden frames.' },
+    web: { summary: 'The program compiled to JavaScript, and its page.' },
+  },
+}

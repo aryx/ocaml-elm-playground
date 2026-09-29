@@ -1,0 +1,54 @@
+// appkits/blocks/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Scratch's blocks on screen: where each block lies, where a dragged stack snaps (TinyScratch, TinySnap).",
+  files: {
+    'Block_layout.mli': { digest: '265430b52f12',
+      summary: 'The scripts area laid out from the program each time it is drawn, and where a stack may snap.',
+      capitals: [
+        { at: 'def:layout', say: 'sizes computed, never stored: like lines from text' },
+        { at: 'def:snap', say: 'where a dragged stack would go' },
+      ],
+      important: [
+        { at: 'type:path', say: 'a place: a script, then steps into blocks', weight: 3 },
+        { at: 'type:target', say: 'below a block, above a script, in a mouth', weight: 2 },
+        { at: 'def:layout', weight: 3 },
+        { at: 'def:snap', weight: 2 },
+        { at: 'def:size', say: 'a block as wide as its words and slots', weight: 1 },
+        { at: 'def:block_at', weight: 1 },
+      ],
+    },
+    'Block_layout.ml': { digest: '8badc4147467',
+      summary: 'Blocks sized like nested parentheses, C blocks as tall as their mouths, stacks placed down.',
+      important: [
+        { at: 'def:size', say: 'words and slots side by side, mouths below', weight: 3 },
+        { at: 'def:place_block', weight: 2 },
+        { at: 'def:snap', say: 'the nearest target within snap_distance', weight: 3 },
+        { at: 'def:snap_distance', weight: 1 },
+      ],
+    },
+    'Block_edit.mli': { digest: 'bec921fdb349',
+      summary: "The program changed by the mouse: Scratch's drag takes a block and every block under it.",
+      capitals: [
+        { at: 'def:take', say: 'the whole editing model: a stack carried' },
+      ],
+      important: [
+        { at: 'comment:"That is the whole editing model"', say: 'no selection, no cut and paste', weight: 3 },
+        { at: 'type:dragged', say: 'a stack, or a reporter out of a slot', weight: 2 },
+        { at: 'def:take', weight: 2 },
+        { at: 'def:drop', weight: 2 },
+        { at: 'def:drop_in_slot', weight: 1 },
+      ],
+    },
+    'Block_edit.ml': { digest: '110f8772491e',
+      summary: 'Take and drop as paths followed into stacks, mouths and arguments, the program rebuilt.',
+      important: [
+        { at: 'def:map_stack', say: 'follow a path, change what is at its end', weight: 2 },
+        { at: 'def:take', weight: 3 },
+        { at: 'def:drop', weight: 3 },
+      ],
+      related: ['../tests/Unit_blocks.ml'],
+    },
+  },
+}

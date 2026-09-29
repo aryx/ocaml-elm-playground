@@ -1,0 +1,26 @@
+// appkits/sheet_view/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "A sheet drawn into a rectangle, and where a click landed: TinyExcel's grid, and the office's sheet part.",
+  files: {
+    'Sheet_view.mli': { digest: '7bee5d9b3f37',
+      summary: 'The grid: headers, cells, the selection as two cells (anchor, focus), and a click back to a cell.',
+      important: [
+        { at: 'type:geometry', say: 'the header and cell sizes', weight: 3 },
+        { at: 'def:cell_at', say: 'the way back: a point to a cell', weight: 2 },
+        { at: 'def:draw', weight: 3 },
+        { at: 'def:corners', say: 'a selection is two cells', weight: 2 },
+      ],
+    },
+    'Sheet_view.ml': { digest: '1079526b62d3',
+      summary: 'Where a cell is, selections as rectangles of cells, drawn with the GUI toolkit\'s widgets.',
+      important: [
+        { at: 'def:cell_box', weight: 2 },
+        { at: 'def:cell_at', weight: 2 },
+        { at: 'def:draw', weight: 3 },
+        { at: 'def:column_letters', say: "a cell's name without its row", weight: 1 },
+      ],
+    },
+  },
+}

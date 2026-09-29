@@ -1,0 +1,16 @@
+// libs/networking/tlsget/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'tls_get: a page fetched over our own TLS 1.3, and the handshake shown, like curl -I.',
+  files: {
+    'tls_get.ml': { digest: '405f322290ba',
+      summary: "An https:// URL fetched: the cipher chosen, the server's chain, the answer's first lines.",
+      important: [
+        { at: 'def:key_name', say: "each certificate's key: RSA or ECDSA", weight: 1 },
+        { at: 'comment:"the number: how many lines"', weight: 1 },
+      ],
+      related: ['../unix/Tls_client.mli', '../tls/Tls13.mli'],
+    },
+  },
+}

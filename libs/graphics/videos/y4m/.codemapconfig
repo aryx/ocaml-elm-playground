@@ -1,0 +1,24 @@
+// libs/graphics/videos/y4m/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Y4M read and written: raw video, the format tools hand each other uncompressed frames in.',
+  files: {
+    'Y4m.mli': { digest: 'f53e1e6c3331',
+      summary: "A text header, then each frame's three YCbCr planes, no compression: how big video really is.",
+      important: [
+        { at: 'type:header', say: 'size, rate, chroma, range', weight: 2 },
+        { at: 'comment:"How big video is"', weight: 2 },
+        { at: 'def:of_string', weight: 2 },
+      ],
+    },
+    'Y4m.ml': { digest: '9bfd9d6fb02e',
+      summary: 'The header fields parsed, frames cut at their fixed size, planes to RGBA through Yuv.',
+      important: [
+        { at: 'def:parse_header', weight: 2 },
+        { at: 'def:of_string', weight: 2 },
+        { at: 'def:to_string', weight: 1 },
+      ],
+    },
+  },
+}

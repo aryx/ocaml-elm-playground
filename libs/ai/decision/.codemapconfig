@@ -1,0 +1,66 @@
+// libs/ai/decision/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'What do I do now? Three ways to decide: states and rules, a tree of fallbacks, scores.',
+  files: {
+    'Fsm.mli': { digest: '38f2400f37de',
+      summary: "State machines, Pac-Man's ghosts' way: the rules as data, the time in a state counted.",
+      capitals: [
+        { at: 'def:step', say: 'the first rule out of the state whose guard holds' },
+      ],
+      important: [
+        { at: 'type:rule', say: 'from, when a guard holds, to: drawable, checkable', weight: 3 },
+        { at: 'type:run', say: 'the state, the steps in it, the rule just fired', weight: 3 },
+        { at: 'def:step', weight: 2 },
+        { at: 'def:after', say: "the guard nearly every rule wants: time's up", weight: 1 },
+        { at: 'comment:"The cure is hysteresis"', say: 'why an agent flips on a threshold', weight: 2 },
+      ],
+    },
+    'Fsm.ml': { digest: '239054e6349a',
+      summary: 'A machine in a dozen lines: the rules searched in order, their order their priority.',
+      important: [
+        { at: 'def:step', weight: 3 },
+      ],
+    },
+    'Behavior.mli': { digest: 'c9316aa9973e',
+      summary: "Behavior trees after Halo 2: selectors and sequences of conditions and actions, pure.",
+      capitals: [
+        { at: 'def:decide', say: 'the action the tree answers, or none' },
+      ],
+      important: [
+        { at: 'type:t', say: "Selector is 'or', Sequence 'and'", weight: 3 },
+        { at: 'def:decide', weight: 2 },
+        { at: 'def:path', say: 'what the tree was thinking, for drawing', weight: 2 },
+        { at: 'comment:"This tree is pure"', say: 'no running state, no blackboard: the model is', weight: 2 },
+      ],
+    },
+    'Behavior.ml': { digest: 'e4af36c248cc',
+      summary: 'One evaluation of the tree, giving the success, the action and the nodes visited.',
+      important: [
+        { at: 'def:eval', weight: 3 },
+      ],
+      links: [
+        { from: 'def:decide', to: 'def:eval' },
+      ],
+    },
+    'Utility.mli': { digest: '387c901c6d21',
+      summary: "Utility AI, The Sims' way: every option scored from curves, the best one taken.",
+      capitals: [
+        { at: 'def:choose', say: 'the best score, with inertia against flip-flopping' },
+      ],
+      important: [
+        { at: 'type:option_', say: 'an action, and its score in the situation', weight: 3 },
+        { at: 'def:choose', weight: 3 },
+        { at: 'def:linear', say: 'the simplest curve', weight: 1 },
+        { at: 'comment:"and this does: *degrees*"', say: 'degrees, where a rule has a threshold', weight: 2 },
+      ],
+    },
+    'Utility.ml': { digest: '7d5ad6e90f4c',
+      summary: "The scores, and choose: a fold keeping the best, the current action's score raised.",
+      important: [
+        { at: 'def:choose', weight: 3 },
+      ],
+    },
+  },
+}

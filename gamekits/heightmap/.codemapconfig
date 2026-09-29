@@ -1,0 +1,30 @@
+// gamekits/heightmap/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The height-map kit: a terrain as a grid of heights, made up at startup, and its colours.',
+  files: {
+    'Heightmap.mli': { digest: '705e02d3848b',
+      summary: "Comanche's idea: a picture whose every pixel is a height, and another its colours.",
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:generate', say: 'an island made up: diamond-square', weight: 3 },
+        { at: 'def:height', say: 'the height anywhere, between the cells', weight: 2 },
+        { at: 'def:clear', say: 'the height a craft must keep above', weight: 1 },
+        { at: 'def:color', weight: 1 },
+      ],
+    },
+    'Heightmap.ml': { digest: '84d9028c0672',
+      summary: 'Diamond-square on a seed, the same on the web and natively; heights interpolated, lit colours.',
+      important: [
+        { at: 'def:random', say: 'the low 30 bits: same numbers on 32 and 63 bits', weight: 2 },
+        { at: 'def:diamond_square', weight: 3 },
+        { at: 'def:height', weight: 2 },
+        { at: 'def:light', weight: 1 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: the island the same on every run." },
+  },
+}

@@ -1,0 +1,10 @@
+// examples/tty/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Textmode programs in a real terminal: raw mode, the alternate screen, no Playground.',
+  files: {
+    'TextmodeSnake.ml': { digest: '214fd38a37d1',
+      summary: "Snake in the terminal you type this in: Tui_snake's program run by Tty_unix." },
+  },
+}

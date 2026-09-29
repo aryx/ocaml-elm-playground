@@ -1,0 +1,101 @@
+// languages/c/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "C read, not run, for the code map's colours: every token kept, parsed without a preprocessor.",
+  files: {
+    'Token_c.mli': { digest: '43c837127d2a',
+      summary: "C's tokens, every one kept with its text and place; a directive's marked, for the parser to read apart.",
+      important: [
+        { at: 'type:kind', weight: 2 },
+        { at: 'type:t', say: 'a token: its kind, text, place, in a directive or not', weight: 3 },
+      ],
+    },
+    'Token_c.ml': { digest: '69134eefc652',
+      summary: 'The tokens, as Token_c.mli says.',
+    },
+    'Lexer_c.mli': { digest: '7486740edeca',
+      summary: "C99's and Plan 9 C's tokens by ocamllex, the longest match; a # at a line's start begins a directive.",
+      important: [
+        { at: 'def:tokens', weight: 2 },
+      ],
+    },
+    'Lexer_c.mll': { digest: 'ab5287fa449a',
+      summary: "The lexer's rules; the driver sees the newlines go by and marks the preprocessor's lines.",
+      important: [
+        { at: 'def:tokens', say: 'the driver: where a directive starts and ends', weight: 3 },
+        { at: 'def:keywords', weight: 1 },
+      ],
+    },
+    'Ast_c.mli': { digest: '81ad2bc20de7',
+      summary: "A C file's tree as a highlighter needs it: the names and what they are, a declarator's type put together.",
+      important: [
+        { at: 'type:name', weight: 2 },
+        { at: 'type:ty', say: 'specifiers and declarator: a function when its type is', weight: 3 },
+        { at: 'type:decl', weight: 2 },
+        { at: 'type:item', weight: 1 },
+      ],
+    },
+    'Parse_c.mli': { digest: '5c7246550afb',
+      summary: "Recursive descent with no preprocessor: an #if's first branch read, types guessed from shapes, nothing given up.",
+      important: [
+        { at: 'comment:"C\'s grammar needs to know which names are types"', say: 'the typedef problem, without headers', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Parse_c.ml': { digest: '7805578135d4',
+      summary: 'The parser: directives read apart, declarations, expressions by precedence, statements skipped to ; when lost.',
+      capitals: [
+        { at: 'def:names_type', say: 'is this name a type? guessed from what follows' },
+      ],
+      important: [
+        { at: 'def:reading', say: "the directives apart; an #if's first branch kept", weight: 2 },
+        { at: 'def:known_types', say: "the types known without headers: Plan 9's, POSIX's", weight: 1 },
+        { at: 'def:names_type', weight: 3 },
+        { at: 'def:declarator', say: 'a name inside a type: *p, a[10], (*f)(int)', weight: 2 },
+        { at: 'def:precedence', weight: 1 },
+        { at: 'def:stmt', weight: 1 },
+        { at: 'def:skip_stmt', say: 'lost: on to the semicolon', weight: 2 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Highlight_c.mli': { digest: '5d99c3361457',
+      summary: 'Each token its category, in two passes: its kind first, then what the tree says each name is.',
+      important: [
+        { at: 'comment:"static: Keyword  int: Type  f: Def_function"', say: 'a line categorized', weight: 2 },
+        { at: 'def:analyze', weight: 3 },
+      ],
+    },
+    'Highlight_c.ml': { digest: '227cc81564b2',
+      summary: 'The two passes: from the tokens a guess, from the tree with its scopes the names told apart.',
+      capitals: [
+        { at: 'def:analyze', say: "a C file's colours, definitions and uses" },
+      ],
+      important: [
+        { at: 'def:of_kind', say: 'the first guess, from a token alone', weight: 2 },
+        { at: 'def:resolve', say: "the tree walked with C's scopes", weight: 3 },
+        { at: 'def:categorize_bound', weight: 2 },
+        { at: 'def:analyze', weight: 2 },
+      ],
+    },
+  },
+  skeletons: [
+    {
+      name: 'A C file coloured',
+      bones: [
+        { at: 'Lexer_c.mll:def:tokens', role: 'text into tokens, comments kept' },
+        { at: 'Parse_c.ml:def:parse', role: 'tokens into the names and what they are' },
+        { at: 'Highlight_c.ml:def:resolve', role: 'the tree walked with its scopes' },
+        { at: 'Highlight_c.ml:def:analyze', role: "each token's category, for the map" },
+      ],
+      joints: [
+        { from: 'Lexer_c.mll:def:tokens', to: 'Parse_c.ml:def:parse', say: 'the tokens' },
+        { from: 'Parse_c.ml:def:parse', to: 'Highlight_c.ml:def:resolve', say: 'the tree' },
+        { from: 'Highlight_c.ml:def:resolve', to: 'Highlight_c.ml:def:analyze', say: 'the categories' },
+      ],
+    },
+  ],
+  dirs: {
+    tests: { summary: 'C lexed, parsed and categorized: declarators, directives, the type guesses.' },
+  },
+}

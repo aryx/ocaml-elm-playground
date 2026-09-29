@@ -1,0 +1,31 @@
+// gamekits/rhythm/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The rhythm kit: what time it is, how close a press was, and a chart played through.",
+  files: {
+    'Rhythm.mli': { digest: 'af9506302c2a',
+      summary: "The machinery under every rhythm game's pictures: the clock, the grades, charts, difficulty, sustains.",
+      important: [
+        { at: 'def:song_time', say: "the music's clock, less the calibration", weight: 3 },
+        { at: 'def:judge', say: 'an error in time graded: Perfect to Miss', weight: 3 },
+        { at: 'type:note', weight: 2 },
+        { at: 'def:play', say: 'a performance: the presses against the chart', weight: 3 },
+        { at: 'def:on_frets', say: "a chart made from a tune's voice", weight: 2 },
+        { at: 'def:reduce', say: 'the difficulty: the same chart, reduced', weight: 2 },
+        { at: 'def:strummed', say: 'Guitar Hero: fret held, then strum', weight: 1 },
+      ],
+    },
+    'Rhythm.ml': { digest: 'ee1eec0a021d',
+      summary: 'Windows and grades, a performance folded over the presses, chords and their reduction.',
+      important: [
+        { at: 'def:window', weight: 2 },
+        { at: 'def:press', weight: 2 },
+        { at: 'def:reduce', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's tests: presses judged, charts reduced." },
+  },
+}

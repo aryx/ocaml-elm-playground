@@ -1,0 +1,47 @@
+// languages/sexpr/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "S-expressions, the syntax the Lisps share: a tree with spans, and the reader for Emacs Lisp and Scheme.",
+  files: {
+    'Sexpr.mli': { digest: '617b71083c65',
+      summary: 'The neutral tree each Lisp turns into its own values; each part knows its span, for DrScheme to paint.',
+      important: [
+        { at: 'type:t', say: 'a datum and where it came from', weight: 3 },
+        { at: 'type:datum', weight: 2 },
+        { at: 'type:span', say: 'the characters: what DrScheme paints pink', weight: 2 },
+      ],
+    },
+    'Sexpr.ml': { digest: 'a1f384833b30',
+      summary: 'The tree, as Sexpr.mli says, and printed back.',
+      important: [
+        { at: 'type:t', weight: 2 },
+        { at: 'def:to_string', weight: 1 },
+      ],
+    },
+    'Sexpr_read.mli': { digest: 'b7b9b2e263c8',
+      summary: "The smallest parser there is, the parentheses doing the grammar's work; each dialect's additions.",
+      capitals: [
+        { at: 'def:read_all', say: 'a text into its s-expressions' },
+      ],
+      important: [
+        { at: 'comment:"expr ::= number"', say: 'the whole grammar', weight: 3 },
+        { at: 'type:dialect', say: 'Emacs or Scheme: ?a and #t differ', weight: 2 },
+        { at: 'def:read', weight: 2 },
+      ],
+    },
+    'Sexpr_read.ml': { digest: 'c652b1154da1',
+      summary: 'The reader: a character decides, prefixes become (quote x), lists read to their closing bracket.',
+      important: [
+        { at: 'def:read', say: 'one expression: its first character decides', weight: 3 },
+        { at: 'def:read_list', say: 'up to the closing bracket; a dot makes a tail', weight: 2 },
+        { at: 'comment:"\'x and its kin: (quote x)"', say: 'the prefixes spanning their quote', weight: 2 },
+        { at: 'def:block_comment', say: '#| |# nest', weight: 1 },
+        { at: 'def:read_all', weight: 2 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: 'Both dialects read: atoms, lists, prefixes, spans, errors.' },
+  },
+}

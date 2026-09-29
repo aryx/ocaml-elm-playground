@@ -1,0 +1,53 @@
+// games/rhythm/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md; its facts:
+// tinybox codemap -facts . games/rhythm)
+local skeletons = import '../../skeletons.libsonnet';
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Rhythm games: pressing in time with music, judged by the music's clock.",
+  files: {
+    'TinyDDR.ml': { digest: 'b5fe53ae145e',
+      summary: 'Dance Dance Revolution (Konami, 1998): arrows rising in time with the music, pressed as they reach the top.',
+      capitals: [{ at: 'def:chart', say: 'the steps computed from the melody' }],
+      important: [
+        { at: 'def:chart', weight: 3 },
+        { at: 'def:song_time', say: "what time is it? the music's clock, not the frame's", weight: 3 },
+        { at: 'def:judge', say: 'the error in time graded: Perfect to Miss', weight: 2 },
+        { at: 'def:average_error', say: 'the calibration measured from the player', weight: 2 },
+        { at: 'def:dance_step', weight: 1 },
+      ],
+      related: ['web/TinyDDR.html', '../../tests/2d/golden/TinyDDR.png'],
+    },
+    'TinyGuitarHero.ml': { digest: 'a362bfab4db1',
+      summary: 'Guitar Hero (Harmonix, 2005): hold the fret and strum as each note reaches the line; long notes.',
+      capitals: [{ at: 'def:project', say: "the highway: Out Run's road, straightened" }],
+      important: [
+        { at: 'comment:"The highway -- the trick of this game"', say: 'the trick: a road in 23 lines', weight: 3 },
+        { at: 'def:project', weight: 3 },
+        { at: 'def:part', say: 'the difficulty: the same song reduced', weight: 2 },
+        { at: 'def:hits', say: 'a fret held and a strum: a note played', weight: 2 },
+        { at: 'def:play_step', weight: 1 },
+      ],
+    },
+    'TinyRockBand.ml': { digest: 'ee85db8918bc',
+      summary: "Rock Band (Harmonix, 2007): a band on four highways, a part each from the tune's four voices.",
+      capitals: [{ at: 'def:band', say: 'four parts from four voices' }],
+      important: [
+        { at: 'type:instrument', weight: 2 },
+        { at: 'def:band', weight: 3 },
+        { at: 'def:drum_part', say: 'drums from a percussion voice, reduced by level', weight: 2 },
+        { at: 'def:crowd', say: 'one meter for the band: a hit fills, a miss drains', weight: 2 },
+        { at: 'def:presses', say: 'four ways of pressing, one per instrument', weight: 1 },
+      ],
+    },
+  },
+  skeletons: [
+    skeletons.game('TinyDDR.ml', 'def:dance_step', 'a press judged against the chart', say='the presses') + {
+      bones+: [{ at: '../../gamekits/rhythm/Rhythm.ml:def:play', role: "the kit: a chart played through" }],
+      joints+: [{ from: 'TinyDDR.ml:def:dance_step', to: '../../gamekits/rhythm/Rhythm.ml:def:play', say: 'is the kit' }],
+    },
+  ],
+  views: [
+    { name: 'The rhythm games and their kit', files: ['TinyDDR.ml', 'TinyGuitarHero.ml', 'TinyRockBand.ml', '../../gamekits/rhythm/'] },
+  ],
+}

@@ -1,0 +1,49 @@
+// appkits/modeler/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Blender's kit for TinyBlender: objects as primitives placed by three vectors, and the quad view.",
+  files: {
+    'Modeler.mli': { digest: '713229df6b8a',
+      summary: 'A scene of objects, each a recipe -- a primitive and location, rotation, scale -- and Boolean cutters.',
+      capitals: [
+        { at: 'type:obj', say: 'a primitive and its transform, never its geometry' },
+      ],
+      important: [
+        { at: 'type:obj', weight: 3 },
+        { at: 'type:kind', say: 'meshes, lights, the camera', weight: 2 },
+        { at: 'type:boolean', say: "a modifier naming a cutter: CSG, the ray tracer's", weight: 2 },
+        { at: 'def:transform', say: 'scaled, turned x y z, then moved', weight: 3 },
+        { at: 'def:to_world', say: "z up to the ray tracer's y up", weight: 2 },
+        { at: 'def:wires', say: 'what the views draw', weight: 1 },
+      ],
+      related: ['../tests/Unit_modeler.ml'],
+    },
+    'Modeler.ml': { digest: 'bbcf13bb0928',
+      summary: 'The scene edited by name, the transforms as three rotations, each primitive as wires.',
+      important: [
+        { at: 'def:transform', weight: 3 },
+        { at: 'def:rot_x', weight: 1 },
+        { at: 'def:edges', say: "a primitive's edges, before its transform", weight: 2 },
+        { at: 'def:wires', weight: 2 },
+      ],
+    },
+    'Modeler_view.mli': { digest: '38568b2d987e',
+      summary: 'The four views: top, front, right orthographic, and the camera, projected as the ray tracer does.',
+      important: [
+        { at: 'type:view', weight: 2 },
+        { at: 'def:project', say: 'an orthographic view drops one coordinate', weight: 3 },
+        { at: 'def:unproject', say: 'a drag moves along the two axes shown', weight: 2 },
+        { at: 'def:perspective', say: "the camera's: wires fall on the rendering", weight: 2 },
+        { at: 'def:pick', weight: 1 },
+      ],
+    },
+    'Modeler_view.ml': { digest: 'a0724333e7c3',
+      summary: "Each view's two axes, the camera over Camera, an object picked by its nearest wire.",
+      important: [
+        { at: 'def:axes', weight: 2 },
+        { at: 'def:pick', say: 'the nearest wire on the screen', weight: 2 },
+      ],
+    },
+  },
+}

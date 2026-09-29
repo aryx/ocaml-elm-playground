@@ -1,0 +1,19 @@
+// libs/graphics/images/rgba/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The decoded picture every image reader gives and every backend draws from: RGBA bytes, row by row.',
+  files: {
+    'Rgba_image.mli': { digest: '58822dc64eda',
+      summary: 'Width, height and 4 straight-alpha bytes a pixel in a Bigarray, as an OpenGL upload wants them.',
+      capitals: [
+        { at: 'type:t', say: 'the one picture type: used by 78 files' },
+      ],
+      important: [
+        { at: 'type:t', weight: 3 },
+        { at: 'def:create', weight: 1 },
+      ],
+    },
+    'Rgba_image.ml': { digest: 'd27e1456cdf5', summary: 'The record, and a transparent picture made.' },
+  },
+}

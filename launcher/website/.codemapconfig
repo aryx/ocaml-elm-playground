@@ -1,0 +1,17 @@
+// launcher/website/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The website's index pages: a section per genre or category, a card per program.",
+  files: {
+    'make_website.ml': { digest: 'cf45fb8f1a45',
+      summary: 'docs/games and docs/apps written from CATALOG.md: thumbnail, original, play, source, code map.',
+      important: [
+        { at: 'def:card', say: 'a program: its thumbnail and its links', weight: 3 },
+        { at: 'def:index', weight: 2 },
+        { at: 'def:by_size', say: 'the programs by their lines', weight: 1 },
+        { at: 'def:examples', weight: 1 },
+      ],
+    },
+  },
+}

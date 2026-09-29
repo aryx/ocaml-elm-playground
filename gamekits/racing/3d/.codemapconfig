@@ -1,0 +1,26 @@
+// gamekits/racing/3d/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'The 3D racing kit: a course as a ribbon of quads in space, with a width, a height and a bank.',
+  files: {
+    'Track3d.mli': { digest: '2904a3fd6da5',
+      summary: 'A closed line through the middle of a road, its width, height and lean at every point; a ribbon.',
+      important: [
+        { at: 'type:control', say: 'a course written as a few points', weight: 2 },
+        { at: 'def:build', say: 'a Catmull-Rom through the points, sampled', weight: 3 },
+        { at: 'def:of_road', say: "a Road.t walked into space", weight: 2 },
+        { at: 'def:locate', say: 'a point of the world: how far along, how far across', weight: 3 },
+        { at: 'def:strip', say: 'the ribbon of quads, drawn', weight: 2 },
+      ],
+    },
+    'Track3d.ml': { digest: 'defe7482047f',
+      summary: 'The samples, closed for a circuit, open for a stage; places on it, and its quads.',
+      important: [
+        { at: 'def:catmull', weight: 2 },
+        { at: 'def:build', weight: 2 },
+        { at: 'def:locate', weight: 3 },
+      ],
+    },
+  },
+}

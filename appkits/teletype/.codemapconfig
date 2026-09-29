@@ -1,0 +1,67 @@
+// appkits/teletype/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The teletype's games as Talk programs that ask and wait, TinyTerminal's commands: Hangman, Guess, Wumpus.",
+  files: {
+    'Tty_hangman.mli': { digest: '6adbd3e88ebf',
+      summary: "Hangman as the teletype played it, after Ahl's 101 BASIC Computer Games (1973).",
+      important: [
+        { at: 'def:program', say: 'a value: run alone, or by the shell', weight: 2 },
+        { at: 'comment:"Every [let*] is a place where the program may wait"', say: 'how a program waits without stopping', weight: 3 },
+      ],
+    },
+    'Tty_hangman.ml': { digest: 'ff864586e44f',
+      summary: 'Hangman written like its BASIC listing: print, ask, check, round again; no model, no view.',
+      capitals: [
+        { at: 'def:turn', say: 'a BASIC loop as recursion over let*' },
+      ],
+      important: [
+        { at: 'def:turn', weight: 3 },
+        { at: 'def:gallows', say: 'six parts, one a miss', weight: 1 },
+        { at: 'comment:"a miss is remembered in [found] too"', weight: 1 },
+      ],
+    },
+    'Tty_guess.mli': { digest: '707cad141a16',
+      summary: 'Guess the number, a lesson hidden in a game: halving what is left is binary search.',
+      important: [
+        { at: 'def:program', weight: 2 },
+        { at: 'def:best', say: 'the most guesses binary search ever needs', weight: 2 },
+      ],
+    },
+    'Tty_guess.ml': { digest: '7f1ef7de640a',
+      summary: 'Guess: too low, too high, and at the end how you did against the bound.',
+      important: [
+        { at: 'def:best', weight: 2 },
+        { at: 'def:guess', weight: 2 },
+      ],
+    },
+    'Tty_wumpus.mli': { digest: '241327c98bee',
+      summary: 'Hunt the Wumpus (Gregory Yob, 1973): twenty rooms on a dodecahedron, in the dark.',
+      important: [
+        { at: 'def:tunnels', say: "the dodecahedron: each room joined to three", weight: 3 },
+        { at: 'type:cave', weight: 2 },
+        { at: 'def:play', weight: 2 },
+      ],
+    },
+    'Tty_wumpus.ml': { digest: 'e7003a994c88',
+      summary: 'The Wumpus: a turn told by smells and drafts, moving, and crooked arrows shot room by room.',
+      capitals: [
+        { at: 'def:play', say: 'a turn: what is near, then move or shoot' },
+      ],
+      important: [
+        { at: 'def:tunnels', weight: 2 },
+        { at: 'def:play', weight: 3 },
+        { at: 'def:arrive', say: 'pits, bats, the Wumpus: what a room does to you', weight: 2 },
+        { at: 'def:fly', say: 'the arrow through the rooms named, or a random one', weight: 2 },
+        { at: 'def:wake', say: 'a miss wakes it: it may move', weight: 1 },
+      ],
+      links: [
+        { from: 'def:play', to: 'def:move' },
+        { from: 'def:play', to: 'def:shoot' },
+        { from: 'def:move', to: 'def:arrive' },
+        { from: 'def:shoot', to: 'def:fly' },
+      ],
+    },
+  },
+}

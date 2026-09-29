@@ -1,0 +1,41 @@
+// libs/audio/formats/abc/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: 'Tunes as text, the way they are sung: ABC notation, and solfège (do ré mi) into the same tune.',
+  files: {
+    'Abc.mli': { digest: '1604bc20642e',
+      summary: "ABC notation (Walshaw, 1991): the letters are the notes, a number how long; the subset read.",
+      capitals: [
+        { at: 'type:tune', say: 'what every tune becomes: voices of timed notes' },
+      ],
+      important: [
+        { at: 'type:event', say: 'notes at a time, for a length: a chord or one', weight: 2 },
+        { at: 'type:tune', weight: 3 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Abc.ml': { digest: '4118379e5e60',
+      summary: "ABC parsed line by line: the header's fields, the key's sharps and flats, the notes' lengths.",
+      important: [
+        { at: 'def:key_count', say: 'a key signature: how many sharps or flats', weight: 2 },
+        { at: 'def:parse_music_line', say: 'notes, chords, rests, ties, broken rhythms', weight: 3 },
+        { at: 'def:broken', say: 'a > b: dotted, then short', weight: 1 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Doremi.mli': { digest: '4e8de9e51a1a',
+      summary: "Tunes in solfège, fixed do (do is always C): Guido d'Arezzo's syllables, parsed to an Abc.tune.",
+      important: [
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+    'Doremi.ml': { digest: 'ffc1148d642f',
+      summary: 'Solfège parsed: a syllable, its octave and length, accents or not.',
+      important: [
+        { at: 'def:split_syllable', weight: 2 },
+        { at: 'def:parse', weight: 2 },
+      ],
+    },
+  },
+}
