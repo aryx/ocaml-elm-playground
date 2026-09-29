@@ -19,7 +19,8 @@
        tours: [{ name, stops: [item] }],
        skeletons: [{ name, bones: [{ at: path:anchor, role }], joints: [{ from, to, say }] }],
        views: [{ name, files: [path] } or { name, of: path, with: 'users' }],
-       layers: [{ name, rules: [{ text or ref, color: '#rrggbb', say }] }] }
+       layers: [{ name, rules: [{ text or ref, color: '#rrggbb', say }] }],
+       anatomy: { nerves: [{ text or ref, say }], lungs: [...] } }
 
    an item being { at: anchor, say: words, weight: 1 to 3 }.
 
@@ -100,6 +101,8 @@ type dir_note = {
   skeletons : skeleton list;
   views : view list;
   layers : layer list;
+  nerves : rule list; (* claude: anatomy: nerves:, its inputs *)
+  lungs : rule list; (* anatomy: lungs:, its I/O *)
 }
 
 type t
@@ -128,8 +131,15 @@ val file_note : t -> string -> file_note option
 (* every config's colours *)
 val colours : t -> (string * rgb) list
 
+(* claude: a line's text, whole *)
+val line_text : Code_file.t -> int -> string
+
 (* claude: every config's layers *)
 val layers : t -> layer list
+
+(* claude: the anatomy's rules for a file (its config's and its
+   ancestors'): the nerves', the lungs' *)
+val senses : t -> string -> rule list * rule list
 
 (* claude: every config's views, their paths from the root (a
    directory's without its final slash); every config's tours, their

@@ -43,6 +43,8 @@ type dir_note = {
   skeletons : skeleton list;
   views : view list;
   layers : layer list;
+  nerves : rule list; (* claude: anatomy: nerves:, its inputs *)
+  lungs : rule list; (* anatomy: lungs:, its I/O *)
 }
 
 type t = dir_note list
@@ -107,10 +109,26 @@ let split (s : string) : string option * string =
   | Some i when not (List.mem (String.sub s 0 i) kinds) -> (Some (String.sub s 0 i), String.sub s (i + 1) (String.length s - i - 1))
   | _ -> (None, s)
 
+(* an anatomy's rules: its [key]'s, { text or ref, say } *)
+let sense (where : string) (fs : (string * Json.t) list) (key : string) : rule list =
+  match List.assoc_opt "anatomy" fs with
+  | None -> []
+  | Some a ->
+      let afs = fields (where ^ ".anatomy") [ "nerves"; "lungs" ] a in
+      opt_list (where ^ ".anatomy") afs key (fun w v ->
+          let fs = fields w [ "text"; "ref"; "say" ] v in
+          let text, is_ref =
+            match (opt_str w fs "text", opt_str w fs "ref") with
+            | Some t, None when String.length t >= 2 -> (t, false)
+            | None, Some r when String.length r >= 2 -> (r, true)
+            | _ -> bad "%s: its text or ref, two characters at least" w
+          in
+          { text; is_ref; colour = (0, 0, 0); rsay = opt_str w fs "say" })
+
 let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
   let where = if dir = "" then ".codemapconfig" else dir ^ "/.codemapconfig" in
   match
-    let fs = fields where [ "title"; "summary"; "generated"; "colors"; "dirs"; "files"; "tours"; "skeletons"; "views"; "layers" ] v in
+    let fs = fields where [ "title"; "summary"; "generated"; "colors"; "dirs"; "files"; "tours"; "skeletons"; "views"; "layers"; "anatomy" ] v in
     let obj k f = match List.assoc_opt k fs with Some (Json.Object kvs) -> List.map (fun (name, v) -> f (where ^ "." ^ k ^ "." ^ name) name v) kvs | Some _ -> bad "%s.%s: an object expected" where k | None -> [] in
     (match List.assoc_opt "generated" fs with Some g -> ignore (fields (where ^ ".generated") [ "by"; "on" ] g) | None -> ());
     {
@@ -180,6 +198,10 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
                   { text; is_ref; colour; rsay = opt_str w fs "say" })
             in
             { lname = (match opt_str w fs "name" with Some n -> n | None -> bad "%s: its name" w); ldir = dir; rules });
+      (* claude: anatomy: { nerves: [rule], lungs: [rule] }, the rules
+       * without a colour (the plate's) *)
+      nerves = sense where fs "nerves";
+      lungs = sense where fs "lungs";
     }
   with
   | d -> Ok d
@@ -216,6 +238,13 @@ let file_note (t : t) (path : string) : file_note option =
 
 let colours (t : t) = List.concat_map (fun d -> d.colors) t
 let layers (t : t) : layer list = List.concat_map (fun d -> d.layers) t
+
+(* claude: the anatomy rules applying to a file: its configs' and its
+ * ancestors' *)
+let senses (t : t) (path : string) : rule list * rule list =
+  let over d = d.dir = "" || String.length path > String.length d.dir && String.sub path 0 (String.length d.dir + 1) = d.dir ^ "/" in
+  let ds = List.filter over t in
+  (List.concat_map (fun d -> d.nerves) ds, List.concat_map (fun d -> d.lungs) ds)
 
 (* claude: a path of a config from the root, a directory's final slash
  * dropped *)

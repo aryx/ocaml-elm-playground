@@ -204,11 +204,10 @@ key) turns it on or off:
 | key | plate | marks |
 |---|---|---|
 | 1 | skeleton | the architecture: the parts and how they connect |
-| 2 | blood | what flows along the joints, pulses from user to used |
-| 3 | muscles | where the work is: definitions dense with loops |
-| 4 | nerves | the inputs: keyboard, mouse, events |
-| 5 | lungs | the I/O: files, network, console, processes |
-| 6 | skin | what a module exports: the `.mli`'s definitions barred, the private ones shaded |
+| 2 | muscles | where the work is: definitions dense with loops |
+| 3 | nerves | the inputs: keyboard, mouse, events (the configs' `anatomy: nerves:` rules) |
+| 4 | lungs | the I/O: files, network, console, processes (`anatomy: lungs:`) |
+| 5 | skin | what a module exports: the `.mli`'s definitions barred, the private ones shaded |
 
 ## 8. Layers
 
@@ -307,7 +306,7 @@ The keys:
 | `h` | every key |
 | `/` | search |
 | `a` | the street (cycles) |
-| `x` | the X-ray (cycles skeletons); `1`-`6` its plates |
+| `x` | the X-ray (cycles skeletons); `1`-`5` its plates |
 | `l` | the layers (cycles) |
 | `g` | the matrix |
 | `d` | in the tied view: its modes |
@@ -367,6 +366,7 @@ The fields (a misspelt one is a mistake, not ignored):
 | `tours` | `[{ name, stops: [{ at, say }] }]` |
 | `views` | `[{ name, files: [path] }]`, or `{ name, of: path, with: 'users' }` |
 | `layers` | `[{ name, rules: [{ text or ref, color, say }] }]` |
+| `anatomy` | `{ nerves: [{ text or ref, say }], lungs: [...] }`: the X-ray's nerves and lungs |
 
 **Anchors** point at a place by what it is, not its line, so that
 editing the code does not break them:

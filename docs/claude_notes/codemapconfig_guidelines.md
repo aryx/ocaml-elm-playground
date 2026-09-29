@@ -445,6 +445,32 @@ is spoken.
 - A layer belongs in the config of the directory whose question it is:
   the root's for the whole repository.
 
+## Anatomy: nerves and lungs
+
+The X-ray's plates 3 and 4 show where a program senses its user (nerves:
+keyboard, mouse, events) and where it breathes with the world (lungs:
+files, network, processes, the console). Only the project knows how it
+does either, so its root config says it, as rules like a layer's
+(`text` or `ref`, a `say`, no colour); a directory's config may add its
+own, applying to the files under it:
+
+```jsonnet
+anatomy: {
+  nerves: [{ text: 'computer.keyboard', say: 'the keys held' }, { ref: 'Scene2d.pressed' }],
+  lungs:  [{ ref: 'Cap.open_in', say: 'reads a file' }, { text: 'Unix.', say: 'the OS' }],
+}
+```
+
+- This repository: the Playground's `computer.keyboard`/`mouse`, `Sub`'s
+  events; `Cap.*`, `Unix.`, HTTP, a sound out.
+- An OS kernel: its nerves are the interrupt handlers for the keyboard
+  and the timer, `inb` from the keyboard's port; its lungs the disk's
+  and the console's drivers, `outb`, the user memory copies.
+- A command-line program: `argv`, `stdin` for nerves; files and
+  `stdout` for lungs.
+- Without rules the plates fall back to a list of words, a guess: write
+  them for every project.
+
 ## Digests
 
 Each described file gets its `digest`, which `tinybox codemap -check`

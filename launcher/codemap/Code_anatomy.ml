@@ -10,13 +10,12 @@
 
 (* See Code_anatomy.mli *)
 
-type system = Skeleton | Blood | Muscles | Nerves | Lungs | Skin
+type system = Skeleton | Muscles | Nerves | Lungs | Skin
 
-let all = [ Skeleton; Blood; Muscles; Nerves; Lungs; Skin ]
+let all = [ Skeleton; Muscles; Nerves; Lungs; Skin ]
 
 let name = function
   | Skeleton -> "skeleton"
-  | Blood -> "blood"
   | Muscles -> "muscles"
   | Nerves -> "nerves"
   | Lungs -> "lungs"
@@ -24,7 +23,6 @@ let name = function
 
 let colour = function
   | Skeleton -> (245, 232, 200)
-  | Blood -> (225, 45, 70)
   | Muscles -> (235, 120, 80)
   | Nerves -> (250, 220, 80)
   | Lungs -> (110, 195, 250)
@@ -32,7 +30,6 @@ let colour = function
 
 let meaning = function
   | Skeleton -> "the architecture, its parts' roles"
-  | Blood -> "the data flowing between the parts"
   | Muscles -> "the loop-heavy code, the work"
   | Nerves -> "the inputs: keyboard, mouse, events"
   | Lungs -> "the I/O: files, network, console"
@@ -46,28 +43,24 @@ let explain = function
       [ "The bones: the few definitions the rest hangs on, and the joints between them.";
         "Written in the configs (a role per bone), or derived from the code: its capitals, its most used definitions.";
         "Look for: how the parts connect; x shows the next skeleton." ]
-  | Blood ->
-      [ "What flows along the skeleton's joints: pulses moving from one bone to the next.";
-        "Found from the joints' direction: from the user to the used.";
-        "Look for: which way the data goes, and where it loops back." ]
   | Muscles ->
       [ "Where the work is: definitions dense with loops (for, while, List.iter, fold...).";
         "Found by counting loop words per line of each definition: the denser, the redder.";
         "Look for: the inner loops, where time is spent: a rasterizer's, a solver's." ]
   | Nerves ->
       [ "Where the program senses its user: keyboard, mouse, events, touches.";
-        "Found by the words: keyboard, mouse, key, click, pressed, event...";
+        "Found by the configs' rules (anatomy: nerves:), else by the words: keyboard, mouse, key, click...";
         "Look for: where input enters and which definitions react to it." ]
   | Lungs ->
       [ "Where the program breathes with the world: files, network, console, processes.";
-        "Found by the words: open_in, read, write, socket, print, Unix., Cap....";
+        "Found by the configs' rules (anatomy: lungs:), else by the words: open_in, socket, print, Unix....";
         "Look for: the edges of the program, what may fail or block." ]
   | Skin ->
       [ "What a module shows the others: the definitions its .mli exports.";
         "Found from the .mli: exported definitions barred, the private ones shaded.";
         "Look for: the surface to learn first; what is only inside." ]
 
-let key = function Skeleton -> "1" | Blood -> "2" | Muscles -> "3" | Nerves -> "4" | Lungs -> "5" | Skin -> "6"
+let key = function Skeleton -> "1" | Muscles -> "2" | Nerves -> "3" | Lungs -> "4" | Skin -> "5"
 
 let shown = ref [ Skeleton ]
 let toggle s = shown := if List.mem s !shown then List.filter (( <> ) s) !shown else s :: !shown
@@ -113,7 +106,7 @@ type facts = { nerves : int list; lungs : int list; muscles : (int * int * float
 
 let loop_words = [ "for"; "while"; "List.iter"; "List.map"; "List.fold_left"; "List.fold_right"; "List.filter"; "List.concat_map"; "Array.iter"; "Array.iteri"; "Array.map"; "Array.init"; "Array.fold_left"; "Hashtbl.iter"; "Seq." ]
 
-let facts (f : Code_file.t) ~(public : string list option) : facts =
+let facts ?nerve ?lung (f : Code_file.t) ~(public : string list option) : facts =
   let n = Code_file.nlines f in
   let lines words = List.filter (fun l -> line_has f l words) (List.init n Fun.id) in
   (* the top-level definitions, each to the next *)
@@ -139,7 +132,10 @@ let facts (f : Code_file.t) ~(public : string list option) : facts =
   let skin = match public with None -> [] | Some names -> List.filter_map (fun (a, _, name) -> if List.mem name names then Some a else None) defs in
   (* claude: what the .mli does not show: the private definitions' lines *)
   let hidden = match public with None -> [] | Some names -> List.filter_map (fun (a, b, name) -> if List.mem name names then None else Some (a, b)) defs in
-  { nerves = lines nerve_words; lungs = lines lung_words; muscles; skin; hidden }
+  (* claude: the configs' rules where given (the author: a program says
+   * what its inputs and its I/O are), else the words *)
+  let by rule words = match rule with Some r -> List.filter r (List.init n Fun.id) | None -> lines words in
+  { nerves = by nerve nerve_words; lungs = by lung lung_words; muscles; skin; hidden }
 
 let public_names (f : Code_file.t) : string list =
   List.filter_map (fun (_, name, (cat : Highlight_code.category)) -> match cat with Def_function | Def_value | Def_type | Def_module -> Some name | _ -> None) f.defs

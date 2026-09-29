@@ -975,20 +975,6 @@ let extent (f : Code_file.t) (line : int) : int * int =
   let next = List.fold_left (fun acc (l, _, (cat : Highlight_code.category)) -> if l > line && l < acc && cat <> Comment_section then l else acc) (Code_file.nlines f) f.defs in
   (line, next - 1)
 
-(* claude: the blood, pulses running along a joint in its direction,
- * three to a joint, a lap every two seconds *)
-let blood (a : area) (clock : float) (pts : (float * float) list) : shape list =
-  let pts = Array.of_list pts in
-  let n = Array.length pts in
-  if n < 2 then []
-  else
-    let r, g, b = Code_anatomy.colour Blood in
-    List.init 3 (fun k ->
-        let phase = Float.rem ((clock *. 0.5) +. (float_of_int k /. 3.)) 1. in
-        let x, y = pts.(min (n - 1) (int_of_float (phase *. float_of_int (n - 1)))) in
-        [ circle (rgb 40 0 10) 6. |> move (sx a x) (sy a y); circle (rgb r g b) 4.5 |> move (sx a x) (sy a y) ])
-    |> List.concat
-
 (* claude: a file's skeleton when no config gives one, derived from its
  * code: its capitals and important lines (the config's words as roles),
  * else its definitions the most used within it; a joint from a to b
@@ -1216,7 +1202,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let bone_spot (b : Code_guide.bone) =
     match (packed_at b.bpath, bone_spot b) with Some (x, y, _), Some (l, _) -> Some (l, (x +. 12., y, x +. 12.)) | _, s -> s
   in
-  let skeleton_on = List.mem Code_anatomy.Skeleton !Code_anatomy.shown and blood_on = List.mem Code_anatomy.Blood !Code_anatomy.shown in
+  let skeleton_on = List.mem Code_anatomy.Skeleton !Code_anatomy.shown in
   let r, g, b = ivory in
   let ink_i = rgb r g b in
   let bones = List.concat_map (fun (s : Code_guide.skeleton) -> s.bones) shown in
@@ -1264,8 +1250,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                 let mx = ((ax +. bx) /. 2.) +. (-.dy /. len *. bend) and my = ((ay +. by) /. 2.) +. (dx /. len *. bend) in
                 let pts = Map_atlas.bspline [| (ax, ay); (mx, my); (bx, by) |] in
                 (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 6. 0.85 else [])
-                @ (if blood_on then blood a t.clock pts else [])
-                @ (match j.jsay with Some w when skeleton_on || blood_on -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | _ -> [])
+                @ (match j.jsay with Some w when skeleton_on -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | _ -> [])
             | Some (_, Some (_, _, (ax0, ay, _))), Some (bn, None) | Some (bn, None), Some (_, Some (_, _, (ax0, ay, _))) ->
                 (* an end off the map: a stub to its port on the edge (below) *)
                 stubs := (ax0 -. 12., ay, bn) :: !stubs;
@@ -1352,7 +1337,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
         List.concat_map
           (fun (x, y, _) ->
             let pts = Map_atlas.bspline [| (x, y); ((x +. ex) /. 2., ((y +. py) /. 2.) -. 30.); (ex, py) |] in
-            (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else []) @ if blood_on then blood a t.clock pts else [])
+            (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else []))
           l
         @
         if skeleton_on then
@@ -1382,7 +1367,23 @@ let facts_of (t : t) ?(budget = ref max_int) (e : entry) : Code_anatomy.facts op
       let public =
         if Filename.check_suffix e.path ".ml" then Option.map (fun (m : entry) -> Code_anatomy.public_names (Lazy.force m.file)) (entry_of t (e.path ^ "i")) else None
       in
-      let f = Code_anatomy.facts (Lazy.force e.file) ~public in
+      let file = Lazy.force e.file in
+      (* claude: the configs' anatomy rules for this file, a line's test *)
+      let test (rules : Code_guide.rule list) =
+        if rules = [] then None
+        else
+          let refs l = if l < Array.length file.refs then List.map (fun (r : Highlight_code.reference) -> String.concat "." (r.rpath @ [ r.rname ])) file.refs.(l) else [] in
+          let text l = Code_guide.line_text file l in
+          Some
+            (fun l ->
+              List.exists
+                (fun (r : Code_guide.rule) ->
+                  if r.is_ref then List.exists (fun n -> n = r.text || Code_search.starts n (r.text ^ ".") || (let k = String.length r.text in String.length n > k && String.sub n (String.length n - k) k = r.text)) (refs l)
+                  else Code_search.contains (text l) r.text)
+                rules)
+      in
+      let nerves, lungs = Code_guide.senses t.guide e.path in
+      let f = Code_anatomy.facts ?nerve:(test nerves) ?lung:(test lungs) file ~public in
       Hashtbl.replace facts_cache e.path f;
       Some f
 
@@ -1487,7 +1488,7 @@ let legend ?pointer (c : camera) : shape list =
     | _ -> []
   in
   (rectangle (rgb 18 16 36) 410. 150. |> move (sx a (x0 +. 205.)) (sy a (y0 +. 70.)) |> fade 0.92)
-  :: (words ink "the X-ray (x)   hover: what it shows; click or 1-6: on, off" |> scale (12. /. words_font_size) |> move (sx a (x0 +. 170.)) (sy a (y0 +. 4.)))
+  :: (words ink "the X-ray (x)   hover: what it shows; click or 1-5: on, off" |> scale (12. /. words_font_size) |> move (sx a (x0 +. 170.)) (sy a (y0 +. 4.)))
   :: (List.concat (List.mapi row Code_anatomy.all) @ card)
 
 (* claude: a definition's body, read over the map (a click at the ground

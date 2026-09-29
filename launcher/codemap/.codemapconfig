@@ -69,7 +69,7 @@
         { at: 'def:morph_from', say: 'a new layout animated from the old', weight: 1 },
       ],
     },
-    'Code_map.ml': { digest: 'c7e436fcd972',
+    'Code_map.ml': { digest: 'fb80534de643',
       summary: "What every style shares: flights, the names lit and clicked, peeks, search, tours, the reading glass.",
       important: [
         { at: 'def:update_map', say: 'the keys and the mouse, a unit at a time', weight: 3 },
@@ -85,7 +85,7 @@
         { at: 'def:labels', say: "v2's names, notes, cards and the X-ray" },
       ],
     },
-    'Map_v2.ml': { digest: 'c7440230b437',
+    'Map_v2.ml': { digest: '42b6e7aa0fec',
       summary: "Each level painted and named: the configs' cards and notes, peeks, the skeletons and the anatomy's plates.",
       important: [
         { at: 'def:paint_ground', say: 'a file as the whole map, lines as high as they matter', weight: 3 },
@@ -266,7 +266,7 @@
         { at: 'def:overview_of', say: 'a pixel per character, the part shown framed', weight: 2 },
       ],
     },
-    'Code_guide.mli': { digest: '80cb4dad435f',
+    'Code_guide.mli': { digest: '742372e71b77',
       summary: "What the .codemapconfig files say: summaries, capitals, important lines, tours, skeletons, layers; anchors that survive edits.",
       capitals: [
         { at: 'def:load', say: 'every config read as jsonnet' },
@@ -279,7 +279,7 @@
         { at: 'def:digest', say: 'stale when the file changes', weight: 1 },
       ],
     },
-    'Code_guide.ml': { digest: '0b6c8ab43903',
+    'Code_guide.ml': { digest: '6e7dc9b40411',
       summary: 'The jsonnet evaluated and checked field by field, paths made relative to their config, anchors found.',
       important: [
         { at: 'def:of_json', say: 'a misspelt field is a mistake, not ignored', weight: 2 },
@@ -305,14 +305,14 @@
     'Code_config.ml': { digest: '767b1c2106f0',
       summary: 'Patterns matched on names or from the root, a directory only when ending with a slash.',
     },
-    'Code_anatomy.mli': { digest: '48ede46ddccf',
+    'Code_anatomy.mli': { digest: '0b58ec04e2d0',
       summary: "The X-ray's plates: skeleton and blood from the configs; muscles, nerves, lungs and skin found in the code.",
       important: [
         { at: 'type:system', say: 'the six plates', weight: 3 },
         { at: 'def:facts', say: 'the lines each plate lights in a file', weight: 2 },
       ],
     },
-    'Code_anatomy.ml': { digest: '7750c5dca810',
+    'Code_anatomy.ml': { digest: 'd2205d485802',
       summary: "Each plate's words and colour, its legend's card; lines found by words outside comments and strings.",
       important: [
         { at: 'def:nerve_words', say: 'keyboard, mouse, subscriptions', weight: 1 },

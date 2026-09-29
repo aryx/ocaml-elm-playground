@@ -53,6 +53,29 @@ local dirs_color = '#e173eb';
       ],
     },
   ],
+  // the anatomy (the X-ray's plates): where a program senses its user
+  // (nerves) and where it breathes with the world (lungs), as this
+  // repository writes them
+  anatomy: {
+    nerves: [
+      { text: 'computer.keyboard', say: 'the keys held' },
+      { text: 'computer.mouse', say: 'the mouse' },
+      { text: '.keyboard.', say: 'the keys' },
+      { text: 'keyboard.typed', say: 'the characters typed' },
+      { ref: 'Scene2d.pressed', say: 'a key pressed this frame' },
+      { ref: 'Sub.on_key', say: 'a key, as a message' },
+      { ref: 'Sub.on_mouse', say: 'the mouse, as a message' },
+    ],
+    lungs: [
+      { ref: 'Cap.open_in', say: 'reads a file' },
+      { ref: 'Cap.open_out', say: 'writes a file' },
+      { ref: 'Cap.network', say: 'the network' },
+      { text: 'Unix.', say: 'the OS directly' },
+      { ref: 'Http.get', say: 'an HTTP request' },
+      { ref: 'Playground_platform.export', say: 'a file saved' },
+      { ref: 'Audio.play', say: 'a sound out' },
+    ],
+  },
   // the layers (the map's l): what a program may do to the world, each
   // capability (Cap.*: a function asks for it) lit where it is asked
   layers: [

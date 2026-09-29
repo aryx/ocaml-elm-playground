@@ -1003,7 +1003,7 @@ let keys_help = [
   ("hover a name", "its card: what the configs say of it; a folder's or file's ties drawn");
   ("click a name in the code", "a peek at its definition; the wheel scrolls it; Escape closes");
   ("a", "at a file: its neighbours, what it uses, what uses it (a again: the next)");
-  ("x", "the X-ray: the skeleton; x again, the next one; 1-6 the plates (hover the legend)");
+  ("x", "the X-ray: the skeleton; x again, the next one; 1-5 the plates (hover the legend)");
   ("l", "the layers: patterns lit everywhere (the configs', and those kept)");
   ("Searching", "");
   ("/", "search: a name, or file: dir: def: type: view: tour: bone: text: ref:");

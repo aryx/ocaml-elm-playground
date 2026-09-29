@@ -26,7 +26,7 @@
    the nerves are line 0 (computer.keyboard), the lungs line 1
    (Out_channel.). *)
 
-type system = Skeleton | Blood | Muscles | Nerves | Lungs | Skin
+type system = Skeleton | Muscles | Nerves | Lungs | Skin
 
 val all : system list
 val name : system -> string
@@ -59,7 +59,9 @@ val lung_words : string list
    does not show, shaded when the skin is on *)
 type facts = { nerves : int list; lungs : int list; muscles : (int * int * float) list; skin : int list; hidden : (int * int) list }
 
-val facts : Code_file.t -> public:string list option -> facts
+(* [nerve], [lung]: a line's test from the configs' anatomy rules; the
+   words when not given *)
+val facts : ?nerve:(int -> bool) -> ?lung:(int -> bool) -> Code_file.t -> public:string list option -> facts
 
 (* the names an interface declares (its val, type, module, exception) *)
 val public_names : Code_file.t -> string list
