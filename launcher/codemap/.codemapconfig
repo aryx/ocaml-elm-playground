@@ -279,7 +279,7 @@
         { at: 'def:digest', say: 'stale when the file changes', weight: 1 },
       ],
     },
-    'Code_guide.ml': { digest: '789d60b1380f',
+    'Code_guide.ml': { digest: '0b6c8ab43903',
       summary: 'The jsonnet evaluated and checked field by field, paths made relative to their config, anchors found.',
       important: [
         { at: 'def:of_json', say: 'a misspelt field is a mistake, not ignored', weight: 2 },

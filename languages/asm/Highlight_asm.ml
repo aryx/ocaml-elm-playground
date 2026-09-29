@@ -12,7 +12,8 @@
 
 open Highlight_code
 
-let is_start c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_' || c = '.' || c = '$'
+(* claude: not $, an immediate's prefix ($_do_divide_error: a use) *)
+let is_start c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c = '_' || c = '.'
 let is_ident c = is_start c || (c >= '0' && c <= '9')
 let is_digit c = c >= '0' && c <= '9'
 
@@ -43,7 +44,8 @@ let analyze (src : string) : analysis =
           add y start (String.sub l start (!i - start)) Comment
         end
         else if c = '/' && !i + 1 < n && l.[!i + 1] = '*' then in_comment := true
-        else if c = '|' || c = '!' || (c = '#' && !first) || (c = '/' && !i + 1 < n && l.[!i + 1] = '/') then begin
+        (* claude: # a comment anywhere (gas's), not only first on a line *)
+        else if c = '|' || c = '!' || c = '#' || (c = '/' && !i + 1 < n && l.[!i + 1] = '/') then begin
           add y !i (String.sub l !i (n - !i)) Comment;
           i := n
         end

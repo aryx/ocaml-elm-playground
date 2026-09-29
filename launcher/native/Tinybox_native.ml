@@ -355,11 +355,13 @@ let directory_sources (_caps : < Cap.readdir ; Cap.open_in ; .. >) (dir : string
     if Array.mem ".codemapconfig" entries then configs := (if rel = "" then ".codemapconfig" else Filename.concat rel ".codemapconfig") :: !configs;
     Array.iter
       (fun e ->
-        if e <> "" && e.[0] <> '.' && e.[0] <> '_' then begin
+        (* claude: a directory starting with _ is a build's (_build,
+         * _opam); a file may (Linux 0.01's lib/_exit.c) *)
+        if e <> "" && e.[0] <> '.' then begin
           let r = if rel = "" then e else Filename.concat rel e in
           let path = Filename.concat dir r in
           match (Unix.lstat path).st_kind with
-          | S_DIR -> if not (Code_config.ignored config r ~dir:true) then walk r
+          | S_DIR -> if e.[0] <> '_' && not (Code_config.ignored config r ~dir:true) then walk r
           | S_REG when List.exists (Filename.check_suffix e) source_extensions && not (Code_config.ignored config r ~dir:false) -> (
               match read path with Some src -> out := (r, src) :: !out | None -> ())
           | _ -> ()

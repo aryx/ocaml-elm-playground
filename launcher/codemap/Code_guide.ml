@@ -100,7 +100,7 @@ let file_note where v =
 (* a path of the config, from the root *)
 let under (dir : string) (p : string) : string = if dir = "" then p else Jsonnet_parse.resolve ~from:(dir ^ "/.codemapconfig") p
 
-let kinds = [ "def"; "type"; "module"; "section"; "comment"; "line"; "pattern" ]
+let kinds = [ "def"; "type"; "module"; "section"; "comment"; "code"; "line"; "pattern" ]
 
 let split (s : string) : string option * string =
   match String.index_opt s ':' with
@@ -255,10 +255,16 @@ let contains (s : string) (sub : string) : int option =
 let find (f : Code_file.t) (anchor : string) : (int, string) result =
   let kind, what = match String.index_opt anchor ':' with Some i -> (String.sub anchor 0 i, String.sub anchor (i + 1) (String.length anchor - i - 1)) | None -> ("", anchor) in
   let unquote s = let n = String.length s in if n >= 2 && s.[0] = '"' && s.[n - 1] = '"' then String.sub s 1 (n - 2) else s in
+  (* claude: a name defined twice (a C prototype, then its body): the
+   * body's line, the definition of rank 3 (the Linux 0.01 pass: def:
+   * landed on forward declarations) *)
   let def cats =
-    match List.find_opt (fun (_, name, cat) -> name = what && List.mem cat cats) f.defs with
-    | Some (l, _, _) -> Ok l
-    | None -> Error (Printf.sprintf "%s: no %s %s" f.path kind what)
+    match List.filter (fun (_, name, cat) -> name = what && List.mem cat cats) f.defs with
+    | [] -> Error (Printf.sprintf "%s: no %s %s" f.path kind what)
+    | [ (l, _, _) ] -> Ok l
+    | (l0, _, _) :: _ as all -> (
+        let body = List.find_opt (fun (l, _, _) -> List.exists (fun (d : Highlight_code.definition) -> d.dline = l && d.drank >= 3 && (d.dname = what || "_" ^ d.dname = what)) f.definitions) all in
+        match body with Some (l, _, _) -> Ok l | None -> Ok l0)
   in
   match kind with
   | "def" -> def [ Def_function; Def_value ]
@@ -276,6 +282,18 @@ let find (f : Code_file.t) (anchor : string) : (int, string) result =
         else
           match contains (line_text f l) words with
           | Some c when (match Code_file.at f l c with Some (Comment | Comment_section) -> true | _ -> false) -> Ok l
+          | _ -> go (l + 1)
+      in
+      go 0)
+  (* claude: code:"words", the first line of code containing them (not a
+   * comment): the tricky lines 1991 C left uncommented *)
+  | "code" -> (
+      let words = unquote what in
+      let rec go l =
+        if l >= Code_file.nlines f then Error (Printf.sprintf "%s: no code saying %S" f.path words)
+        else
+          match contains (line_text f l) words with
+          | Some c when (match Code_file.at f l c with Some (Comment | Comment_section) -> false | _ -> true) -> Ok l
           | _ -> go (l + 1)
       in
       go 0)
