@@ -81,6 +81,9 @@ val unit_with_ties : Code_map_base.t -> Code_map_base.camera -> (string * string
 (* claude: at the street, the panel whose name is under a pixel *)
 val street_title_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> string option
 
+(* claude: the X-ray's legend row under a pixel (a click toggles it) *)
+val legend_row_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> Code_anatomy.system option
+
 (* claude: the bone under the mouse, in the X-ray: a click peeks at it *)
 val hovered_bone : Code_map_base.t -> Code_map_base.camera -> Code_guide.bone option
 

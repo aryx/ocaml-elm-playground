@@ -74,3 +74,6 @@ val ref_query : string -> string option
 (* the lines of files (path, references as line and dotted name, lines'
    text) referring to a name, at most [limit] *)
 val ref_matches : ?limit:int -> (string * (int * string) list * string array) list -> string -> hit list
+
+(* [contains s sub] *)
+val contains : string -> string -> bool

@@ -35,6 +35,10 @@ val colour : system -> int * int * int
 (* what it shows, in the code's words (the legend's) *)
 val meaning : system -> string
 
+(* claude: a plate explained: what it marks, how it is found, what to
+   look for (its legend row's card) *)
+val explain : system -> string list
+
 (* the key toggling it in the X-ray: "1" to "6" *)
 val key : system -> string
 

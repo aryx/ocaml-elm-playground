@@ -577,6 +577,12 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   in
   (* claude: shift+click on a unit's name: a view of it and all it is
    * tied to *)
+  (* claude: a click on the X-ray's legend: that plate on or off *)
+  let clicked =
+    match (clicked && units, Map_v2.legend_row_at t t.cam mpx mpy) with
+    | true, Some s -> Code_anatomy.toggle s; t.painted <- None; false
+    | _ -> clicked
+  in
   let with_ties = if clicked && units && Set_.mem "Shift" computer.keyboard.keys then Map_v2.unit_with_ties t t.cam else None in
   let clicked = if with_ties <> None then false else clicked in
   (* claude: a click on a match (a search's, a layer's): its file, and

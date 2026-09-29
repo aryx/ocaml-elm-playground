@@ -1452,7 +1452,7 @@ let anatomy_shapes (t : t) (c : camera) : shape list =
              | _ -> [])
 
 (* the atlas's key: the plates, the ones shown bright *)
-let legend (c : camera) : shape list =
+let legend ?pointer (c : camera) : shape list =
   let a = c.a in
   let x0 = float_of_int a.pw -. 420. and y0 = 36. in
   let row i s =
@@ -1465,9 +1465,26 @@ let legend (c : camera) : shape list =
       words (if on then ink else dim) text |> scale (14. /. words_font_size) |> move (sx a (x0 +. 30. +. (0.25 *. 14. *. float_of_int (String.length text)))) (sy a y);
     ]
   in
+  (* claude: the row under the mouse, its plate explained in a card *)
+  let card =
+    match pointer with
+    | Some (mx, my) when mx >= x0 && mx <= x0 +. 410. ->
+        let i = int_of_float (Float.floor ((my -. y0 -. 12.) /. 20.)) in
+        (match if i < 0 then None else List.nth_opt Code_anatomy.all i with
+        | Some s ->
+            let lines = List.concat_map (wrap 62) (Code_anatomy.explain s) in
+            let r, g, b = Code_anatomy.colour s in
+            let w = 24. +. List.fold_left (fun m l -> Float.max m (text_width 14. l)) 0. lines and h = 16. +. (20. *. float_of_int (List.length lines)) in
+            let cx0 = Float.max 8. (x0 -. w -. 10.) and cy0 = y0 +. 12. +. (float_of_int i *. 20.) in
+            [ rectangle (rgb 18 16 36) w h |> move (sx a (cx0 +. (w /. 2.))) (sy a (cy0 +. (h /. 2.))) |> fade 0.96 ]
+            @ frame a (rgb r g b) cx0 cy0 (cx0 +. w) (cy0 +. h) 1.5
+            @ List.mapi (fun k l -> label a ink 14. (cx0 +. 12. +. (text_width 14. l /. 2.)) (cy0 +. 18. +. (20. *. float_of_int k)) l) lines
+        | _ -> [])
+    | _ -> []
+  in
   (rectangle (rgb 18 16 36) 410. 150. |> move (sx a (x0 +. 205.)) (sy a (y0 +. 70.)) |> fade 0.92)
-  :: (words ink "the X-ray (x)" |> scale (14. /. words_font_size) |> move (sx a (x0 +. 60.)) (sy a (y0 +. 4.)))
-  :: List.concat (List.mapi row Code_anatomy.all)
+  :: (words ink "the X-ray (x)   hover: what it shows; click or 1-6: on, off" |> scale (12. /. words_font_size) |> move (sx a (x0 +. 170.)) (sy a (y0 +. 4.)))
+  :: (List.concat (List.mapi row Code_anatomy.all) @ card)
 
 (* claude: a definition's body, read over the map (a click at the ground
  * or the street, Code_map: t.peek): its lines alone laid out by
@@ -1688,7 +1705,7 @@ let text_of (e : entry) : string array =
 (* claude: a query's prefix, as VS Code's (the author): file:, dir:,
  * def:, type:, view:, tour:, text: (the lines' text, as a double
  * quote), ref: (the code's references, as @); none, every kind *)
-let prefixes = [ "file:"; "dir:"; "def:"; "type:"; "view:"; "tour:"; "text:"; "ref:" ]
+let prefixes = [ "file:"; "dir:"; "def:"; "type:"; "view:"; "tour:"; "text:"; "ref:"; "bone:" ]
 
 let split_prefix (q : string) : string option * string =
   match List.find_opt (fun p -> Code_search.starts (String.lowercase_ascii q) p) prefixes with
@@ -1700,6 +1717,7 @@ let query_mode (q : string) : string =
   match split_prefix q with
   | Some "text:", _ -> "the lines' text"
   | Some "ref:", _ -> "the code's references"
+  | Some "bone:", _ -> "the skeletons' bones, by role or name"
   | Some p, _ -> String.sub p 0 (String.length p - 1) ^ "s by name"
   | None, _ when Code_search.text_query q <> None -> "the lines' text"
   | None, _ when Code_search.ref_query q <> None -> "the code's references"
@@ -1726,6 +1744,22 @@ let query_hits (t : t) (q : string) : Code_search.hit list =
   match split_prefix q with
   | Some "text:", rest -> if String.length rest >= 2 then text_search rest else []
   | Some "ref:", rest -> if String.length rest >= 2 then ref_search rest else []
+  (* claude: bone:, every skeleton's bones, by their role or their name
+   * (the author) *)
+  | Some "bone:", rest ->
+      let q = String.lowercase_ascii (String.trim rest) in
+      let has s = q = "" || Code_search.contains (String.lowercase_ascii s) q in
+      List.concat_map (fun (d : Code_guide.dir_note) -> d.skeletons) (Code_guide.dirs t.guide)
+      |> List.concat_map (fun (sk : Code_guide.skeleton) -> sk.bones)
+      |> List.filter (fun (b : Code_guide.bone) -> has b.role || has b.banchor)
+      |> List.filter_map (fun (b : Code_guide.bone) ->
+             if b.banchor = "" then Some ({ kind = (if List.exists (fun (e : entry) -> e.path = b.bpath) every then File else Dir); path = b.bpath; line = 0; name = b.role } : Code_search.hit)
+             else Option.map (fun line : Code_search.hit -> { kind = Def; path = b.bpath; line; name = b.role }) (match entry_of t b.bpath with Some e -> capital_line e b.banchor | None -> None))
+      |> List.sort_uniq compare
+      (* the role said exactly first, then starting so, then containing *)
+      |> List.stable_sort (fun (x : Code_search.hit) (y : Code_search.hit) ->
+             let rank (h : Code_search.hit) = let r = String.lowercase_ascii h.name in if r = q then 0 else if Code_search.starts r q then 1 else 2 in
+             compare (rank x) (rank y))
   (* claude: view: or tour: alone, all of them, to explore (the author) *)
   | Some (("view:" | "tour:") as p), rest when String.trim rest = "" ->
       Array.to_list (search_all t) |> List.filter (fun (h : Code_search.hit) -> h.kind = (if p = "view:" then View else Tour))
@@ -1826,7 +1860,7 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
   @ frame a yellow x0 y0 (x0 +. w) (y0 +. h) 2.
   @ [ left 20. yellow (x0 +. 14.) (y0 +. 22.) ("/ " ^ s.query ^ caret) ]
   @ [ left 13. dim (x0 +. w -. 14. -. text_width 13. (query_mode s.query ^ ", " ^ where0 ^ "   " ^ string_of_int (List.length hits) ^ " found")) (y0 +. 22.) (query_mode s.query ^ ", " ^ where0 ^ "   " ^ string_of_int (List.length hits) ^ " found") ]
-  @ (if s.query = "" then [ left 15. dim (x0 +. 20.) (y0 +. 50. +. (row /. 2.)) "a name, or a part of it; or first file: dir: def: type: view: tour: text: ref:" ]
+  @ (if s.query = "" then [ left 15. dim (x0 +. 20.) (y0 +. 50. +. (row /. 2.)) "a name, or a part of it; or first file: dir: def: type: view: tour: text: ref: bone:" ]
      else if hits = [] then [ left 15. dim (x0 +. 20.) (y0 +. 50. +. (row /. 2.)) "nothing of that name" ]
      else [])
   @ List.concat
@@ -2126,7 +2160,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   | None -> [])
   @ List.rev_map (fun n -> n.draw) kept
   (* the legend when a plate other than the skeleton is on *)
-  @ (if t.xray then skeleton_shapes t c @ anatomy_shapes t c @ (if List.exists (fun s -> s <> Code_anatomy.Skeleton) !Code_anatomy.shown then legend c else []) else [])
+  @ (if t.xray then skeleton_shapes t c @ anatomy_shapes t c @ (if true then legend ?pointer:(Option.map (fun (u, v) -> (to_px c u, to_py c v)) t.pointer) c else []) else [])
   @ unit_ties t c kept
   @ hover_card t c kept
   @ peek_shapes t c q
@@ -2166,3 +2200,13 @@ let pick (t : t) (c : camera) (_ : float) (px : float) (py : float) : (string * 
       Option.map (fun (p, l) -> (p, l, -1)) (List.find_map (fun n -> if within n.nbox px py then n.sect else None) (names t c))
 
 let style : style = { sname = "v2"; paint; labels; pick; unit_at; units = true }
+
+(* claude: the X-ray's legend row under a pixel: a click toggles it *)
+let legend_row_at (t : t) (c : camera) (px : float) (py : float) : Code_anatomy.system option =
+  if not t.xray then None
+  else
+    let x0 = float_of_int c.a.pw -. 420. and y0 = 36. in
+    if px < x0 || px > x0 +. 410. then None
+    else
+      let i = int_of_float (Float.floor ((py -. y0 -. 12.) /. 20.)) in
+      if i < 0 then None else List.nth_opt Code_anatomy.all i

@@ -38,6 +38,35 @@ let meaning = function
   | Lungs -> "the I/O: files, network, console"
   | Skin -> "exported: what the .mli shows, the rest shaded"
 
+(* claude: what a plate marks, how it is found, what to look for: its
+ * legend row's card (the author: "a way to understand what those plates
+ * are by hovering on it") *)
+let explain = function
+  | Skeleton ->
+      [ "The bones: the few definitions the rest hangs on, and the joints between them.";
+        "Written in the configs (a role per bone), or derived from the code: its capitals, its most used definitions.";
+        "Look for: how the parts connect; x shows the next skeleton." ]
+  | Blood ->
+      [ "What flows along the skeleton's joints: pulses moving from one bone to the next.";
+        "Found from the joints' direction: from the user to the used.";
+        "Look for: which way the data goes, and where it loops back." ]
+  | Muscles ->
+      [ "Where the work is: definitions dense with loops (for, while, List.iter, fold...).";
+        "Found by counting loop words per line of each definition: the denser, the redder.";
+        "Look for: the inner loops, where time is spent: a rasterizer's, a solver's." ]
+  | Nerves ->
+      [ "Where the program senses its user: keyboard, mouse, events, touches.";
+        "Found by the words: keyboard, mouse, key, click, pressed, event...";
+        "Look for: where input enters and which definitions react to it." ]
+  | Lungs ->
+      [ "Where the program breathes with the world: files, network, console, processes.";
+        "Found by the words: open_in, read, write, socket, print, Unix., Cap....";
+        "Look for: the edges of the program, what may fail or block." ]
+  | Skin ->
+      [ "What a module shows the others: the definitions its .mli exports.";
+        "Found from the .mli: exported definitions barred, the private ones shaded.";
+        "Look for: the surface to learn first; what is only inside." ]
+
 let key = function Skeleton -> "1" | Blood -> "2" | Muscles -> "3" | Nerves -> "4" | Lungs -> "5" | Skin -> "6"
 
 let shown = ref [ Skeleton ]
