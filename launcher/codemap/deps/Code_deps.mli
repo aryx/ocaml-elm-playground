@@ -45,3 +45,9 @@ val budget : int
    build's copies of them (web/, software/, svg/, tests/) nor generated
    modules: what tinybox embeds, and what budgets are counted over *)
 val repository_sources : root:string -> (string * string) list
+
+(* claude: [repository_configs ~root]: what the code map's configs say
+   (Code_guide, plan_codemap_v2.md): the .codemapconfig files at [root]
+   and under the same directories, and the .libsonnet files they may
+   import; embedded by tinybox beside the sources *)
+val repository_configs : root:string -> (string * string) list

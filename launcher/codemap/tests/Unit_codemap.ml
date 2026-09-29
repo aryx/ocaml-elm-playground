@@ -203,6 +203,22 @@ let tests =
               Error "games/.codemapconfig: G.ml: games/G.ml: no def view";
             ]
             found);
+      (* claude: the repository's own configs: no mistake (tinybox
+       * codemap -check . says the same); a file changed since it was
+       * described is the checker's warning, not a failure: editing a
+       * game must not break the tests *)
+      Testo.create "the repository's configs hold" (fun () ->
+          let root = "../../.." in
+          let sources = Code_deps.repository_sources ~root and configs = Code_deps.repository_configs ~root in
+          let paths = List.filter_map (fun (p, _) -> if Filename.basename p = ".codemapconfig" then Some p else None) configs in
+          let guide, mistakes = Code_guide.load ~read:(fun p -> List.assoc_opt p configs) paths in
+          let found =
+            Code_guide.check guide
+              ~file:(fun p -> Option.map (fun s -> (Code_file.make p s, s)) (List.assoc_opt p sources))
+              ~exists:(fun p -> Sys.file_exists (Filename.concat root p))
+          in
+          let problems = mistakes @ List.filter_map (function Ok _ -> None | Error e -> Some e) found in
+          if problems <> [] then Alcotest.failf "the .codemapconfig files (tinybox codemap -check .):\n  %s" (String.concat "\n  " problems));
       Testo.create "a config's mistakes" (fun () ->
           let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
           Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");

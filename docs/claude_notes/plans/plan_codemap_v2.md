@@ -430,7 +430,16 @@ The same patterns serve search (`/` with a pattern) and anchors
 
 4. **The pilot's configs, written by hand with the LLM**: the root,
    `games/`, `games/shmup/`, `gamekits/`, `gamekits/shmup/`; the map's
-   title, cards and capitals from them.
+   title, cards and capitals from them. (Done, 2026-09-29: the root's,
+   `games/`, `games/shmup/` (TinyInvaders: capitals, important lines,
+   links, related files, a tour, a view), `gamekits/`, `gamekits/shmup/`,
+   written after `codemapconfig_guidelines.md`; a game's capital its
+   heart, not `update` and `view`, which every game has. Embedded by
+   tinybox beside the sources (`Code_deps.repository_configs`,
+   `Codemap.guide_of`); checked by the code map's tests, a mistake
+   failing them, a stale digest only the checker's warning. The
+   capitals drawn by `Map_v2`, a dot and a name, their card saying why.)
+
 5. **Ground level**: lines' heights by category and weight; tested with
    a golden frame of TinyInvaders.
 6. **Street level**: the focus and its associations; edges from

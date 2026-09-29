@@ -90,7 +90,62 @@ let paint ~(aa : bool) (t : t) (c : camera) : Rgba_image.t =
 
 (* a name's place: its node, its box in the map's pixels, how much it
  * matters, and how to draw it *)
-type name = { node : int; nbox : float * float * float * float; nrank : float; draw : shape }
+(* claude: words cut into lines of at most [width] characters *)
+let wrap (width : int) (text : string) : string list =
+  let words = List.filter (( <> ) "") (String.split_on_char ' ' text) in
+  let lines, last =
+    List.fold_left
+      (fun (lines, cur) w -> if cur = "" then (lines, w) else if String.length cur + 1 + String.length w > width then (cur :: lines, w) else (lines, cur ^ " " ^ w))
+      ([], "") words
+  in
+  List.rev (if last = "" then lines else last :: lines)
+
+type name = { node : int; nbox : float * float * float * float; nrank : float; draw : shape; said : string list option }
+
+(* claude: the capitals the configs name (Code_guide.capitals): where
+ * each is in its file, found once (its file lexed then) *)
+let capital_lines : (string, int option) Hashtbl.t = Hashtbl.create 16
+
+let capital_line (e : entry) (at : string) : int option =
+  let key = e.path ^ "\000" ^ at in
+  match Hashtbl.find_opt capital_lines key with
+  | Some l -> l
+  | None ->
+      let l = Result.to_option (Code_guide.find (Lazy.force e.file) at) in
+      Hashtbl.replace capital_lines key l;
+      l
+
+(* a capital: a dot where it is and its name, what the config says of it
+ * on its card; under the names of the regions and of their
+ * subdirectories (a genre's name says more from afar), above the rest *)
+let capitals (t : t) (c : camera) : name list =
+  let a = c.a in
+  let where = Hashtbl.create 64 in
+  Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, e) -> Hashtbl.replace where e.path (i, e) | Dir _ -> ()) t.placed;
+  List.filter_map
+    (fun (path, (it : Code_guide.item)) ->
+      match Hashtbl.find_opt where path with
+      | Some (i, e) when not (outside t t.placed.(i)) -> (
+          match (clip c t.placed.(i).rect, t.geometry.(i)) with
+          | Some _, Some g -> (
+              match capital_line e it.at with
+              | Some line ->
+                  let x, y = line_pos t.placed.(i).rect g line in
+                  let px = to_px c x and py = to_py c (y +. (g.cell_h /. 2.)) in
+                  let label = snd (Code_guide.split it.at) |> fun s -> match String.index_opt s ':' with Some k -> String.sub s (k + 1) (String.length s - k - 1) | None -> s in
+                  let size = 15. in
+                  let tw = 0.5 *. size *. float_of_int (String.length label) in
+                  let x0 = px -. 6. and x1 = px +. 10. +. tw +. 4. in
+                  let dot = circle yellow 5. |> move (sx a px) (sy a py) in
+                  let ring = circle black 7. |> move (sx a px) (sy a py) in
+                  let text = words yellow label |> scale (size /. words_font_size) |> move (sx a (px +. 10. +. (tw /. 2.))) (sy a py) in
+                  let shadow = words black label |> scale (size /. words_font_size) |> move (sx a (px +. 11.5 +. (tw /. 2.))) (sy a (py +. 1.5)) |> fade 0.8 in
+                  let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ [ "click: to its file" ] in
+                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805.; draw = group [ ring; dot; shadow; text ]; said = Some said }
+              | None -> None)
+          | _ -> None)
+      | _ -> None)
+    (Code_guide.capitals t.guide)
 
 (* the names over the map, the directories' first: a directory's centred
  * on it, as large as it fits (a region's up to 64, deeper ones smaller),
@@ -114,10 +169,10 @@ let names (t : t) (c : camera) : name list =
           let box, shape = tab a ~alpha:0.9 (lighter (archi t.colours p.path)) 16. !x 6. text in
           let _, _, x1, _ = box in
           x := x1 +. 4.;
-          { node = i; nbox = box; nrank = 10000.; draw = shape })
+          { node = i; nbox = box; nrank = 10000.; draw = shape; said = None })
         above
   in
-  let cands = ref crumbs in
+  let cands = ref (crumbs @ capitals t c) in
   Array.iteri
     (fun i (p : entry Treemap.placed) ->
       match clip c p.rect with
@@ -143,7 +198,7 @@ let names (t : t) (c : camera) : name list =
               else text 0. 0. (lighter (r, g, b)) 0.85
             in
             let nrank = if is_dir then 1000. -. (100. *. float_of_int p.depth) +. size else size in
-            cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw } :: !cands
+            cands := { node = i; nbox = (cx -. (bw /. 2.), cy -. (bh /. 2.), cx +. (bw /. 2.), cy +. (bh /. 2.)); nrank; draw; said = None } :: !cands
           end
       | _ -> ())
     t.placed;
@@ -158,16 +213,6 @@ let within (x0, y0, x1, y1) x y = x >= x0 && x < x1 && y >= y0 && y < y1
 
 let unit_at (t : t) (c : camera) (_ : float) (px : float) (py : float) : int option =
   Option.map (fun n -> n.node) (List.find_opt (fun n -> within n.nbox px py) (names t c))
-
-(* claude: words cut into lines of at most [width] characters *)
-let wrap (width : int) (text : string) : string list =
-  let words = List.filter (( <> ) "") (String.split_on_char ' ' text) in
-  let lines, last =
-    List.fold_left
-      (fun (lines, cur) w -> if cur = "" then (lines, w) else if String.length cur + 1 + String.length w > width then (cur :: lines, w) else (lines, cur ^ " " ^ w))
-      ([], "") words
-  in
-  List.rev (if last = "" then lines else last :: lines)
 
 (* a directory's or a file's card: its path, what its config says of it
  * (Code_guide), and what it holds *)
@@ -203,7 +248,7 @@ let hover_card (t : t) (c : camera) (kept : name list) : shape list =
       match List.find_opt (fun n -> within n.nbox mx my) kept with
       | None -> []
       | Some n ->
-          let lines = card t n.node in
+          let lines = match n.said with Some l -> l | None -> card t n.node in
           let size = 15. and gap = 6. in
           let w = 16. +. (0.5 *. size *. float_of_int (List.fold_left (fun m s -> max m (String.length s)) 0 lines)) in
           let h = 12. +. (float_of_int (List.length lines) *. (size +. gap)) in

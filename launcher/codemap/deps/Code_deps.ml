@@ -122,6 +122,20 @@ let repository_sources ~(root : string) : (string * string) list =
   in
   List.concat_map walk (List.filter (fun d -> Sys.file_exists (Filename.concat root d)) source_roots)
 
+let repository_configs ~(root : string) : (string * string) list =
+  let is_config f = f = ".codemapconfig" || Filename.check_suffix f ".libsonnet" in
+  let here dir = Sys.readdir (Filename.concat root dir) |> Array.to_list |> List.sort compare in
+  let rec walk (dir : string) : (string * string) list =
+    here dir
+    |> List.concat_map (fun f ->
+           let path = Filename.concat dir f in
+           if Sys.is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
+           else if is_config f then [ (path, read (Filename.concat root path)) ]
+           else [])
+  in
+  List.filter_map (fun f -> if is_config f && not (Sys.is_directory (Filename.concat root f)) then Some (f, read (Filename.concat root f)) else None) (here ".")
+  @ List.concat_map walk (List.filter (fun d -> Sys.file_exists (Filename.concat root d)) source_roots)
+
 let budget = 5000
 
 let own_size (sources : (string * string) list) (path : string) : int * int =

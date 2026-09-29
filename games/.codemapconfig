@@ -1,0 +1,25 @@
+// games/: what the code map says of it (plan_codemap_v2.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The games, one directory per genre (CATALOG.md), each rebuilding a classic in miniature, with its story.",
+  files: {
+    'template.ml': { digest: '581bdf5ab4ee', summary: 'The skeleton of a new game: a model, an update, a view.' },
+  },
+  dirs: {
+    adventure: { summary: 'A world explored, in words and turns, then in pictures, then in real time.' },
+    arcade: { summary: 'One screen, one rule learned in a minute: Pong, Breakout, Pac-Man.' },
+    cards: { summary: 'A deck of cards and the rules of a game played with it.' },
+    fighting: { summary: 'The fighters\' own mechanics are the game: moves timed in frames, hitboxes.' },
+    flight: { summary: 'Flying a craft in three dimensions, over terrain, through space or down a mine.' },
+    fps: { summary: 'The world through the eyes of whoever you play: Wolfenstein, Doom, Quake.' },
+    platform: { summary: 'Crossing a level by running, jumping and climbing: gravity is the challenge.' },
+    programming: { summary: 'You win by writing the program that plays.' },
+    puzzle: { summary: 'Thinking over reflexes: rules to master, a level to solve, a board to win.' },
+    racing: { summary: 'A course driven round against the clock or other drivers.' },
+    rhythm: { summary: "Pressing in time with music, judged by the music's clock." },
+    rpg: { summary: 'A character who grows, through a dungeon of many rooms.' },
+    shmup: { summary: "Shoot 'em ups: a ship or a gun against waves of enemies." },
+    sports: { summary: 'A sport or a table game played on the screen as it is played off it.' },
+    strategy: { summary: 'Planning at a scale above one character: an army, a city, a civilization.' },
+  },
+}

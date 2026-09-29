@@ -1,6 +1,21 @@
 ; claude: unit tests for tinybox's code map, run by 'make test' (dune
-; runtest): the treemap's worked example, a file's grid and definitions
+; runtest): the treemap's worked example, a file's grid and definitions;
+; and the repository's own .codemapconfig files checked (Code_guide), so
+; that a renamed function breaks a test, not the map
 (test
  (name Test)
- (libraries alcotest testo tinybox_codemap highlight_code
-   elm_playground_native)) ; implem of virtual elm_playground
+ (libraries alcotest testo tinybox_codemap tinybox_codedeps highlight_code
+   elm_playground_native) ; implem of virtual elm_playground
+ (deps
+   (glob_files_rec %{project_root}/.codemapconfig)
+   (glob_files_rec %{project_root}/*.libsonnet)
+   (glob_files_rec %{project_root}/games/*.{ml,mli,html})
+   (glob_files_rec %{project_root}/apps/*.{ml,mli})
+   (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
+   (glob_files_rec %{project_root}/appkits/*.{ml,mli})
+   (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly})
+   (glob_files_rec %{project_root}/playground/*.{ml,mli})
+   (glob_files_rec %{project_root}/libs/*.{ml,mli})
+   (glob_files_rec %{project_root}/launcher/*.{ml,mli})
+   (glob_files %{project_root}/tests/2d/golden/*.png)
+   (glob_files %{project_root}/tests/3d/golden/*.png)))

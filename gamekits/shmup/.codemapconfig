@@ -1,0 +1,41 @@
+// gamekits/shmup/: what the code map says of it (plan_codemap_v2.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The shoot 'em up kit: shots that move, and the curves enemies fly along.",
+  files: {
+    'Shots.mli': { digest: '6a5b2035eb83',
+      summary: 'Shots as values that move a fixed step each frame, no physics: fired, advanced, dropped.',
+      important: [
+        { at: 'type:t', say: 'a shot: where it is, how fast it goes', weight: 3 },
+        { at: 'def:straight', weight: 2 },
+        { at: 'def:aimed', say: 'the one bit of math: toward a target', weight: 2 },
+        { at: 'def:advance', weight: 2 },
+      ],
+    },
+    'Shots.ml': { digest: 'a9518f464402',
+      summary: 'Shots, as Shots.mli says; aiming is the direction divided by its length, times the speed.',
+      important: [
+        { at: 'def:aimed', weight: 3 },
+        { at: 'def:advance', weight: 2 },
+      ],
+      related: ['tests/Unit_shmup.ml'],
+    },
+    'Path.mli': { digest: 'ce4084396922',
+      summary: "Galaga's swirling paths: a Catmull-Rom spline through a few points, followed by distance.",
+      important: [
+        { at: 'def:make', say: 'the curve measured once', weight: 2 },
+        { at: 'def:at', say: 'where the ship is, s pixels along', weight: 3 },
+        { at: 'def:mirror', weight: 1 },
+      ],
+    },
+    'Path.ml': { digest: '06b6ead84fe8',
+      summary: 'Paths over Curve (graphics/2d/geometry): 16 samples a segment, directions for rotate.',
+      important: [
+        { at: 'def:at', weight: 3 },
+      ],
+    },
+  },
+  dirs: {
+    tests: { summary: "The kit's unit tests: shots aimed and advanced, paths measured." },
+  },
+}

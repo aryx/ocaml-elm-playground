@@ -116,7 +116,10 @@
   %{project_root}/launcher/web/Tinybox_web.ml
   (glob_files_rec %{project_root}/launcher/catalogue/*.{ml,mli})
   (glob_files_rec %{project_root}/launcher/codegen/*.{ml,mli})
-  (glob_files_rec %{project_root}/launcher/codemap/*.{ml,mli}))
+  (glob_files_rec %{project_root}/launcher/codemap/*.{ml,mli})
+  ; claude: the code map's configs (Code_deps.repository_configs)
+  (glob_files_rec %{project_root}/.codemapconfig)
+  (glob_files_rec %{project_root}/*.libsonnet))
  (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} sources)))))
 
 (rule

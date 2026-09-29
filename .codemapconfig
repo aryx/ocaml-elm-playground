@@ -1,0 +1,20 @@
+// the repository: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  title: 'Games and applications that made computing history, rebuilt small in OCaml',
+  dirs: {
+    playground: { summary: "The library every program is written with: Elm's playground, shapes, and its model-update-view loop." },
+    games: { summary: 'The games, one directory per genre, each a classic rebuilt in miniature.' },
+    apps: { summary: 'The applications, by category: VisiCalc to Smalltalk-80, MacPaint to Winamp.' },
+    gamekits: { summary: "Genre kits: what a genre's games share." },
+    appkits: { summary: "Application kits: what several applications share (a File menu, an editor's core)." },
+    languages: { summary: 'Languages as text, parsed and run: BASIC, Scheme, Pascal, Smalltalk, JavaScript, jsonnet.' },
+    libs: { summary: 'The from-scratch libraries, independent of the Playground: pixels, samples, bytes, bodies.' },
+    launcher: { summary: 'tinybox, every program in one binary: its menu, and this code map.' },
+    examples: { summary: 'Small programs showing the library, a feature each.' },
+    tests: { summary: "The repository's tests: golden frames of every program, the catalogue checked." },
+    docs: { summary: 'The published site, and the plans and notes behind the code (claude_notes/).' },
+    scripts: { summary: 'Helper scripts for the build and the site.' },
+  },
+}

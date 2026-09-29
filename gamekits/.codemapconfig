@@ -1,0 +1,24 @@
+// gamekits/: what the code map says of it (plan_codemap_v2.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Genre kits: what a genre's games share, on top of the Playground, each a small library.",
+  dirs: {
+    adventure: { summary: "A world as data, rooms, objects and flags, and sentences answered by rules (Zork, Maniac Mansion)." },
+    brawler: { summary: 'Hitboxes, frame data and stick fighters: a fight timed in frames (Final Fight, Street Fighter).' },
+    cards: { summary: "The 52 cards, drawn as shapes, and Microsoft's numbered deals (Solitaire, FreeCell)." },
+    crush: { summary: 'A level of 2D slices, played on one or crushed into their union (Crush, 2D and 3D).' },
+    heightmap: { summary: 'A terrain as a grid of heights, and the voxel ray that draws it (Comanche).' },
+    isometric: { summary: "A world seen from one fixed angle: the projection, the shadow that tells height, the sort (Zaxxon, Diablo)." },
+    lightcycles: { summary: "Tron's light cycles as a model and an update, with no picture." },
+    maze: { summary: "How a maze's movers choose their way at each crossing, chasing or wandering (Pac-Man's ghosts)." },
+    platformer: { summary: 'Moving on tiles, ladders, and shaped ground felt by sensors (Mario, Lode Runner, Sonic).' },
+    puzzle: { summary: 'Pushing, undoing, and Sokoban: its rules, its level format and a solver.' },
+    racing: { summary: 'Roads seen from behind, cars, and courses seen from above (OutRun, Micro Machines), and in 3D.' },
+    rhythm: { summary: "A rhythm game's machinery: the music's clock, the grades, the charts (DDR, Guitar Hero)." },
+    rts: { summary: "A strategy game's units told where to go, and how they get there on the tiles." },
+    sectors: { summary: 'A Doom-style level: sectors of floor and ceiling heights, joined by lines (Doom, 2D and 3D).' },
+    segments: { summary: 'A Descent mine of boxes, and a ship that can point anywhere (Descent).' },
+    shmup: { summary: "The shoot 'em up kit: shots that move, and the curves enemies fly along." },
+    sports: { summary: 'A ball pushed ahead instead of carried, and players pulled to their places (Kick Off, Speedball).' },
+  },
+}

@@ -25,7 +25,20 @@ type t = {
   file : Code_view.t option; (* a file open over the map *)
   tour : (int * int) option; (* claude: the tour's stop: a file (its place in the map's entries), a stop in it *)
   own : string -> bool; (* claude: its own code's files *)
+  guide : Code_guide.t option; (* claude: what the configs among its sources say *)
 }
+
+(* claude: the code map's configs among the sources (tinybox embeds them
+ * there, Code_deps.repository_configs), set apart: the code, and what
+ * the configs say (Code_guide), a config's mistake left out *)
+let is_config (path : string) = let f = Filename.basename path in f = ".codemapconfig" || Filename.check_suffix f ".libsonnet"
+
+let guide_of (sources : (string * string) list) : (string * string) list * Code_guide.t option =
+  let configs, code = List.partition (fun (p, _) -> is_config p) sources in
+  if configs = [] then (code, None)
+  else
+    let paths = List.filter_map (fun (p, _) -> if Filename.basename p = ".codemapconfig" then Some p else None) configs in
+    (code, Some (fst (Code_guide.load ~read:(fun p -> List.assoc_opt p configs) paths)))
 
 (*****************************************************************************)
 (* Which files *)
@@ -65,7 +78,9 @@ let map_of ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (st
     | Whole -> Printf.sprintf "the whole repository: %s   (w: %s's code)" files program
     | Directory name -> (
         (* claude: the project in a sentence, its root config's *)
-        match Option.bind guide Code_guide.title with Some s -> Printf.sprintf "%s: %s   (%s)" name s files | None -> Printf.sprintf "%s: %s" name files)
+        (* or, for a directory inside a project, its summary *)
+        let said = match guide with Some g -> ( match Code_guide.title g with Some s -> Some s | None -> Code_guide.dir_summary g "") | None -> None in
+        match said with Some s -> Printf.sprintf "%s: %s   (%s)" name s files | None -> Printf.sprintf "%s: %s" name files)
   in
   (* claude: numbered in their reading order (Code_deps.closure's), but
    * the whole repository's and a directory's *)
@@ -73,17 +88,20 @@ let map_of ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (st
   Code_map.make ~numbered ~colours ~roots ?guide ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
-  { program; path; sources; scope = Own; area; map = map_of ~guide:None ~roots:[] ~colours:[] ~own ~area ~sources ~program ~path ~scope:Own; file = None; tour = None; own }
+  let sources, guide = guide_of sources in
+  let colours = match guide with Some g -> Code_guide.colours g | None -> [] in
+  { program; path; sources; scope = Own; area; map = map_of ~guide ~roots:[] ~colours ~own ~area ~sources ~program ~path ~scope:Own; file = None; tour = None; own; guide }
 
 let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) ~area ~sources ~program ~path
 
 let of_directory ?guide ?(colours = []) ?(roots = []) ~(area : float * float * int * int) ~(name : string) ~(sources : (string * string) list) () : t =
   let scope = Directory name in
   let own _ = true in
-  { program = name; path = ""; sources; scope; area; map = map_of ~guide ~roots ~colours ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own }
+  { program = name; path = ""; sources; scope; area; map = map_of ~guide ~roots ~colours ~own ~area ~sources ~program:name ~path:"" ~scope; file = None; tour = None; own; guide }
 
 let preview ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : Code_map.t =
-  map_of ~guide:None ~roots:[] ~colours:[] ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
+  let sources, guide = guide_of sources in
+  map_of ~guide ~roots:[] ~colours:[] ~own:(Code_deps.own path) ~area ~sources ~program ~path ~scope:Own
 
 (*****************************************************************************)
 (* Update and view *)
@@ -129,7 +147,7 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
   | None ->
       if pressed "w" && (match t.scope with Directory _ -> false | _ -> true) then
         let scope = match t.scope with Own -> Uses | Uses -> Whole | Whole | Directory _ -> Own in
-        Some { t with scope; map = map_of ~guide:None ~roots:[] ~colours:[] ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
+        Some { t with scope; map = map_of ~guide:t.guide ~roots:[] ~colours:[] ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         | _, Close -> None

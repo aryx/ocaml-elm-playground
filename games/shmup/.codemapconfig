@@ -1,0 +1,62 @@
+// games/shmup/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Shoot 'em ups: a ship or a gun against waves of enemies; you shoot and dodge.",
+  files: {
+    'TinyInvaders.ml': { digest: '86823bae06a6',
+      summary: 'Space Invaders (Taito, 1978): 55 aliens marching one per frame, four bunkers that crumble.',
+      capitals: [
+        { at: 'def:march', say: 'one alien moved per frame: why the last one runs' },
+      ],
+      important: [
+        { at: 'type:model', say: 'what the game remembers: the scenes, the score, the effects', weight: 3 },
+        { at: 'type:game', say: 'a wave in play: the aliens, the cannon, the shots, the bunkers', weight: 3 },
+        { at: 'def:march', weight: 3 },
+        { at: 'comment:"We move one alien per frame"', say: 'the accident Nishikado kept', weight: 2 },
+        { at: 'def:drop_bomb', say: 'who shoots: a fixed table, or the column above you', weight: 2 },
+        { at: 'def:hit_bunker', say: 'a bunker is a tile map, bitten 3x3 where a shot lands', weight: 2 },
+        { at: 'def:juiced', say: 'the effects watch the rules from outside', weight: 2 },
+        { at: 'def:update', weight: 1 },
+        { at: 'def:view', weight: 1 },
+      ],
+      links: [
+        { from: 'def:update', to: 'def:update_rules' },
+        { from: 'def:update', to: 'def:juiced' },
+        { from: 'def:update_rules', to: 'def:update_game' },
+        { from: 'def:update_game', to: 'def:march' },
+        { from: 'def:view', to: 'def:view_game' },
+      ],
+      related: ['web/TinyInvaders.html', '../../tests/2d/golden/TinyInvaders.png'],
+    },
+    'TinyGalaga.ml': { digest: '865d7c811c25', summary: "Galaga (Namco, 1981): enemies fly in along curves, take their places, then dive." },
+    'TinyDefender.ml': { digest: '8a1274612ef1', summary: 'Defender (Williams, 1981): a planet six screens wide; save the humanoids from the landers.' },
+    'TinyGradius.ml': { digest: 'ceb5be23b6f4', summary: 'Gradius (Konami, 1985): a cave scrolling by itself, and the power-up bar.' },
+    'TinyRType.ml': { digest: '2cce651fbbae', summary: 'R-Type (Irem, 1987): the Force at your nose, a charged beam, a battleship to take apart.' },
+    'TinyRobotron.ml': { digest: '5672b609c853', summary: 'Robotron: 2084 (Williams, 1982): one stick to run, one to shoot, a crowd of robots.' },
+    'TinyMissileCommand.ml': { digest: '5cc10d98791b', summary: 'Missile Command (Atari, 1980): counter-missiles exploding where you aim, six cities to keep.' },
+    'TinyZaxxon.ml': { digest: '44bb74667e02', summary: 'Zaxxon (Sega, 1982): an isometric fortress flown over, its height told by a shadow.' },
+    'TinyStarFox.ml': { digest: 'ffcb3289e87b', summary: 'Star Fox (Nintendo, 1993): an arwing on rails down a canyon, in 3D.' },
+    'Asteroid.ml': { digest: 'fe15863ee2a6', summary: 'Asteroids, ported from a Haskell version (Haskell in Space): the ship, the rocks, wrapping.' },
+  },
+  tours: [
+    {
+      name: 'How Space Invaders runs',
+      stops: [
+        { at: 'TinyInvaders.ml:type:model', say: 'The state first: the scenes, the score, the effects.' },
+        { at: 'TinyInvaders.ml:type:game', say: 'A wave in play, all of it in one record.' },
+        { at: 'TinyInvaders.ml:def:update', say: 'A frame: the rules run, then the juice looks at what they did.' },
+        { at: 'TinyInvaders.ml:def:update_game', say: 'The cannon moves and fires, the aliens march, the shots fly.' },
+        { at: 'TinyInvaders.ml:def:march', say: 'One alien per frame: the fewer left, the faster they go.' },
+        { at: 'TinyInvaders.ml:def:drop_bomb', say: 'No randomness: a table of columns, as the original.' },
+        { at: '../../gamekits/shmup/Shots.ml:def:advance', say: "The kit's shots, shared with Galaga and Robotron." },
+        { at: 'TinyInvaders.ml:def:hit_bunker', say: 'Bunkers are tile maps, eroded where they are hit.' },
+        { at: 'TinyInvaders.ml:def:juiced', say: 'Effects added from outside the rules: same keys, same game.' },
+        { at: 'TinyInvaders.ml:def:view', say: 'The picture, shaken by the juice but for the score.' },
+      ],
+    },
+  ],
+  views: [
+    { name: 'Space Invaders and its kit', files: ['TinyInvaders.ml', '../../gamekits/shmup/'] },
+  ],
+}

@@ -153,7 +153,12 @@ let () =
               (* claude: a config's mistake said, the map drawn without it *)
               List.iter (fun m -> eprint caps (Printf.sprintf "tinybox codemap: %s\n" m)) mistakes;
               (* its name: the directory's own, not "." *)
-              let name = Filename.basename (if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir) in
+              let name =
+                (* claude: "." and "x/" are their directory's name *)
+                let abs = if Filename.is_relative dir then Filename.concat (Sys.getcwd ()) dir else dir in
+                let rec name p = match Filename.basename p with "." | "" -> name (Filename.dirname p) | n -> n in
+                name abs
+              in
               Codemap.run_directory ~guide ~colours:(Code_guide.colours guide) ~roots ~name ~sources ()))
 
 (* claude: tinybox codemap -check <dir>: what its .codemapconfig files

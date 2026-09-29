@@ -102,7 +102,8 @@ let () =
              if i mod n = k && Sys.file_exists frame then Printf.printf "  (%S, %S);\n" p.name (thumbnail (read frame)));
       print_string "]\n"
   | [ _; "sources" ] ->
-      let sources = Code_deps.repository_sources ~root:"." in
+      (* claude: and the code map's configs, which Codemap sets apart *)
+      let sources = Code_deps.repository_sources ~root:"." @ Code_deps.repository_configs ~root:"." in
       print_string "let sources = [\n";
       List.iter (fun (path, text) -> Printf.printf "  (%S, %S);\n" path text) sources;
       print_string "]\n"
@@ -123,5 +124,5 @@ let () =
    * its length in bytes, a newline, and its text (Tinybox_web.parse) *)
   | [ _; "sources-file" ] ->
       List.iter (fun (path, text) -> Printf.printf "%s\n%d\n%s" path (String.length text) text)
-        (Code_deps.repository_sources ~root:".")
+        (Code_deps.repository_sources ~root:"." @ Code_deps.repository_configs ~root:".")
   | _ -> failwith "usage: make_tinybox_data (catalogue | thumbs n | thumbnails k n | sources | sources-file | pngs dir)"
