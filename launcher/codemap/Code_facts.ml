@@ -316,4 +316,13 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
     |> List.filter (fun d -> not (List.exists (fun (s : Code_guide.skeleton) -> s.sdir = d) skeletons))
     |> List.map (fun d -> (if d = "" then "(the root)" else d) ^ ": a folder with no skeleton (its parts and how they connect)")
   in
-  programs @ hubs @ dirs @ modules
+  (* claude: every source described (the author found launcher/codemap's
+   * files without a summary: its config, written early, had none) *)
+  let undescribed =
+    List.filter_map
+      (fun (p, _) ->
+        if is_source p && (match Code_guide.file_note guide p with Some { summary = Some _; _ } -> false | _ -> true) then Some (p ^ ": a file no config describes (its summary)")
+        else None)
+      sources
+  in
+  programs @ hubs @ dirs @ modules @ undescribed
