@@ -25,7 +25,11 @@ type t = {
   includes : string list;
 }
 
-let cols = 80
+(* claude: 160 kept, the width of the lines' grid; [shown], the 80 a
+ * column of the classic map draws (the ground draws what fits, a » where
+ * a line goes on: the author's long lines, cut) *)
+let cols = 160
+let shown = 80
 let trick = "the trick of this game"
 
 let plain (src : string) : Highlight_code.span list array =

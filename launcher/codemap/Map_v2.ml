@@ -1558,7 +1558,17 @@ let geom_of (t : t) (c : camera) ((path, first, last) : string * int * int) (scr
           let n = Code_file.nlines f in
           let first = max 0 first and last = min (n - 1) last in
           let lines = last - first + 1 in
-          let bw = Float.min (float_of_int a.pw -. 80. -. shift) 820. and bh = Float.min (float_of_int a.ph -. 60. -. shift) ((float_of_int lines *. 17.) +. 56.) in
+          (* claude: as wide as its longest line, up to the screen (the
+           * author: in a peek, the full line) -- 8.5 pixels a character *)
+          let longest =
+            List.fold_left
+              (fun m l ->
+                let k = ref 0 in
+                for c = 0 to Code_file.cols - 1 do if Bytes.get f.grid ((l * Code_file.cols) + c) <> '\000' then k := c + 1 done;
+                max m !k)
+              0 (List.init (last - first + 1) (fun k -> first + k))
+          in
+          let bw = Float.min (float_of_int a.pw -. 80. -. shift) (Float.max 820. ((float_of_int longest *. 8.5) +. 48.)) and bh = Float.min (float_of_int a.ph -. 60. -. shift) ((float_of_int lines *. 17.) +. 56.) in
           let iw = bw -. 24. and ih = bh -. 48. in
           (* the window: as many lines as fit at 17 pixels, from the scroll *)
           let cap = max 1 (int_of_float (ih /. 17.)) in

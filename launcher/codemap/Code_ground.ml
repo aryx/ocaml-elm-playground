@@ -127,6 +127,13 @@ let paint (img : Rgba_image.t) (f : Code_file.t) (g : t) ~(bg : int * int * int)
       let cw = cell_w g l in
       let ch_h = if glyphs then h else Float.max 1. (h -. 1.) in
       ignore p;
+      (* claude: as many characters as the column's width holds; a line
+       * going on past them ends in a » (the author) *)
+      let fits = max 1 (min cols (int_of_float (w /. cw))) in
+      let cut =
+        let rec any c = c < cols && (Bytes.unsafe_get f.grid ((l * cols) + c) <> '\000' || any (c + 1)) in
+        any fits
+      in
       let px0 = int_of_float x0 and px1 = int_of_float (x0 +. w) in
       let py0 = int_of_float y0 and py1 = int_of_float (y0 +. ch_h) in
       let ss = if glyphs && aa then 2 else 1 in
@@ -138,16 +145,18 @@ let paint (img : Rgba_image.t) (f : Code_file.t) (g : t) ~(bg : int * int * int)
               let fx = (float_of_int x +. ((float_of_int kx +. 0.5) /. float_of_int ss) -. x0) /. cw in
               let fy = (float_of_int y +. ((float_of_int ky +. 0.5) /. float_of_int ss) -. y0) /. ch_h in
               let c = int_of_float fx in
-              if c >= 0 && c < cols && fy >= 0. && fy < 1. then begin
+              if c >= 0 && c < fits && fy >= 0. && fy < 1. then begin
                 let cell = (l * cols) + c in
-                let code = Char.code (Bytes.unsafe_get f.grid cell) in
+                let marked = cut && c = fits - 1 in
+                (* the », code page 437's 175, in the comments' colour *)
+                let code = if marked then 1 + Highlight_code.index Comment else Char.code (Bytes.unsafe_get f.grid cell) in
                 if code <> 0 then begin
                   let hit =
                     (not glyphs)
                     ||
                     let gx = min (Vga_font.width - 1) (int_of_float ((fx -. float_of_int c) *. float_of_int Vga_font.width)) in
                     let gy = min (Vga_font.height - 1) (int_of_float (fy *. float_of_int Vga_font.height)) in
-                    Vga_font.bit (Char.code (Bytes.unsafe_get f.chars cell)) gx gy
+                    Vga_font.bit (if marked then 175 else Char.code (Bytes.unsafe_get f.chars cell)) gx gy
                   in
                   if hit then (incr hits; ink := code)
                 end

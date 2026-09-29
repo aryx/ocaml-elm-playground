@@ -10,7 +10,7 @@
   // claude: the directory's hub (15 of its files name it) first, then
   // the program, the map and its styles, what they stand on
   files: {
-    'Code_file.mli': { digest: '9c2641d90d99',
+    'Code_file.mli': { digest: '178d85735ba9',
       summary: 'A source file lexed and coloured once: its lines of spans, its SeeSoft grid, its definitions and names.',
       capitals: [
         { at: 'type:t', say: 'a file as the map draws it: what every view reads' },
@@ -23,7 +23,7 @@
         { at: 'def:trick', say: '"the trick of this game", marked', weight: 1 },
       ],
     },
-    'Code_file.ml': { digest: 'd43d92f5d276',
+    'Code_file.ml': { digest: 'd540682f9965',
       summary: "OCaml's or C's highlighter run (plain text if it fails), its spans laid into the grid a byte a cell, the tricks marked.",
     },
     'Codemap.mli': { digest: 'd16de88ffb6e',
@@ -51,7 +51,7 @@
         { at: 'def:relayout', say: 'the treemap laid out once, in units', weight: 2 },
       ],
     },
-    'Code_map_base.ml': { digest: '6ba0b4cdb6e9',
+    'Code_map_base.ml': { digest: 'c790db76a7b0',
       summary: "The camera's arithmetic, the parts' colours, a file's code painted as SeeSoft's pixels or as letters.",
       important: [
         { at: 'def:paint_code', say: 'a file in miniature, or readable up close', weight: 3 },
@@ -85,7 +85,7 @@
         { at: 'def:labels', say: "v2's names, notes, cards and the X-ray" },
       ],
     },
-    'Map_v2.ml': { digest: '42b6e7aa0fec',
+    'Map_v2.ml': { digest: '83baec42b251',
       summary: "Each level painted and named: the configs' cards and notes, peeks, the skeletons and the anatomy's plates.",
       important: [
         { at: 'def:paint_ground', say: 'a file as the whole map, lines as high as they matter', weight: 3 },
@@ -105,7 +105,7 @@
     'Map_streets.mli': { digest: '3d0e07ab498b',
       summary: 'The map as a street map: each zoom its own question, the parts, the shape, the colours, the letters.',
     },
-    'Map_streets.ml': { digest: 'f66f2a55977f',
+    'Map_streets.ml': { digest: 'aa12de9d0a9e',
       summary: 'The zoom levels crossfaded, the files coloured by role, labels placed once by their uses (Code_labels).',
       important: [
         { at: 'def:level', say: "a zoom by a line's height on screen", weight: 2 },
@@ -238,7 +238,7 @@
         { at: 'def:weights', say: 'blank, comment, statement, header, important', weight: 2 },
       ],
     },
-    'Code_ground.ml': { digest: '3707c5abaac3',
+    'Code_ground.ml': { digest: '74add58a85eb',
       summary: 'The heights weighed, the columns chosen to keep 80 characters wide, each line painted at its height.',
     },
     'Code_street.mli': { digest: 'e019123e4147',

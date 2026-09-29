@@ -100,7 +100,7 @@ let hints ~(alpha : float) (img : Rgba_image.t) (c : camera) (r : Treemap.rect) 
       let k = colx.(xi) and ch = chx.(xi) in
       (* a column's last characters left blank: the gap between columns *)
       let hits = ref 0 in
-      if ch < float_of_int (Code_file.cols - 3) then
+      if ch < float_of_int (Code_file.shown - 3) then
         for s = 0 to samples - 1 do
           let lc = l0 + (s * max 1 ((l1 - l0 + 1) / samples)) in
           let line = (k * g.lpc) + lc in

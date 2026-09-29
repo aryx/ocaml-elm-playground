@@ -31,6 +31,9 @@ val trick : string
    others blank *)
 val cols : int
 
+(* claude: the characters a classic map's column draws of a line *)
+val shown : int
+
 (* [make path src]: [src] highlighted by its language's highlighter,
    chosen by [path]'s extension (OCaml's for .ml and .mli; another
    language's text is shown uncoloured) *)

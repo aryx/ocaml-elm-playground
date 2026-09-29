@@ -23,8 +23,17 @@ let jumps = [ "jmp"; "ljmp"; "call"; "lcall"; "ret"; "lret"; "iret"; "int"; "loo
 
 type tok = { line : int; col : int; text : string; mutable cat : category }
 
+let contains_s (s : string) (sub : string) : bool =
+  let n = String.length s and m = String.length sub in
+  let rec go i = i + m <= n && (String.sub s i m = sub || go (i + 1)) in
+  go 0
+
 let analyze (src : string) : analysis =
   let lines = String.split_on_char '\n' src in
+  (* claude: ARM's assembly comments with @ and writes immediates with #
+   * (mov r0, #0x40); x86's gas comments with # (the ~/ix pass: ARM lines
+   * cut at their immediates) *)
+  let arm = List.exists (fun l -> let t = String.trim l in String.length t > 0 && t.[0] = '@') lines || List.exists (fun l -> contains_s l " @ " || contains_s l "\t@ ") lines in
   let toks = ref [] in
   let add line col text cat = toks := { line; col; text; cat } :: !toks in
   let in_comment = ref false in
@@ -45,7 +54,7 @@ let analyze (src : string) : analysis =
         end
         else if c = '/' && !i + 1 < n && l.[!i + 1] = '*' then in_comment := true
         (* claude: # a comment anywhere (gas's), not only first on a line *)
-        else if c = '|' || c = '!' || c = '#' || (c = '/' && !i + 1 < n && l.[!i + 1] = '/') then begin
+        else if c = '|' || c = '!' || (c = '#' && ((not arm) || !first)) || (arm && c = '@') || (c = '/' && !i + 1 < n && l.[!i + 1] = '/') then begin
           add y !i (String.sub l !i (n - !i)) Comment;
           i := n
         end

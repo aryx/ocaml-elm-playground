@@ -145,7 +145,7 @@ let geometry_of (r : Treemap.rect) (nlines : int) : geometry =
   let make k =
     let lpc = (n + k - 1) / k in
     let colw = r.w /. float_of_int k in
-    { k; lpc; colw; cell_w = colw /. float_of_int Code_file.cols; cell_h = r.h /. float_of_int lpc }
+    { k; lpc; colw; cell_w = colw /. float_of_int Code_file.shown; cell_h = r.h /. float_of_int lpc }
   in
   (* the k whose cells are closest to 2 high for 1 wide *)
   let score g = Float.abs (Float.log (g.cell_h /. g.cell_w /. 2.)) in
@@ -423,7 +423,7 @@ let paint_code ~(aa : bool) (img : Rgba_image.t) (c : camera) (r : Treemap.rect)
   let cell_of xi lc =
     let col = Array.unsafe_get colx xi and ch = Array.unsafe_get chx xi in
     let line = (col * lpc) + lc in
-    if line >= 0 && line < n && lc >= 0 && lc < lpc && ch < cols && ch >= 0 then (line * cols) + ch else -1
+    if line >= 0 && line < n && lc >= 0 && lc < lpc && ch < Code_file.shown && ch >= 0 then (line * cols) + ch else -1
   in
   for y = y0 to y1 - 1 do
     for k = 0 to ss - 1 do
