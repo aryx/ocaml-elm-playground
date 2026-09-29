@@ -299,8 +299,31 @@ let area_of (screen : Playground.screen) = (screen.left +. 20., screen.top -. 92
  *   focus=<path>   a folder, or a file (flown to)
  *   line=<n>       with a file, its definition there peeked at (from 1)
  *   def=<name>     a top-level definition so named, the first found
- *                  (under focus if given), peeked at *)
+ *                  (under focus if given), peeked at
+ *   code=<Program> a program's own code, as tinybox's menu shows it
+ *                  (tinybox.html?code=), w widening it *)
 let opened_at (c : t) (flags : (string * string) list) : t =
+  (* claude: code=<Program>, its own code (as tinybox.html?code=: its
+   * file and the kits' and languages' modules it names, Code_deps.own),
+   * w widening it; the configs kept (the author: the README's links to
+   * a program's "419 lines in 3 files") *)
+  let c =
+    match List.assoc_opt "code" flags with
+    | None -> c
+    | Some name -> (
+        let file = name ^ ".ml" in
+        (* the shallowest so named: apps/devtools/TinyTurboPascal.ml, not
+         * its terminal twin in tty/ *)
+        let depth p = List.length (String.split_on_char '/' p) in
+        match List.sort (fun (a, _) (b, _) -> compare (depth a) (depth b)) (List.filter (fun (p, _) -> Filename.basename p = file) c.sources) with
+        | [] -> c
+        | (path, _) :: _ ->
+            let own = Code_deps.own path in
+            let colours = match c.guide with Some g -> Code_guide.colours g | None -> [] in
+            let map = map_of ~style:None ~guide:c.guide ~roots:[] ~colours ~own ~area:c.area ~sources:c.sources ~program:name ~path ~scope:Own in
+            let map = if Code_map.style_name () = "v2" then Code_map.focus_on map path else map in
+            { c with program = name; path; scope = Own; own; map })
+  in
   let focus = List.assoc_opt "focus" flags in
   let is_file p = List.exists (fun (e : Code_map.entry) -> e.path = p) (Code_map.entries c.map) in
   let c = match focus with Some p when not (is_file p) -> { c with map = Code_map.focus_on c.map p } | _ -> c in

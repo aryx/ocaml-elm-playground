@@ -74,6 +74,7 @@ turn red and its users green.
 ```
 tinybox codemap <dir>            the map of a directory (tinybox codemap ~/ix)
 tinybox codemap . focus=<path>   opened on a folder or file
+tinybox codemap . code=<Program> opened on a program's own code (w widens)
 tinybox codemap . def=<name>     opened on a definition, peeked at
                                  (focus=<file> line=<n>: the one there)
 tinybox                          the menu: s (or a click on the code under
@@ -123,6 +124,7 @@ codemap.html?focus=version_control                a folder
 codemap.html?focus=version_control/Commands.ml    a file, flown to
 codemap.html?focus=kernel/proc.c&line=120         the definition at that line, peeked at
 codemap.html?def=diff                             a definition by name (under focus= if given)
+codemap.html?code=TinyMario                       a program's own code, as tinybox's menu shows it (w widens)
 codemap.html?data=<url>                           another bundle
 ```
 

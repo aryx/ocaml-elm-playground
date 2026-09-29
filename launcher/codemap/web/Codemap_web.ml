@@ -24,6 +24,7 @@
  *   codemap.html?focus=version_control/Commands.ml  a file, flown to
  *   codemap.html?focus=kernel/proc.c&line=120       its definition there
  *   codemap.html?def=diff                           a definition by name
+ *   codemap.html?code=TinyMario                     a program's own code
  *   codemap.html?data=other.txt                     another bundle
  *
  * The page may name its bundle (data_url): ix's site keeps only its page,
