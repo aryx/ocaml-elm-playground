@@ -70,6 +70,9 @@ val layer_groups : Code_map_base.t -> (string * Code_map_base.layer list) list
    its hit, colour and meaning; a click on it peeks at its definition *)
 val hovered_match : Code_map_base.t -> Code_map_base.camera -> (Code_search.hit * Playground.color * string option) option
 
+(* claude: the line of an anchor ("def:march") in a file of the map *)
+val anchor_line : Code_map_base.t -> string -> string -> int option
+
 (* claude: the layers' colours, one each, in turn *)
 val layer_colours : (int * int * int) list
 

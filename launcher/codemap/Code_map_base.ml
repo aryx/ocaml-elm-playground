@@ -77,6 +77,7 @@ type t = {
   mutable rank : Code_rank.t option; (* claude: its definitions' uses, once (rank_of) *)
   mutable search : search option; (* claude: the search box (/, Map_v2), while open *)
   mutable search_all : Code_search.hit array option; (* claude: what a search looks among, gathered once *)
+  mutable tour_on : (Code_guide.tour * int) option; (* claude: a config's tour under way, its stop (n, p) *)
   mutable layers : layer list; (* claude: searches kept, each lit in its colour, all at once (ctrl+Enter in the search) *)
   mutable layer_group : int; (* claude: the layers lit: -1 none, 0 those kept, k the configs' k-th (l cycling) *)
   mutable guide_layers : (string * layer list) list option; (* claude: the configs' layers as the map's, their names, made once *)
@@ -177,7 +178,7 @@ let make ?(top_kept = false) ?(numbered = false) ?(colours = []) ?(roots = []) ?
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; layers = []; layer_group = 0; guide_layers = None; flight = None; pointer = None;
+    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; tour_on = None; layers = []; layer_group = 0; guide_layers = None; flight = None; pointer = None;
     focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept }
 
 (* claude: the map's files for Code_names and Code_rank *)

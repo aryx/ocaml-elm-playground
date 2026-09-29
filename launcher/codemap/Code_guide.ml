@@ -208,6 +208,24 @@ let file_note (t : t) (path : string) : file_note option =
 
 let colours (t : t) = List.concat_map (fun d -> d.colors) t
 let layers (t : t) : layer list = List.concat_map (fun d -> d.layers) t
+
+(* claude: a path of a config from the root, a directory's final slash
+ * dropped *)
+let rooted (dir : string) (p : string) : string =
+  let p = under dir p in
+  if String.length p > 1 && p.[String.length p - 1] = '/' then String.sub p 0 (String.length p - 1) else p
+
+let views (t : t) : view list =
+  List.concat_map (fun d -> List.map (fun v -> { v with files = List.map (rooted d.dir) v.files; of_ = Option.map (rooted d.dir) v.of_ }) d.views) t
+
+let tours (t : t) : tour list =
+  List.concat_map
+    (fun d ->
+      List.map
+        (fun tr ->
+          { tr with stops = List.map (fun (i : item) -> match split i.at with Some p, anchor -> { i with at = rooted d.dir p ^ ":" ^ anchor } | None, _ -> i) tr.stops })
+        d.tours)
+    t
 let skeletons_of (t : t) (path : string) : skeleton list =
   List.concat_map (fun d -> List.filter (fun s -> List.exists (fun b -> b.bpath = path) s.bones) d.skeletons) t
 

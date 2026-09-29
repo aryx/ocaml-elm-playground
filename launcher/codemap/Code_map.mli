@@ -111,5 +111,6 @@ val cycle_style : unit -> unit
 val choose_style : string -> unit
 val style_name : unit -> string
 
-(* claude: the search box open: the keys are its (Codemap's n, p, w too) *)
+(* claude: the search box open, or a config's tour under way: the keys
+   are theirs (Codemap's n, p, w too) *)
 val searching : t -> bool

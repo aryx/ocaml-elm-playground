@@ -1297,7 +1297,9 @@ let search_all (t : t) : Code_search.hit array =
               (Lazy.force e.file).defs)
           t.entries
       in
-      let a = Code_search.candidates ~dirs ~files ~defs in
+      let views = List.map (fun (v : Code_guide.view) -> v.vname) (Code_guide.views t.guide) in
+      let tours = List.map (fun (tr : Code_guide.tour) -> tr.name) (Code_guide.tours t.guide) in
+      let a = Code_search.candidates ~views ~tours ~dirs ~files ~defs () in
       t.search_all <- Some a;
       a
 
@@ -1353,7 +1355,8 @@ let search_named (t : t) : string list =
  * only definitions, their files *)
 let search_set (t : t) : string list =
   let hits = search_hits t in
-  let units = List.filter_map (fun (h : Code_search.hit) -> match h.kind with Dir | File -> Some h.path | Def | Text -> None) hits in
+  let units = List.filter_map (fun (h : Code_search.hit) -> match h.kind with Dir | File -> Some h.path | Def | Text | View | Tour -> None) hits in
+  let hits = List.filter (fun (h : Code_search.hit) -> h.kind <> View && h.kind <> Tour) hits in
   let paths = if units <> [] then units else List.map (fun (h : Code_search.hit) -> h.path) hits in
   let paths = List.sort_uniq compare paths in
   List.filter (fun p -> not (List.exists (fun d -> d <> p && Code_search.starts p (d ^ "/")) paths)) paths
@@ -1387,7 +1390,8 @@ let search_lit ?(glow = rgb 255 225 90) ?(dot = 3.) ?(chosen : Code_search.hit o
                    let w = Float.max 30. (xe -. x) in
                    [ rectangle glow (w +. 8.) 12. |> move (sx a (x +. (w /. 2.))) (sy a y) |> fade (if sel then 0.55 else 0.3) ]
                | Some (x, y, _) -> [ circle glow (if sel then 6. else dot) |> move (sx a x) (sy a y) |> fade (if sel then 1. else 0.85) ]
-               | None -> [])))
+               | None -> [])
+           | View | Tour -> []))
 
 (* the box, under the title: the query typed, where it looks, the best
  * hits, the chosen one lit, and what the keys do *)
@@ -1413,10 +1417,18 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
       (List.mapi
          (fun i (hit : Code_search.hit) ->
            let y = y0 +. 44. +. (float_of_int i *. row) +. (row /. 2.) in
-           let kind = match hit.kind with Dir -> "dir" | File -> "file" | Def -> "def" | Text -> "line" in
+           let kind = match hit.kind with Dir -> "dir" | File -> "file" | Def -> "def" | Text -> "line" | View -> "view" | Tour -> "tour" in
            let cut n str = if String.length str > n then String.sub str 0 n ^ "..." else str in
            let name = match hit.kind with Dir -> hit.name ^ "/" | Text -> Printf.sprintf "%s:%d" (Code_search.basename hit.path) (hit.line + 1) | _ -> hit.name in
-           let where = match hit.kind with Def -> Printf.sprintf "%s:%d" hit.path (hit.line + 1) | Text -> cut 70 hit.name | _ -> hit.path in
+           let where =
+             match hit.kind with
+             | Def -> Printf.sprintf "%s:%d" hit.path (hit.line + 1)
+             | Text -> cut 70 hit.name
+             | View -> ( match List.nth_opt (Code_guide.views t.guide) hit.line with Some v -> (match v.of_ with Some o -> o ^ " and " ^ Option.value v.with_ ~default:"users" | None -> String.concat ", " v.files) | None -> "")
+             | Tour -> ( match List.nth_opt (Code_guide.tours t.guide) hit.line with Some tr -> Printf.sprintf "%d stops, n next, p back" (List.length tr.stops) | None -> "")
+             | Dir | File -> hit.path
+           in
+           let where = cut 80 where in
            let col = lighter (archi t.colours hit.path) in
            (if i = s.sel then [ rectangle (rgb 60 56 110) (w -. 12.) row |> move (sx a (x0 +. (w /. 2.))) (sy a y) ] else [])
            @ [ left 12. dim (x0 +. 16.) y kind; left 16. (if i = s.sel then yellow else col) (x0 +. 56.) y name; left 13. dim (x0 +. 70. +. text_width 16. name) y where ])
@@ -1551,6 +1563,27 @@ let match_preview (t : t) (c : camera) : shape list =
             code_card ~lit:(h.line, col) t c h.path (h.line - 3) (h.line + 3) title mx my
   | _ -> []
 
+(* claude: a config's tour under way: its name, the stop, its words,
+ * above the map's foot *)
+let tour_banner (t : t) (c : camera) : shape list =
+  match t.tour_on with
+  | None -> []
+  | Some (tr, k) ->
+      let a = c.a in
+      let say = match List.nth_opt tr.stops k with Some (i : Code_guide.item) -> Option.value i.say ~default:i.at | None -> "" in
+      let head = Printf.sprintf "%s   stop %d of %d   (n next, p back, Esc the end)" tr.name (k + 1) (List.length tr.stops) in
+      let lines = wrap 90 say in
+      let w = Float.min (float_of_int a.pw -. 40.) (40. +. List.fold_left (fun m l -> Float.max m (text_width 18. l)) (text_width 14. head) lines) in
+      let h = 34. +. (24. *. float_of_int (List.length lines)) in
+      let x0 = (float_of_int a.pw -. w) /. 2. and y0 = float_of_int a.ph -. h -. 12. in
+      [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.95 ]
+      @ frame a (rgb 90 210 120) x0 y0 (x0 +. w) (y0 +. h) 2.
+      @ [ label a (rgb 90 210 120) 14. (x0 +. 14. +. (text_width 14. head /. 2.)) (y0 +. 14.) head ]
+      @ List.mapi (fun i l -> label a ink 18. (x0 +. 14. +. (text_width 18. l /. 2.)) (y0 +. 36. +. (24. *. float_of_int i)) l) lines
+
+let anchor_line (t : t) (path : string) (anchor : string) : int option =
+  match entry_of t path with Some e -> capital_line e anchor | None -> None
+
 let search_shapes (t : t) (c : camera) : shape list =
   match t.search with
   | None -> []
@@ -1573,6 +1606,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ layers_shapes t c
   @ search_shapes t c
   @ match_preview t c
+  @ tour_banner t c
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,
  * not the treemap's): what Enter opens, what the status line says *)

@@ -129,6 +129,12 @@ val colours : t -> (string * rgb) list
 (* claude: every config's layers *)
 val layers : t -> layer list
 
+(* claude: every config's views, their paths from the root (a
+   directory's without its final slash); every config's tours, their
+   stops' paths from the root ("games/shmup/TinyInvaders.ml:def:march") *)
+val views : t -> view list
+val tours : t -> tour list
+
 (* the capitals: a file's path, and the item *)
 val capitals : t -> (string * item) list
 

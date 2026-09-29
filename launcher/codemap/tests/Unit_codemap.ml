@@ -359,6 +359,7 @@ let tests =
             Code_search.candidates ~dirs:[ "games"; "games/arm"; "libs"; "libs/arm"; "libs/armour" ]
               ~files:[ "games/arm/Step.ml"; "libs/arm/Tiny_invaders.ml" ]
               ~defs:[ ("games/arm/Step.ml", 3, "step"); ("games/arm/Step.ml", 9, "step_ball"); ("libs/arm/Tiny_invaders.ml", 1, "make_step") ]
+              ()
           in
           let found q = List.map (fun (h : Code_search.hit) -> h.path ^ (if h.kind = Def then ":" ^ h.name else "")) (Code_search.matches all q) in
           Alcotest.(check (list string)) "step: the file named so, then its definitions, a word's start last"
@@ -378,4 +379,14 @@ let tests =
           | [ { lname = "Capabilities"; rules = [ { text = "Cap.fork"; colour; rsay = Some "forks" } ]; _ } ] ->
               Alcotest.(check (triple int int int)) "its colour, named" (0xe0, 0x50, 0x50) colour
           | _ -> Alcotest.fail "the layer");
+      (* claude: a config's views and tours, their paths from the root *)
+      Testo.create "views and tours, from the root" (fun () ->
+          let config =
+            "{ views: [{ name: 'kit', files: ['A.ml', '../../kits/k/'] }], tours: [{ name: 't', stops: [{ at: 'A.ml:def:f', say: 'f' }, { at: '../../kits/k/K.ml:def:g' }] }] }"
+          in
+          let g, errs = Code_guide.load ~read:(fun p -> if p = "games/g/.codemapconfig" then Some config else None) [ "games/g/.codemapconfig" ] in
+          Alcotest.(check (list string)) "no mistake" [] errs;
+          Alcotest.(check (list (list string))) "the view's files" [ [ "games/g/A.ml"; "kits/k" ] ] (List.map (fun (v : Code_guide.view) -> v.files) (Code_guide.views g));
+          Alcotest.(check (list (list string))) "the tour's stops" [ [ "games/g/A.ml:def:f"; "kits/k/K.ml:def:g" ] ]
+            (List.map (fun (tr : Code_guide.tour) -> List.map (fun (i : Code_guide.item) -> i.at) tr.stops) (Code_guide.tours g)));
     ]

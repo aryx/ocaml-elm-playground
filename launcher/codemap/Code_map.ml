@@ -379,6 +379,39 @@ let search_go (t : t) (h : Code_search.hit) : camera option =
          open_peek t file_of (h.path, h.line));
       Some (fit t.target.a t.placed.(i).rect)
 
+(* claude: a config's tour (Code_guide.tours): each stop a file and an
+ * anchor, flown to and its definition peeked at, the stop's words in a
+ * banner (Map_v2.tour_banner); n the next, p the one before *)
+let tour_go (t : t) (tr : Code_guide.tour) (k : int) : camera option =
+  match List.nth_opt tr.stops k with
+  | None -> None
+  | Some i ->
+      t.tour_on <- Some (tr, k);
+      let hit : Code_search.hit =
+        match Code_guide.split i.at with
+        | Some path, anchor -> (
+            match Map_v2.anchor_line t path anchor with Some line -> { kind = Def; path; line; name = anchor } | None -> { kind = File; path; line = 0; name = path })
+        | None, path -> { kind = File; path; line = 0; name = path }
+      in
+      search_go t hit
+
+(* claude: a config's view: its files, or a file and those it uses or
+ * that use it (Code_rank.links) *)
+let view_set (t : t) (v : Code_guide.view) : string list =
+  match v.of_ with
+  | None -> v.files
+  | Some f ->
+      let links = Code_rank.links (rank_of t) in
+      let others =
+        List.filter_map
+          (fun (a, b, _) ->
+            match v.with_ with
+            | Some "uses" -> if a = f then Some b else None
+            | _ -> if b = f then Some a else None)
+          links
+      in
+      f :: List.sort_uniq compare others @ v.files
+
 let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
   let a = t.target.a in
@@ -605,12 +638,27 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
  * file flown to, a definition's file and its peek; name// the
  * directories so named, together (Select). The map goes on under it,
  * the mouse too, but not the keys. *)
-let searching (t : t) : bool = t.search <> None
+let searching (t : t) : bool = t.search <> None || t.tour_on <> None
 
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   match t.search with
   | None when pressed "/" && t.style.units ->
       t.search <- Some { query = ""; sel = 0; here = false; hits = (("", false), []) };
+      update_map computer ~pressed:(fun _ -> false) ~arrow:None t
+  (* claude: a tour under way: n, p, Escape are its *)
+  | None when t.tour_on <> None && (pressed "n" || pressed "p" || pressed "Escape") ->
+      let tr, k = Option.get t.tour_on in
+      let t =
+        if pressed "Escape" then begin
+          t.tour_on <- None;
+          t.peek <- None;
+          t.peek_stack <- [];
+          t
+        end
+        else
+          let k = if pressed "n" then min (List.length tr.stops - 1) (k + 1) else max 0 (k - 1) in
+          match tour_go t tr k with Some c -> { t with target = c } | None -> t
+      in
       update_map computer ~pressed:(fun _ -> false) ~arrow:None t
   | None -> update_map computer ~pressed ~arrow t
   | Some s ->
@@ -649,6 +697,15 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
               (t, Select (Printf.sprintf "the %d directories named %s" (List.length dirs) name, dirs))
           | _ -> (
               match List.nth_opt hits s.sel with
+              (* claude: a view: its files together; a tour: its first stop *)
+              | Some { kind = View; line; _ } -> (
+                  t.search <- None;
+                  match List.nth_opt (Code_guide.views t.guide) line with Some v -> (t, Select (v.vname, view_set t v)) | None -> (t, Stay))
+              | Some { kind = Tour; line; _ } -> (
+                  t.search <- None;
+                  match List.nth_opt (Code_guide.tours t.guide) line with
+                  | Some tr -> ( match tour_go t tr 0 with Some c -> ({ t with target = c }, Stay) | None -> (t, Stay))
+                  | None -> (t, Stay))
               | Some h ->
                   t.search <- None;
                   (match search_go t h with Some c -> ({ t with target = c }, Stay) | None -> (t, Stay))

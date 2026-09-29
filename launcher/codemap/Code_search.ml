@@ -10,14 +10,16 @@
 
 (* See Code_search.mli *)
 
-type kind = Dir | File | Def | Text
+type kind = Dir | File | Def | Text | View | Tour
 type hit = { kind : kind; path : string; line : int; name : string }
 
 let basename (p : string) : string = match String.rindex_opt p '/' with Some i -> String.sub p (i + 1) (String.length p - i - 1) | None -> p
 
-let candidates ~(dirs : string list) ~(files : string list) ~(defs : (string * int * string) list) : hit array =
+let candidates ?(views = []) ?(tours = []) ~(dirs : string list) ~(files : string list) ~(defs : (string * int * string) list) () : hit array =
   Array.of_list
-    (List.map (fun p -> { kind = Dir; path = p; line = 0; name = basename p }) dirs
+    (List.mapi (fun i n -> { kind = View; path = n; line = i; name = n }) views
+    @ List.mapi (fun i n -> { kind = Tour; path = n; line = i; name = n }) tours
+    @ List.map (fun p -> { kind = Dir; path = p; line = 0; name = basename p }) dirs
     @ List.map (fun p -> { kind = File; path = p; line = 0; name = basename p }) files
     @ List.map (fun (p, l, n) -> { kind = Def; path = p; line = l; name = n }) defs)
 
@@ -42,7 +44,7 @@ let word_start (name : string) (p : string) : bool =
   let rec go i =
     i < n
     && ((i > 0
-        && (match name.[i - 1] with '_' | '.' | '-' -> true | c -> (c >= 'a' && c <= 'z') && name.[i] >= 'A' && name.[i] <= 'Z')
+        && (match name.[i - 1] with '_' | '.' | '-' | ' ' -> true | c -> (c >= 'a' && c <= 'z') && name.[i] >= 'A' && name.[i] <= 'Z')
         && starts (String.sub low i (n - i)) p)
        || go (i + 1))
   in
@@ -52,7 +54,7 @@ let word_start (name : string) (p : string) : bool =
  * definition's directory; and its file itself for a definition *)
 let under (h : hit) : string =
   let dir p = match String.rindex_opt p '/' with Some i -> String.sub p 0 i | None -> "" in
-  String.lowercase_ascii (match h.kind with Dir -> dir h.path | File -> dir h.path | Def | Text -> h.path)
+  String.lowercase_ascii (match h.kind with Dir -> dir h.path | File -> dir h.path | Def | Text -> h.path | View | Tour -> "")
 
 (* the query's path part and name part: "shmup/step" -> "shmup", "step" *)
 let split (text : string) : string * string =
@@ -68,7 +70,7 @@ let score (h : hit) (name : string) : int option =
   else None
 
 let depth (p : string) = List.length (String.split_on_char '/' p)
-let rank_kind = function Dir -> 0 | File -> 1 | Def -> 2 | Text -> 3
+let rank_kind = function View | Tour -> 0 | Dir -> 1 | File -> 2 | Def -> 3 | Text -> 4
 
 let matches (all : hit array) (q : string) : hit list =
   let text, slashes = parse (String.lowercase_ascii (String.trim q)) in

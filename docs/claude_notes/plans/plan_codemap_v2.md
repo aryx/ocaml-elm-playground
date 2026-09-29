@@ -497,6 +497,16 @@ together with a skeleton.
 Also: a click in a top-level comment (a game's header) peeks at all of
 it, scrollable.
 
+## Views and tours from the configs: done (2026-09-29)
+
+A config's views and tours are found by the search, by their names
+(listed first). A view opens as a selection (the search's shift+Enter
+map): its files and directories, or `of: path, with: 'users'` (or
+`'uses'`) a file and the files using it (or it uses), from
+`Code_rank.links`. A tour starts at its first stop: each stop flown to,
+its anchor's definition peeked at, the stop's words in a green banner
+at the foot; n the next stop, p the one before, Escape its end.
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in

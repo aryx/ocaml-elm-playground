@@ -20,7 +20,13 @@
    a capital (smart case, Emacs's), at least two characters; before the
    layers of plan_codemap_v2.md, a pattern to try. *)
 
-type kind = Dir | File | Def | Text
+type kind =
+  | Dir
+  | File
+  | Def
+  | Text
+  | View (* claude: a config's view, by its name; its line its place among them *)
+  | Tour (* claude: a config's tour, the same *)
 
 (* a thing found: a directory's path (no final slash), a file's, a
    definition's file and line (from 0); its name, what is matched (a
@@ -29,7 +35,7 @@ type hit = { kind : kind; path : string; line : int; name : string }
 
 (* the things to search: the directories and files by path, the
    definitions as file, line, name *)
-val candidates : dirs:string list -> files:string list -> defs:(string * int * string) list -> hit array
+val candidates : ?views:string list -> ?tours:string list -> dirs:string list -> files:string list -> defs:(string * int * string) list -> unit -> hit array
 
 (* the query without its final slashes, and how many there were *)
 val parse : string -> string * int
