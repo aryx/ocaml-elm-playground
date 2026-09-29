@@ -507,6 +507,22 @@ map): its files and directories, or `of: path, with: 'users'` (or
 its anchor's definition peeked at, the stop's words in a green banner
 at the foot; n the next stop, p the one before, Escape its end.
 
+## Every directory described, and what followed (2026-09-29): done
+
+- 182 configs, one per directory with sources (tests described in
+  their parents' `dirs:`), written in parallel from each directory's
+  facts; `-check`: 0 mistakes, 0 warnings. Lessons in the guidelines'
+  "Across configs".
+- References: `@Cap.fork` in the search, `ref:` in a layer's rule, the
+  lexer's references (no comment's or string's words); the root's
+  Capabilities layer uses them.
+- The search: one hit for a definition and its .mli, the near first.
+- In the X-ray, a bone hovered shows its card (an entity's first lines,
+  a unit's summary), a click peeks at it.
+- With everything described the earth was a rash of dots: the deeper
+  skeletons a level down only; the capitals two levels down, one a
+  file, fourteen a region, the biggest files'.
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in
