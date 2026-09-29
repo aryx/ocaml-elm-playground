@@ -259,6 +259,40 @@ let capitals (t : t) (c : camera) : name list =
   let a = c.a in
   let where = Hashtbl.create 64 in
   Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, e) -> Hashtbl.replace where e.path (i, e) | Dir _ -> ()) t.placed;
+  (* claude: from a unit, the capitals of files at most two directories
+   * below it: every directory described, all of them at once were a
+   * rash of dots; flying in shows the deeper ones *)
+  let top = t.placed.(t.focus).path in
+  let depth p = List.length (String.split_on_char '/' p) in
+  let near path =
+    let d = Filename.dirname path in
+    let d = if d = "." then "" else d in
+    (top = "" && depth d <= 2) || (top <> "" && (d = top || Code_search.starts d (top ^ "/")) && depth d - depth top <= 2)
+  in
+  (* and a file's first only (the config's main one), fourteen a region
+   * at most (the unit's immediate subdirectories), the biggest files' *)
+  let region p =
+    let rest = if top = "" then p else String.sub p (String.length top + 1) (max 0 (String.length p - String.length top - 1)) in
+    match String.index_opt rest '/' with Some k -> String.sub rest 0 k | None -> rest
+  in
+  let seen_file = Hashtbl.create 64 and per_region = Hashtbl.create 16 in
+  let chosen =
+    List.filter
+      (fun (path, _) ->
+        near path
+        && (not (Hashtbl.mem seen_file path))
+        &&
+        let r = region path in
+        let n = Option.value (Hashtbl.find_opt per_region r) ~default:0 in
+        Hashtbl.replace seen_file path ();
+        if n >= 14 then false else (Hashtbl.replace per_region r (n + 1); true))
+      (* the biggest files first: a program before its helpers *)
+      (List.stable_sort
+         (fun (p, _) (q, _) ->
+           let lines p = match Hashtbl.find_opt where p with Some (_, (e : entry)) -> e.nlines | None -> 0 in
+           compare (lines q) (lines p))
+         (Code_guide.capitals t.guide))
+  in
   List.filter_map
     (fun (path, (it : Code_guide.item)) ->
       match Hashtbl.find_opt where path with
@@ -270,6 +304,8 @@ let capitals (t : t) (c : camera) : name list =
                   let x, y = line_pos t.placed.(i).rect g line in
                   let px = to_px c x and py = to_py c (y +. (g.cell_h /. 2.)) in
                   let label = snd (Code_guide.split it.at) |> fun s -> match String.index_opt s ':' with Some k -> String.sub s (k + 1) (String.length s - k - 1) | None -> s in
+                  (* claude: a name too short to say anything from afar (t), its module's with it *)
+                  let label = if String.length label <= 2 then String.capitalize_ascii (Filename.remove_extension (Filename.basename path)) ^ "." ^ label else label in
                   let size = 15. in
                   let tw = 0.5 *. size *. float_of_int (String.length label) in
                   let x0 = px -. 6. and x1 = px +. 10. +. tw +. 4. in
@@ -282,7 +318,7 @@ let capitals (t : t) (c : camera) : name list =
               | None -> None)
           | _ -> None)
       | _ -> None)
-    (Code_guide.capitals t.guide)
+    chosen
 
 (* the names over the map, the directories' first: a directory's centred
  * on it, as large as it fits (a region's up to 64, deeper ones smaller),
@@ -791,7 +827,12 @@ let blood (a : area) (clock : float) (pts : (float * float) list) : shape list =
         [ circle (rgb 40 0 10) 6. |> move (sx a x) (sy a y); circle (rgb r g b) 4.5 |> move (sx a x) (sy a y) ])
     |> List.concat
 
+(* claude: the bones drawn last, their dot's place and their role's
+ * width, for a hover (bone_card) and a click (Code_map) *)
+let drawn_bones : (Code_guide.bone * float * float * float) list ref = ref []
+
 let skeleton_shapes (t : t) (c : camera) : shape list =
+  drawn_bones := [];
   let a = c.a in
   let ground = at_ground t c in
   let all = List.concat_map (fun (d : Code_guide.dir_note) -> d.skeletons) (Code_guide.dirs t.guide) in
@@ -834,7 +875,13 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let shown = match List.nth_opt candidates t.xray_n with Some s -> [ s ] | None -> [] in
   let deeper =
     if ground <> None then []
-    else List.filter (fun (s : Code_guide.skeleton) -> (one_file s || s.sdir <> here) && under here s.sdir && not (List.memq s candidates)) all
+    (* claude: only a level down (the unit's own, or its subdirectories'):
+     * with every directory described, all the levels' dots at once hid
+     * the map; flying in shows the next level's *)
+    else
+      List.filter
+        (fun (s : Code_guide.skeleton) -> (one_file s || s.sdir <> here) && (s.sdir = here || parent s.sdir = here) && under here s.sdir && not (List.memq s candidates))
+        all
   in
   let banner =
     match shown with
@@ -948,6 +995,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
             let tw = 0.5 *. size *. float_of_int (String.length bn.role) in
             (* above the header's start, over the shaded line before it *)
             let lx = x in
+            drawn_bones := (bn, x -. 12., y, tw) :: !drawn_bones;
             [
               circle (rgb 20 16 30) 8. |> move (sx a (x -. 12.)) (sy a y);
               circle ink_i 6. |> move (sx a (x -. 12.)) (sy a y);
@@ -1599,6 +1647,50 @@ let tour_banner (t : t) (c : camera) : shape list =
 let anchor_line (t : t) (path : string) (anchor : string) : int option =
   match entry_of t path with Some e -> capital_line e anchor | None -> None
 
+(* claude: a bone under the mouse, its dot or its role (the author: "at
+ * the skeleton, can we also hover a bone ... when the bone is an entity
+ * especially") *)
+let hovered_bone (t : t) (c : camera) : Code_guide.bone option =
+  match t.pointer with
+  | Some (u, v) when t.xray && t.peek = None ->
+      let mx = to_px c u and my = to_py c v in
+      List.find_map
+        (fun ((bn : Code_guide.bone), x, y, tw) ->
+          let on_dot = Float.hypot (mx -. x) (my -. y) < 11. in
+          let on_role = mx >= x +. 12. && mx <= x +. 22. +. tw && my >= y -. 35. && my <= y -. 13. in
+          if on_dot || on_role then Some bn else None)
+        !drawn_bones
+  | _ -> None
+
+(* its card: an entity's role and the start of its definition, readable;
+ * a file's or a directory's role and what its config says of it *)
+let bone_card (t : t) (c : camera) : shape list =
+  match (hovered_bone t c, t.pointer) with
+  | Some bn, Some (u, v) -> (
+      let mx = to_px c u and my = to_py c v in
+      match bone_line t bn with
+      | Some l -> (
+          match entry_of t bn.bpath with
+          | Some e ->
+              let _, last = extent (Lazy.force e.file) l in
+              code_card t c bn.bpath l (min last (l + 11)) (Printf.sprintf "%s   %s:%d   (click: all of it)" bn.role bn.bpath (l + 1)) mx my
+          | None -> [])
+      | None ->
+          let a = c.a in
+          let said =
+            match Code_guide.file_note t.guide bn.bpath with
+            | Some { summary = Some s; _ } -> Some s
+            | _ -> Code_guide.dir_summary t.guide bn.bpath
+          in
+          let lines = (bn.role :: [ bn.bpath ]) @ (match said with Some s -> wrap 60 s | None -> []) in
+          let w = 24. +. List.fold_left (fun m l -> Float.max m (text_width 15. l)) 0. lines and h = 12. +. (22. *. float_of_int (List.length lines)) in
+          let x0 = Float.min (mx +. 18.) (float_of_int a.pw -. w -. 4.) and y0 = Float.min (my +. 18.) (float_of_int a.ph -. h -. 4.) in
+          let r, g, b = ivory in
+          [ rectangle (rgb 18 16 36) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.96 ]
+          @ frame a (rgb r g b) x0 y0 (x0 +. w) (y0 +. h) 1.5
+          @ List.mapi (fun i l -> label a (if i = 0 then rgb r g b else if i = 1 then dim else ink) 15. (x0 +. 12. +. (text_width 15. l /. 2.)) (y0 +. 17. +. (22. *. float_of_int i)) l) lines)
+  | _ -> []
+
 let search_shapes (t : t) (c : camera) : shape list =
   match t.search with
   | None -> []
@@ -1621,6 +1713,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ layers_shapes t c
   @ search_shapes t c
   @ match_preview t c
+  @ bone_card t c
   @ tour_banner t c
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,

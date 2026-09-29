@@ -526,7 +526,20 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: a click on a match (a search's, a layer's): its file, and
    * its definition peeked at, as Enter in the search *)
   let jumped_to, clicked =
-    if clicked && units then match Map_v2.hovered_match t t.cam with Some (h, _, _) -> (search_go t h, false) | None -> (None, clicked) else (None, clicked)
+    if clicked && units then
+      match (Map_v2.hovered_bone t t.cam, Map_v2.hovered_match t t.cam) with
+      (* claude: a bone clicked (the X-ray's): its definition peeked at,
+       * or its file or directory flown to *)
+      | Some bn, _ ->
+          let hit : Code_search.hit =
+            match Map_v2.anchor_line t bn.bpath bn.banchor with
+            | Some line when bn.banchor <> "" -> { kind = Def; path = bn.bpath; line; name = bn.role }
+            | _ -> { kind = File; path = bn.bpath; line = 0; name = bn.role }
+          in
+          (search_go t hit, false)
+      | None, Some (h, _, _) -> (search_go t h, false)
+      | None, None -> (None, clicked)
+    else (None, clicked)
   in
   let target = match jumped_to with Some c -> c | None -> target in
   let moved = if units then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
