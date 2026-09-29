@@ -24,28 +24,60 @@ let modules_used (src : string) : string list =
   in
   List.sort_uniq compare (go [] (Lexer_ml.tokens src))
 
+let module_name (path : string) : string = String.capitalize_ascii (Filename.remove_extension (Filename.basename path))
+
 (* claude: how central each module is: the other files naming it (an
- * open, an include, a qualified name), by module name *)
+ * open, an include, a qualified name), by the module's file (its path
+ * without extension: an .ml and its .mli one). Several files of one name
+ * (~/ix's 26 CLI.ml, one per program): a use counts for the nearest, the
+ * one sharing the most directory with the user's, as the resolver
+ * (Code_names) would pick *)
 let fan_in (sources : (string * string) list) : (string, int) Hashtbl.t =
   let h = Hashtbl.create 1024 in
+  let by_name : (string, string list) Hashtbl.t = Hashtbl.create 1024 in
   let paths = Hashtbl.create 4096 in
   List.iter (fun (p, _) -> Hashtbl.replace paths p ()) sources;
   List.iter
+    (fun (p, _) ->
+      if Filename.check_suffix p ".ml" || Filename.check_suffix p ".mli" then
+        let m = module_name p and k = Filename.remove_extension p in
+        let l = Option.value (Hashtbl.find_opt by_name m) ~default:[] in
+        if not (List.mem k l) then Hashtbl.replace by_name m (k :: l))
+    sources;
+  let shared a b =
+    let a = String.split_on_char '/' (Filename.dirname a) and b = String.split_on_char '/' (Filename.dirname b) in
+    let rec go n = function x :: r, y :: r' when x = y -> go (n + 1) (r, r') | _ -> n in
+    go 0 (a, b)
+  in
+  List.iter
     (fun (p, src) ->
       if Filename.check_suffix p ".ml" || Filename.check_suffix p ".mli" then
-        let self = String.capitalize_ascii (Filename.remove_extension (Filename.basename p)) in
+        let self = Filename.remove_extension p in
         (* an .ml and its .mli are one module, counted once: the .ml's *)
-        if Filename.check_suffix p ".ml" || not (Hashtbl.mem paths (Filename.remove_extension p ^ ".ml")) then
-          List.iter (fun m -> if m <> self then Hashtbl.replace h m (1 + Option.value (Hashtbl.find_opt h m) ~default:0)) (modules_used src))
+        if Filename.check_suffix p ".ml" || not (Hashtbl.mem paths (self ^ ".ml")) then
+          List.iter
+            (fun m ->
+              match Hashtbl.find_opt by_name m with
+              | Some ks -> (
+                  let ks = List.filter (fun k -> k <> self) ks in
+                  (* the nearest; as near, the shallowest: a virtual
+                   * module's interface above its implementations
+                   * (Playground_platform.mli over each platform's .ml) *)
+                  let depth k = List.length (String.split_on_char '/' k) in
+                  let better k b = shared k p > shared b p || (shared k p = shared b p && depth k < depth b) in
+                  let best = List.fold_left (fun acc k -> match acc with Some b when not (better k b) -> acc | _ -> Some k) None ks in
+                  match best with Some k -> Hashtbl.replace h k (1 + Option.value (Hashtbl.find_opt h k) ~default:0) | None -> ())
+              | None -> ())
+            (modules_used src))
     sources;
   h
+
+let fan (t : (string, int) Hashtbl.t) (path : string) : int = Option.value (Hashtbl.find_opt t (Filename.remove_extension path)) ~default:0
 
 let count_lines (s : string) : int =
   let n = ref 1 in
   String.iter (fun c -> if c = '\n' then incr n) s;
   !n
-
-let module_name (path : string) : string = String.capitalize_ascii (Filename.remove_extension (Filename.basename path))
 
 let starts (prefix : string) (s : string) : bool = String.length s >= String.length prefix && String.sub s 0 (String.length prefix) = prefix
 

@@ -290,7 +290,7 @@ let capitals (t : t) (c : camera) : name list =
   in
   let seen_file = Hashtbl.create 64 and per_region = Hashtbl.create 16 in
   let fans = Lazy.force t.fan_in in
-  let fan p = Option.value (Hashtbl.find_opt fans (String.capitalize_ascii (Filename.remove_extension (Filename.basename p)))) ~default:0 in
+  let fan p = Code_deps.fan fans p in
   let dir_of p = match Filename.dirname p with "." -> "" | d -> d in
   let lines p = match Hashtbl.find_opt where p with Some (_, (e : entry)) -> e.nlines | None -> 0 in
   let sorted = List.stable_sort (fun (p, _) (q, _) -> compare (fan q, lines q) (fan p, lines p)) (Code_guide.capitals t.guide) in

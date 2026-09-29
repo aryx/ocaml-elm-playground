@@ -18,10 +18,15 @@
 val modules_used : string -> string list
 
 (* claude: each module's fan-in: how many files name it (open, include,
-   a qualified name), an .ml and its .mli counted once; what makes a
-   module the project's core rather than one of its programs (the
-   author: games and apps are like a kernel's device drivers) *)
+   a qualified name), an .ml and its .mli counted once, by the module's
+   path without extension; several files of one name, a use counting for
+   the nearest to the user; what makes a module the project's core rather
+   than one of its programs (the author: games and apps are like a
+   kernel's device drivers) *)
 val fan_in : (string * string) list -> (string, int) Hashtbl.t
+
+(* a file's fan-in, in that table *)
+val fan : (string, int) Hashtbl.t -> string -> int
 
 val count_lines : string -> int
 

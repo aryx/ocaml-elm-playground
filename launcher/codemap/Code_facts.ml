@@ -53,7 +53,7 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
    * (Code_deps.fan_in); what size does not say (the author: games and
    * apps are like a kernel's device drivers, not its core) *)
   let fans = Code_deps.fan_in sources in
-  let fan p = Option.value (Hashtbl.find_opt fans (String.capitalize_ascii (Filename.remove_extension (Filename.basename p)))) ~default:0 in
+  let fan p = Code_deps.fan fans p in
   let total = List.length (List.filter (fun (p, _) -> Filename.check_suffix p ".ml") sources) in
   let hub p = fan p >= max 30 (total / 20) in
   pr "# %s\n\n" (if dir = "" then "(the root)" else dir);
@@ -198,7 +198,7 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
  * with no capital, in its .ml or its .mli *)
 let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : string list =
   let fans = Code_deps.fan_in sources in
-  let fan p = Option.value (Hashtbl.find_opt fans (String.capitalize_ascii (Filename.remove_extension (Filename.basename p)))) ~default:0 in
+  let fan p = Code_deps.fan fans p in
   let total = List.length (List.filter (fun (p, _) -> Filename.check_suffix p ".ml") sources) in
   let hub p = fan p >= max 30 (total / 20) in
   let described p = Code_guide.file_note guide p <> None in
