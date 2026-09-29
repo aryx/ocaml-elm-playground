@@ -73,6 +73,24 @@ bones' definitions lit in the shaded file.
 - Every Playground game is Model-View-Update: the template is the
   default; name a game's skeleton for what it adds.
 
+## The anatomy: what the configs give, what the code gives
+
+The X-ray (`x`) has six plates (keys 1 to 6): skeleton, blood, muscles,
+nerves, lungs, skin (`launcher/codemap/Code_anatomy.mli`). Only the
+first two come from the configs; the others the map finds in the code
+by itself -- do not write them:
+
+- skeleton: the configs' `skeletons`, above.
+- blood: the data carried round the skeleton, flowing along its joints
+  in their direction. So a joint's `say` names what flows ("the next
+  state", "each event"), and its direction is the data's, not the call's.
+- muscles (loop density), nerves (keyboard, mouse, subscriptions,
+  commands), lungs (capabilities, files, sockets, the console, the
+  platform), skin (what a `.mli` exposes): found in the code. A
+  codebase whose inputs or outputs have other names (a kernel's
+  syscalls) will one day give its words in a `layers` rule; until then,
+  say it in the summaries.
+
 ## Notes
 
 An item's `say` is drawn beside its line at the ground and the street,

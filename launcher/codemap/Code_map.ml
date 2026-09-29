@@ -259,6 +259,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
   end;
   (* claude: the skeletons, at any level (Map_v2) *)
   if pressed "x" then t.xray <- not t.xray;
+  (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
+  if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
   (* claude: the style, the next one, for this map and those to come *)
   let before = t.placed in
   let t =

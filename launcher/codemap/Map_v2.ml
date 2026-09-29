@@ -596,6 +596,20 @@ let extent (f : Code_file.t) (line : int) : int * int =
   let next = List.fold_left (fun acc (l, _, (cat : Highlight_code.category)) -> if l > line && l < acc && cat <> Comment_section then l else acc) (Code_file.nlines f) f.defs in
   (line, next - 1)
 
+(* claude: the blood, pulses running along a joint in its direction,
+ * three to a joint, a lap every two seconds *)
+let blood (a : area) (clock : float) (pts : (float * float) list) : shape list =
+  let pts = Array.of_list pts in
+  let n = Array.length pts in
+  if n < 2 then []
+  else
+    let r, g, b = Code_anatomy.colour Blood in
+    List.init 3 (fun k ->
+        let phase = Float.rem ((clock *. 0.5) +. (float_of_int k /. 3.)) 1. in
+        let x, y = pts.(min (n - 1) (int_of_float (phase *. float_of_int (n - 1)))) in
+        [ circle (rgb 40 0 10) 6. |> move (sx a x) (sy a y); circle (rgb r g b) 4.5 |> move (sx a x) (sy a y) ])
+    |> List.concat
+
 let skeleton_shapes (t : t) (c : camera) : shape list =
   let a = c.a in
   let ground = at_ground t c in
@@ -639,8 +653,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let bone_spot (b : Code_guide.bone) =
     match (packed_at b.bpath, bone_spot b) with Some (x, y, _), Some (l, _) -> Some (l, (x +. 12., y, x +. 12.)) | _, s -> s
   in
-  if shown = [] then [ label a dim 16. (float_of_int a.pw /. 2.) 30. "(no skeleton here: the configs name none)" ]
-  else
+  let skeleton_on = List.mem Code_anatomy.Skeleton !Code_anatomy.shown and blood_on = List.mem Code_anatomy.Blood !Code_anatomy.shown in
   let r, g, b = ivory in
   let ink_i = rgb r g b in
   let bones = List.concat_map (fun (s : Code_guide.skeleton) -> s.bones) shown in
@@ -686,8 +699,9 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                 let bend = Float.min 140. (Float.max 40. (0.25 *. len)) in
                 let mx = ((ax +. bx) /. 2.) +. (-.dy /. len *. bend) and my = ((ay +. by) /. 2.) +. (dx /. len *. bend) in
                 let pts = Map_atlas.bspline [| (ax, ay); (mx, my); (bx, by) |] in
-                Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 6. 0.85
-                @ (match j.jsay with Some w -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | None -> [])
+                (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 6. 0.85 else [])
+                @ (if blood_on then blood a t.clock pts else [])
+                @ (match j.jsay with Some w when skeleton_on || blood_on -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | _ -> [])
             | Some (_, Some (_, _, (ax0, ay, _))), Some (bn, None) | Some (bn, None), Some (_, Some (_, _, (ax0, ay, _))) ->
                 (* an end off the map: a stub to its edge, naming it *)
                 let ae = ax0 -. 12. in
@@ -696,8 +710,9 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                 let name = snd (Code_guide.split bn.bat) in
                 let text = Printf.sprintf "%s  %s" name bn.bpath in
                 let tw = 0.5 *. 13. *. float_of_int (String.length text) in
-                Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6
-                @ [ words ink_i text |> scale (13. /. words_font_size) |> move (sx a (ex -. (tw /. 2.))) (sy a (ay +. 14.)) ]
+                (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else [])
+                @ (if blood_on then blood a t.clock pts else [])
+                @ (if skeleton_on then [ words ink_i text |> scale (13. /. words_font_size) |> move (sx a (ex -. (tw /. 2.))) (sy a (ay +. 14.)) ] else [])
             | _ -> [])
           s.joints)
       shown
@@ -735,7 +750,106 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
         ])
       packed_files
   in
-  shade @ joints @ marks @ dots
+  let none =
+    if shown = [] && skeleton_on then [ label a dim 16. (float_of_int a.pw /. 2.) 30. "(no skeleton here: the configs name none)" ] else []
+  in
+  shade @ joints @ (if skeleton_on then marks @ dots else []) @ none
+
+(* claude: the anatomy's other plates (Code_anatomy): each file's facts,
+ * found a few files a frame from afar (the whole repository's X-ray
+ * opening at once), kept *)
+let facts_cache : (string, Code_anatomy.facts) Hashtbl.t = Hashtbl.create 256
+
+let facts_of (t : t) ?(budget = ref max_int) (e : entry) : Code_anatomy.facts option =
+  match Hashtbl.find_opt facts_cache e.path with
+  | Some f -> Some f
+  | None when !budget <= 0 -> None
+  | None ->
+      decr budget;
+      let public =
+        if Filename.check_suffix e.path ".ml" then Option.map (fun (m : entry) -> Code_anatomy.public_names (Lazy.force m.file)) (entry_of t (e.path ^ "i")) else None
+      in
+      let f = Code_anatomy.facts (Lazy.force e.file) ~public in
+      Hashtbl.replace facts_cache e.path f;
+      Some f
+
+let anatomy_shapes (t : t) (c : camera) : shape list =
+  let a = c.a in
+  let on s = List.mem s !Code_anatomy.shown in
+  let col s = let r, g, b = Code_anatomy.colour s in rgb r g b in
+  let tint s alpha (x0, y0, w, h) = rectangle (col s) w (Float.max 1.5 h) |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade alpha in
+  match at_ground t c with
+  | Some e ->
+      (* at the ground and the street: the lines, tinted *)
+      List.concat_map
+        (fun (path, (g : Code_ground.t)) ->
+          match Option.bind (entry_of t path) (fun x -> facts_of t x) with
+          | None -> []
+          | Some (fs : Code_anatomy.facts) ->
+              let box l = if l < Array.length g.places then Some (Code_ground.box g l) else None in
+              let lines s alpha ls = List.filter_map (fun l -> Option.map (tint s alpha) (box l)) ls in
+              (if on Muscles then
+                 List.concat_map (fun (a0, b0, st) -> if st < 0.35 then [] else lines Muscles (0.06 +. (0.3 *. Float.min 1. st)) (List.init (b0 - a0 + 1) (fun k -> a0 + k))) fs.muscles
+               else [])
+              @ (if on Nerves then lines Nerves 0.4 fs.nerves else [])
+              @ (if on Lungs then lines Lungs 0.4 fs.lungs else [])
+              @
+              if on Skin then
+                List.filter_map (fun l -> Option.map (fun (x0, y0, _, h) -> rectangle (col Skin) 5. (Float.max 3. h) |> move (sx a (x0 -. 12.)) (sy a (y0 +. (h /. 2.)))) (box l)) fs.skin
+              else [])
+        (grounds t e)
+  | None ->
+      (* from afar: a file tinted by its muscles, a dot for its nerves and
+       * one for its lungs, as big as they are many, its skin a frame *)
+      let budget = ref 30 in
+      (* the muscles relative: the strongest sixth of the files known *)
+      (* a file's strength: its definitions', weighed by their lines *)
+      let strength (fs : Code_anatomy.facts) =
+        let w, n = List.fold_left (fun (w, n) (a0, b0, st) -> let k = float_of_int (b0 - a0 + 1) in (w +. (st *. k), n +. k)) (0., 0.) fs.muscles in
+        if n = 0. then 0. else w /. n
+      in
+      let all = Hashtbl.fold (fun _ fs acc -> strength fs :: acc) facts_cache [] |> List.sort compare |> Array.of_list in
+      let cut = if Array.length all = 0 then 1. else all.(min (Array.length all - 1) (Array.length all * 85 / 100)) in
+      Array.to_list t.placed
+      |> List.concat_map (fun (p : entry Treemap.placed) ->
+             match (p.node, clip c p.rect) with
+             | File (_, _, e), Some (x0, y0, x1, y1) when not (outside t p) -> (
+                 match facts_of t ~budget e with
+                 | None -> []
+                 | Some fs ->
+                     let x0 = float_of_int x0 and y0 = float_of_int y0 and x1 = float_of_int x1 and y1 = float_of_int y1 in
+                     let w = x1 -. x0 and h = y1 -. y0 in
+                     let strongest = strength fs in
+                     let dot s k i =
+                       if k = 0 then []
+                       else
+                         let r = Float.min (Float.min w h /. 3.) (2. +. Float.sqrt (float_of_int k)) in
+                         [ circle (col s) r |> move (sx a (x0 +. 3. +. r +. (float_of_int i *. ((2. *. r) +. 2.)))) (sy a (y0 +. 3. +. r)) |> fade 0.9 ]
+                     in
+                     (* the strongest files only: the heavy lifters *)
+                     (if on Muscles && strongest > cut && strongest > 0. then [ tint Muscles (Float.min 0.7 (0.25 +. (0.45 *. ((strongest -. cut) /. Float.max 0.01 cut)))) (x0, y0, w, h) ] else [])
+                     @ (if on Nerves then dot Nerves (List.length fs.nerves) 0 else [])
+                     @ (if on Lungs then dot Lungs (List.length fs.lungs) 1 else [])
+                     @ if on Skin && fs.skin <> [] then List.map (fade 0.45) (frame a (col Skin) x0 y0 x1 y1 1.) else [])
+             | _ -> [])
+
+(* the atlas's key: the plates, the ones shown bright *)
+let legend (c : camera) : shape list =
+  let a = c.a in
+  let x0 = float_of_int a.pw -. 190. and y0 = 36. in
+  let row i s =
+    let r, g, b = Code_anatomy.colour s in
+    let on = List.mem s !Code_anatomy.shown in
+    let y = y0 +. 22. +. (float_of_int i *. 20.) in
+    let text = Printf.sprintf "%s  %s" (Code_anatomy.key s) (Code_anatomy.name s) in
+    [
+      circle (rgb r g b) 6. |> move (sx a (x0 +. 14.)) (sy a y) |> fade (if on then 1. else 0.25);
+      words (if on then ink else dim) text |> scale (14. /. words_font_size) |> move (sx a (x0 +. 30. +. (0.25 *. 14. *. float_of_int (String.length text)))) (sy a y);
+    ]
+  in
+  (rectangle (rgb 18 16 36) 180. 150. |> move (sx a (x0 +. 90.)) (sy a (y0 +. 70.)) |> fade 0.92)
+  :: (words ink "the X-ray (x)" |> scale (14. /. words_font_size) |> move (sx a (x0 +. 60.)) (sy a (y0 +. 4.)))
+  :: List.concat (List.mapi row Code_anatomy.all)
 
 let labels (t : t) (c : camera) (_ : float) : shape list =
   let kept = names t c in
@@ -744,7 +858,7 @@ let labels (t : t) (c : camera) (_ : float) : shape list =
   | Some e -> notes t c e @ line_lit t c e @ names_glow t c e
   | None -> [])
   @ List.rev_map (fun n -> n.draw) kept
-  @ (if t.xray then skeleton_shapes t c else [])
+  @ (if t.xray then skeleton_shapes t c @ anatomy_shapes t c @ legend c else [])
   @ hover_card t c kept
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,

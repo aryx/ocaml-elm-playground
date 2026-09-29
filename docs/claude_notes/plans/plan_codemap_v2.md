@@ -380,6 +380,21 @@ The same mode switch, several systems: `x` the skeleton, and others to
 choose (keys or a menu), several shown at once, each in its colour, as
 an anatomy atlas's plates.
 
+Done, 2026-09-29 (the author: "love those biology elements! Let's do
+it!"): `Code_anatomy` (the facts: nerves' and lungs' lines by their
+words, outside comments and strings; muscles, a definition's loop
+density -- not its size, which the map's area already shows, and which
+made every big file look strong; skin, the definitions a .mli exposes);
+in the X-ray, 1 to 6 the plates, a legend; blood as pulses running
+along the skeleton's joints; from afar a file tinted by its muscles
+(the strongest sixth of the files known), a dot for its nerves and one
+for its lungs, as big as they are many, its skin a faint frame; at the
+ground and the street the lines tinted, the skin a mark in the margin.
+The facts found a few files a frame from afar, so that the whole
+repository's X-ray opens at once. To come: organs (the directories'
+summaries as the plates' captions), a config's `layers` adding its own
+words (a kernel's syscalls as lungs), blood along the street's roads.
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in

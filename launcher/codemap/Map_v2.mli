@@ -24,7 +24,10 @@
    close together one dot, its skeleton's name) and the joints between
    them across the map; at the ground and the street, the bones'
    definitions lit, their roles, the joints between them, a bone in a
-   panel reached across files, one off the map a stub naming it.
+   panel reached across files, one off the map a stub naming it. In the
+   X-ray, 1 to 6 the anatomy's plates (Code_anatomy): the skeleton, the
+   blood running along its joints, the muscles, the nerves, the lungs,
+   the skin; a legend, the atlas's key.
 
    The camera moves a unit at a time (the plan's step 2, Code_units, in
    Code_map.update): the wheel or a click one level in, the wheel back,

@@ -266,6 +266,18 @@ let tests =
                 (List.map (fun (b : Code_guide.bone) -> b.bpath ^ " " ^ b.banchor) sk.bones);
               Alcotest.(check int) "two joints" 2 (List.length sk.joints)
           | _ -> Alcotest.fail "one skeleton reaching kit/K.ml");
+      (* claude: Code_anatomy.mli's worked example, and the skin *)
+      Testo.create "the anatomy: nerves, lungs, muscles, skin" (fun () ->
+          let src =
+            "let update computer m = if computer.keyboard.space then fire m else m\nlet save () = Out_channel.with_open_text \"f\" (fun oc -> ())\n(* the keyboard, in a comment *)\nlet sum l = List.fold_left ( + ) 0 l\n"
+          in
+          let f = Code_file.make "g.ml" src in
+          let fs = Code_anatomy.facts f ~public:(Some [ "update"; "sum" ]) in
+          Alcotest.(check (list int)) "the nerves: line 0, not the comment's" [ 0 ] fs.nerves;
+          Alcotest.(check (list int)) "the lungs: line 1" [ 1 ] fs.lungs;
+          Alcotest.(check (list int)) "the skin: what the .mli shows" [ 0; 3 ] fs.skin;
+          let strength l = List.fold_left (fun acc (a, _, st) -> if a = l then st else acc) 0. fs.muscles in
+          Alcotest.(check bool) "the muscles: sum's loop works more than update's none" true (strength 3 > strength 0));
       Testo.create "a config's mistakes" (fun () ->
           let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
           Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");
