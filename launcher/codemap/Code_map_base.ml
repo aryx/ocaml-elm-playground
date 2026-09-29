@@ -89,6 +89,7 @@ type t = {
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
   mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
+  top_kept : bool; (* claude: a lone top directory drawn (relayout) *)
   beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
@@ -141,9 +142,16 @@ let geometry_of (r : Treemap.rect) (nlines : int) : geometry =
   let rec best k acc = if k > min n 64 then acc else best (k + 1) (let g = make k in if score g < score acc then g else acc) in
   best 2 (make 1)
 
-let relayout ?links (a : area) (algo : Treemap.algo) (entries : entry list) : entry Treemap.placed array * geometry option array =
+let relayout ?links ?(top_kept = false) (a : area) (algo : Treemap.algo) (entries : entry list) : entry Treemap.placed array * geometry option array =
+  let tree = Treemap.of_paths (List.map (fun e -> (e.path, float_of_int (max 1 e.nlines), e)) entries) in
+  (* claude: [top_kept]: a lone top directory drawn, not merged into the
+   * root (whose name is never drawn): a selection's files in their
+   * folder, named (a search's shift+Enter, the author: "showed also in
+   * their enclosing folder name") *)
   let tree =
-    Treemap.fold_singletons (Treemap.of_paths (List.map (fun e -> (e.path, float_of_int (max 1 e.nlines), e)) entries))
+    match tree with
+    | Dir ("", [ Dir (sub, kids) ]) when top_kept -> Treemap.Dir ("", [ Treemap.fold_singletons (Dir (sub, kids)) ])
+    | tree -> Treemap.fold_singletons tree
   in
   (* claude: layered by who uses whom, given the files' links *)
   let bands = Option.map (fun l -> Code_layers.compute l tree) links in
@@ -155,16 +163,16 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ?(beyond = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(top_kept = false) ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ?(beyond = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
-  let placed, geometry = relayout a Ordered entries in
+  let placed, geometry = relayout ~top_kept a Ordered entries in
   let order = Hashtbl.create 64 in
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
     back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; flight = None; pointer = None;
-    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond }
+    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries

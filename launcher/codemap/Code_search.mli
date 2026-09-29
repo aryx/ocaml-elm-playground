@@ -41,3 +41,6 @@ val complete : hit list -> string -> string
 
 (* [starts s p]: [s] begins with [p] *)
 val starts : string -> string -> bool
+
+(* a path's last part *)
+val basename : string -> string

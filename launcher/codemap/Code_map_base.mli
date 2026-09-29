@@ -71,6 +71,7 @@ type t = {
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
   mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
+  top_kept : bool; (* claude: a lone top directory drawn, not merged into the root (relayout): a selection's *)
   beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
@@ -115,13 +116,16 @@ val root_rect : area -> Treemap.rect
 val geometry_of : Treemap.rect -> int -> geometry
 (* with [links] (Code_rank.links), layered: the users above the used
    (Code_layers) *)
-val relayout : ?links:(string * string * int) list -> area -> Treemap.algo -> entry list -> entry Treemap.placed array * geometry option array
+(* claude: [top_kept]: a lone top directory drawn, named, not merged into
+   the root *)
+val relayout : ?links:(string * string * int) list -> ?top_kept:bool -> area -> Treemap.algo -> entry list -> entry Treemap.placed array * geometry option array
 
 (* the camera fitting a rectangle; the whole map's *)
 val fit : area -> Treemap.rect -> camera
 val home : area -> camera
 
 val make :
+  ?top_kept:bool ->
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->
   ?roots:string list ->

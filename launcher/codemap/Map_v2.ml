@@ -1306,6 +1306,16 @@ let search_hits (t : t) : Code_search.hit list =
 let search_named (t : t) : string list =
   match t.search with Some s -> List.filter (fun p -> (not s.here) || shown t p) (Code_search.all_named (search_all t) s.query) | None -> []
 
+(* all a search found, to see together (shift+Enter): its directories
+ * and files, a file under a directory found left out; else, if it found
+ * only definitions, their files *)
+let search_set (t : t) : string list =
+  let hits = search_hits t in
+  let units = List.filter_map (fun (h : Code_search.hit) -> if h.kind <> Def then Some h.path else None) hits in
+  let paths = if units <> [] then units else List.map (fun (h : Code_search.hit) -> h.path) hits in
+  let paths = List.sort_uniq compare paths in
+  List.filter (fun p -> not (List.exists (fun d -> d <> p && Code_search.starts p (d ^ "/")) paths)) paths
+
 (* the hits lit where they are on the map, at any level: a directory or
  * file framed, a definition's line marked (a bar at the ground, a dot
  * above it), the chosen one brighter and named *)
@@ -1374,6 +1384,10 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
       left 12. dim (x0 +. 14.) (y0 +. h -. 14.)
         (match named with
         | _ :: _ :: _ -> Printf.sprintf "Enter: the %d directories named so, together   Esc close" (List.length named)
+        | _ when hits <> [] ->
+            let n = List.length (search_set t) in
+            Printf.sprintf "Enter go   shift+Enter the %d %s together   Tab complete   up/down choose   name// directories so named   / first: here or all   Esc close" n
+              (if List.exists (fun (h : Code_search.hit) -> h.kind <> Def) hits then "found" else "files of these")
         | _ -> "Tab complete   up/down choose   Enter go   name// every directory so named   / first: here or everywhere   Esc close");
     ]
 

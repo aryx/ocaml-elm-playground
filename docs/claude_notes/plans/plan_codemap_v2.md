@@ -460,6 +460,12 @@ the keys in `Code_map.update`):
   Enter opens a map of just them together (`Codemap`'s scope
   `Selection`), Escape back to the map they were chosen from -- a
   first view, made by a search rather than a config.
+- shift+Enter: all it found together, its directories and files (the
+  author: "searching for cs80 ... then it would be good to then go in a
+  few with all those files"), or, if it found only definitions, their
+  files -- a set of files named by a search, like Spotlight's. The
+  selection's lone top folder stays drawn, named ("showed also in
+  their enclosing folder name"; `Code_map_base.relayout ~top_kept`).
 
 Also, from the same day: a peek opens with the comment just above the
 definition ("it probably comment the entity").

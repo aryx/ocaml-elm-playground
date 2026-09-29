@@ -58,4 +58,8 @@ val unit_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> float
 val search_hits : Code_map_base.t -> Code_search.hit list
 val search_named : Code_map_base.t -> string list
 
+(* claude: all a search found, its directories and files (else its
+   definitions' files), to see together (shift+Enter) *)
+val search_set : Code_map_base.t -> string list
+
 val style : Code_map_base.style

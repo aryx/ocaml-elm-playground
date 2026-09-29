@@ -23,7 +23,7 @@ open Playground
  * were apart (plan_codemap_google_maps.md, step 0) *)
 include Code_map_base
 
-type action = Stay | Open of Code_file.t * int | Close | Select of string list
+type action = Stay | Open of Code_file.t * int | Close | Select of string * string list
 
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
@@ -42,12 +42,12 @@ let cycle_style () =
  * whom (Code_layers), the others' by name *)
 let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
   let links = if style.sname = "atlas" then Some (Code_rank.links (rank_of t)) else None in
-  let placed, geometry = relayout ?links t.cam.a algo t.entries in
+  let placed, geometry = relayout ?links ~top_kept:t.top_kept t.cam.a algo t.entries in
   { t with style; algo; placed; geometry; painted = None; lens = None; focus = 0 }
 
 (* a map in the chosen style *)
-let make ?numbered ?colours ?roots ?guide ?beyond ?style ~area ~title ~marked entries : t =
-  let t = Code_map_base.make ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries in
+let make ?top_kept ?numbered ?colours ?roots ?guide ?beyond ?style ~area ~title ~marked entries : t =
+  let t = Code_map_base.make ?top_kept ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries in
   if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
 
 (* claude: the map framing a unit by its path (a directory's or a
@@ -576,9 +576,21 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
       let n = List.length hits in
       let t, action =
         if pressed "Escape" then (t.search <- None; (t, Stay))
+        (* claude: shift+Enter, all it found together: its directories and
+         * files, else the files of its definitions *)
+        else if pressed "Enter" && Set_.mem "Shift" computer.keyboard.keys then begin
+          match Map_v2.search_set t with
+          | [] -> (t, Stay)
+          | set ->
+              t.search <- None;
+              (t, Select (Printf.sprintf "%s: the %d found" s.query (List.length set), set))
+        end
         else if pressed "Enter" then begin
           match Map_v2.search_named t with
-          | _ :: _ :: _ as dirs -> t.search <- None; (t, Select dirs)
+          | _ :: _ :: _ as dirs ->
+              t.search <- None;
+              let name = Code_search.basename (List.hd dirs) in
+              (t, Select (Printf.sprintf "the %d directories named %s" (List.length dirs) name, dirs))
           | _ -> (
               match List.nth_opt hits s.sel with
               | Some h ->

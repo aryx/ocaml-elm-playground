@@ -36,6 +36,7 @@ type t
    finding a name defined elsewhere (Code_names.find); claude: [guide]
    what the directories' .codemapconfig say (Code_guide) *)
 val make :
+  ?top_kept:bool ->
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->
   ?roots:string list ->
@@ -56,7 +57,7 @@ type action =
   | Stay
   | Open of Code_file.t * int (* its line, from 0 *)
   | Close
-  | Select of string list (* claude: directories to see together (a search's name//) *)
+  | Select of string * string list (* claude: directories and files to see together (a search's name//, or shift+Enter), and what to call them *)
 
 (* keys as Code_view's; the mouse; Escape closes. claude: / opens the
    search (Map_v2's), which takes the keys while open *)

@@ -18,9 +18,10 @@ type scope =
   | Uses
   | Whole
   | Directory of string
-  (* claude: directories seen together (a search's name//), and the map
-   * they were chosen from, Escape's way back *)
-  | Selection of string list * t
+  (* claude: directories and files seen together (a search's name//, or
+   * all it found), what to call them, and the map they were chosen
+   * from, Escape's way back *)
+  | Selection of string * string list * t
 
 and t = {
   program : string;
@@ -73,7 +74,7 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Own -> Code_deps.closure ~keep:own sources path
     | Uses -> Code_deps.closure sources path
     | Whole | Directory _ -> List.map fst sources
-    | Selection (dirs, _) -> List.filter (fun p -> List.exists (fun d -> Code_search.starts p (d ^ "/")) dirs) (List.map fst sources)
+    | Selection (_, set, _) -> List.filter (fun p -> List.exists (fun d -> p = d || Code_search.starts p (d ^ "/")) set) (List.map fst sources)
   in
   let entries = List.filter_map (fun p -> Option.map (entry p) (List.assoc_opt p sources)) paths in
   let n = List.length entries in
@@ -89,9 +90,7 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
         (* or, for a directory inside a project, its summary *)
         let said = match guide with Some g -> ( match Code_guide.title g with Some s -> Some s | None -> Code_guide.dir_summary g "") | None -> None in
         match said with Some s -> Printf.sprintf "%s: %s   (%s)" name s files | None -> Printf.sprintf "%s: %s" name files)
-    | Selection (dirs, _) ->
-        let name = match dirs with d :: _ -> Filename.basename d | [] -> "" in
-        Printf.sprintf "the %d directories named %s: %s   (%s; esc back)" (List.length dirs) name (String.concat ", " dirs) files
+    | Selection (what, _, _) -> Printf.sprintf "%s   (%s; esc back)" what files
   in
   (* claude: numbered in their reading order (Code_deps.closure's), but
    * the whole repository's and a directory's *)
@@ -103,7 +102,8 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Own | Uses | Selection _ -> List.filter_map (fun (p, src) -> if List.mem p paths then None else Some (entry p src)) sources
     | Whole | Directory _ -> []
   in
-  Code_map.make ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
+  let top_kept = match scope with Selection _ -> true | _ -> false in
+  Code_map.make ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   let sources, guide = guide_of sources in
@@ -175,10 +175,10 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
       else (
         match Code_map.update computer ~pressed ~arrow t.map with
         (* claude: from a selection, back to the map it was chosen from *)
-        | _, Close -> ( match t.scope with Selection (_, before) -> Some before | _ -> None)
+        | _, Close -> ( match t.scope with Selection (_, _, before) -> Some before | _ -> None)
         | map, Stay -> Some { t with map }
-        | map, Select dirs ->
-            let scope = Selection (dirs, { t with map }) in
+        | map, Select (what, set) ->
+            let scope = Selection (what, set, { t with map }) in
             Some { t with scope; map = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope; tour = None }
         (* a file opened by hand: the tour, if any, left *)
         | map, Open (f, line) -> Some { t with map; file = Some (Code_view.make ~line f); tour = None })
