@@ -40,6 +40,7 @@
      module:Make    a module's
      section:Model  a section's title, the (* Model *) between rules
      comment:"one alien per frame"   the first comment saying those words
+     code:"verify_area"   the first line of code (not a comment) saying them
      line:42        a line (from 1): discouraged, it moves
 
    and in a tour, or a link to another file, a path first: 'Shots.ml:def:advance'.

@@ -47,10 +47,21 @@ let fan_in (sources : (string * string) list) : (string, int) Hashtbl.t =
         let l = Option.value (Hashtbl.find_opt by_name m) ~default:[] in
         if not (List.mem k l) then Hashtbl.replace by_name m (k :: l))
     sources;
+  (* claude: the modules that have a header: an #include names one of
+   * them, never a stranger's .c of the same base name (~/principia's
+   * <draw.h> counted for lib_gui's draw.c, 172 files) *)
+  let headers = Hashtbl.create 256 in
+  List.iter (fun (p, _) -> if Filename.check_suffix p ".h" then Hashtbl.replace headers (Filename.remove_extension p) ()) sources;
   let shared a b =
     let a = String.split_on_char '/' (Filename.dirname a) and b = String.split_on_char '/' (Filename.dirname b) in
     let rec go n = function x :: r, y :: r' when x = y -> go (n + 1) (r, r') | _ -> n in
     go 0 (a, b)
+  in
+  (* claude: as near, the one sharing more directory names anywhere: an
+   * x86 file's "dat.h" is 386/'s, not arm/'s *)
+  let common a b =
+    let b = String.split_on_char '/' (Filename.dirname b) in
+    List.length (List.filter (fun x -> List.mem x b) (String.split_on_char '/' (Filename.dirname a)))
   in
   (* a C file's headers, #include "x.h" and <x.h>, by base name *)
   let includes (src : string) : string list =
@@ -79,11 +90,15 @@ let fan_in (sources : (string * string) list) : (string, int) Hashtbl.t =
               match Hashtbl.find_opt by_name m with
               | Some ks -> (
                   let ks = List.filter (fun k -> k <> self) ks in
+                  let ks = if is_c p && List.exists (Hashtbl.mem headers) ks then List.filter (Hashtbl.mem headers) ks else ks in
                   (* the nearest; as near, the shallowest: a virtual
                    * module's interface above its implementations
                    * (Playground_platform.mli over each platform's .ml) *)
                   let depth k = List.length (String.split_on_char '/' k) in
-                  let better k b = shared k p > shared b p || (shared k p = shared b p && depth k < depth b) in
+                  let better k b =
+                    shared k p > shared b p
+                    || (shared k p = shared b p && (common k p > common b p || (common k p = common b p && depth k < depth b)))
+                  in
                   let best = List.fold_left (fun acc k -> match acc with Some b when not (better k b) -> acc | _ -> Some k) None ks in
                   match best with Some k -> Hashtbl.replace h k (1 + Option.value (Hashtbl.find_opt h k) ~default:0) | None -> ())
               | None -> ())

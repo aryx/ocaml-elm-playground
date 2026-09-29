@@ -51,7 +51,48 @@ type index = {
    * transitively, made when first asked *)
   cfiles : (string, Code_file.t Lazy.t) Hashtbl.t;
   closure : (string, string list) Hashtbl.t;
+  (* claude: the system's headers, by base name: included from many top
+   * folders (~/principia's libc.h, from 30), so sharing one does not
+   * make two files one program (troff "using" sam's linep) *)
+  system : (string, unit) Hashtbl.t Lazy.t;
 }
+
+(* claude: a C file's #include lines, "x.h" and <x/y.h>, as written *)
+let includes_of (f : Code_file.t) : string list =
+  Array.to_list f.lines
+  |> List.filter_map (fun spans ->
+         let b = Buffer.create 80 in
+         List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) spans;
+         let l = String.trim (Buffer.contents b) in
+         if String.length l > 9 && String.sub l 0 8 = "#include" then
+           let r = String.trim (String.sub l 8 (String.length l - 8)) in
+           if String.length r > 2 && (r.[0] = '"' || r.[0] = '<') then
+             let close = if r.[0] = '"' then '"' else '>' in
+             match String.index_from_opt r 1 close with Some j -> Some (String.sub r 1 (j - 1)) | None -> None
+           else None
+         else None)
+
+(* claude: a top folder's name ("" at the top) *)
+let top_of (p : string) : string = match String.index_opt p '/' with Some i -> String.sub p 0 i | None -> ""
+
+(* claude: a header included from six top folders or more is the
+ * system's (Linux 0.01's linux/sched.h, from four, is still a program's
+ * own: kernel/, mm/ and fs/ are one kernel) *)
+let system_headers (files : (string * Code_file.t Lazy.t) list) : (string, unit) Hashtbl.t =
+  let tops : (string, string list) Hashtbl.t = Hashtbl.create 256 in
+  List.iter
+    (fun (p, lf) ->
+      if is_c p then
+        List.iter
+          (fun inc ->
+            let b = Filename.basename inc and t = top_of p in
+            let l = Option.value (Hashtbl.find_opt tops b) ~default:[] in
+            if not (List.mem t l) then Hashtbl.replace tops b (t :: l))
+          (includes_of (Lazy.force lf)))
+    files;
+  let h = Hashtbl.create 64 in
+  Hashtbl.iter (fun b l -> if List.length l >= 6 then Hashtbl.replace h b ()) tops;
+  h
 
 let index (files : (string * Code_file.t Lazy.t) list) : index =
   let ml = Hashtbl.create 256 in
@@ -69,22 +110,7 @@ let index (files : (string * Code_file.t Lazy.t) list) : index =
   in
   let cfiles = Hashtbl.create 256 in
   List.iter (fun (p, lf) -> if is_c p then Hashtbl.replace cfiles p lf) files;
-  { ml; c; cfiles; closure = Hashtbl.create 256 }
-
-(* claude: a C file's #include lines, "x.h" and <x/y.h>, as written *)
-let includes_of (f : Code_file.t) : string list =
-  Array.to_list f.lines
-  |> List.filter_map (fun spans ->
-         let b = Buffer.create 80 in
-         List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) spans;
-         let l = String.trim (Buffer.contents b) in
-         if String.length l > 9 && String.sub l 0 8 = "#include" then
-           let r = String.trim (String.sub l 8 (String.length l - 8)) in
-           if String.length r > 2 && (r.[0] = '"' || r.[0] = '<') then
-             let close = if r.[0] = '"' then '"' else '>' in
-             match String.index_from_opt r 1 close with Some j -> Some (String.sub r 1 (j - 1)) | None -> None
-           else None
-         else None)
+  { ml; c; cfiles; closure = Hashtbl.create 256; system = lazy (system_headers files) }
 
 (* an include resolved: the file of that path's tail, the nearest *)
 let resolve_include (ix : index) (from : string) (inc : string) : string option =
@@ -94,7 +120,11 @@ let resolve_include (ix : index) (from : string) (inc : string) : string option 
   let top p = match String.index_opt p '/' with Some i -> String.sub p 0 i | None -> "" in
   let reachable p = top p = top from || List.mem "include" (String.split_on_char '/' p) in
   let ends p = reachable p && (p = inc || (String.length p > String.length inc && String.sub p (String.length p - String.length inc - 1) (String.length inc + 1) = "/" ^ inc)) in
-  Hashtbl.fold (fun p _ acc -> if ends p then (match acc with Some q when shared q from >= shared p from -> acc | _ -> Some p) else acc) ix.cfiles None
+  (* claude: as near, the one sharing more directory names anywhere (an
+   * x86 file's "dat.h" is core/386/'s, not core/arm/'s) *)
+  let common p = let b = String.split_on_char '/' (Filename.dirname from) in List.length (List.filter (fun x -> List.mem x b) (String.split_on_char '/' (Filename.dirname p))) in
+  let key p = (shared p from, common p) in
+  Hashtbl.fold (fun p _ acc -> if ends p then (match acc with Some q when key q >= key p -> acc | _ -> Some p) else acc) ix.cfiles None
 
 (* a C file's headers, transitively *)
 let header_closure (ix : index) (p : string) : string list =
@@ -203,7 +233,8 @@ let find_c ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.refer
     top p = top from
     || top_library p
     || List.mem p (Lazy.force mine)
-    || (let theirs = header_closure ix p in List.exists (fun h -> List.mem h theirs) (Lazy.force mine))
+    || (let theirs = header_closure ix p in
+        List.exists (fun h -> List.mem h theirs && not (Hashtbl.mem (Lazy.force ix.system) (Filename.basename h))) (Lazy.force mine))
   in
   ignore declares;
   let all = List.filter (fun (p, _) -> p <> from && linkable p) (Hashtbl.find_all (Lazy.force ix.c) (r.rname, r.rspace)) in
@@ -215,7 +246,9 @@ let find_c ~other (ix : index) ~from (f : Code_file.t) (r : Highlight_code.refer
         if d.drank < best then None
         else
           (* another project's after all of its own *)
-          let group = (if own_header p then 0 else if library p then 1 else 2) + if other p then 3 else 0 in
+          (* claude: the use's own top folder before a library: the
+           * kernel's qlock for the kernel, libc's for the programs *)
+          let group = (if own_header p then 0 else if top p = top from then 1 else if library p then 2 else 3) + if other p then 4 else 0 in
           Some (candidate p d (group, - shared p from) (other p)))
       all
   in

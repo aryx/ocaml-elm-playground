@@ -426,7 +426,11 @@ editing the code does not break them:
 | `module:Make` | a module's |
 | `section:Model` | a section's title, `(* Model *)` between rules of stars |
 | `comment:"one alien per frame"` | the first comment containing those words |
+| `code:"verify_area"` | the first line of code (not a comment) containing those words: an uncommented line of old C; whitespace exact, no tab, no inner quotes |
 | `line:42` | a line (discouraged: it moves) |
+
+A literate program's chunk markers make the surest anchors:
+`comment:"function [[mountio]]"`, `comment:"struct [[Node]]"`.
 
 In a skeleton, a tour or a link, a path comes first:
 `'../../gamekits/shmup/Shots.ml:def:advance'`; a bone that is a whole

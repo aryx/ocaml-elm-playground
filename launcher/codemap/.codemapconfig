@@ -201,7 +201,7 @@
         { at: 'def:find_in', say: 'a reference to its definitions, and whether sure' },
       ],
     },
-    'Code_names.ml': { digest: '412d071ce707',
+    'Code_names.ml': { digest: 'a0fc35470f24',
       summary: "Modules found by file name, opens tried last first; C's definitions before declarations, nearest first.",
       important: [
         { at: 'def:find_ml', say: "OCaml's rule: M.x, then the opens", weight: 2 },
@@ -266,7 +266,7 @@
         { at: 'def:overview_of', say: 'a pixel per character, the part shown framed', weight: 2 },
       ],
     },
-    'Code_guide.mli': { digest: '742372e71b77',
+    'Code_guide.mli': { digest: '32b7ebeaed7f',
       summary: "What the .codemapconfig files say: summaries, capitals, important lines, tours, skeletons, layers; anchors that survive edits.",
       capitals: [
         { at: 'def:load', say: 'every config read as jsonnet' },
@@ -279,7 +279,7 @@
         { at: 'def:digest', say: 'stale when the file changes', weight: 1 },
       ],
     },
-    'Code_guide.ml': { digest: '6e7dc9b40411',
+    'Code_guide.ml': { digest: 'b1eae686d27b',
       summary: 'The jsonnet evaluated and checked field by field, paths made relative to their config, anchors found.',
       important: [
         { at: 'def:of_json', say: 'a misspelt field is a mistake, not ignored', weight: 2 },
@@ -292,7 +292,7 @@
         { at: 'def:brief', say: 'tinybox codemap -facts: a directory in Markdown' },
       ],
     },
-    'Code_facts.ml': { digest: '83273a97a46c',
+    'Code_facts.ml': { digest: 'dfef3e49ee4c',
       summary: "Each file's digest, header, sections, definitions with their uses and callers, fan-in and hubs, written out.",
       important: [
         { at: 'def:is_program', say: 'a main: a driver, not the core', weight: 2 },

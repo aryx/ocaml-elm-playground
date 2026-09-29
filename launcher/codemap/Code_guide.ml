@@ -142,7 +142,9 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
         obj "dirs" (fun w name v ->
             let fs = fields w [ "summary" ] v in
             (name, match opt_str w fs "summary" with Some s -> s | None -> bad "%s: its summary" w));
-      notes = obj "files" (fun w name v -> (name, file_note w v));
+      (* claude: a file of a subdirectory is read only from its own
+       * directory's config: named here, it would be ignored in silence *)
+      notes = obj "files" (fun w name v -> if String.contains name '/' then bad "%s: %s is in a subdirectory: describe it in that directory's own .codemapconfig" w name else (name, file_note w v));
       tours =
         opt_list where fs "tours" (fun w v ->
             let fs = fields w [ "name"; "stops" ] v in

@@ -54,6 +54,8 @@ let is_program (src : string) : bool =
   || contains src "\nkmain(" || contains src " kmain(void)\n{" 
   (* claude: C's main, Plan 9's way (its type on the line above) or not *)
   || contains src "\nmain(" || contains src "\nint main(" || contains src "\nvoid main("
+  (* claude: a libthread program's (rio, acme: its main is libthread's) *)
+  || contains src "\nthreadmain(" || contains src "\nvoid threadmain("
 
 (* a source the brief reads: OCaml's and C's *)
 let is_source (p : string) : bool = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".c"; ".h"; ".s"; ".S"; ".asm" ]
