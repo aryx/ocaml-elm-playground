@@ -532,26 +532,30 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   (* claude: a style's own place under the mouse (Map_v2's ground: the
    * lines laid out anew), else the treemap's *)
   let picked = if on a mpx mpy then t.style.pick t c q mpx mpy else None in
+  (* a file's line, and the definition it is in, for the status line *)
+  let where (e : entry) (line : int) =
+    let def =
+      if Lazy.is_val e.file then List.fold_left (fun acc (l, name, _) -> if l <= line then Some name else acc) None (Lazy.force e.file).defs
+      else None
+    in
+    Printf.sprintf "%s:%d%s   (%d lines)" e.path (line + 1) (match def with Some d -> "   " ^ d | None -> "") e.nlines
+  in
+  (* claude: on a file (Map_v2's ground and street) the treemap is not
+   * what is on the map: no frame, and the status line the style's place
+   * under the mouse (its file and line, a panel's too), else nothing *)
+  let on_a_file = t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false in
   let hover, status =
-    match hovered with
-    | Some i -> (
+    match (picked, hovered) with
+    | Some (path, line, _), _ -> ([], match List.find_opt (fun (e : entry) -> e.path = path) t.entries with Some e -> where e line | None -> "")
+    | None, _ when on_a_file -> ([], "")
+    | None, Some i -> (
         let p = t.placed.(i) in
-        (* claude: no frame round the unit one is in; nor, when it is a
-         * file (Map_v2's ground and street), round anything: the
-         * treemap is not what is on the map then *)
-        let on_a_file = t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false in
-        let frame = match clip c p.rect with Some b when not (t.style.units && (i = t.focus || on_a_file)) -> box white 1.5 b | _ -> [] in
+        (* claude: no frame round the unit one is in *)
+        let frame = match clip c p.rect with Some b when not (t.style.units && i = t.focus) -> box white 1.5 b | _ -> [] in
         match (p.node, t.geometry.(i)) with
-        | File (_, _, e), Some g ->
-            let line = match picked with Some (_, l, _) -> l | None -> line_at g p.rect u v in
-            let def =
-              if Lazy.is_val e.file then
-                List.fold_left (fun acc (l, name, _) -> if l <= line then Some name else acc) None (Lazy.force e.file).defs
-              else None
-            in
-            (frame, Printf.sprintf "%s:%d%s   (%d lines)" e.path (line + 1) (match def with Some d -> "   " ^ d | None -> "") e.nlines)
+        | File (_, _, e), Some g -> (frame, where e (line_at g p.rect u v))
         | _ -> (frame, p.path))
-    | None -> ([], "")
+    | None, None -> ([], "")
   in
   let algo = match t.algo with Ordered -> "ordered" | Squarified -> "squarified" | Slice_and_dice -> "slice and dice" in
   let screen = computer.screen in
