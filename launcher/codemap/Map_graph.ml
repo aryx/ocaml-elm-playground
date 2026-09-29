@@ -249,16 +249,23 @@ let view (computer : computer) (g : t) : shape list =
                   if i = j then [ rect x y l.cell l.cell (rgb 60 58 80) 0.8 ]
                   else if v = 0 then []
                   else
-                    let strength = 0.25 +. (0.75 *. Float.sqrt (float_of_int v /. float_of_int biggest)) in
+                    (* claude: a gradient, dark to bright, on a log scale (the
+                     * author): 1 and 22,060 both seen *)
+                    let strength = Float.log (float_of_int v +. 1.) /. Float.log (float_of_int biggest +. 1.) in
+                    let shade (r0, g0, b0) (r1, g1, b1) =
+                      let k x0 x1 = int_of_float (float_of_int x0 +. (strength *. float_of_int (x1 - x0))) in
+                      rgb (k r0 r1) (k g0 g1) (k b0 b1)
+                    in
                     (* below the diagonal, down the layers; above, a cycle *)
                     let col =
                       match (match hover with Column c -> Label c | h -> h) with
                       | Label h when h = i -> red (* what the hovered uses *)
                       | Label h when h = j -> green (* who uses the hovered *)
-                      | _ -> if j < i then rgb 80 150 230 else rgb 220 70 220
+                      | _ -> if j < i then shade (30, 50, 100) (110, 190, 255) else shade (90, 30, 90) (240, 90, 240)
                     in
-                    [ rect (x +. 1.) (y +. 1.) (l.cell -. 2.) (l.cell -. 2.) col strength ]
-                    @ if l.cell >= 18. then [ label a ink (Float.min 13. (l.cell *. 0.45)) (x +. (l.cell /. 2.)) (y +. (l.cell /. 2.)) (string_of_int v) ] else []))))
+                    let text = if v >= 1000 then Printf.sprintf "%dk" (v / 1000) else string_of_int v in
+                    [ rect (x +. 1.) (y +. 1.) (l.cell -. 2.) (l.cell -. 2.) col 1. ]
+                    @ if l.cell >= 11. then [ label a ink (Float.min 13. (l.cell *. 0.5)) (x +. (l.cell /. 2.)) (y +. (l.cell /. 2.)) text ] else []))))
   in
   let numbers =
     if l.cell < 10. then []
