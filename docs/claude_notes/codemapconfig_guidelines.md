@@ -157,12 +157,42 @@ matter most, 1 for the rest. Five to ten per file.
 - A record or variant is a `type:` (Galaxy's `zone`, `body`), not a
   `def:`: the checker says "no def zone"; the facts list each
   definition with its kind.
+- `section:` takes the title as the banner writes it, without quotes
+  around it: `"section:The formulas (Dexed's dx7note.cc)"`. An odoc
+  heading, `{1 ...}` in a comment, is no section: anchor it with
+  `comment:`.
+- A `comment:` phrase must be words the comment has in a row: not across
+  markdown emphasis (`**...**`) nor escaped quotes; pick a nearby phrase.
+- `def:` finds a name's first definition: two `eval`s in a file, the
+  first; avoid anchoring the second.
+- A Lisp defun inside an OCaml string is out of the anchors' reach:
+  `line:` only there (it moves, say why beside it).
+- Only OCaml and C files are sources: a `.js`, `.st` or `.css` beside
+  them is described in a comment of the config, or by the module
+  embedding it, not in `files:`.
+- A generated file (`Photos.mli`) is described like the others: the map
+  reads it from the disk.
 
 ## Jsonnet pitfalls
 
 - An apostrophe inside a single-quoted string ends it: write "its
   ghosts' ways" in double quotes.
 - A function's named arguments are `name=value`, a field's `name: value`.
+- No `\'` escape: a text with an apostrophe inside a quoted anchor goes
+  in double quotes, its inner quotes escaped:
+  `at: "comment:\"MPEG-1's idea: the pixels didn't change\""`.
+
+## Across configs (learned writing them all at once)
+
+- A directory with its own config needs no line in its parent's `dirs:`:
+  its own summary is the one shown; a parent's line for it would drift.
+- A skeleton may have bones in other directories (`../../libs/audio/`):
+  they hold when checked from the repository's root, which is how to
+  check (`tinybox codemap -check .`); checked alone, the directory
+  reports them "not a source here".
+- A directory without sources of its own but with subdirectories
+  (`libs/graphics/videos`) gets a config with its summary, or it shows
+  "not described yet".
 
 ## Anchors
 
