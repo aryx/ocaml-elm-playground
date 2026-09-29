@@ -741,6 +741,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   (* the joints, bent one way or the other so that a -> b and b -> a (a
    * loop, the model and its update) are two roads *)
   let where at = match List.find_opt (fun (bn : Code_guide.bone) -> bn.bat = at) bones with Some bn -> Option.map (fun (l, s) -> (bn, l, s)) (bone_spot bn) |> fun x -> (bn, x) |> Option.some | None -> None in
+  let stubs = ref [] in
   let joints =
     List.concat_map
       (fun (s : Code_guide.skeleton) ->
@@ -763,17 +764,9 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                 @ (if blood_on then blood a t.clock pts else [])
                 @ (match j.jsay with Some w when skeleton_on || blood_on -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | _ -> [])
             | Some (_, Some (_, _, (ax0, ay, _))), Some (bn, None) | Some (bn, None), Some (_, Some (_, _, (ax0, ay, _))) ->
-                (* an end off the map: a stub to its edge, naming it *)
-                let ae = ax0 -. 12. in
-                let ex = float_of_int a.pw -. 20. in
-                let pts = Map_atlas.bspline [| (ae, ay); ((ae +. ex) /. 2., ay -. 40.); (ex, ay) |] in
-                (* a definition: its name and file; a whole unit: its path
-                 * and what it is for *)
-                let text = if bn.banchor = "" then Printf.sprintf "%s: %s" bn.bpath bn.role else Printf.sprintf "%s  %s" (snd (Code_guide.split bn.bat)) bn.bpath in
-                let tw = 0.5 *. 13. *. float_of_int (String.length text) in
-                (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else [])
-                @ (if blood_on then blood a t.clock pts else [])
-                @ (if skeleton_on then [ words ink_i text |> scale (13. /. words_font_size) |> move (sx a (ex -. (tw /. 2.))) (sy a (ay +. 14.)) ] else [])
+                (* an end off the map: a stub to its port on the edge (below) *)
+                stubs := (ax0 -. 12., ay, bn) :: !stubs;
+                []
             | _ -> [])
           s.joints)
       shown
@@ -833,10 +826,43 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
             ])
       deeper
   in
+  (* the ends off the map: a port each on the map's right edge, at the
+   * height of the stubs going to it, the ports spread so that their names
+   * do not overlap; each named once *)
+  let ports =
+    let by = Hashtbl.create 8 in
+    List.iter (fun (x, y, (bn : Code_guide.bone)) -> Hashtbl.replace by bn.bat ((x, y, bn) :: Option.value (Hashtbl.find_opt by bn.bat) ~default:[])) !stubs;
+    let ps = Hashtbl.fold (fun _ l acc -> let (_, _, bn) = List.hd l in (bn, l, List.fold_left (fun m (_, y, _) -> m +. y) 0. l /. float_of_int (List.length l)) :: acc) by [] in
+    let ps = List.sort (fun (_, _, y) (_, _, y') -> compare y y') ps in
+    let last = ref neg_infinity in
+    List.map (fun (bn, l, y) -> let y = Float.max y (!last +. 24.) in last := y; (bn, l, y)) ps
+  in
+  let ex = float_of_int a.pw -. 20. in
+  let stub_shapes =
+    List.concat_map
+      (fun ((bn : Code_guide.bone), l, py) ->
+        (* a definition: its name and file; a whole unit: its path and
+         * what it is for *)
+        let text = if bn.banchor = "" then Printf.sprintf "%s: %s" bn.bpath bn.role else Printf.sprintf "%s  %s" (snd (Code_guide.split bn.bat)) bn.bpath in
+        let tw = 0.5 *. 13. *. float_of_int (String.length text) in
+        List.concat_map
+          (fun (x, y, _) ->
+            let pts = Map_atlas.bspline [| (x, y); ((x +. ex) /. 2., ((y +. py) /. 2.) -. 30.); (ex, py) |] in
+            (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else []) @ if blood_on then blood a t.clock pts else [])
+          l
+        @
+        if skeleton_on then
+          [
+            rectangle (rgb 18 16 36) (tw +. 10.) 18. |> move (sx a (ex -. 4. -. (tw /. 2.))) (sy a (py +. 13.)) |> fade 0.9;
+            words ink_i text |> scale (13. /. words_font_size) |> move (sx a (ex -. 4. -. (tw /. 2.))) (sy a (py +. 13.));
+          ]
+        else [])
+      ports
+  in
   let none =
     if shown = [] && deeper = [] && skeleton_on then [ label a dim 16. (float_of_int a.pw /. 2.) 30. "(no skeleton here: the configs name none)" ] else []
   in
-  shade @ joints @ (if skeleton_on then marks @ dots @ deep_dots @ banner else []) @ none
+  shade @ joints @ stub_shapes @ (if skeleton_on then marks @ dots @ deep_dots @ banner else []) @ none
 
 (* claude: the anatomy's other plates (Code_anatomy): each file's facts,
  * found a few files a frame from afar (the whole repository's X-ray

@@ -138,6 +138,12 @@ comment explaining the non-obvious. Not the most used (the map knows
 that already), the most telling. `weight` 3 for the two or three that
 matter most, 1 for the rest. Five to ten per file.
 
+## Anchors the checker taught
+
+- A record or variant is a `type:` (Galaxy's `zone`, `body`), not a
+  `def:`: the checker says "no def zone"; the facts list each
+  definition with its kind.
+
 ## Jsonnet pitfalls
 
 - An apostrophe inside a single-quoted string ends it: write "its
