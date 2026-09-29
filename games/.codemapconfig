@@ -22,4 +22,8 @@
     sports: { summary: 'A sport or a table game played on the screen as it is played off it.' },
     strategy: { summary: 'Planning at a scale above one character: an army, a city, a civilization.' },
   },
+  // claude: the template's own, its model a () with no type yet
+  skeletons: [
+    { name: 'Model-View-Update, to fill in', bones: [{ at: 'template.ml:def:initial_model', role: 'the first state: () for now, a model to write' }, { at: 'template.ml:def:update', role: 'a frame: model -> model' }, { at: 'template.ml:def:view', role: 'a picture: model -> shapes' }, { at: 'template.ml:def:app', role: 'the three, a game' }], joints: [{ from: 'template.ml:def:initial_model', to: 'template.ml:def:app', say: 'the first state' }, { from: 'template.ml:def:app', to: 'template.ml:def:update', say: 'stepped' }, { from: 'template.ml:def:update', to: 'template.ml:def:view', say: 'the next state, drawn' }] },
+  ],
 }

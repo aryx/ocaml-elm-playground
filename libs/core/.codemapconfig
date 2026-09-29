@@ -26,7 +26,12 @@
     'Keyboard.ml': { digest: 'e141e4eb6302', summary: "A key, as Elm names it: a string (\"ArrowLeft\", \"a\")." },
     'Time.ml': { digest: '12d97078cc4f', summary: "Elm's Time.Posix: the milliseconds since the epoch, as an opaque value." },
     'Set.ml': { digest: 'c64d7e9ba7f2', summary: "Elm's Set spelling (insert, remove) over Set_, for the keys held down." },
-    'Set_.mli': { digest: 'e1130b8be1bc', summary: "OCaml's stdlib sets without the functor: polymorphic, compared with compare." },
+    'Set_.mli': { digest: 'e1130b8be1bc', summary: "OCaml's stdlib sets without the functor: polymorphic, compared with compare.",
+      capitals: [
+        { at: 'type:t', say: 'a set of anything: the keys held are one' },
+        { at: 'def:mem', say: 'is this key held? asked by 136 files' },
+      ],
+    },
     'Set_.ml': { digest: '3bde649c1c45', summary: "The stdlib's balanced trees, copied and made polymorphic." },
     'Cmd.mli': { digest: '118b555675ee',
       summary: "Elm's commands: what a pure update asks the platform to do, answered later as a message.",

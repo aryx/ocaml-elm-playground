@@ -135,8 +135,17 @@ bones' definitions lit in the shaded file.
     written inside `app`: `init='def:app'`).
   - "Defined twice": `def:` finds the first; for the second, a
     `comment:` near it, or `line:` with a comment saying why.
-  - A program written on a way (Teletype, Textmode) has no update or
-    view of its own: a shape of its own, the program, the way, the app.
+  - A program written on a way (Teletype, Textmode, Bigbang, Karel,
+    Povray) has no update or view of its own: `skeletons.way(file, name,
+    parts, at, role)`, its parts, then `app`, then the way's function.
+  - The other shapes in `skeletons.libsonnet` (the examples' pass): `via`
+    (a heart in a library, `Physics.simulate`), `untyped` (a state with
+    no type, its first value in `app`), `scene3d` and `still` (a 3D scene
+    that only turns, a picture with no update; `playground=` the path to
+    playground/ from the config).
+  - "Called by" misses a call inside a lambda (`List.iter (fun n ->
+    sound_of n)`): an empty "called by" is no proof; read the code before
+    choosing another heart.
 - Every program gets one: each game and app of a genre's or category's
   config, not a few examples (the author, missing TinyMissileCommand's:
   "I thought the libsonnet would help for that"). The template makes it

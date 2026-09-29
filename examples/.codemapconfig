@@ -2,6 +2,17 @@
 // docs/claude_notes/codemapconfig_guidelines.md; its facts:
 // tinybox codemap -facts . examples)
 local skeletons = import '../skeletons.libsonnet';
+// claude: the shapes of the examples the template does not fit (no
+// model type, no update, a way's program), each a function of the file
+// like skeletons.libsonnet's
+// claude: the shapes now in skeletons.libsonnet, the playground one
+// level up from here
+local P = '../playground/Playground.mli';
+local via = skeletons.via;
+local untyped = skeletons.untyped;
+local way = skeletons.way;
+local scene3d(file, role, heart=null, hrole=null) = skeletons.scene3d(file, role, heart, hrole, playground='../playground/');
+local still(file, role, heart=null, hrole=null) = skeletons.still(file, role, heart, hrole, playground='../playground/');
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: 'Small programs showing the library, a feature each: shapes, 3D, physics, sound, AI, GUIs, the ways.',
@@ -194,6 +205,115 @@ local skeletons = import '../skeletons.libsonnet';
     skeletons.mvu('Turtle.ml', model='type:turtle', init='def:initial_turtle') + {
       name: 'Model-View-Update, the smallest: the turtle',
     },
+
+    // Elm's own examples, and the first steps
+    still('Picture.ml', 'a tree: a rectangle and a circle'),
+    still('Smiley.ml', 'a face: circles and an ellipse'),
+    still('Words.ml', 'words and rectangles: scaled, moved, rotated'),
+    still('Misc.ml', 'the shapes, the star among them', heart='def:star', hrole='two triangles grouped: one shape'),
+    { name: 'An animation: a picture as a function of time', bones: [{ at: 'Animation.ml:def:view', role: 'time in, shapes out: spin, wave, zigzag' }, { at: P + ':def:animation', role: 'the time given each frame' }], joints: [{ from: P + ':def:animation', to: 'Animation.ml:def:view', say: 'the time' }] },
+    untyped('Mouse.ml', '(): the mouse is read, not kept'),
+    untyped('Keyboard.ml', 'a pair: where the square is'),
+    untyped('Flags.ml', 'a pair: where the square is', heart='def:color_of_name', role="a flag's colour, read by name", from='def:view', say="the program's flags"),
+    skeletons.mvu('Typing.ml', init='def:initial') + { name: 'Model-View-Update: characters typed, the wheel, a double click' },
+    skeletons.game('HttpText.ml', 'def:lines', 'the text fetched, cut into lines', say='the answer', init='def:init') + { bones+: [{ at: 'HttpText.ml:type:msg', role: 'the answer, as a message' }], joints+: [{ from: 'HttpText.ml:def:init', to: 'HttpText.ml:type:msg', say: 'a command out: Http.get' }, { from: 'HttpText.ml:type:msg', to: 'HttpText.ml:def:update', say: 'comes back' }] },
+    skeletons.game('Mario.ml', 'def:update_dumb', 'the jump as Elm wrote it', say='by hand') + { bones+: [{ at: 'Mario.ml:def:update_physics', role: 'the same jump on the physics engine' }], joints+: [{ from: 'Mario.ml:def:update', to: 'Mario.ml:def:update_physics', say: 'physics' }] },
+
+    // 3D
+    scene3d('Triangle3d.ml', 'a camera on one triangle', heart='def:triangle', hrole='one triangle, a colour per corner'),
+    scene3d('Cube3d.ml', 'a cube turning with the clock: projected, backs culled'),
+    scene3d('Cubes3d.ml', 'the grid orbited', heart='def:scene', hrole='cubes overlapping: the z-buffer sorts them'),
+    scene3d('Spheres3d.ml', 'spheres and boxes, shaded flat, Gouraud or Phong'),
+    scene3d('TexturedCube3d.ml', "a cube, its faces' UVs on a checker"),
+    untyped('InteractiveCube3d.ml', "a pair: the cube's two angles"),
+    scene3d('PaintersAlgorithmFail3d.ml', 'two boxes crossing: no order of the two is right'),
+    untyped('Corridor3d.ml', 'a number: how far along the corridor', heart='def:walls', role='walls walked past: the near plane cuts them', from='def:view', say='drawn with'),
+    scene3d('FloatingCity3d.ml', 'the city orbited', heart='def:scene', hrole='a tapering base, towers and an accent'),
+    scene3d('CachedGrid3d.ml', 'the grid round a spinning cube', heart='def:grid', hrole='1600 cubes built once, kept on the GPU'),
+    skeletons.game('StarCollector3d.ml', 'def:move_by_engine', 'the player on the physics engine: pushed, dragged', say='engine', init='def:init') + { bones+: [{ at: 'StarCollector3d.ml:def:move_by_hand', role: 'the player moved by hand' }], joints+: [{ from: 'StarCollector3d.ml:def:update', to: 'StarCollector3d.ml:def:move_by_hand', say: 'by hand' }] },
+    scene3d('RaytracingShadows3d.ml', 'the scene with its shadows: one more ray per point'),
+    scene3d('RaytracingSplit3d.ml', 'the scene twice: rasterized left, ray traced right, timed'),
+
+    // physics
+    skeletons.game('PhysicsBounce.ml', 'def:fall_and_bounce', 'gravity, then the bounce off the walls'),
+    skeletons.game('PhysicsBoxes.ml', 'def:fall_and_bounce', 'bodies fallen, hitting, turning'),
+    skeletons.game('PhysicsMarbles.ml', 'def:next', '300 marbles stepped: the broad phase'),
+    via('PhysicsPyramid.ml', '../playground/apis/Physics.mli:def:simulate', 'the solver: iterations, warm starting', say='solver on'),
+    via('PhysicsElastic.ml', '../libs/physics/2d/Particles.mli:def:relax', "the rope's sticks relaxed, Verlet's way", say='the rope'),
+    skeletons.game('PhysicsOrbit.ml', 'def:next', 'the integrator: explicit Euler spirals out', say='steps a frame'),
+    skeletons.drawn('PhysicsSolarSystem.ml', 'def:view_planet', 'a planet on its ellipse, at the date'),
+    skeletons.drawn('PhysicsSolarSystem3d.ml', 'def:planet_shape', 'a planet, its night side turned away'),
+    skeletons.game('PhysicsBounce3d.ml', 'def:fall_and_bounce', 'five balls: each its bounciness'),
+    skeletons.game('PhysicsMarbles3d.ml', 'def:next', 'two hundred marbles stepped: the 3D broad phase'),
+    via('PhysicsFloat3d.ml', '../playground/apis/Physics3d.mli:def:floating', 'buoyancy: a waterline per density', say='each block'),
+    skeletons.drawn('PhysicsHitbox3d.ml', 'def:contact_shapes', 'the contacts the engine sees, drawn', init='def:start'),
+    skeletons.game('PhysicsRagdoll3d.ml', 'def:fresh', 'the doll: ten boxes, nine joints, limits or not', say='again'),
+    skeletons.drawn('PhysicsRoll3d.ml', 'def:predicted', "the formula's speed, from each body's inertia", say='against the measured'),
+    skeletons.game('PhysicsSpin3d.ml', 'def:throw', 'thrown about an axis: the middle one tumbles', say='a key'),
+    skeletons.game('PhysicsStack3d.ml', 'def:step', 'the solver stepped, or gravity alone'),
+    via('PhysicsWalk3d.ml', '../playground/layers/Character3d.mli:def:walk', 'the capsule controller: steps and slopes', say='the arrows'),
+
+    // sound
+    skeletons.game('AudioPiano.ml', 'def:sound_of', 'a note in the chosen timbre', say='a key pressed'),
+    untyped('AudioTheremin.ml', '(): the mouse is the instrument', heart='def:pitch', role='the mouse, left to right, as a pitch', say='held'),
+    skeletons.game('AudioSfx.ml', 'def:current', "the preset's numbers, reseeded or mutated", say='a key pressed'),
+    skeletons.game('AudioSampler.ml', 'def:ratio', 'a note as a speed: the recording resampled', say='a key pressed'),
+    skeletons.game('AudioSpace.ml', 'def:heard', 'two ears: pan, loudness, Doppler'),
+    skeletons.drawn('AudioAliasing.ml', 'def:spectrum', 'the harmonics, and those folded past Nyquist'),
+
+    // images
+    skeletons.drawn('ImagePng.ml', 'def:differences', "a filter's bytes: small numbers, for DEFLATE", init='def:app'),
+    skeletons.drawn('ImageLzw.ml', 'def:steps', 'the decoding recorded a code at a time: the dictionary grows', init='def:app'),
+    skeletons.game('ImageJpeg.ml', 'def:with_keep', 'the picture remade from its first coefficients', say='keep more or fewer'),
+
+    // AI
+    skeletons.game('AiPathfinding.ml', 'def:solve', 'the three searches over one grid', say='the grid changed'),
+    skeletons.game('AiSteering.ml', 'def:modes', "Reynolds's seven behaviours, a key each", say='the key held'),
+    via('AiFlock.ml', '../playground/apis/Ai.mli:def:flocking', "Reynolds's three rules, no leader", say='each fish'),
+    skeletons.game('AiGhosts.ml', 'def:target', "each ghost's rule: a target tile", say='the ghosts think'),
+    skeletons.game('AiTictactoe.ml', 'def:tictactoe', 'the rules as the search wants them', say='its turn'),
+    skeletons.game('AiBots.ml', 'def:mind', 'the bot: senses, late, then a decision', say='each frame'),
+    via('AiDebug.ml', '../playground/apis/Ai_debug.mli:def:way', 'what it thinks, drawn: one call a picture', say='drawn with', from='def:view'),
+    skeletons.game('AiPerceptron.ml', 'def:show_one', 'one example shown: the line nudged', say='each few frames'),
+    skeletons.game('AiNeuralNet.ml', 'def:train_a_frame', 'the network trained, some steps a frame'),
+    skeletons.drawn('AiDigits.ml', 'def:bars', 'the network asked: ten outputs as bars', say='its answer'),
+    skeletons.game('AiQlearn.ml', 'def:step_once', 'one move: the Q-table learns from it'),
+
+    // juice
+    untyped('JuiceCurves.ml', "Juice.t: the effects' clock", heart='def:panel', role='a curve plotted, and a dot playing it', from='def:view', say='each curve'),
+    untyped('JuiceSquash.ml', "Juice.t: the effects' clock", heart='def:bounce', role='the height, and when it last landed', from='def:view', say='squashed on landing'),
+
+    // GUIs
+    skeletons.game('GuiWidgets.ml', 'def:places', 'the panel laid out: a box per slot', init='def:initial'),
+    untyped('Gui7Counter.ml', 'a number', init='def:initial', heart='def:places', role='the panel laid out: a box per slot'),
+    skeletons.game('Gui7Temperature.ml', 'def:show', 'a number shown in the other field', say='typed in one', init='def:initial'),
+    skeletons.game('Gui7Flight.ml', 'def:date', 'a date read: the rules turn on it', say='the fields', init='def:initial'),
+    skeletons.game('Gui7Timer.ml', 'def:elapsed', 'the time elapsed: frames counted, not a clock', init='def:initial'),
+    skeletons.game('Gui7Crud.ml', 'def:visible', 'the people the filter lets through', init='def:initial'),
+    skeletons.game('Gui7Circles.ml', 'def:shown', "the circles: the dialog's live, or undo's present", init='def:initial'),
+    via('Gui7Cells.ml', '../appkits/sheet/Sheet.mli:def:set', 'a cell set: what depends on it recalculated', say='Enter', init='def:initial'),
+    untyped('GuiFourWays.ml', 'a number: the task shown', heart='def:runners', role='each task run four ways: callbacks, MVC, MVU, immediate'),
+    via('GuiEditor.ml', '../libs/gui/Text_edit.mli:type:t', 'the piece table: pieces, caret, undo', say='each key', init='def:initial'),
+    skeletons.drawn('TypesetParagraph.ml', 'def:set_page', 'the paragraph broken by the chosen breaker, set', init='def:initial'),
+
+    // the ways
+    skeletons.game('LogoFractals.ml', 'def:fractals', 'the fractals: a Logo program each, and its levels', say='another one'),
+    skeletons.game('LogoFractals3d.ml', 'def:fractals', 'the fractals: a 3D Logo program each, and its levels', say='another one'),
+    way('BigBangRocket.ml', 'The Bigbang way: a world, a tick, a drawing', [['def:draw', 'the world (a height) drawn', 'to_draw'], ['def:landed', 'where the tick stops it', 'on_tick']], '../playground/ways/Bigbang.mli:def:big_bang', "HtDP's big-bang: the world stepped and drawn"),
+    way('BigBangWorm.ml', 'The Bigbang way: a world, a tick, a key, a drawing', [['def:init', 'the first world', 'the world'], ['def:tick', 'the worm crawls, eats', 'on_tick'], ['def:key', 'the arrows turn it', 'on_key'], ['def:draw', 'the world drawn', 'to_draw'], ['def:dead', 'the end', 'stop_when']], '../playground/ways/Bigbang.mli:def:big_bang', "HtDP's big-bang: the world stepped and drawn"),
+    way('UniverseBall.ml', 'The Universe way: a world with a mailbox', [['def:fall', 'the ball falls', 'on_tick'], ['def:catch', 'a message: the ball is mine', 'on_receive'], ['def:draw', 'the world drawn', 'to_draw']], '../playground/ways/Universe.mli:def:big_bang', 'big-bang with a network: messages to the server'),
+    way('PuzzleScriptSokoban.ml', 'The PuzzleScript way: things, maps, rules', [['def:things', 'the things and their layers', 'things'], ['def:levels', 'the maps', 'levels'], ['def:sokoban', 'the game: one rule, and winning', 'the game']], '../playground/ways/Puzzlescript.mli:def:play', 'the rules rewritten each turn: an app'),
+    way('PuzzleScriptBoulders.ml', 'The PuzzleScript way: things, maps, rules', [['def:things', 'dirt, diamonds, boulders', 'things'], ['def:levels', 'the cave', 'levels'], ['def:boulders', 'the game: falling rules, and winning', 'the game']], '../playground/ways/Puzzlescript.mli:def:play', 'the rules rewritten each turn: an app'),
+    way('KarelHarvest.ml', "Karel's way: a world and a program", [['def:field', 'the world: walls and beepers, as strings', 'the world'], ['def:harvest', 'the program: commands, a row at a time', 'the program']], '../playground/ways/Karel.mli:def:animation', 'the program stepped a primitive at a time'),
+    way('TeletypeHangman.ml', 'The Teletype way: a program that asks and waits', [], '../playground/ways/Teletype.mli:def:teletype', 'a Talk program played on a VT100', say='Tty_hangman.program') + { bones+: [{ at: '../appkits/teletype/Tty_hangman.ml:def:program', role: 'hangman: prints, reads a line, loops' }], joints+: [{ from: '../appkits/teletype/Tty_hangman.ml:def:program', to: 'TeletypeHangman.ml:def:app', say: 'the program' }] },
+    way('TextmodeSnake.ml', 'The Textmode way: a Tui program, a screen of characters', [], '../playground/ways/Textmode.mli:def:textmode', "a Tui program's bytes fed to a VT100", say='Tui_snake.program') + { bones+: [{ at: '../appkits/tui/Tui_snake.ml:def:update', role: 'a key or a tick: model -> model' }, { at: '../appkits/tui/Tui_snake.ml:def:view', role: 'a screen of characters' }], joints+: [{ from: '../playground/ways/Textmode.mli:def:textmode', to: '../appkits/tui/Tui_snake.ml:def:update', say: 'each key' }, { from: '../appkits/tui/Tui_snake.ml:def:view', to: '../playground/ways/Textmode.mli:def:textmode', say: 'the Curses bytes' }] },
+    way('PovraySpheres.ml', "POV-Ray's way: a scene of solids, ray traced", [], '../playground/ways/Povray.mli:def:orbit', 'ray traced progressively, orbited', say='the scene'),
+    way('PovrayWhitted.ml', "POV-Ray's way: a scene of solids, ray traced", [['def:board', 'the checkerboard', 'a surface']], '../playground/ways/Povray.mli:def:orbit', 'ray traced progressively, orbited', say='the scene'),
+    way('PovrayCornell.ml', "POV-Ray's way: a scene of solids, path traced", [['def:room', 'the white room, a red wall, a green one', 'solids'], ['def:blocks', 'the two blocks', 'solids']], '../playground/ways/Povray.mli:def:still', 'path traced, samples added a frame at a time', say='the scene'),
+    way('PovrayCsg.ml', "POV-Ray's way: solids made of solids", [['def:holes', 'a board with holes: a difference', 'CSG'], ['def:die', 'a die: a cube less its pips', 'CSG'], ['def:lens', 'a lens: an intersection', 'CSG'], ['def:ring', 'a ring', 'CSG']], '../playground/ways/Povray.mli:def:orbit', 'ray traced progressively, orbited', say='the scene'),
+    way('PovrayMarble.ml', "POV-Ray's way: procedural surfaces", [['def:dots', 'a pattern of our own: a colour at each point of space', 'a surface']], '../playground/ways/Povray.mli:def:orbit', 'ray traced progressively, orbited', say='the scene'),
+    way('PovrayFib.ml', "POV-Ray's way: ICFP 2000's fib.gml", [['def:spheres', 'a grid of spheres at Fibonacci heights', 'solids']], '../playground/ways/Povray.mli:def:orbit', 'ray traced progressively, orbited', say='the scene'),
+    skeletons.game('PovrayQuake.ml', 'def:still', 'a still per place and heading, ray traced on arrival', say='20,000 rays a frame', init='def:initial'),
   ],
   views: [
     { name: 'The 7GUIs, each way', files: ['Gui7Counter.ml', 'Gui7Temperature.ml', 'Gui7Flight.ml', 'Gui7Timer.ml', 'Gui7Crud.ml', 'Gui7Circles.ml', 'Gui7Cells.ml', 'gui4/'] },

@@ -14,4 +14,26 @@
       ],
     },
   },
+  // claude: the menu is Tinybox_menu's, the same natively; this file is
+  // only its host, what a browser does differently
+  skeletons: [
+    {
+      name: "The web host: the menu's, a page per program",
+      bones: [
+        { at: 'Tinybox_web.ml:def:main', role: 'the flags read, the menu run with its host' },
+        { at: '../menu/Tinybox_menu.mli:def:run', role: 'the menu, the same natively and here' },
+        { at: 'Tinybox_web.ml:def:host', role: 'what a browser does differently' },
+        { at: 'Tinybox_web.ml:def:go', role: "a program started: its own page loaded" },
+        { at: 'Tinybox_web.ml:def:get_sources', role: "the code map's sources, asked for" },
+        { at: 'Tinybox_web.ml:def:fetch_sources', role: 'fetched once from the assets repository' },
+      ],
+      joints: [
+        { from: 'Tinybox_web.ml:def:main', to: '../menu/Tinybox_menu.mli:def:run', say: 'the host' },
+        { from: 'Tinybox_web.ml:def:host', to: '../menu/Tinybox_menu.mli:def:run', say: 'play, thumbnails, sources' },
+        { from: '../menu/Tinybox_menu.mli:def:run', to: 'Tinybox_web.ml:def:go', say: 'a program chosen' },
+        { from: '../menu/Tinybox_menu.mli:def:run', to: 'Tinybox_web.ml:def:get_sources', say: 'the code map opened' },
+        { from: 'Tinybox_web.ml:def:get_sources', to: 'Tinybox_web.ml:def:fetch_sources', say: 'the first time' },
+      ],
+    },
+  ],
 }

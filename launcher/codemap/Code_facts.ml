@@ -166,12 +166,12 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
         in
         (* the names defined twice: def: finds the first *)
         let twice = List.filter (fun (_, n, _, _, _) -> List.length (List.filter (fun (_, m, _, _, _) -> m = n) defs) > 1) defs |> List.map (fun (_, n, _, _, _) -> n) |> List.sort_uniq compare in
-        if twice <> [] then pr "Defined twice (def: finds the first; the second needs another anchor): %s.\n\n" (String.concat ", " twice);
+        if twice <> [] then pr "%s, defined twice (def: finds the first; the second needs another anchor): %s.\n\n" (Filename.basename p) (String.concat ", " twice);
         (* a program's Model-View-Update names, those the template assumes *)
         if List.exists (fun (_, n, _) -> n = "main") f.defs then begin
           let has k n = List.exists (fun (_, m, kind, _, _) -> m = n && kind = k) defs in
           let say k n = Printf.sprintf "%s:%s %s" k n (if has k n then "yes" else "NO") in
-          pr "The template's names (skeletons.libsonnet): %s, %s, %s, %s.\n\n" (say "type" "model") (say "def" "initial_model") (say "def" "update") (say "def" "view")
+          pr "%s, the template's names (skeletons.libsonnet): %s, %s, %s, %s.\n\n" (Filename.basename p) (say "type" "model") (say "def" "initial_model") (say "def" "update") (say "def" "view")
         end;
         pr "Definitions (anchor, line, uses here / from other files in N files; * the most used; called by: the file's definitions using it):\n\n";
         List.iter
@@ -209,7 +209,7 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
   let programs =
     List.filter_map
       (fun (p, src) ->
-        if Filename.check_suffix p ".ml" && in_scope p && (contains src "\nlet main " || contains src "\nlet main=") && described p && Code_guide.skeletons_of guide p = [] then
+        if Filename.check_suffix p ".ml" && in_scope p && (contains src "\nlet main =" || contains src "\nlet main () =" || contains src "\nlet main=") && described p && Code_guide.skeletons_of guide p = [] then
           Some (p ^ ": a program with no skeleton (skeletons.libsonnet: game, drawn or mvu, one line)")
         else None)
       sources

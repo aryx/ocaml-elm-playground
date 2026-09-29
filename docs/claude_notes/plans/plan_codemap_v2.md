@@ -523,6 +523,28 @@ at the foot; n the next stop, p the one before, Escape its end.
   skeletons a level down only; the capitals two levels down, one a
   file, fourteen a region, the biggest files'.
 
+## A Tufte pass (to do)
+
+Asked "would Edward Tufte be proud?", the answer was: partly. Strong on
+structure and encoding -- micro and macro readings of one map (earth to
+street), layering (the X-ray, the layers over a quiet base), labels on
+the data rather than in legends, each visual variable meaning one thing
+(area: lines; a capital's size and red: centrality; green and red: used
+and defined; a line's height: importance). Weaker on restraint:
+
+- Chartjunk: the pulsing glows, the "blood" plate's animation, drop
+  shadows under words decorate more than they inform.
+- The regions' colours: saturated and categorical, they compete with
+  the red, green and yellow that carry meaning; mute them (desaturated,
+  darker), so that the data's colours stand out.
+- Non-data ink: the frames round cards, panels and peeks, their boxes;
+  many could go, a slight background enough.
+- Clutter: show less by default, more on demand (the hovers and peeks
+  already do); fewer labels at a time.
+
+To do as a restraint pass, before and after frames side by side, the
+golden frames of the code map approved after.
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in

@@ -6,6 +6,11 @@
   files: {
     'Widget.mli': { digest: '56b3d7d58f31',
       summary: 'What a widget is: a rectangle, a drawing, a hit test; the state is what architectures argue over.',
+      capitals: [
+        { at: 'type:box', say: 'where a widget is: what every GUI program places' },
+        { at: 'type:input', say: "the frame's mouse and keys, as the toolkit sees them" },
+        { at: 'type:paint', say: 'what a widget draws, before any Playground' },
+      ],
       important: [
         { at: 'type:box', say: 'placed by its center, y up, as shapes are', weight: 3 },
         { at: 'def:contains', say: 'the hit test', weight: 2 },
@@ -214,6 +219,26 @@
         { from: 'Look.mli', to: 'Theme.mli', say: 'colours' },
         { from: 'Look.mli', to: 'Widget.mli', say: 'paint' },
         { from: 'Layout.mli', to: 'Widget.mli', say: 'boxes' },
+      ],
+    },
+    // claude: Layout.ml's two passes, as Flutter's: constraints down,
+    // sizes up, then boxes down
+    {
+      name: 'A layout: measured, then arranged',
+      bones: [
+        { at: 'Layout.ml:type:t', role: 'the tree: leaves, rows, columns, space' },
+        { at: 'Layout.ml:type:constraints', role: 'what a parent allows: min and max' },
+        { at: 'Layout.ml:def:measure', role: 'pass one: constraints down, sizes up' },
+        { at: 'Layout.ml:def:child_sizes', role: "a line's room shared out: the flexible get the rest" },
+        { at: 'Layout.ml:def:arrange', role: 'pass two: each child its box' },
+        { at: 'Widget.mli:type:box', role: 'a box per leaf: what the widgets are given' },
+      ],
+      joints: [
+        { from: 'Layout.ml:type:t', to: 'Layout.ml:def:measure', say: 'the tree' },
+        { from: 'Layout.ml:type:constraints', to: 'Layout.ml:def:measure', say: 'constraints down' },
+        { from: 'Layout.ml:def:measure', to: 'Layout.ml:def:child_sizes', say: 'a row or a column' },
+        { from: 'Layout.ml:def:child_sizes', to: 'Layout.ml:def:arrange', say: 'the sizes' },
+        { from: 'Layout.ml:def:arrange', to: 'Widget.mli:type:box', say: 'a box per leaf' },
       ],
     },
   ],
