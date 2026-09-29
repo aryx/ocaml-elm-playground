@@ -145,8 +145,18 @@ let update (computer : computer) ~(pressed : string -> bool) (g : t) : t * actio
 (* View *)
 (*****************************************************************************)
 
+(* claude: each as the map colours it (the author): a definition as the
+ * code's highlighter does its kind (a function yellow, a type green...),
+ * a folder or file its region's colour, as at the earth *)
 let colour_of (g : t) (n : Code_dsm.node) : color =
-  match n with Def _ -> ink | _ -> lighter (archi g.map.colours (Code_dsm.path_of n))
+  match n with
+  | Def (p, line, _) -> (
+      let cat =
+        List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (g.map.entries @ g.map.beyond)
+        |> Fun.flip Option.bind (fun (f : Code_file.t) -> List.find_map (fun (l, _, c) -> if l = line then Some c else None) f.defs)
+      in
+      match cat with Some c -> let r, gr, b = Highlight_code.rgb c in rgb r gr b | None -> ink)
+  | _ -> lighter (archi g.map.colours (Code_dsm.path_of n))
 
 (* a card of lines beside a pixel, kept on the area *)
 let card (a : area) (x : float) (y : float) (title : string) (col : color) (lines : string list) : shape list =
