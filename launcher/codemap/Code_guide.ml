@@ -28,6 +28,10 @@ type joint = { jfrom : string; jto : string; jsay : string option }
 type skeleton = { sname : string; sdir : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
+(* claude: a layer: lines matching its rules, each lit in its colour *)
+type rule = { text : string; colour : rgb; rsay : string option }
+type layer = { lname : string; ldir : string; rules : rule list }
+
 type dir_note = {
   dir : string;
   title : string option;
@@ -38,7 +42,7 @@ type dir_note = {
   tours : tour list;
   skeletons : skeleton list;
   views : view list;
-  layers : Json.t list;
+  layers : layer list;
 }
 
 type t = dir_note list
@@ -157,7 +161,17 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
               of_ = opt_str w fs "of";
               with_ = opt_str w fs "with";
             });
-      layers = opt_list where fs "layers" (fun w v -> ignore (fields w [ "name"; "rules" ] v); v);
+      layers =
+        opt_list where fs "layers" (fun w v ->
+            let fs = fields w [ "name"; "rules" ] v in
+            let rules =
+              opt_list w fs "rules" (fun w v ->
+                  let fs = fields w [ "text"; "color"; "say" ] v in
+                  let text = match opt_str w fs "text" with Some t when String.length t >= 2 -> t | _ -> bad "%s: its text, two characters at least" w in
+                  let colour = match opt_str w fs "color" with Some c -> ( match Code_config.hex c with Some rgb -> rgb | None -> bad "%s: %S is no #rrggbb" w c) | None -> bad "%s: its color" w in
+                  { text; colour; rsay = opt_str w fs "say" })
+            in
+            { lname = (match opt_str w fs "name" with Some n -> n | None -> bad "%s: its name" w); ldir = dir; rules });
     }
   with
   | d -> Ok d
@@ -193,6 +207,7 @@ let file_note (t : t) (path : string) : file_note option =
   Option.bind (List.find_opt (fun d -> d.dir = dir_of path) t) (fun d -> List.assoc_opt (Filename.basename path) d.notes)
 
 let colours (t : t) = List.concat_map (fun d -> d.colors) t
+let layers (t : t) : layer list = List.concat_map (fun d -> d.layers) t
 let skeletons_of (t : t) (path : string) : skeleton list =
   List.concat_map (fun d -> List.filter (fun s -> List.exists (fun b -> b.bpath = path) s.bones) d.skeletons) t
 

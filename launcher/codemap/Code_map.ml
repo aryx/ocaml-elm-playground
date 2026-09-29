@@ -393,7 +393,17 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
   if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
   (* claude: l, the layers hidden, shown (Map_v2) *)
-  if pressed "l" && t.layers <> [] then t.layers_on <- not t.layers_on;
+  (* claude: l, the layers lit: those kept (ctrl+Enter), then each
+   * config's, then none, in turn (Map_v2.layer_groups) *)
+  if pressed "l" then begin
+    let groups = Map_v2.layer_groups t in
+    let n = List.length groups in
+    if n > 0 then begin
+      (* the next group with layers, or none past the last *)
+      let rec next k = if k >= n then -1 else if snd (List.nth groups k) <> [] then k else next (k + 1) in
+      t.layer_group <- next (t.layer_group + 1)
+    end
+  end;
   (* claude: the style, the next one, for this map and those to come *)
   let before = t.placed in
   let t =
@@ -606,8 +616,8 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
            else if s.query <> "" then begin
              let used = List.map (fun (l : layer) -> l.lcolour) t.layers in
              let lcolour = match List.find_opt (fun c -> not (List.mem c used)) Map_v2.layer_colours with Some c -> c | None -> List.hd Map_v2.layer_colours in
-             t.layers <- t.layers @ [ { lquery = s.query; lcolour; lhits = None } ];
-             t.layers_on <- true
+             t.layers <- t.layers @ [ { lquery = s.query; lcolour; lsay = None; lhits = None } ];
+             t.layer_group <- 0
            end);
           t.search <- None;
           t.painted <- None;
@@ -839,7 +849,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
           (if t.style.units then
-             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   / search   a what a file uses   x skeleton   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
+             Printf.sprintf "wheel or click: in, a directory at a time   right click, - or wheel back: out   arrows: beside   / search   l layers   a what a file uses   x skeleton   enter the file view   m style (%s)   n tour (p back)   0 all   esc back" t.style.sname
            else
            Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)

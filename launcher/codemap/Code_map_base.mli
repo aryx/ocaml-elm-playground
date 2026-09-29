@@ -58,9 +58,10 @@ type t = {
   mutable index : Code_names.index option; (* its files indexed, once (index_of) *)
   mutable rank : Code_rank.t option; (* its definitions' uses, once (rank_of) *)
   mutable search : search option; (* claude: the search box (/, Map_v2), while open *)
-  mutable search_all : Code_search.hit array option;
+  mutable search_all : Code_search.hit array option; (* claude: what a search looks among, gathered once *)
   mutable layers : layer list; (* claude: searches kept, each lit in its colour, all at once (ctrl+Enter in the search) *)
-  mutable layers_on : bool; (* claude: l hides them, shows them *) (* claude: what a search looks among, gathered once *)
+  mutable layer_group : int; (* claude: the layers lit: -1 none, 0 those kept, k the configs' k-th (l cycling) *)
+  mutable guide_layers : (string * layer list) list option; (* claude: the configs' layers as the map's, their names, made once *)
   mutable flight : flight option; (* a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* the layout's point under the mouse, when on the map, for a style's labels *)
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
@@ -87,7 +88,7 @@ type t = {
 and search = { mutable query : string; mutable sel : int; mutable here : bool; mutable hits : (string * bool) * Code_search.hit list }
 
 (* claude: a layer: a query kept, its colour, its hits found once *)
-and layer = { lquery : string; lcolour : int * int * int; mutable lhits : Code_search.hit list option }
+and layer = { lquery : string; lcolour : int * int * int; lsay : string option; mutable lhits : Code_search.hit list option }
 
 and flight = { from : camera; dest : camera; mutable start : float; duration : float }
 

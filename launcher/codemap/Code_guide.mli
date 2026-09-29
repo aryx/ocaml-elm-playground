@@ -19,9 +19,15 @@
        tours: [{ name, stops: [item] }],
        skeletons: [{ name, bones: [{ at: path:anchor, role }], joints: [{ from, to, say }] }],
        views: [{ name, files: [path] } or { name, of: path, with: 'users' }],
-       layers: [{ name, rules: [...] }] }
+       layers: [{ name, rules: [{ text, color: '#rrggbb', say }] }] }
 
    an item being { at: anchor, say: words, weight: 1 to 3 }.
+
+   claude: a layer (the map's l): the lines containing a rule's text
+   (smart case, as the search's text search), each rule's in its colour, all
+   lit at once at any level; the colours best named in jsonnet (the
+   author), local fork_color = '#e05050', then { text: 'Cap.fork',
+   color: fork_color }. Semgrep-like patterns later.
 
    Anchors, the places a config points at, by what they are rather than
    by their line, so that editing the code does not break them:
@@ -74,6 +80,13 @@ type joint = { jfrom : string; jto : string; jsay : string option }
 type skeleton = { sname : string; sdir : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
+(* claude: a layer's rule: the text of the lines it lights, their
+   colour, what it means *)
+type rule = { text : string; colour : rgb; rsay : string option }
+
+(* a layer: its name, its config's directory, its rules *)
+type layer = { lname : string; ldir : string; rules : rule list }
+
 type dir_note = {
   dir : string; (* the config's directory, relative to the root ("": the root) *)
   title : string option;
@@ -84,7 +97,7 @@ type dir_note = {
   tours : tour list;
   skeletons : skeleton list;
   views : view list;
-  layers : Json.t list;
+  layers : layer list;
 }
 
 type t
@@ -112,6 +125,9 @@ val file_note : t -> string -> file_note option
 
 (* every config's colours *)
 val colours : t -> (string * rgb) list
+
+(* claude: every config's layers *)
+val layers : t -> layer list
 
 (* the capitals: a file's path, and the item *)
 val capitals : t -> (string * item) list

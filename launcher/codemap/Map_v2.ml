@@ -1345,7 +1345,7 @@ let search_set (t : t) : string list =
 (* the hits lit where they are on the map, at any level: a directory or
  * file framed, a definition's line marked (a bar at the ground, a dot
  * above it), the chosen one brighter and named *)
-let search_lit ?(glow = rgb 255 225 90) ?(chosen : Code_search.hit option) (t : t) (c : camera) (hits : Code_search.hit list) : shape list =
+let search_lit ?(glow = rgb 255 225 90) ?(dot = 3.) ?(chosen : Code_search.hit option) (t : t) (c : camera) (hits : Code_search.hit list) : shape list =
   let a = c.a in
   let ground = at_ground t c <> None in
   let index = Hashtbl.create 64 in
@@ -1370,7 +1370,7 @@ let search_lit ?(glow = rgb 255 225 90) ?(chosen : Code_search.hit option) (t : 
                | Some (x, y, xe) when ground ->
                    let w = Float.max 30. (xe -. x) in
                    [ rectangle glow (w +. 8.) 12. |> move (sx a (x +. (w /. 2.))) (sy a y) |> fade (if sel then 0.55 else 0.3) ]
-               | Some (x, y, _) -> [ circle glow (if sel then 6. else 3.) |> move (sx a x) (sy a y) |> fade (if sel then 1. else 0.8) ]
+               | Some (x, y, _) -> [ circle glow (if sel then 6. else dot) |> move (sx a x) (sy a y) |> fade (if sel then 1. else 0.85) ]
                | None -> [])))
 
 (* the box, under the title: the query typed, where it looks, the best
@@ -1431,26 +1431,50 @@ let layer_hits (t : t) (l : layer) : Code_search.hit list =
       l.lhits <- Some h;
       h
 
+(* the groups of layers: those kept, then each config's, their names *)
+let layer_groups (t : t) : (string * layer list) list =
+  let guide =
+    match t.guide_layers with
+    | Some g -> g
+    | None ->
+        let g =
+          List.map
+            (fun (l : Code_guide.layer) ->
+              (l.lname, List.map (fun (r : Code_guide.rule) -> { lquery = "\"" ^ r.text; lcolour = r.colour; lsay = r.rsay; lhits = None }) l.rules))
+            (Code_guide.layers t.guide)
+        in
+        t.guide_layers <- Some g;
+        g
+  in
+  ("kept", t.layers) :: guide
+
 let layers_shapes (t : t) (c : camera) : shape list =
-  if t.layers = [] || not t.layers_on then []
-  else
+  match List.nth_opt (layer_groups t) t.layer_group with
+  | None | Some (_, []) -> []
+  | Some (group, layers) ->
     let a = c.a in
-    let lit = List.concat_map (fun (l : layer) -> let r, g, b = l.lcolour in search_lit ~glow:(rgb r g b) t c (layer_hits t l)) t.layers in
+    let lit = List.concat_map (fun (l : layer) -> let r, g, b = l.lcolour in search_lit ~glow:(rgb r g b) ~dot:4.5 t c (layer_hits t l)) layers in
     let row = 20. in
-    let n = List.length t.layers in
-    let w = 30. +. List.fold_left (fun m (l : layer) -> Float.max m (text_width 14. (Printf.sprintf "%s  %d" l.lquery (List.length (layer_hits t l))))) 0. t.layers in
-    let h = 12. +. (row *. float_of_int n) in
+    let line (l : layer) =
+      let q = if String.length l.lquery > 0 && l.lquery.[0] = '"' then String.sub l.lquery 1 (String.length l.lquery - 1) else l.lquery in
+      Printf.sprintf "%s  %d%s" q (List.length (layer_hits t l)) (match l.lsay with Some s -> "   " ^ s | None -> "")
+    in
+    let head = Printf.sprintf "%s   (l: next)" (if group = "kept" then "layers kept" else group) in
+    let n = List.length layers in
+    let w = 30. +. List.fold_left (fun m l -> Float.max m (text_width 14. (line l))) (text_width 14. head) layers in
+    let h = 12. +. (row *. float_of_int (n + 1)) in
     let x0 = 10. and y0 = float_of_int a.ph -. h -. 10. in
     lit
     @ [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
+    @ [ label a yellow 14. (x0 +. 12. +. (text_width 14. head /. 2.)) (y0 +. 6. +. (row /. 2.)) head ]
     @ List.concat
         (List.mapi
            (fun i (l : layer) ->
              let r, g, b = l.lcolour in
-             let y = y0 +. 6. +. (float_of_int i *. row) +. (row /. 2.) in
-             let str = Printf.sprintf "%s  %d" l.lquery (List.length (layer_hits t l)) in
+             let y = y0 +. 6. +. (float_of_int (i + 1) *. row) +. (row /. 2.) in
+             let str = line l in
              [ circle (rgb r g b) 5. |> move (sx a (x0 +. 12.)) (sy a y); label a ink 14. (x0 +. 22. +. (text_width 14. str /. 2.)) y str ])
-           t.layers)
+           layers)
 
 let search_shapes (t : t) (c : camera) : shape list =
   match t.search with

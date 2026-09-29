@@ -181,6 +181,28 @@ lexer sees it. Never `line:` unless nothing else points there.
   sentence on what to notice there. A stop names its file.
 - `views`: a game and its kits; a library file and its users.
 
+## Layers
+
+A layer lights, at every level at once, the lines containing its rules'
+texts, each rule in its colour (the map's `l` cycles through them; the
+search's `"text` is where one tries a rule first, ctrl+Enter keeping
+it). Write one when a question cuts across the directories: what may
+touch the world (the root's Capabilities: `Cap.network`, `Cap.exec`,
+`Cap.fork`...), where a deprecated API is still used, where a protocol
+is spoken.
+
+- Name the colours with jsonnet locals (the author), so that the rules
+  read: `local fork_color = '#e05050';` then
+  `{ text: 'Cap.fork', color: fork_color, say: 'forks a process' }`.
+  Rules that mean the same kind of thing share a colour (exec and fork,
+  both processes).
+- `say` is the legend's: what a line lit so means, in a few words.
+- A text specific enough to match only what is meant: `Cap.fork`, not
+  `fork`. Two characters at least; smart case (a capital: the case
+  counts). Semgrep-like patterns will come later.
+- A layer belongs in the config of the directory whose question it is:
+  the root's for the whole repository.
+
 ## Digests
 
 Each described file gets its `digest`, which `tinybox codemap -check`

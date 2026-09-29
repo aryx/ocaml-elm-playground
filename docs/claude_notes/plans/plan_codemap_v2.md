@@ -470,6 +470,33 @@ the keys in `Code_map.update`):
 Also, from the same day: a peek opens with the comment just above the
 definition ("it probably comment the entity").
 
+## Text search and layers (the author, 2026-09-29): done
+
+"full-text search where even before the layers, one could experiment
+with Cap.fork and get matches at whatever level", "then once you are
+satisfied with some query like Cap.fork, Cap.exec, you add a layer with
+different color scheme for each and get all the capabilities
+highlighted at the same time", "in the jsonnet config file we can name
+colors with a more descriptive name like fork_color". Done:
+
+- In the search, `"text` finds the lines containing it (smart case),
+  lit at any level like the other hits (dots from afar, bars at the
+  ground); Enter peeks at the definition around the line; shift+Enter
+  takes their files together.
+- ctrl+Enter keeps a search as a layer, in the next colour; the same
+  query again takes it off.
+- Configs' layers, `layers: [{ name, rules: [{ text, color, say }] }]`,
+  colours named by jsonnet locals; the root's has Capabilities.
+- `l` cycles: the layers kept, each config's, none; a legend in the
+  bottom left corner, each rule's colour, text, count and meaning.
+
+Next for layers: semgrep-like patterns (a call to `Cap.fork` rather than
+the text), a rule's `in:` (only under a directory), layers shown
+together with a skeleton.
+
+Also: a click in a top-level comment (a game's header) peeks at all of
+it, scrollable.
+
 ## Views: several units at once (later)
 
 The author (2026-09-29): "at some point we might want to zoom in

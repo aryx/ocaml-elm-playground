@@ -1,5 +1,12 @@
 // the repository: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
+
+// the capabilities' colours, named, so that the layer's rules read
+local network_color = '#50c8f0';
+local process_color = '#f05050';
+local files_in_color = '#78e66e';
+local files_out_color = '#fa9f32';
+local dirs_color = '#e173eb';
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   title: 'Games and applications that made computing history, rebuilt small in OCaml',
@@ -43,6 +50,21 @@
         { from: 'playground/Playground.ml:def:game', to: 'playground/platforms/native/Playground_platform.ml:def:run_app', say: 'the app' },
         { from: 'playground/platforms/native/Playground_platform.ml:def:run_app', to: 'playground/platforms/native_common/Native_loop_2d.ml:def:run', say: 'its loop' },
         { from: 'playground/platforms/native_common/Native_loop_2d.ml:def:run', to: 'playground/Playground.ml:def:game_update', say: 'each event' },
+      ],
+    },
+  ],
+  // the layers (the map's l): what a program may do to the world, each
+  // capability (Cap.*: a function asks for it) lit where it is asked
+  layers: [
+    {
+      name: 'Capabilities',
+      rules: [
+        { text: 'Cap.network', color: network_color, say: 'the network: sockets, HTTP' },
+        { text: 'Cap.exec', color: process_color, say: 'runs another program' },
+        { text: 'Cap.fork', color: process_color, say: 'forks a process' },
+        { text: 'Cap.open_in', color: files_in_color, say: 'reads a file' },
+        { text: 'Cap.open_out', color: files_out_color, say: 'writes a file' },
+        { text: 'Cap.readdir', color: dirs_color, say: 'lists a directory' },
       ],
     },
   ],

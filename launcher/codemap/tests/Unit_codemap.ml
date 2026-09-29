@@ -369,4 +369,13 @@ let tests =
           Alcotest.(check (list string)) "arm//: those named so, together" [ "games/arm"; "libs/arm" ] (Code_search.all_named all "arm//");
           Alcotest.(check string) "Tab: as far as the hits agree" "step" (Code_search.complete (Code_search.matches all "ste") "ste");
           Alcotest.(check string) "Tab: a directory's slash" "games/" (Code_search.complete (Code_search.matches all "gam") "gam"));
+      (* claude: a config's layer, its colours named by jsonnet locals *)
+      Testo.create "a config's layer" (fun () ->
+          let config = "local fork_color = '#e05050';\n{ layers: [{ name: 'Capabilities', rules: [{ text: 'Cap.fork', color: fork_color, say: 'forks' }] }] }" in
+          let g, errs = Code_guide.load ~read:(fun p -> if p = ".codemapconfig" then Some config else None) [ ".codemapconfig" ] in
+          Alcotest.(check (list string)) "no mistake" [] errs;
+          match Code_guide.layers g with
+          | [ { lname = "Capabilities"; rules = [ { text = "Cap.fork"; colour; rsay = Some "forks" } ]; _ } ] ->
+              Alcotest.(check (triple int int int)) "its colour, named" (0xe0, 0x50, 0x50) colour
+          | _ -> Alcotest.fail "the layer");
     ]

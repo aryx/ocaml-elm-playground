@@ -62,6 +62,10 @@ val search_named : Code_map_base.t -> string list
    definitions' files), to see together (shift+Enter) *)
 val search_set : Code_map_base.t -> string list
 
+(* claude: the groups of layers l cycles through: those kept (ctrl+Enter
+   in the search), then each config's, their names *)
+val layer_groups : Code_map_base.t -> (string * Code_map_base.layer list) list
+
 (* claude: the layers' colours, one each, in turn *)
 val layer_colours : (int * int * int) list
 
