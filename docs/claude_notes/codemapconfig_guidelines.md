@@ -77,6 +77,25 @@ needs first; the rest is found by searching.
   excellent (Linus's `|` and `/* */` notes): summaries should say what
   they say, shorter, and important lines should point at the tricky
   places they warn about.
+- The lines that matter most are often uncommented (1991 C): anchor
+  them with `code:"words"`, the first line of code containing them
+  (`code:"verify_area"`), not `line:`.
+- `def:` finds a body before its prototype; a name defined by a macro
+  (`_syscall1(int,close,int,fd)` defining `close`) is invisible: name
+  the file, and say it in the summary.
+- In a kernel, nearly every file is a driver or a subsystem with an
+  entry point worth a capital (unlike a game's helpers): one per file,
+  its entry (`schedule`, `do_page_fault`, `rw_hd`), and the shared
+  structures (the process, the inode, the buffer) in the headers.
+- Real bugs of the historical code (a precedence slip, a wrong
+  variable) are worth an important line saying so: the reader will
+  wonder otherwise.
+- C resolves as it links: a name is found in the use's own top folder,
+  a top-level library (`lib/`), or a file sharing a header with the
+  use's (one program); an include only in its includer's top folder or
+  an `include/` directory. A dependency that should be there and is not
+  (a table of function pointers, a macro's call) is worth a joint in a
+  skeleton, saying how it happens.
 
 ## Before writing
 
