@@ -69,6 +69,7 @@ type t = {
   mutable xray_n : int; (* claude: which of the skeletons at hand the X-ray shows (x again: the next) *)
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
+  beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }
@@ -118,6 +119,7 @@ val make :
   ?colours:(string * (int * int * int)) list ->
   ?roots:string list ->
   ?guide:Code_guide.t ->
+  ?beyond:entry list ->
   style:style ->
   area:float * float * int * int ->
   title:string ->

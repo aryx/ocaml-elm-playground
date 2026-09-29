@@ -40,6 +40,7 @@ val make :
   ?colours:(string * (int * int * int)) list ->
   ?roots:string list ->
   ?guide:Code_guide.t ->
+  ?beyond:entry list ->
   area:float * float * int * int ->
   title:string ->
   marked:string list ->

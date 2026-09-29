@@ -87,6 +87,7 @@ type t = {
   mutable xray_n : int; (* claude: which of the skeletons at hand the X-ray shows (x again: the next) *)
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
+  beyond : entry list; (* claude: sources not drawn but resolved against, peeked at (a program's map: the rest of the repository) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }
@@ -147,7 +148,7 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ?(beyond = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout a Ordered entries in
@@ -156,7 +157,7 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
     back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None;
-    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0 }
+    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; beyond }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries
@@ -165,7 +166,8 @@ let index_of (t : t) : Code_names.index =
   match t.index with
   | Some ix -> ix
   | None ->
-      let ix = Code_names.index (files_of t) in
+      (* claude: and the sources beyond the map, resolved against *)
+      let ix = Code_names.index (files_of t @ List.map (fun (e : entry) -> (e.path, e.file)) t.beyond) in
       t.index <- Some ix;
       ix
 

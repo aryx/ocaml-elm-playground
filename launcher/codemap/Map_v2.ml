@@ -664,7 +664,7 @@ let grounds (t : t) (e : entry) : (string * Code_ground.t) list =
     (e.path, s.focus) :: List.map (fun (p : Code_street.panel) -> (p.path, p.ground)) (Code_street.panels s)
   else [ (e.path, ground_of t e) ]
 
-let entry_of (t : t) (path : string) : entry option = List.find_opt (fun (x : entry) -> x.path = path) t.entries
+let entry_of (t : t) (path : string) : entry option = List.find_opt (fun (x : entry) -> x.path = path) (t.entries @ t.beyond)
 
 (* where a file's line is on the map now: its left, its middle's height,
  * the end of its text *)

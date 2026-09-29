@@ -85,7 +85,14 @@ let map_of ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (st
   (* claude: numbered in their reading order (Code_deps.closure's), but
    * the whole repository's and a directory's *)
   let numbered = match scope with Own | Uses -> true | Whole | Directory _ -> false in
-  Code_map.make ~numbered ~colours ~roots ?guide ~area ~title ~marked:[ path ] entries
+  (* claude: a program's map resolves its names against every source, the
+   * ones it does not draw too (a click on game peeks at Playground's) *)
+  let beyond =
+    match scope with
+    | Own | Uses -> List.filter_map (fun (p, src) -> if List.mem p paths then None else Some (entry p src)) sources
+    | Whole | Directory _ -> []
+  in
+  Code_map.make ~numbered ~colours ~roots ?guide ~beyond ~area ~title ~marked:[ path ] entries
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   let sources, guide = guide_of sources in

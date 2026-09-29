@@ -46,8 +46,8 @@ let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
   { t with style; algo; placed; geometry; painted = None; lens = None; focus = 0 }
 
 (* a map in the chosen style *)
-let make ?numbered ?colours ?roots ?guide ~area ~title ~marked entries : t =
-  let t = Code_map_base.make ?numbered ?colours ?roots ?guide ~style:!chosen ~area ~title ~marked entries in
+let make ?numbered ?colours ?roots ?guide ?beyond ~area ~title ~marked entries : t =
+  let t = Code_map_base.make ?numbered ?colours ?roots ?guide ?beyond ~style:!chosen ~area ~title ~marked entries in
   if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
 
 (* claude: the map framing a unit by its path (a directory's or a
@@ -388,7 +388,7 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
       (* claude: a line the style placed itself (Map_v2's ground), not
        * the treemap's: Enter opens it there, a click stays *)
       let picked = t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy in
-      let file_of path = List.find_map (fun (e : entry) -> if e.path = path then Some (Lazy.force e.file) else None) t.entries in
+      let file_of path = List.find_map (fun (e : entry) -> if e.path = path then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
       match (named, picked) with
       | Some i, _ -> (fit a t.placed.(i).rect, Stay)
       | None, Some (path, line, col) -> (
