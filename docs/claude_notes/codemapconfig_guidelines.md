@@ -68,6 +68,19 @@ files). The first pass left the Playground's core without a capital and
 most games without a skeleton, found only by the author looking: a pass
 is finished when -check says 0 missing.
 
+### Other languages, other projects (~/ix, ~/principia)
+
+The brief and the checks are not OCaml's only: a C file's `#include`s
+count toward its header's fan-in (a header and its `.c` one module), a
+C `main` (Plan 9's, its type on the line above, or not) is a program,
+as is an OCaml `Main.ml` running `Cap.main` (~/ix's programs). Several
+files of one name (~/ix's 26 `CLI.ml`) are told apart by nearness: a
+use counts for the one sharing the most directory with the user's. A
+project's own shapes go in its own `skeletons.libsonnet` (~/ix's
+`cli`: Main, the CLI's main, the core); the Playground's templates are
+for Playground programs, and the brief's template line shows only for
+them.
+
 ### Centrality, not size (the author, 2026-09-29)
 
 "Playground.computer, Playground.game ... are arguably the most

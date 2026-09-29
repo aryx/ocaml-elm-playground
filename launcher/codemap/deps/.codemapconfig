@@ -13,7 +13,7 @@
         { at: 'def:budget', say: '5,000 lines of its own', weight: 2 },
       ],
     },
-    'Code_deps.ml': { digest: '03702f160b67',
+    'Code_deps.ml': { digest: 'fbc9e0d8f68e',
       summary: 'Module names found in the text, aliases followed, the closure counted in lines.',
       important: [
         { at: 'def:modules_used', weight: 2 },
