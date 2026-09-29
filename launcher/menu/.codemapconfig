@@ -36,7 +36,7 @@ local skeletons = import '../../skeletons.libsonnet';
     },
   },
   skeletons: [
-    skeletons.mvu('Tinybox_menu.ml', init='def:initial') + {
+    skeletons.mvu('Tinybox_menu.ml', init='def:initial', app=null, main=null) + {
       name: 'The menu: Model-View-Update over a host',
       bones+: [
         { at: 'Tinybox_menu.mli:type:host', role: 'the platform: native or web' },

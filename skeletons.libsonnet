@@ -6,7 +6,10 @@
   // a game on the Playground: Model-View-Update, Elm's architecture
   // (Evan Czaplicki's): the state, its first value, a frame's step, and
   // its picture
-  mvu(file, model='type:model', init='def:initial_model', update='def:update', view='def:view'):: {
+  // claude: and where they meet, app (the three handed to the
+  // Playground's game) and main (the app run by the platform), null
+  // when a program has no such definition
+  mvu(file, model='type:model', init='def:initial_model', update='def:update', view='def:view', app='def:app', main='def:main'):: {
     local at(a) = file + ':' + a,
     name: 'Model-View-Update',
     bones: [
@@ -14,13 +17,18 @@
       { at: at(init), role: 'the first state' },
       { at: at(update), role: 'a frame: model -> model' },
       { at: at(view), role: 'a picture: model -> shapes' },
-    ],
+    ] + (if app == null then [] else [{ at: at(app), role: 'the app: the three given to game' }])
+      + (if main == null then [] else [{ at: at(main), role: 'the program: the app run' }]),
     joints: [
       { from: at(init), to: at(model) },
       { from: at(model), to: at(update), say: 'stepped' },
       { from: at(update), to: at(model), say: 'the next state' },
       { from: at(model), to: at(view), say: 'drawn' },
-    ],
+    ] + (if app == null then [] else [
+      { from: at(app), to: at(init), say: 'starts from' },
+      { from: at(app), to: at(update), say: 'steps with' },
+      { from: at(app), to: at(view), say: 'draws with' },
+    ]) + (if app == null || main == null then [] else [{ from: at(main), to: at(app), say: 'runs' }]),
   },
 
   // a game on the Playground: Model-View-Update, and the game's heart
@@ -59,17 +67,19 @@
 
   // a state with no type of its own, its first value written in app (a
   // pair, a number, ()); a heart, optional, reached from update or view
-  untyped(file, what, heart=null, role=null, say='each frame', from='def:update', init='def:app', update='def:update', view='def:view'):: {
+  untyped(file, what, heart=null, role=null, say='each frame', from='def:update', init='def:app', update='def:update', view='def:view', main='def:main'):: {
     name: 'Model-View-Update, the state ' + what + (if heart == null then '' else ', and its heart: ' + std.split(heart, ':')[1]),
     bones: [
       { at: file + ':' + init, role: 'the first state: ' + what },
       { at: file + ':' + update, role: 'a frame: state -> state' },
       { at: file + ':' + view, role: 'a picture of the state' },
-    ] + (if heart == null then [] else [{ at: file + ':' + heart, role: role }]),
+    ] + (if heart == null then [] else [{ at: file + ':' + heart, role: role }])
+      + (if main == null then [] else [{ at: file + ':' + main, role: 'the program: the app run' }]),
     joints: [
       { from: file + ':' + init, to: file + ':' + update, say: 'stepped' },
       { from: file + ':' + update, to: file + ':' + view, say: 'the next state, drawn' },
-    ] + (if heart == null then [] else [{ from: file + ':' + from, to: file + ':' + heart, say: say }]),
+    ] + (if heart == null then [] else [{ from: file + ':' + from, to: file + ':' + heart, say: say }])
+      + (if main == null then [] else [{ from: file + ':' + main, to: file + ':' + init, say: 'runs' }]),
   },
 
   // a 3D scene that only turns with the clock: game3d, the state ()

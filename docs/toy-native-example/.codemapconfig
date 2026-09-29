@@ -14,6 +14,6 @@ local skeletons = import '../../skeletons.libsonnet';
     },
   },
   skeletons: [
-    skeletons.mvu('Toy.ml', init='def:initial_state'),
+    skeletons.mvu('Toy.ml', init='def:initial_state', main='def:_main'),
   ],
 }

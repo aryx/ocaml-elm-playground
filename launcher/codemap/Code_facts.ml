@@ -325,4 +325,11 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
         else None)
       sources
   in
-  programs @ hubs @ dirs @ modules @ undescribed
+  (* claude: the project's senses, once: its root config's anatomy rules
+   * (the X-ray's nerves and lungs; guessed from words without them) *)
+  let senses =
+    match List.find_opt (fun (d : Code_guide.dir_note) -> d.dir = "") (Code_guide.dirs guide) with
+    | Some d when d.nerves = [] || d.lungs = [] -> [ ".codemapconfig: no anatomy rules (nerves:, lungs:): what this project's inputs and I/O are" ]
+    | _ -> []
+  in
+  senses @ programs @ hubs @ dirs @ modules @ undescribed

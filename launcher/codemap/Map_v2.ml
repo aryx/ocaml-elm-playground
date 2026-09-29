@@ -1631,6 +1631,30 @@ let peek_level (t : t) (c : camera) (q : float) (pk : peek) ~(top : bool) : shap
       label a (lighter (r, g, b)) 14. (pk.bx +. 12. +. (0.25 *. 14. *. float_of_int (String.length title))) (pk.by +. 18.) title;
       bitmap pk.iw pk.ih img |> move (sx a (pk.ix +. (pk.iw /. 2.))) (sy a (pk.iy +. (pk.ih /. 2.)));
     ]
+  (* claude: the X-ray's nerves and lungs on, their lines tinted in the
+   * peek too, and a bar in its margin (the author: the enclosing
+   * entity's body, bigger, the nerves and lungs still lit) *)
+  @ (if not t.xray then []
+     else
+       match facts_of t pk.pe with
+       | None -> []
+       | Some (fs : Code_anatomy.facts) ->
+           let on s = List.mem s !Code_anatomy.shown in
+           let lit s ls =
+             if not (on s) then []
+             else
+               let r, g, b = Code_anatomy.colour s in
+               List.concat_map
+                 (fun l ->
+                   if l < pk.shown_first || l > pk.shown_last || l >= Array.length pk.pg.places then []
+                   else
+                     let x0, y0, w, h = Code_ground.box pk.pg l in
+                     let h = Float.max 3. h in
+                     let y = pk.iy +. y0 +. (h /. 2.) in
+                     [ rectangle (rgb r g b) w h |> move (sx a (pk.ix +. x0 +. (w /. 2.))) (sy a y) |> fade 0.3; rectangle (rgb r g b) 5. h |> move (sx a (pk.bx +. 5.)) (sy a y) ])
+                 ls
+           in
+           lit Code_anatomy.Nerves fs.nerves @ lit Code_anatomy.Lungs fs.lungs)
   (* a peek under another, dimmed *)
   @ if top then [] else [ rectangle (rgb 0 0 0) pk.bw pk.bh |> move (sx a cx) (sy a cy) |> fade 0.35 ]
 

@@ -28,12 +28,23 @@ project's path.
    the `title` (the project in a sentence), `colors` per top folder,
    and the skeletons that cross the whole project -- its layers (a
    directory bone each), and one chain per path a reader must follow
-   (below). These frame every other config.
+   (below). These frame every other config. And its `anatomy:`, the
+   X-ray's nerves and lungs, rules naming this project's inputs
+   (keyboard, events, interrupts, a syscall's user bytes) and its I/O
+   (files, disk, console, network): `{ nerves: [...], lungs: [...] }`,
+   each a `ref:` (a name used, `Unix.read`, `ll_rw_block`) or words on
+   the line; `-check` reports a root without them (the words the map
+   guesses from otherwise are a web program's, not a kernel's).
 3. **Write the project's `skeletons.libsonnet`** at its root: the
    shapes its parts repeat (ix: `cli`, Main to the CLI to the core;
    Linux 0.01: `chain`, a path of [anchor, role, say]; this repository:
    `mvu`, `game`, `drawn`...). A shape one config would repeat ten times
-   belongs there.
+   belongs there. A shape's bones go down to where the program starts:
+   `mvu`'s state, first state, update and view, and the `app` that hands
+   them to the Playground and the `main` that runs it (the author: the
+   skeleton links main and app to view, update and model) -- a skeleton
+   that stops short of the entry point leaves the reader asking how it
+   is run.
 4. **Split the rest** by top folders among parallel agents (a few
    hundred files each at most), each given: the project's path, this
    file, the manual's section 12, the root config and the libsonnet to

@@ -85,7 +85,7 @@
         { at: 'def:labels', say: "v2's names, notes, cards and the X-ray" },
       ],
     },
-    'Map_v2.ml': { digest: '83baec42b251',
+    'Map_v2.ml': { digest: '5689707d8578',
       summary: "Each level painted and named: the configs' cards and notes, peeks, the skeletons and the anatomy's plates.",
       important: [
         { at: 'def:paint_ground', say: 'a file as the whole map, lines as high as they matter', weight: 3 },
@@ -292,7 +292,7 @@
         { at: 'def:brief', say: 'tinybox codemap -facts: a directory in Markdown' },
       ],
     },
-    'Code_facts.ml': { digest: '938b35e3a508',
+    'Code_facts.ml': { digest: '83273a97a46c',
       summary: "Each file's digest, header, sections, definitions with their uses and callers, fan-in and hubs, written out.",
       important: [
         { at: 'def:is_program', say: 'a main: a driver, not the core', weight: 2 },

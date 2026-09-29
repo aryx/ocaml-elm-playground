@@ -1,0 +1,18 @@
+// languages/asm/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "Assembly read, not run, for the code map: an old Unix's as86 and gas, Plan 9's, a line at a time, labels as definitions.",
+  files: {
+    'Highlight_asm.mli': { digest: 'ee5c3b5fc09b',
+      summary: "An assembly file's tokens coloured, its labels defined and its operands' names used; C's leading underscore dropped, so C and assembly are one namespace.",
+    },
+    'Highlight_asm.ml': { digest: '635390cbca6e',
+      summary: 'Read line by line without a grammar: comments, [label:] mnemonic operands, ARM told apart by its @ comments and # immediates.',
+      important: [
+        { at: 'def:analyze', weight: 2 },
+        { at: 'def:strip', say: "_main is C's main", weight: 1 },
+      ],
+    },
+  },
+}
