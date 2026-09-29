@@ -463,9 +463,12 @@ let line_lit (t : t) (c : camera) (e : entry) : shape list =
       | None -> [])
 
 (* claude: at the ground or the street, the name under the mouse bound
- * in its file: its binding pulsing cyan, its uses lit yellow, as on the
+ * in its file: its binding pulsing cyan, its uses yellow, as on the
  * map read up close (Code_map.names_lit), placed where the lines are
- * laid out now (Code_ground), in the focus and in the panels *)
+ * laid out now (Code_ground), in the focus and in the panels; and a use
+ * in a line too thin to read magnified while the mouse is there, a
+ * callout (the author: "temporarily magnify the calls") -- not the
+ * layout changed, which would move the line under the mouse *)
 let names_glow (t : t) (c : camera) (e : entry) : shape list =
   match t.pointer with
   | None -> []
@@ -490,18 +493,52 @@ let names_glow (t : t) (c : camera) (e : entry) : shape list =
               match Code_file.name_at f l col with
               | None -> []
               | Some o ->
-                  List.concat_map
-                    (fun (w : Highlight_code.occurrence) ->
-                      if w.line >= Array.length g.places then []
-                      else
+                  let occurrences = List.filter (fun (w : Highlight_code.occurrence) -> w.line < Array.length g.places) (Code_file.uses f o) in
+                  (* the binding pulsing cyan, the uses yellow *)
+                  let lit =
+                    List.concat_map
+                      (fun (w : Highlight_code.occurrence) ->
                         let x, y, _, h = Code_ground.box g w.line in
                         let cw = Code_ground.cell_w g w.line in
                         let ww = float_of_int w.len *. cw and hh = Float.max 3. h in
                         let px = x +. (float_of_int w.col *. cw) +. (ww /. 2.) and py = y +. (h /. 2.) in
                         let binding = (w.line, w.col) = o.bound_at in
-                        if binding then List.map (move (sx a px) (sy a py)) (Code_view.glow_at t.clock (rgb 0 225 255) ww hh)
-                        else [ rectangle yellow ww hh |> move (sx a px) (sy a py) |> fade 0.3 ])
-                    (Code_file.uses f o))))
+                        List.map (move (sx a px) (sy a py)) (Code_view.glow_at t.clock (if binding then rgb 0 225 255 else yellow) ww hh))
+                      occurrences
+                  in
+                  (* a use in a line too thin to read: a callout, the line's
+                   * words round it drawn readable over it, moved down when
+                   * it would cover another *)
+                  let size = 15. in
+                  let placed = ref [] in
+                  let callouts =
+                    List.filter_map
+                      (fun (w : Highlight_code.occurrence) ->
+                        let x, y, cwidth, h = Code_ground.box g w.line in
+                        if h >= 7. || (w.line, w.col) = o.bound_at then None
+                        else
+                          let text = String.map (fun ch -> if ch = '\000' then ' ' else ch) (Bytes.sub_string f.chars (w.line * Code_file.cols) Code_file.cols) in
+                          let from = max 0 (w.col - 24) in
+                          let snippet = String.trim (String.sub text from (min 64 (String.length text - from))) in
+                          let snippet = (if from > 0 then "... " else "") ^ snippet in
+                          let tw = (0.5 *. size *. float_of_int (String.length snippet)) +. 12. in
+                          let bw = Float.min tw cwidth and bh = size +. 6. in
+                          let bx = x +. 6. in
+                          let overlaps by = List.exists (fun (ox, oy) -> Float.abs (oy -. by) < bh && Float.abs (ox -. bx) < bw) !placed in
+                          let rec free by k = if k = 0 || not (overlaps by) then by else free (by +. bh +. 2.) (k - 1) in
+                          let by = free (y +. (h /. 2.)) 8 in
+                          placed := (bx, by) :: !placed;
+                          let cx = bx +. (bw /. 2.) in
+                          Some
+                            (List.map (move (sx a cx) (sy a by)) (Code_view.glow_at t.clock yellow bw bh)
+                            @ [
+                                rectangle (rgb 18 16 36) bw bh |> move (sx a cx) (sy a by) |> fade 0.9;
+                                words ink snippet |> scale (size /. words_font_size) |> move (sx a (bx +. 6. +. ((tw -. 12.) /. 2.))) (sy a by);
+                              ]))
+                      occurrences
+                    |> List.concat
+                  in
+                  lit @ callouts)))
 
 let labels (t : t) (c : camera) (_ : float) : shape list =
   let kept = names t c in
