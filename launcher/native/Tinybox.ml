@@ -106,6 +106,7 @@ let usage =
   \  chosen=, code=: the menu on a program, or in its code map\n\
   \  codemap <dir>: the code map of a directory's OCaml and C files\n\
   \  codemap -check <dir>: what its .codemapconfig files say that does not hold\n\
+  \  codemap -facts <root> <dir>: what the analyses know of <dir>, for writing its config\n\
   \  <program>: its name, case-insensitive, \"Tiny\" optional, or a unique part of it\n\
   \  args: the program's own, e.g. -debug-keys, artwork=shapes\n"
 
@@ -191,6 +192,12 @@ let () =
   | [ _; "list" ] -> list_programs ()
   (* claude: a directory's code map, with the platform's flags if any *)
   | [ _; "codemap"; "-check"; dir ] -> Cap.main (fun caps -> check_directory caps dir)
+  (* claude: codellm's evidence, a directory's brief (Code_facts) *)
+  | [ _; "codemap"; "-facts"; root; dir ] ->
+      Cap.main (fun caps ->
+          let d = Tinybox_native.directory_sources caps root in
+          let dir = match dir with "." | "./" | "" -> "" | d -> if d.[String.length d - 1] = '/' then String.sub d 0 (String.length d - 1) else d in
+          print caps (Code_facts.brief ~guide:d.guide ~sources:d.sources ~dir))
   | exe :: "codemap" :: dir :: flags ->
       codemap_dir := dir;
       Program.run codemap ~argv:(Array.of_list (exe :: flags))

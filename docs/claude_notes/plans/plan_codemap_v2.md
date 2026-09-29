@@ -535,7 +535,10 @@ The same patterns serve search (`/` with a pattern) and anchors
    the config's `links` inside the focus, its `related` files as
    panels of their own, an .ml and its .mli as one panel.)
 
-7. **codellm**: the facts brief and the guidelines; configs for
+7. **codellm** (started, 2026-09-29: `Code_facts`, `tinybox codemap
+   -facts <root> <dir>`; `skeletons.game`; `games/arcade/` written, its
+   18 games' cards, capitals, important lines, ten game skeletons and
+   the region's own, what its games share): the facts brief and the guidelines; configs for
    `launcher/` and `launcher/codemap/` (the map explaining itself), then
    `~/ix`; a tour of each.
 8. **Tours from the config** replacing today's (headers, sections,

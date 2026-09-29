@@ -12,7 +12,14 @@ The worked example to imitate: `games/shmup/.codemapconfig`
 
 ## Before writing
 
-Read, in this order: the directory's README if any (and `CATALOG.md`'s
+Start from the facts: `tinybox codemap -facts <root> <dir>` prints a
+Markdown brief of the directory (its files, their digests, their header
+comments, their sections, their top-level definitions with their uses
+here and from other files, the most used starred, what each file uses
+and what uses it). It says what is there, never what matters: that is
+the config's judgement. It also gives the digests to copy.
+
+Then read, in this order: the directory's README if any (and `CATALOG.md`'s
 section for a genre), each file's header comment, then the code itself
 -- the model, the update, the view for a game; the `.mli` for a
 library. The header comments here are good: the config's job is not to
@@ -71,7 +78,15 @@ bones' definitions lit in the shaded file.
   repository's own ("How a program runs": `Program.main`, the platform's
   `run_app`, the frame loop, the game's update) sits in the root config.
 - Every Playground game is Model-View-Update: the template is the
-  default; name a game's skeleton for what it adds.
+  default; name a game's skeleton for what it adds. `skeletons.game(file,
+  heart, role)` is MVU and the game's heart reached from `update`, one
+  line a game (named arguments with `=`: `model='type:game'`).
+- A skeleton inside one file is that file's: shown at its ground, a
+  small dot from afar. A region's skeleton spans files: for a genre,
+  what its games share -- the kits (the arcade's: the maze kit under
+  Pac-Man and Bomberman, the lightcycles kit under the three Trons),
+  the only ties between programs otherwise each alone. Bones outside
+  the region are fine: the X-ray draws stubs naming them.
 - A skeleton has a level: its config's directory. The X-ray shows the
   skeletons of the unit looked at (a file's at the ground, a directory's
   config's from afar, or the nearest above that has some), one at a
@@ -122,6 +137,12 @@ the ground: the model's type, the function holding the trick, the
 comment explaining the non-obvious. Not the most used (the map knows
 that already), the most telling. `weight` 3 for the two or three that
 matter most, 1 for the rest. Five to ten per file.
+
+## Jsonnet pitfalls
+
+- An apostrophe inside a single-quoted string ends it: write "its
+  ghosts' ways" in double quotes.
+- A function's named arguments are `name=value`, a field's `name: value`.
 
 ## Anchors
 

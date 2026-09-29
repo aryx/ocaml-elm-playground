@@ -278,6 +278,18 @@ let tests =
           Alcotest.(check (list int)) "the skin: what the .mli shows" [ 0; 3 ] fs.skin;
           let strength l = List.fold_left (fun acc (a, _, st) -> if a = l then st else acc) 0. fs.muscles in
           Alcotest.(check bool) "the muscles: sum's loop works more than update's none" true (strength 3 > strength 0));
+      (* claude: codellm's evidence, a directory's brief *)
+      Testo.create "the facts: a directory's brief" (fun () ->
+          let sources =
+            [ ("g/A.ml", "(* Claude Code\n * Copyright (C) 2026\n *)\n(* A game: the heart is march. *)\nlet march x = Kit.step x\nlet main = march 1\n"); ("k/Kit.ml", "let step x = x + 1\n") ]
+          in
+          let b = Code_facts.brief ~guide:Code_guide.empty ~sources ~dir:"g" in
+          let has s = Alcotest.(check bool) s true (let n = String.length s and m = String.length b in let rec go i = i + n <= m && (String.sub b i n = s || go (i + 1)) in go 0) in
+          has "# g";
+          has "A game: the heart is march.";
+          has "def:march, line 5";
+          has "Uses: k/Kit.ml (1)";
+          has "A program: it has a main.");
       Testo.create "a config's mistakes" (fun () ->
           let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
           Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");

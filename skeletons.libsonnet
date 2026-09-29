@@ -22,4 +22,13 @@
       { from: at(model), to: at(view), say: 'drawn' },
     ],
   },
+
+  // a game on the Playground: Model-View-Update, and the game's heart
+  // (the one definition that makes it that game), reached from update
+  game(file, heart, role, say='the rules', model='type:model', init='def:initial_model', update='def:update', view='def:view')::
+    self.mvu(file, model, init, update, view) + {
+      name: 'Model-View-Update, and its heart: ' + std.split(heart, ':')[1],
+      bones+: [{ at: file + ':' + heart, role: role }],
+      joints+: [{ from: file + ':' + update, to: file + ':' + heart, say: say }],
+    },
 }

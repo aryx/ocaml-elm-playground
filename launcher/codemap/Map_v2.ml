@@ -643,11 +643,22 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let here = t.placed.(t.focus).path in
   let parent d = match String.rindex_opt d '/' with Some i -> String.sub d 0 i | None -> "" in
   let under d p = d = "" || p = d || (String.length p > String.length d && String.sub p 0 (String.length d + 1) = d ^ "/") in
+  (* a skeleton inside one file is that file's: spread at its ground,
+   * a dot from afar; a region's are the ones spanning its files *)
+  let one_file (s : Code_guide.skeleton) =
+    match s.bones with b :: rest -> b.banchor <> "" && List.for_all (fun (x : Code_guide.bone) -> x.bpath = b.bpath && x.banchor <> "") rest | [] -> false
+  in
   let candidates =
     match ground with
     | Some e -> List.filter (fun (s : Code_guide.skeleton) -> List.exists (fun (b : Code_guide.bone) -> b.bpath = e.path) s.bones) all
     | None ->
-        let rec level d = match List.filter (fun (s : Code_guide.skeleton) -> s.sdir = d) all with [] when d <> "" -> level (parent d) | l -> l in
+        (* above the unit, only a skeleton with two bones on the map: one
+         * mostly off it would be stubs *)
+        let seen (s : Code_guide.skeleton) = List.length (List.filter (fun b -> bone_spot b <> None) s.bones) >= 2 in
+        let rec level d =
+          let l = List.filter (fun (s : Code_guide.skeleton) -> s.sdir = d && (not (one_file s)) && (d = here || seen s)) all in
+          match l with [] when d <> "" -> level (parent d) | l -> l
+        in
         level here
   in
   let k = List.length candidates in
@@ -658,7 +669,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let shown = match List.nth_opt candidates t.xray_n with Some s -> [ s ] | None -> [] in
   let deeper =
     if ground <> None then []
-    else List.filter (fun (s : Code_guide.skeleton) -> s.sdir <> here && under here s.sdir && not (List.memq s candidates)) all
+    else List.filter (fun (s : Code_guide.skeleton) -> (one_file s || s.sdir <> here) && under here s.sdir && not (List.memq s candidates)) all
   in
   let banner =
     match shown with
@@ -756,8 +767,9 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                 let ae = ax0 -. 12. in
                 let ex = float_of_int a.pw -. 20. in
                 let pts = Map_atlas.bspline [| (ae, ay); ((ae +. ex) /. 2., ay -. 40.); (ex, ay) |] in
-                let name = snd (Code_guide.split bn.bat) in
-                let text = Printf.sprintf "%s  %s" name bn.bpath in
+                (* a definition: its name and file; a whole unit: its path
+                 * and what it is for *)
+                let text = if bn.banchor = "" then Printf.sprintf "%s: %s" bn.bpath bn.role else Printf.sprintf "%s  %s" (snd (Code_guide.split bn.bat)) bn.bpath in
                 let tw = 0.5 *. 13. *. float_of_int (String.length text) in
                 (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else [])
                 @ (if blood_on then blood a t.clock pts else [])
@@ -809,6 +821,10 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
             let n = float_of_int (List.length spots) in
             let x = List.fold_left (fun acc (x, _, _) -> acc +. x) 0. spots /. n and y = List.fold_left (fun acc (_, y, _) -> acc +. y) 0. spots /. n in
             let tw = 0.5 *. 13. *. float_of_int (String.length s.sname) in
+            (* a file's skeleton a small dot, its name the file's capital's
+             * business: a hundred games must not crowd the map *)
+            if one_file s then [ circle (rgb 20 16 30) 6. |> move (sx a x) (sy a y); circle ink_i 4. |> move (sx a x) (sy a y) ]
+            else
             [
               circle (rgb 20 16 30) 9. |> move (sx a x) (sy a y);
               circle ink_i 7. |> move (sx a x) (sy a y);
