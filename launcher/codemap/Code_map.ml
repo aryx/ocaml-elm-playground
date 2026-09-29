@@ -153,12 +153,37 @@ let open_peek (t : t) (file_of : string -> Code_file.t option) ((p, l) : string 
   | Some g ->
       let first, last = def_extent g l in
       (* claude: with the comment just above it, which likely says what it
-       * is (the author); not a section's banner, nor past a blank line *)
-      let comment l =
-        let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
-        match first_cat 0 with Some Comment -> true | _ -> false
+       * is (the author), all of it, its blank lines too: from its last
+       * line up to where it opens, (* and *) counted; comments stacked
+       * right above one another with it; not a section's banner *)
+      let text l = String.map (fun c -> if c = '\000' then ' ' else c) (Bytes.sub_string g.chars (l * Code_file.cols) Code_file.cols) in
+      let count sub str =
+        let n = String.length str and m = String.length sub in
+        let k = ref 0 in
+        for i = 0 to n - m do if String.sub str i m = sub then incr k done;
+        !k
       in
-      let rec up l = if l > 0 && comment (l - 1) then up (l - 1) else l in
+      let comment_end l =
+        let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
+        l >= 0 && (match first_cat 0 with Some Comment -> true | _ -> false)
+      in
+      (* the line a comment ending at [l] opens at *)
+      let rec opening l depth =
+        let t = text l in
+        let depth = depth + count "*)" t + count "*/" t - count "(*" t - count "/*" t in
+        if depth <= 0 || l = 0 || l < first - 400 then l else opening (l - 1) depth
+      in
+      (* a banner's rule, (*----*): where a section begins, not a comment *)
+      let rule l =
+        let t = String.trim (text l) in
+        String.length t >= 8 && String.for_all (fun c -> String.contains "(*)-=/ " c) t
+      in
+      let rec up l =
+        if comment_end (l - 1) then
+          let o = opening (l - 1) 0 in
+          if List.exists rule (List.init (l - o) (fun k -> o + k)) then l else up o
+        else l
+      in
       let first = up first in
       (match t.peek with Some top -> t.peek_stack <- (top, t.peek_scroll) :: t.peek_stack | None -> ());
       t.peek <- Some (p, first, last);
