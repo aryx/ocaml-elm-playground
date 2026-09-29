@@ -27,7 +27,7 @@ type action = Stay | Open of Code_file.t * int | Close
 
 (* claude: the styles, m going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
-let styles = [ Map_classic.style; Map_streets.style; Map_atlas.style ]
+let styles = [ Map_classic.style; Map_streets.style; Map_atlas.style; Map_v2.style ]
 let chosen = ref Map_classic.style
 let choose_style (name : string) = match List.find_opt (fun s -> s.sname = name) styles with Some s -> chosen := s | None -> ()
 let style_name () = !chosen.sname
@@ -159,11 +159,11 @@ let readable_at (t : t) (u : float) (v : float) : bool =
   | None -> false
 
 (* claude: the magnifying glass (below): round, a reading glass (80
- * columns), or none, o going from one to the next, one setting for every
- * map (tinybox's panel and its explorer) *)
+ * columns), or none -- none at first, o going from one to the next, one
+ * setting for every map (tinybox's panel and its explorer) *)
 type glass = Round | Reading | No_glass
 
-let glass_shape = ref Round
+let glass_shape = ref No_glass
 let cycle_glass () = glass_shape := match !glass_shape with Round -> Reading | Reading -> No_glass | No_glass -> Round
 let glass_name () = match !glass_shape with Round -> "round" | Reading -> "wide" | No_glass -> "none"
 
@@ -247,6 +247,11 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
         t.note <- ""
       end;
       let u = to_u t.cam mpx and v = to_v t.cam mpy in
+      (* claude: a name clicked (Map_v2's): to its directory or file *)
+      let named = if clicked then t.style.unit_at t t.cam (Playground_platform.pixel_ratio ()) mpx mpy else None in
+      match named with
+      | Some i -> (fit a t.placed.(i).rect, Stay)
+      | None ->
       match under t u v with
       | None -> (target, Stay)
       | Some i -> (

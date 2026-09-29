@@ -94,6 +94,9 @@ and style = {
   (* claude: the definition a label under a pixel of the map names, if
    * the style's labels name any (its file, line and name) *)
   pick : t -> camera -> float -> float -> float -> (string * int * string) option;
+  (* claude: the directory or file whose name is under a pixel of the map,
+     if the style's names are clickable (Map_v2's): a click flies to it *)
+  unit_at : t -> camera -> float -> float -> float -> int option;
 }
 
 (*****************************************************************************)

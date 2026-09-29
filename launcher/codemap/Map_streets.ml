@@ -375,4 +375,4 @@ let pick (t : t) (c : camera) (q : float) (mx : float) (my : float) : (string * 
             match on_map c l with Some (x0, y0, w, h) when mx >= x0 && mx <= x0 +. w && my >= y0 && my <= y0 +. h -> Some target | _ -> None))
     None (placed_labels t q)
 
-let style : style = { sname = "streets"; paint; labels; pick }
+let style : style = { sname = "streets"; paint; labels; pick; unit_at = (fun _ _ _ _ _ -> None) }

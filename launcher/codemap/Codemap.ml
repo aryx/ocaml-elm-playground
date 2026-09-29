@@ -192,7 +192,8 @@ let run_directory ?colours ?roots ~(name : string) ~(sources : (string * string)
   in
   let view (computer : Playground.computer) (m : alone) = match m.code with Some c -> view computer c | None -> [] in
   let flags = Playground_platform.flags () in
-  (* claude: style=streets, the map's style (Code_map) *)
-  Option.iter Code_map.choose_style (List.assoc_opt "style" flags);
+  (* claude: style=streets, the map's style (Code_map); a directory's
+   * map is drawn by default in the new one, Map_v2 *)
+  Code_map.choose_style (Option.value (List.assoc_opt "style" flags) ~default:"v2");
   Playground_platform.run_app ~screen:(1778, 1000) ~flags
     (Playground.game view update { code = None; before = Set_.empty; repeat = None })
