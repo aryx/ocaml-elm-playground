@@ -20,13 +20,23 @@ let contains (s : string) (sub : string) : bool =
 let header ?(max = 24) (src : string) : string list =
   let lines = List.filteri (fun i _ -> i < 60) (String.split_on_char '\n' src) in
   let opens t = String.length t >= 2 && (String.sub t 0 2 = "(*" || String.sub t 0 2 = "/*") in
+  (* claude: C's // lines, a run of them one comment (~/ix's tiny-os) *)
+  let slashes t = String.length t >= 2 && String.sub t 0 2 = "//" in
   let closes t = contains t "*)" || contains t "*/" in
   let rec comments acc cur = function
     | [] -> List.rev (match cur with Some c -> List.rev c :: acc | None -> acc)
     | l :: rest -> (
         let t = String.trim l in
         match cur with
-        | None -> if opens t then if closes t then comments ([ l ] :: acc) None rest else comments acc (Some [ l ]) rest else comments acc None rest
+        | None ->
+            if t = "//" then comments acc None rest
+            else if slashes t then
+              (* a bare // ends a paragraph: the copyright's apart from the design's *)
+              let rec run acc' = function r :: rest' when slashes (String.trim r) && String.trim r <> "//" -> run (r :: acc') rest' | _ :: rest' when acc' <> [] && false -> (List.rev acc', rest') | rest' -> (List.rev acc', rest') in
+              let block, rest = run [ l ] rest in
+              comments (block :: acc) None rest
+            else if opens t then if closes t then comments ([ l ] :: acc) None rest else comments acc (Some [ l ]) rest
+            else comments acc None rest
         | Some c -> if closes t then comments (List.rev (l :: c) :: acc) None rest else comments acc (Some (l :: c)) rest)
   in
   (* a rule of stars, a banner's title alone, a copyright: not a header *)
@@ -39,9 +49,11 @@ let header ?(max = 24) (src : string) : string list =
 (* claude: a program: a top-level main (the Playground's Program.main),
  * or Cap.main run at the top (~/ix's Main.ml: let () = Cap.main ...) *)
 let is_program (src : string) : bool =
-  contains src "\nlet main =" || contains src "\nlet main () =" || contains src "\nlet main=" || (contains src "\nlet () =" && contains src "Cap.main")
+  contains src "\nlet main =" || contains src "\nlet main () =" || contains src "\nlet main=" || (contains src "\nlet () =" && (contains src "Cap.main" || contains src "Sys.argv" || contains src "Callback.register"))
+  (* claude: a kernel's C entry *)
+  || contains src "\nkmain(" || contains src " kmain(void)\n{" 
   (* claude: C's main, Plan 9's way (its type on the line above) or not *)
-  || contains src "\nmain(" || contains src "\nint main(" || contains src "\nvoid main(" || contains src " main(int argc"
+  || contains src "\nmain(" || contains src "\nint main(" || contains src "\nvoid main("
 
 (* a source the brief reads: OCaml's and C's *)
 let is_source (p : string) : bool = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".c"; ".h" ]
@@ -65,7 +77,25 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
   let fans = Code_deps.fan_in sources in
   let fan p = Code_deps.fan fans p in
   let total = List.length (List.filter (fun (p, _) -> Filename.check_suffix p ".ml" || Filename.check_suffix p ".c") sources) in
-  let hub p = fan p >= max 30 (total / 20) in
+  (* claude: a hub, of the project (a twentieth of its files, eight at
+   * least: ~/ix's Memory.mli, 20 of 291) or of its own directory (half
+   * its other modules, three at least: mini-rc's Ast) *)
+  let hub p = fan p >= max 8 (total / 20) in
+  let dir_hub p =
+    let d = Filename.dirname p in
+    let mods = List.sort_uniq compare (List.filter_map (fun (q, _) -> if Filename.dirname q = d && is_source q then Some (Filename.remove_extension q) else None) sources) in
+    let named_here =
+      List.length
+        (List.sort_uniq compare
+           (List.filter_map
+              (fun (q, src) ->
+                if Filename.dirname q = d && Filename.remove_extension q <> Filename.remove_extension p && is_source q && List.mem (Code_deps.module_name p) (Code_deps.modules_used src) then
+                  Some (Filename.remove_extension q)
+                else None)
+              sources))
+    in
+    List.length mods >= 4 && named_here >= max 3 ((List.length mods - 1) / 2)
+  in
   pr "# %s\n\n" (if dir = "" then "(the root)" else dir);
   pr "%d files here, %d lines; %d under it in all.\n\n" (List.length mine)
     (List.fold_left (fun n (_, s) -> n + count_lines s) 0 mine)
@@ -75,9 +105,9 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
   let central = List.sort (fun p q -> compare (fan q) (fan p)) central in
   if central <> [] then begin
     pr "Named by other files (open, include, a qualified name, #include; of %d .ml and .c files in all), the most central first:\n\n" total;
-    List.iter (fun p -> pr "- %s: %d files%s\n" (Filename.basename p) (fan p) (if hub p then "  <- A HUB: part of the project's core" else "")) (List.filteri (fun i _ -> i < 12) central);
+    List.iter (fun p -> pr "- %s: %d files%s\n" (Filename.basename p) (fan p) (if hub p then "  <- A HUB: part of the project's core" else if dir_hub p then "  <- this directory's hub" else "")) (List.filteri (fun i _ -> i < 12) central);
     pr "\n";
-    if List.exists hub central then
+    if List.exists (fun p -> hub p || dir_hub p) central then
       pr "A hub is what the project is written with: its main types and functions are capitals of the whole map, whatever its size (guidelines, Capitals: centrality). A program nobody names (a game, an app) is a driver: capitals for it, but it is not the core.\n\n"
   end;
   (* the configs' words already *)
@@ -118,7 +148,13 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
         (match Code_guide.file_note guide p with
         | Some n -> Printf.sprintf "; described (%s)" (match n.summary with Some s -> s | None -> "no summary")
         | None -> "");
-      let head = header src in
+      (* claude: an .ml whose header is its .mli's ("(* See X.mli *)",
+       * ~/ix's way): no header here, not the next comment's words *)
+      let first = header ~max:3 src in
+      let in_mli = Filename.check_suffix p ".ml" && (match first with l :: _ -> contains l "See " && contains l ".mli" | [] -> false) in
+      let head = if in_mli then [] else first @ [] in
+      let head = if in_mli then [] else if head = [] then [] else header src in
+      if in_mli then pr "Its header: in its .mli (the file says so).\n\n";
       if head <> [] then begin
         pr "Its header:\n\n";
         List.iter (fun l -> pr "    %s\n" l) head;
@@ -175,7 +211,7 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
               |> List.sort_uniq compare
         in
         (* the names defined twice: def: finds the first *)
-        let twice = List.filter (fun (_, n, _, _, _) -> List.length (List.filter (fun (_, m, _, _, _) -> m = n) defs) > 1) defs |> List.map (fun (_, n, _, _, _) -> n) |> List.sort_uniq compare in
+        let twice = List.filter (fun (_, n, k, _, _) -> List.length (List.filter (fun (_, m, k', _, _) -> m = n && k' = k) defs) > 1) defs |> List.map (fun (_, n, k, _, _) -> k ^ ":" ^ n) |> List.sort_uniq compare in
         if twice <> [] then pr "%s, defined twice (def: finds the first; the second needs another anchor): %s.\n\n" (Filename.basename p) (String.concat ", " twice);
         (* a program's Model-View-Update names, those the template assumes *)
         (* only a Playground program: the template is its architecture *)
@@ -198,7 +234,7 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
       let show l = String.concat ", " (List.map (fun (q, n) -> Printf.sprintf "%s (%d)" q n) (List.filteri (fun i _ -> i < 8) l)) in
       if uses <> [] then pr "Uses: %s.\n\n" (show uses);
       if users <> [] then pr "Used by: %s.\n\n" (show users);
-      if List.exists (fun (_, n, _) -> n = "main") f.defs then pr "A program: it has a main.\n\n")
+      if is_program src then pr "A program: its entry (a main, Cap.main).\n\n")
     mine;
   Buffer.contents b
 
@@ -211,17 +247,37 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
   let fans = Code_deps.fan_in sources in
   let fan p = Code_deps.fan fans p in
   let total = List.length (List.filter (fun (p, _) -> Filename.check_suffix p ".ml" || Filename.check_suffix p ".c") sources) in
-  let hub p = fan p >= max 30 (total / 20) in
+  (* claude: a hub, of the project (a twentieth of its files, eight at
+   * least: ~/ix's Memory.mli, 20 of 291) or of its own directory (half
+   * its other modules, three at least: mini-rc's Ast) *)
+  let hub p = fan p >= max 8 (total / 20) in
+  let dir_hub p =
+    let d = Filename.dirname p in
+    let mods = List.sort_uniq compare (List.filter_map (fun (q, _) -> if Filename.dirname q = d && is_source q then Some (Filename.remove_extension q) else None) sources) in
+    let named_here =
+      List.length
+        (List.sort_uniq compare
+           (List.filter_map
+              (fun (q, src) ->
+                if Filename.dirname q = d && Filename.remove_extension q <> Filename.remove_extension p && is_source q && List.mem (Code_deps.module_name p) (Code_deps.modules_used src) then
+                  Some (Filename.remove_extension q)
+                else None)
+              sources))
+    in
+    List.length mods >= 4 && named_here >= max 3 ((List.length mods - 1) / 2)
+  in
   let described p = Code_guide.file_note guide p <> None in
   let capitals p = match Code_guide.file_note guide p with Some n -> n.capitals <> [] | None -> false in
   let twin p = if Filename.check_suffix p ".mli" then Filename.remove_extension p ^ ".ml" else Filename.remove_extension p ^ ".mli" in
   (* only where configs are written: a directory whose config describes files *)
-  let in_scope p = List.exists (fun (d : Code_guide.dir_note) -> d.dir = (match Filename.dirname p with "." -> "" | x -> x) && d.notes <> []) (Code_guide.dirs guide) in
+  (* every directory: one with no config yet is the first thing missing
+   * (the agents' lesson: a bare area looked finished) *)
+  let in_scope _ = true in
   let programs =
     List.filter_map
       (fun (p, src) ->
-        if (Filename.check_suffix p ".ml" || Filename.check_suffix p ".c") && in_scope p && is_program src && described p && Code_guide.skeletons_of guide p = [] then
-          Some (p ^ ": a program with no skeleton (its entry to its core; skeletons.libsonnet has the shapes)")
+        if (Filename.check_suffix p ".ml" || Filename.check_suffix p ".c") && in_scope p && is_program src && Code_guide.skeletons_of guide p = [] then
+          Some (p ^ (if described p then ": a program with no skeleton (its entry to its core; skeletons.libsonnet has the shapes)" else ": a program in a file no config describes"))
         else None)
       sources
   in
@@ -229,8 +285,8 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
     List.filter_map
       (fun (p, _) ->
         let main = Filename.check_suffix p ".mli" || not (List.mem_assoc (twin p) sources) in
-        if main && in_scope p && hub p && not (capitals p || capitals (twin p)) then
-          Some (Printf.sprintf "%s: a hub (named by %d files) with no capital: its main types and functions are the map's" p (fan p))
+        if main && in_scope p && (hub p || dir_hub p) && not (capitals p || capitals (twin p)) then
+          Some (Printf.sprintf "%s: a hub (named by %d files%s) with no capital: its main types and functions are the map's" p (fan p) (if hub p then "" else ", its directory's"))
         else None)
       sources
   in

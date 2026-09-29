@@ -4,7 +4,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "Which files are a program's own code, found by the modules it names; and its budget.",
   files: {
-    'Code_deps.mli': { digest: '32d853215ba6',
+    'Code_deps.mli': { digest: 'ffd8e0271a9e',
       summary: "A program's code from its main file, over the sources as (path, contents); pure, used at build time too.",
       important: [
         { at: 'def:modules_used', say: 'the modules a file names', weight: 2 },

@@ -25,6 +25,9 @@ val modules_used : string -> string list
    kernel's device drivers) *)
 val fan_in : (string * string) list -> (string, int) Hashtbl.t
 
+(* claude: a file's module name: "libs/core/Basics.ml" -> "Basics" *)
+val module_name : string -> string
+
 (* a file's fan-in, in that table *)
 val fan : (string, int) Hashtbl.t -> string -> int
 
