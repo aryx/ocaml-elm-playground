@@ -32,6 +32,9 @@ val all : system list
 val name : system -> string
 val colour : system -> int * int * int
 
+(* what it shows, in the code's words (the legend's) *)
+val meaning : system -> string
+
 (* the key toggling it in the X-ray: "1" to "6" *)
 val key : system -> string
 

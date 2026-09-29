@@ -1,0 +1,36 @@
+// playground/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "The library every program is written with: Elm's playground, one API, several platforms.",
+  dirs: {
+    apis: { summary: 'The Evan-style APIs over the from-scratch libraries: Audio, Physics, Ai, Gui, Juice, Multiplayer.' },
+    layers: { summary: 'What games build on: a camera, sprites, tile maps, scenes, and their 3D kin.' },
+    ways: { summary: 'Other ways to program, each building an app for you: Logo, Big Bang, Karel, PuzzleScript, POV-Ray.' },
+    platforms: { summary: 'Where an app runs: natively (Cairo, OpenGL), our own rasterizers, the browser.' },
+  },
+  skeletons: [
+    {
+      name: 'One API, several platforms',
+      bones: [
+        { at: 'Playground.mli', role: 'the API every program sees: shapes, the computer, game' },
+        { at: 'Playground_platform.mli', role: 'the one function left open: run_app' },
+        { at: 'platforms/native/', role: 'natively: SDL and Cairo, OpenGL for 3D' },
+        { at: 'platforms/software/', role: 'natively, our own rasterizers' },
+        { at: 'platforms/web/', role: 'in the browser: the DOM, WebGL' },
+        { at: 'apis/', role: 'the APIs over libs/: sound, physics, AI, GUI' },
+        { at: 'layers/', role: 'camera, sprites, tile maps, scenes' },
+        { at: 'ways/', role: 'other ways to program' },
+      ],
+      joints: [
+        { from: 'Playground.mli', to: 'Playground_platform.mli', say: 'run by' },
+        { from: 'platforms/native/', to: 'Playground_platform.mli', say: 'implements' },
+        { from: 'platforms/software/', to: 'Playground_platform.mli', say: 'implements' },
+        { from: 'platforms/web/', to: 'Playground_platform.mli', say: 'implements' },
+        { from: 'apis/', to: 'Playground.mli', say: 'built on' },
+        { from: 'layers/', to: 'Playground.mli', say: 'built on' },
+        { from: 'ways/', to: 'Playground.mli', say: 'build an app' },
+      ],
+    },
+  ],
+}

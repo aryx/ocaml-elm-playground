@@ -30,9 +30,17 @@ let colour = function
   | Lungs -> (110, 195, 250)
   | Skin -> (240, 170, 200)
 
+let meaning = function
+  | Skeleton -> "the architecture, its parts' roles"
+  | Blood -> "the data flowing between the parts"
+  | Muscles -> "the loop-heavy code, the work"
+  | Nerves -> "the inputs: keyboard, mouse, events"
+  | Lungs -> "the I/O: files, network, console"
+  | Skin -> "the public API: what the .mli shows"
+
 let key = function Skeleton -> "1" | Blood -> "2" | Muscles -> "3" | Nerves -> "4" | Lungs -> "5" | Skin -> "6"
 
-let shown = ref [ Skeleton; Blood ]
+let shown = ref [ Skeleton ]
 let toggle s = shown := if List.mem s !shown then List.filter (( <> ) s) !shown else s :: !shown
 
 (*****************************************************************************)

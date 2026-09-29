@@ -72,6 +72,22 @@ bones' definitions lit in the shaded file.
   `run_app`, the frame loop, the game's update) sits in the root config.
 - Every Playground game is Model-View-Update: the template is the
   default; name a game's skeleton for what it adds.
+- A skeleton has a level: its config's directory. The X-ray shows the
+  skeletons of the unit looked at (a file's at the ground, a directory's
+  config's from afar, or the nearest above that has some), one at a
+  time, `x` going to the next; the deeper directories' skeletons are
+  dots with their names. So give every important directory its own
+  skeleton of its parts: the root the repository's layers, `playground/`
+  its API and platforms, `launcher/codemap/` how the map draws.
+- At a directory's level, a bone is a whole file or directory: `at:
+  'games/'` or `'Playground.mli'`, no anchor. Its role says what that
+  part is *for* in this architecture ("the one function left open:
+  run_app"), not the directory's summary again.
+- Joints between directories say how they depend: "written with",
+  "implements", "stands on" -- the direction is who uses whom.
+- Several skeletons at one level are fine (the root has its layers and
+  how a program runs): each is shown alone, in the order written, the
+  most telling first.
 
 ## The anatomy: what the configs give, what the code gives
 

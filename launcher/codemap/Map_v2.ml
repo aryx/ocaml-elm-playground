@@ -588,8 +588,24 @@ let spot (t : t) (c : camera) (path : string) (line : int) : (float * float * fl
           | _ -> None)
       | None -> None)
 
-(* a bone's line in its file, found once *)
-let bone_line (t : t) (b : Code_guide.bone) : int option = match entry_of t b.bpath with Some e -> capital_line e b.banchor | None -> None
+(* a bone's line in its file, found once; a whole file's or directory's
+ * none *)
+let bone_line (t : t) (b : Code_guide.bone) : int option =
+  if b.banchor = "" then None else match entry_of t b.bpath with Some e -> capital_line e b.banchor | None -> None
+
+(* where a whole file or directory is on the map: its top left corner, a
+ * little in (its name is at its centre) *)
+let unit_spot (t : t) (c : camera) (path : string) : (float * float * float) option =
+  let found = ref None in
+  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = path then found := Some i) t.placed;
+  match !found with
+  | Some i -> (
+      match clip c t.placed.(i).rect with
+      | Some (x0, y0, x1, y1) when x1 - x0 > 30 && y1 - y0 > 30 ->
+          let x = float_of_int x0 +. 26. and y = float_of_int y0 +. 30. in
+          Some (x, y, x)
+      | _ -> None)
+  | None -> None
 
 (* a definition's lines: from its header to the next top-level one *)
 let extent (f : Code_file.t) (line : int) : int * int =
@@ -615,13 +631,46 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let ground = at_ground t c in
   let all = List.concat_map (fun (d : Code_guide.dir_note) -> d.skeletons) (Code_guide.dirs t.guide) in
   (* at the ground, the skeletons with a bone on the map *)
-  let bone_spot (b : Code_guide.bone) = Option.bind (bone_line t b) (fun l -> Option.map (fun s -> (l, s)) (spot t c b.bpath l)) in
-  (* at the ground and the street, the skeletons of the file looked at
-   * (with a bone in it); from afar, all of them *)
-  let shown =
-    List.filter
-      (fun (s : Code_guide.skeleton) -> match ground with Some e -> List.exists (fun (b : Code_guide.bone) -> b.bpath = e.path) s.bones | None -> true)
-      all
+  let bone_spot (b : Code_guide.bone) =
+    if b.banchor = "" then (if ground = None then Option.map (fun s -> (0, s)) (unit_spot t c b.bpath) else None)
+    else Option.bind (bone_line t b) (fun l -> Option.map (fun s -> (l, s)) (spot t c b.bpath l))
+  in
+  (* the skeletons at hand: at the ground and the street, the file's
+   * (a bone in it); from afar, the unit's config's, else the nearest
+   * directory's above that has some. One at a time, x going to the next
+   * and past the last turning the X-ray off; the deeper directories'
+   * packed, a dot each, named: fly in to spread them *)
+  let here = t.placed.(t.focus).path in
+  let parent d = match String.rindex_opt d '/' with Some i -> String.sub d 0 i | None -> "" in
+  let under d p = d = "" || p = d || (String.length p > String.length d && String.sub p 0 (String.length d + 1) = d ^ "/") in
+  let candidates =
+    match ground with
+    | Some e -> List.filter (fun (s : Code_guide.skeleton) -> List.exists (fun (b : Code_guide.bone) -> b.bpath = e.path) s.bones) all
+    | None ->
+        let rec level d = match List.filter (fun (s : Code_guide.skeleton) -> s.sdir = d) all with [] when d <> "" -> level (parent d) | l -> l in
+        level here
+  in
+  let k = List.length candidates in
+  if t.xray_n >= max 1 k then begin
+    t.xray <- false;
+    t.xray_n <- 0
+  end;
+  let shown = match List.nth_opt candidates t.xray_n with Some s -> [ s ] | None -> [] in
+  let deeper =
+    if ground <> None then []
+    else List.filter (fun (s : Code_guide.skeleton) -> s.sdir <> here && under here s.sdir && not (List.memq s candidates)) all
+  in
+  let banner =
+    match shown with
+    | [ s ] ->
+        let text = Printf.sprintf "X-ray: %s   (%d/%d, x: %s)" s.sname (t.xray_n + 1) k (if t.xray_n + 1 < k then "the next" else "off") in
+        let tw = 0.5 *. 16. *. float_of_int (String.length text) in
+        [
+          (* at the map's foot: the bones sit at the regions' top corners *)
+          rectangle (rgb 18 16 36) (tw +. 20.) 26. |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph -. 16.)) |> fade 0.92;
+          words (let r, g, b = ivory in rgb r g b) text |> scale (16. /. words_font_size) |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph -. 16.));
+        ]
+    | _ -> []
   in
   (* from afar, a file whose bones are a few pixels apart (TinyInvaders'
    * five) is one dot, its skeleton's name, the joints to other files
@@ -696,7 +745,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                 let len = Float.max 1. (Float.sqrt ((dx *. dx) +. (dy *. dy))) in
                 (* the perpendicular turns with the direction: a -> b and b -> a
                  * bend to opposite sides by themselves, a loop drawn as two *)
-                let bend = Float.min 140. (Float.max 40. (0.25 *. len)) in
+                let bend = Float.min 70. (Float.max 30. (0.12 *. len)) in
                 let mx = ((ax +. bx) /. 2.) +. (-.dy /. len *. bend) and my = ((ay +. by) /. 2.) +. (dx /. len *. bend) in
                 let pts = Map_atlas.bspline [| (ax, ay); (mx, my); (bx, by) |] in
                 (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 6. 0.85 else [])
@@ -750,10 +799,28 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
         ])
       packed_files
   in
-  let none =
-    if shown = [] && skeleton_on then [ label a dim 16. (float_of_int a.pw /. 2.) 30. "(no skeleton here: the configs name none)" ] else []
+  let deep_dots =
+    List.concat_map
+      (fun (s : Code_guide.skeleton) ->
+        let spots = List.filter_map (fun b -> Option.map snd (bone_spot b)) s.bones in
+        match spots with
+        | [] -> []
+        | _ ->
+            let n = float_of_int (List.length spots) in
+            let x = List.fold_left (fun acc (x, _, _) -> acc +. x) 0. spots /. n and y = List.fold_left (fun acc (_, y, _) -> acc +. y) 0. spots /. n in
+            let tw = 0.5 *. 13. *. float_of_int (String.length s.sname) in
+            [
+              circle (rgb 20 16 30) 9. |> move (sx a x) (sy a y);
+              circle ink_i 7. |> move (sx a x) (sy a y);
+              rectangle (rgb 18 16 36) (tw +. 10.) 18. |> move (sx a (x +. 14. +. (tw /. 2.))) (sy a (y -. 16.)) |> fade 0.85;
+              words ink_i s.sname |> scale (13. /. words_font_size) |> move (sx a (x +. 14. +. (tw /. 2.))) (sy a (y -. 16.));
+            ])
+      deeper
   in
-  shade @ joints @ (if skeleton_on then marks @ dots else []) @ none
+  let none =
+    if shown = [] && deeper = [] && skeleton_on then [ label a dim 16. (float_of_int a.pw /. 2.) 30. "(no skeleton here: the configs name none)" ] else []
+  in
+  shade @ joints @ (if skeleton_on then marks @ dots @ deep_dots @ banner else []) @ none
 
 (* claude: the anatomy's other plates (Code_anatomy): each file's facts,
  * found a few files a frame from afar (the whole repository's X-ray
@@ -836,18 +903,18 @@ let anatomy_shapes (t : t) (c : camera) : shape list =
 (* the atlas's key: the plates, the ones shown bright *)
 let legend (c : camera) : shape list =
   let a = c.a in
-  let x0 = float_of_int a.pw -. 190. and y0 = 36. in
+  let x0 = float_of_int a.pw -. 420. and y0 = 36. in
   let row i s =
     let r, g, b = Code_anatomy.colour s in
     let on = List.mem s !Code_anatomy.shown in
     let y = y0 +. 22. +. (float_of_int i *. 20.) in
-    let text = Printf.sprintf "%s  %s" (Code_anatomy.key s) (Code_anatomy.name s) in
+    let text = Printf.sprintf "%s  %s: %s" (Code_anatomy.key s) (Code_anatomy.name s) (Code_anatomy.meaning s) in
     [
       circle (rgb r g b) 6. |> move (sx a (x0 +. 14.)) (sy a y) |> fade (if on then 1. else 0.25);
       words (if on then ink else dim) text |> scale (14. /. words_font_size) |> move (sx a (x0 +. 30. +. (0.25 *. 14. *. float_of_int (String.length text)))) (sy a y);
     ]
   in
-  (rectangle (rgb 18 16 36) 180. 150. |> move (sx a (x0 +. 90.)) (sy a (y0 +. 70.)) |> fade 0.92)
+  (rectangle (rgb 18 16 36) 410. 150. |> move (sx a (x0 +. 205.)) (sy a (y0 +. 70.)) |> fade 0.92)
   :: (words ink "the X-ray (x)" |> scale (14. /. words_font_size) |> move (sx a (x0 +. 60.)) (sy a (y0 +. 4.)))
   :: List.concat (List.mapi row Code_anatomy.all)
 
@@ -858,7 +925,8 @@ let labels (t : t) (c : camera) (_ : float) : shape list =
   | Some e -> notes t c e @ line_lit t c e @ names_glow t c e
   | None -> [])
   @ List.rev_map (fun n -> n.draw) kept
-  @ (if t.xray then skeleton_shapes t c @ anatomy_shapes t c @ legend c else [])
+  (* the legend when a plate other than the skeleton is on *)
+  @ (if t.xray then skeleton_shapes t c @ anatomy_shapes t c @ (if List.exists (fun s -> s <> Code_anatomy.Skeleton) !Code_anatomy.shown then legend c else []) else [])
   @ hover_card t c kept
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,

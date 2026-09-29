@@ -258,7 +258,9 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
     t.painted <- None
   end;
   (* claude: the skeletons, at any level (Map_v2) *)
-  if pressed "x" then t.xray <- not t.xray;
+  (* x: the X-ray on its first skeleton, then the next, then off (Map_v2
+   * turns it off past the last) *)
+  if pressed "x" then if t.xray then t.xray_n <- t.xray_n + 1 else begin t.xray <- true; t.xray_n <- 0 end;
   (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
   if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
   (* claude: the style, the next one, for this map and those to come *)

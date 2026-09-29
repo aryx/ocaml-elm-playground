@@ -358,6 +358,18 @@ template's default, checked), the apps' and the languages' (a
 compiler's passes), the earth level marking each file by its skeleton,
 the tour following a skeleton's joints.
 
+The skeleton at every level (the author, 2026-09-29: "Ideally we want
+the same skeleton at the earth level, and region level and maybe in the
+'views' level"; "let's focus on making skeleton good at the ground,
+region, earth level and we can tackle the other plates later"): a bone
+may be a whole file or directory; a skeleton's level is its config's
+directory; the X-ray shows the unit's skeletons one at a time (`x` the
+next), the deeper ones as named dots, a banner at the map's foot naming
+the one shown. Written: the root's layers, `playground/`'s one API and
+its platforms, `launcher/codemap/`'s own. To come: a view's skeleton,
+the bones in the view's files (when views are built); a skeleton for
+every important directory, by the codellm loop.
+
 ## Anatomy: beyond the skeleton (later)
 
 The author (2026-09-29): "go even deeper with the biology terminology

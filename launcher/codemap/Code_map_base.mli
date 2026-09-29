@@ -65,6 +65,7 @@ type t = {
   mutable street : bool; (* claude: at the ground, the file with what it uses (a: Code_street) *)
   mutable clock : float; (* claude: the frame's time (view's), for what pulses *)
   mutable xray : bool; (* claude: the skeletons shown, the rest in the shade (x: Map_v2) *)
+  mutable xray_n : int; (* claude: which of the skeletons at hand the X-ray shows (x again: the next) *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }

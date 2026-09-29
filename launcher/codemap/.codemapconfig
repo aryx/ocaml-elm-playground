@@ -1,0 +1,35 @@
+// launcher/codemap/: the code map saying what it is itself
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
+  summary: "tinybox's code map: a codebase as a map, flown a unit at a time, the configs' words on it.",
+  dirs: {
+    deps: { summary: "Which files are a program's own code, and its budget." },
+    tests: { summary: "The map's tests, and the repository's configs checked." },
+  },
+  skeletons: [
+    {
+      name: 'How the code map draws',
+      bones: [
+        { at: 'Codemap.ml:def:run_directory', role: "a directory's map, as a program" },
+        { at: 'Codemap.ml:def:make_own', role: "a program's map: its code and its kits" },
+        { at: 'Treemap.ml:def:layout', role: 'directories and files as nested rectangles' },
+        { at: 'Code_map.ml:def:update', role: 'a frame: keys, wheel and clicks move the camera' },
+        { at: 'Code_map.ml:def:view', role: 'a frame: the picture and its names' },
+        { at: 'Map_v2.ml:def:paint', role: "v2's picture: the columns, the ground, the street" },
+        { at: 'Map_v2.ml:def:labels', role: "v2's names, notes, cards and the X-ray" },
+        { at: 'Code_guide.ml:def:load', role: 'what the configs say, read as jsonnet' },
+        { at: 'Code_ground.ml:def:layout', role: "a file's lines, as high as they matter" },
+      ],
+      joints: [
+        { from: 'Codemap.ml:def:run_directory', to: 'Code_map.ml:def:update', say: 'each frame' },
+        { from: 'Codemap.ml:def:run_directory', to: 'Code_map.ml:def:view', say: 'each frame' },
+        { from: 'Codemap.ml:def:make_own', to: 'Treemap.ml:def:layout', say: 'laid out' },
+        { from: 'Code_map.ml:def:view', to: 'Map_v2.ml:def:paint', say: 'the style paints' },
+        { from: 'Code_map.ml:def:view', to: 'Map_v2.ml:def:labels', say: 'and names' },
+        { from: 'Map_v2.ml:def:paint', to: 'Code_ground.ml:def:layout', say: 'at the ground' },
+        { from: 'Code_guide.ml:def:load', to: 'Map_v2.ml:def:labels', say: 'the words' },
+      ],
+    },
+  ],
+}

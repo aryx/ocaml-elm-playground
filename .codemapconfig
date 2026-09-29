@@ -6,6 +6,30 @@
   // the repository's skeleton: how any program runs, across directories
   skeletons: [
     {
+      name: "The repository's layers",
+      bones: [
+        { at: 'games/', role: 'the games: each a program, its model, update and view' },
+        { at: 'apps/', role: 'the applications, written the same way' },
+        { at: 'gamekits/', role: "what a genre's games share" },
+        { at: 'appkits/', role: 'what several applications share' },
+        { at: 'languages/', role: 'languages parsed and run, for some programs' },
+        { at: 'playground/', role: 'the library every program is written with' },
+        { at: 'libs/', role: 'from scratch: pixels, samples, bytes; no Playground' },
+        { at: 'launcher/', role: 'tinybox: every program in one binary, and this map' },
+      ],
+      joints: [
+        { from: 'games/', to: 'gamekits/', say: 'share' },
+        { from: 'games/', to: 'playground/', say: 'written with' },
+        { from: 'apps/', to: 'appkits/', say: 'share' },
+        { from: 'apps/', to: 'playground/', say: 'written with' },
+        { from: 'appkits/', to: 'languages/', say: 'run' },
+        { from: 'gamekits/', to: 'playground/' },
+        { from: 'playground/', to: 'libs/', say: 'stands on' },
+        { from: 'launcher/', to: 'games/', say: 'runs them all' },
+        { from: 'launcher/', to: 'apps/' },
+      ],
+    },
+    {
       name: 'How a program runs',
       bones: [
         { at: 'libs/core/Program.ml:def:main', role: 'every program starts here: at once, or chosen in tinybox' },
