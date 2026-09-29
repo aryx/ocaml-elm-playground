@@ -86,6 +86,10 @@ let box (g : t) (l : int) : float * float * float * float =
   let p = g.places.(l) in
   (g.ox +. (float_of_int p.col *. g.colw) +. pad, g.oy +. p.y, g.colw -. (2. *. pad), p.h)
 
+let cell_w (g : t) (l : int) : float =
+  let _, _, w, h = box g l in
+  if h >= 7. then h /. 2. else Float.min ((h /. 2.) +. 1.5) (w /. 80.)
+
 let line_at (g : t) (x : float) (y : float) : int option =
   let found = ref None in
   Array.iteri
@@ -119,7 +123,7 @@ let paint (img : Rgba_image.t) (f : Code_file.t) (g : t) ~(bg : int * int * int)
       let glyphs = h >= 7. in
       (* a character's cell: half as wide as high; a bar's, a column's
        * eightieth *)
-      let cw = if glyphs then h /. 2. else Float.min (h /. 2. +. 1.5) (w /. 80.) in
+      let cw = cell_w g l in
       let ch_h = if glyphs then h else Float.max 1. (h -. 1.) in
       ignore p;
       let px0 = int_of_float x0 and px1 = int_of_float (x0 +. w) in

@@ -383,16 +383,15 @@ let hover_card (t : t) (c : camera) (kept : name list) : shape list =
 
 (* claude: at the ground, what the config says of an important line, a
  * note after its end when the column has room for it *)
-let notes (t : t) (c : camera) (e : entry) : shape list =
+let notes_on (t : t) (c : camera) (e : entry) (g : Code_ground.t) : shape list =
   let a = c.a in
-  let g = ground_of t e in
   let f = Lazy.force e.file in
   List.filter_map
     (fun (l, _, say) ->
       match say with
       | None -> None
       | Some say ->
-          let x0, y0, w, h = Code_ground.box g l in
+          let x0, y0, w, h = if l < Array.length g.places then Code_ground.box g l else (0., 0., 0., 0.) in
           (* the line's end: its last character *)
           let last = ref 0 in
           for k = 0 to Code_file.cols - 1 do
@@ -404,7 +403,8 @@ let notes (t : t) (c : camera) (e : entry) : shape list =
           let start = x0 +. (float_of_int !last *. cw) +. 12. in
           (* wrapped in the room after the line's end, three lines at most *)
           let room = int_of_float ((x0 +. w -. start) /. (0.5 *. size)) in
-          if room < 16 then None
+          (* not beside a line squeezed thin (a street panel's) *)
+          if room < 16 || h < 7. then None
           else
             let lines = wrap room ("<- " ^ say) in
             let lines = if List.length lines > 3 then List.filteri (fun k _ -> k < 3) lines else lines in
@@ -424,11 +424,21 @@ let notes (t : t) (c : camera) (e : entry) : shape list =
                       lines)))
     (important t e)
 
+let notes (t : t) (c : camera) (e : entry) : shape list = notes_on t c e (ground_of t e)
+
 (* claude: at the street, each panel's title, the roads *)
 let street_labels (t : t) (c : camera) (e : entry) : shape list =
   let a = c.a in
   let s = street_of t e in
-  Code_street.roads a s
+  (* the line under the mouse: its roads lit, the others dimmed *)
+  let hover = match t.pointer with Some (u, v) -> Code_street.line_at s ~focus_path:e.path (to_px c u) (to_py c v) | None -> None in
+  Code_street.roads ?hover ~focus_path:e.path a s
+  @ Code_street.ends ?hover ~focus_path:e.path a s
+  (* claude: the configs' notes, the focus's and the panels' *)
+  @ notes_on t c e s.focus
+  @ List.concat_map
+      (fun (p : Code_street.panel) -> match List.find_opt (fun (x : entry) -> x.path = p.path) t.entries with Some x -> notes_on t c x p.ground | None -> [])
+      s.panels
   @ List.map
       (fun (p : Code_street.panel) ->
         let text = Printf.sprintf "%s   (%d use%s)" p.path p.count (if p.count = 1 then "" else "s") in
@@ -439,9 +449,66 @@ let street_labels (t : t) (c : camera) (e : entry) : shape list =
   if s.panels = [] then [ label a dim 16. (s.split +. ((float_of_int a.pw -. s.split) /. 2.)) (float_of_int a.ph /. 2.) "(nothing of this map's other files used)" ]
   else []
 
+(* claude: at the ground or the street, the line under the mouse framed *)
+let line_lit (t : t) (c : camera) (e : entry) : shape list =
+  match t.pointer with
+  | None -> []
+  | Some (u, v) -> (
+      let mx = to_px c u and my = to_py c v in
+      let grounds = if t.street then let s = street_of t e in s.focus :: List.map (fun (p : Code_street.panel) -> p.ground) s.panels else [ ground_of t e ] in
+      match List.find_map (fun g -> Option.map (fun l -> (g, l)) (Code_ground.line_at g mx my)) grounds with
+      | Some (g, l) ->
+          let x, y, w, h = Code_ground.box g l in
+          frame c.a (rgb 240 240 250) x y (x +. w) (y +. Float.max h 2.) 1.
+      | None -> [])
+
+(* claude: at the ground or the street, the name under the mouse bound
+ * in its file: its binding pulsing cyan, its uses lit yellow, as on the
+ * map read up close (Code_map.names_lit), placed where the lines are
+ * laid out now (Code_ground), in the focus and in the panels *)
+let names_glow (t : t) (c : camera) (e : entry) : shape list =
+  match t.pointer with
+  | None -> []
+  | Some (u, v) -> (
+      let a = c.a in
+      let mx = to_px c u and my = to_py c v in
+      let file p = List.find_map (fun (x : entry) -> if x.path = p then Some (Lazy.force x.file) else None) t.entries in
+      let grounds =
+        if t.street then
+          let s = street_of t e in
+          (e.path, s.focus) :: List.map (fun (p : Code_street.panel) -> (p.path, p.ground)) s.panels
+        else [ (e.path, ground_of t e) ]
+      in
+      match List.find_map (fun (p, g) -> Option.map (fun l -> (p, g, l)) (Code_ground.line_at g mx my)) grounds with
+      | None -> []
+      | Some (p, g, l) -> (
+          match file p with
+          | None -> []
+          | Some f -> (
+              let x0, _, _, _ = Code_ground.box g l in
+              let col = int_of_float ((mx -. x0) /. Code_ground.cell_w g l) in
+              match Code_file.name_at f l col with
+              | None -> []
+              | Some o ->
+                  List.concat_map
+                    (fun (w : Highlight_code.occurrence) ->
+                      if w.line >= Array.length g.places then []
+                      else
+                        let x, y, _, h = Code_ground.box g w.line in
+                        let cw = Code_ground.cell_w g w.line in
+                        let ww = float_of_int w.len *. cw and hh = Float.max 3. h in
+                        let px = x +. (float_of_int w.col *. cw) +. (ww /. 2.) and py = y +. (h /. 2.) in
+                        let binding = (w.line, w.col) = o.bound_at in
+                        if binding then List.map (move (sx a px) (sy a py)) (Code_view.glow_at t.clock (rgb 0 225 255) ww hh)
+                        else [ rectangle yellow ww hh |> move (sx a px) (sy a py) |> fade 0.3 ])
+                    (Code_file.uses f o))))
+
 let labels (t : t) (c : camera) (_ : float) : shape list =
   let kept = names t c in
-  (match at_ground t c with Some e when t.street -> street_labels t c e | Some e -> notes t c e | None -> [])
+  (match at_ground t c with
+  | Some e when t.street -> street_labels t c e @ line_lit t c e @ names_glow t c e
+  | Some e -> notes t c e @ line_lit t c e @ names_glow t c e
+  | None -> [])
   @ List.rev_map (fun n -> n.draw) kept @ hover_card t c kept
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,

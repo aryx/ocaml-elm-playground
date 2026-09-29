@@ -457,7 +457,13 @@ The same patterns serve search (`/` with a pattern) and anchors
    the definitions used tall and the rest squeezed; roads
    (`Map_atlas.road`) from each use to its definition, bundled per file;
    operators' uses left out, only sure resolutions kept. `focus=<path>`
-   opens the map on a unit. To come: the users (red, the other way),
+   opens the map on a unit. The hover (the author, 2026-09-29: "as we
+   hover we probably want to highlight what is hovered on"): the line
+   under the mouse framed; its roads lit, the others dimmed, their ends
+   framed (a use green, a definition red); a name's binding pulsing and
+   its uses lit, as on the map up close, in the focus and the panels.
+   The config's notes (its `say`s, which the author likes) at the
+   street too, beside the focus's lines and the panels' tall ones. To come: the users (red, the other way),
    the config's `links` inside the focus, its `related` files as
    panels of their own, an .ml and its .mli as one panel.)
 

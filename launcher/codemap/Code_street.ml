@@ -103,7 +103,16 @@ let mid (g : Code_ground.t) (l : int) : float * float * float =
   let x, y, w, h = Code_ground.box g l in
   (x, x +. w, y +. (h /. 2.))
 
-let roads (a : Code_map_base.area) (t : t) : Playground.shape list =
+let lit_by (hover : (string * int) option) ~(focus_path : string) (e : edge) : bool =
+  match hover with Some (p, l) -> (p = focus_path && e.from_line = l) || (e.target = p && e.target_line = l) | None -> false
+
+let roads ?hover ?(focus_path = "") (a : Code_map_base.area) (t : t) : Playground.shape list =
+  let any = match hover with Some _ -> List.exists (lit_by hover ~focus_path) t.edges | None -> false in
+  let road e pts =
+    if lit_by hover ~focus_path e then `Lit (Map_atlas.road a pts 5. 0.95)
+    else `Dim (Map_atlas.road a pts 3. (if any then 0.12 else 0.55))
+  in
+  let all =
   List.concat_map
     (fun (p : panel) ->
       (* the bundle's point: before the panel, at its middle *)
@@ -120,7 +129,26 @@ let roads (a : Code_map_base.area) (t : t) : Playground.shape list =
             let x1, _, y1 = mid p.ground e.target_line in
             let start = (t.split, y0) and stop = (x1 -. 6., y1) in
             let pts = Map_atlas.bspline [| start; (t.split +. 20., y0); ((t.split +. fst hub) /. 2., (y0 +. snd hub) /. 2.); hub; stop |] in
-            Some (Map_atlas.road a pts 3. 0.55))
-        t.edges
-      |> List.concat)
+            Some (road e pts))
+        t.edges)
     t.panels
+  in
+  (* the roads lit over the others *)
+  List.concat_map (function `Dim s -> s | `Lit _ -> []) all @ List.concat_map (function `Lit s -> s | `Dim _ -> []) all
+
+(* the two ends of the roads lit: the uses framed green, the definitions
+ * red *)
+let ends ?hover ~(focus_path : string) (a : Code_map_base.area) (t : t) : Playground.shape list =
+  let frame (g : Code_ground.t) l color =
+    if l >= Array.length g.places then []
+    else
+      let x, y, w, h = Code_ground.box g l in
+      Code_map_base.frame a color (x -. 2.) (y -. 1.) (x +. w) (y +. Float.max h 3. +. 1.) 2.
+  in
+  List.concat_map
+    (fun e ->
+      if not (lit_by hover ~focus_path e) then []
+      else
+        frame t.focus e.from_line (Playground.rgb 90 220 120)
+        @ match List.find_opt (fun p -> p.path = e.target) t.panels with Some p -> frame p.ground e.target_line (Playground.rgb 250 80 70) | None -> [])
+    t.edges

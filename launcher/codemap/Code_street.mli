@@ -38,8 +38,13 @@ val layout :
 (* the same, [q] times larger (Code_ground.scale) *)
 val scale : t -> float -> t
 
-(* the roads, on a map (its area) *)
-val roads : Code_map_base.area -> t -> Playground.shape list
+(* the roads, on a map (its area); with [hover] (a file and a line, the
+   focus's, [focus_path], or a panel's), the roads from that use or to
+   that definition lit, the others dimmed *)
+val roads : ?hover:string * int -> ?focus_path:string -> Code_map_base.area -> t -> Playground.shape list
+
+(* the lit roads' ends framed: the uses green, the definitions red *)
+val ends : ?hover:string * int -> focus_path:string -> Code_map_base.area -> t -> Playground.shape list
 
 (* the file and line under a pixel, the focus's or a panel's *)
 val line_at : t -> focus_path:string -> float -> float -> (string * int) option

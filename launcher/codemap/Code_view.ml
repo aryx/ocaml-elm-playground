@@ -269,14 +269,17 @@ let page_of (v : t) (q : float) : Rgba_image.t =
  * is bright -- a halo round it, growing and fading, once a second or so,
  * never smaller than a few units (a name small on a map far away), and
  * the name itself brighter and dimmer. Centred on (0, 0). *)
-let glow (computer : computer) (color : color) (w : number) (h : number) : shape list =
-  let (Time t) = computer.time in
+let glow_at (t : float) (color : color) (w : number) (h : number) : shape list =
   let k = 0.5 +. (0.5 *. Float.sin (t *. 2. *. Float.pi *. 1.1)) in
   let pad = Float.max 5. (h *. 0.35) *. (0.6 +. (0.8 *. k)) in
   [
     rectangle color (w +. (2. *. pad)) (h +. (2. *. pad)) |> fade (0.12 +. (0.3 *. (1. -. k)));
     rectangle color w h |> fade (0.3 +. (0.35 *. k));
   ]
+
+let glow (computer : computer) (color : color) (w : number) (h : number) : shape list =
+  let (Time t) = computer.time in
+  glow_at t color w h
 
 (* claude: the name under the mouse, bound in the file: its binding
  * pulsing (glow), its uses on the page lit *)

@@ -81,6 +81,7 @@ type t = {
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
   guide : Code_guide.t; (* claude: what the directories' .codemapconfig say (plan_codemap_v2.md) *)
   mutable street : bool; (* claude: at the ground, the file with what it uses (a: Code_street) *)
+  mutable clock : float; (* claude: the frame's time (view's), for what pulses *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }
@@ -150,7 +151,7 @@ let make ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
     back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; flight = None; pointer = None;
-    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false }
+    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; clock = 0. }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries

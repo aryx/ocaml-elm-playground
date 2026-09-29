@@ -398,6 +398,10 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
  * name under the mouse, its binding framed cyan and its uses lit yellow,
  * in its file; and the binding a click went to, lit green *)
 let names_lit (computer : computer) (t : t) : shape list =
+  (* claude: on a file, Map_v2 lights the names itself, where its lines
+   * are (Map_v2.names_glow): the treemap is not what is on the map *)
+  if t.style.units && (match t.placed.(t.focus).node with File _ -> true | Dir _ -> false) then []
+  else
   let c = t.cam in
   let a = c.a in
   (* [glow]: pulsing (Code_view.glow), where the eye must go *)
@@ -516,6 +520,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let u = to_u c mpx and v = to_v c mpy in
   let hovered = if on a mpx mpy then under t u v else None in
   t.pointer <- (if on a mpx mpy then Some (u, v) else None);
+  (let (Time now) = computer.time in t.clock <- now);
   let box color th (x0, y0, x1, y1) = frame a color (float_of_int x0) (float_of_int y0) (float_of_int x1) (float_of_int y1) th in
   let marks =
     Array.to_list t.placed
@@ -531,8 +536,11 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
     match hovered with
     | Some i -> (
         let p = t.placed.(i) in
-        (* claude: no frame round the unit one is in *)
-        let frame = match clip c p.rect with Some b when not (t.style.units && i = t.focus) -> box white 1.5 b | _ -> [] in
+        (* claude: no frame round the unit one is in; nor, when it is a
+         * file (Map_v2's ground and street), round anything: the
+         * treemap is not what is on the map then *)
+        let on_a_file = t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false in
+        let frame = match clip c p.rect with Some b when not (t.style.units && (i = t.focus || on_a_file)) -> box white 1.5 b | _ -> [] in
         match (p.node, t.geometry.(i)) with
         | File (_, _, e), Some g ->
             let line = match picked with Some (_, l, _) -> l | None -> line_at g p.rect u v in

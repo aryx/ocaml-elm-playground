@@ -63,6 +63,7 @@ type t = {
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
   guide : Code_guide.t; (* claude: what the directories' .codemapconfig say (plan_codemap_v2.md) *)
   mutable street : bool; (* claude: at the ground, the file with what it uses (a: Code_street) *)
+  mutable clock : float; (* claude: the frame's time (view's), for what pulses *)
   mutable wheel_debt : float; (* claude: the wheel's notches not yet a step, and when the last step was *)
   mutable wheel_at : float;
 }

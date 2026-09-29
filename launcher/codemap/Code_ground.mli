@@ -45,6 +45,10 @@ val layout : ?x0:float -> ?y0:float -> float array -> pw:int -> ph:int -> t
    pixels high or more, else its characters' colours *)
 val paint : Rgba_image.t -> Code_file.t -> t -> bg:int * int * int -> aa:bool -> unit
 
+(* a line's character cell's width: half its height, a letter's; a
+   bar's, less *)
+val cell_w : t -> int -> float
+
 (* the line under a pixel of the map, if any *)
 val line_at : t -> float -> float -> int option
 
