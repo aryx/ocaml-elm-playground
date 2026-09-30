@@ -15,8 +15,9 @@
  *   make_codemap_data ~/github/ix ix > codemap_data.txt   (its name)
  *
  * the files tinybox codemap <dir> would show and its configs, read the
- * same way (Code_walk), written in Code_bundle's format. The name is
- * the directory's own by default. *)
+ * same way (Code_walk), written in Code_bundle's format, with the
+ * definitions' uses counted (Code_rank). The name is the directory's
+ * own by default. *)
 
 let () =
   let dir, name =
@@ -35,5 +36,9 @@ let () =
     prerr_endline ("make_codemap_data: no OCaml nor C file under " ^ dir);
     exit 1
   end;
+  (* claude: and what lexing every file tells, counted here, natively,
+   * once: in a browser the first a froze the page (Code_rank) *)
+  let files = List.map (fun (p, src) -> (p, lazy (Code_file.make p src))) w.sources in
+  let rank = Code_rank.to_string (Code_rank.compute ~roots:w.roots files) in
   set_binary_mode_out stdout true;
-  print_string (Code_bundle.to_string { name; roots = w.roots; sources = w.sources; configs = w.configs; jsonnet = w.jsonnet })
+  print_string (Code_bundle.to_string { name; roots = w.roots; sources = w.sources; configs = w.configs; jsonnet = w.jsonnet; rank = Some rank })

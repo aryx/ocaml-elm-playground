@@ -10,7 +10,7 @@
 
 (* See Code_bundle.mli *)
 
-type t = { name : string; roots : string list; sources : (string * string) list; configs : string list; jsonnet : (string * string) list }
+type t = { name : string; roots : string list; sources : (string * string) list; configs : string list; jsonnet : (string * string) list; rank : string option }
 
 let entries (s : string) : (string * string) list =
   let rec go i acc =
@@ -29,6 +29,7 @@ let to_string (t : t) : string =
   let add (path, text) = Buffer.add_string b (Printf.sprintf "%s\n%d\n%s" path (String.length text) text) in
   add ("#name", t.name);
   add ("#roots", String.concat "\n" t.roots);
+  Option.iter (fun r -> add ("#rank", r)) t.rank;
   List.iter add t.sources;
   List.iter add t.jsonnet;
   Buffer.contents b
@@ -39,8 +40,8 @@ let is_jsonnet p = is_config p || Filename.check_suffix p ".libsonnet" || Filena
 let of_string (s : string) : t =
   let es = entries s in
   let meta k = Option.value (List.assoc_opt k es) ~default:"" in
-  let files = List.filter (fun (p, _) -> p <> "#name" && p <> "#roots") es in
+  let files = List.filter (fun (p, _) -> p <> "#name" && p <> "#roots" && p <> "#rank") es in
   let jsonnet, sources = List.partition (fun (p, _) -> is_jsonnet p) files in
   (* claude: the root "" is an empty line; String.split_on_char keeps it *)
   let roots = match meta "#roots" with "" when not (List.mem_assoc "#roots" es) -> [] | r -> String.split_on_char '\n' r in
-  { name = meta "#name"; roots; sources; configs = List.filter is_config (List.map fst jsonnet); jsonnet }
+  { name = meta "#name"; roots; sources; configs = List.filter is_config (List.map fst jsonnet); jsonnet; rank = List.assoc_opt "#rank" es }

@@ -10,6 +10,9 @@
 
 (* See Codemap.mli *)
 
+(* claude: @ in constant stack, as Code_map_base's (a browser's stack is small) *)
+let ( @ ) = Code_map_base.( @ )
+
 (* which files: the program's own code, then with all it uses, then all;
  * or a directory's, read from the disk (tinybox codemap <dir>), no
  * program in it to start from *)
@@ -84,6 +87,12 @@ let fan_in_of (sources : (string * string) list) : (string, int) Hashtbl.t Lazy.
       fan_ins := (sources, f) :: !fan_ins;
       f
 
+(* claude: the definitions' uses and the files' links, counted before
+ * (a web page's bundle, Codemap_web): every map of these sources given
+ * them, not counting them again by lexing every file *)
+let given_rank : Code_rank.t option ref = ref None
+let use_rank (r : Code_rank.t) : unit = given_rank := Some r
+
 let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (string * (int * int * int)) list) ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
     ~(scope : scope) : Code_map.t =
   let paths =
@@ -126,7 +135,11 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Whole | Directory _ -> []
   in
   let top_kept = match scope with Selection _ | Tied _ -> true | _ -> false in
-  Code_map.make ~fan_in:(fan_in_of sources) ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries
+  let (m : Code_map.t) = Code_map.make ~fan_in:(fan_in_of sources) ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries in
+  (* the same for every map of these sources: the map's files and those
+   * beyond it are all of them *)
+  Option.iter (fun r -> m.rank <- Some r) !given_rank;
+  m
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
   let sources, guide = guide_of sources in
@@ -353,10 +366,31 @@ let opened_at (c : t) (flags : (string * string) list) : t =
 
 type directory = { guide : Code_guide.t option; colours : (string * (int * int * int)) list option; roots : string list option; name : string; sources : (string * string) list }
 
+(* claude: a progress bar and what it counts, at the foot of the screen
+ * (the author: the web page seemed to hang) *)
+let progress_bar (screen : Playground.screen) (text : string) (frac : float option) : Playground.shape list =
+  let open Playground in
+  let w = 360. and y = screen.bottom +. 22. in
+  let x = screen.left +. 30. +. (w /. 2.) in
+  (match frac with
+  | Some f ->
+      let f = Float.max 0. (Float.min 1. f) in
+      [
+        rectangle (rgb 50 48 80) w 6. |> move x y;
+        rectangle (rgb 120 190 255) (w *. f) 6. |> move (x -. (w /. 2.) +. (w *. f /. 2.)) y;
+      ]
+  | None -> [])
+  @ [ words (rgb 170 170 200) text |> scale (13. /. words_font_size) |> move (x -. (w /. 2.) +. (0.26 *. 13. *. float_of_int (String.length text))) (y +. 14.) ]
+
 (* claude: the map, its directory given by [get] once it has it (a web
- * page's, fetched; Error, why not, said on the screen) *)
-let run_loading ~(get : unit -> (directory, string) result option) : unit =
-  let status = ref "its code: on its way..." in
+ * page's, fetched; Error, why not, said on the screen); [waiting], what
+ * to say meanwhile (the bytes come) and how far. Once the map is up,
+ * every file is lexed in the background, a slice a frame (a search, a
+ * layer or a's street needs them all: lexing them at once froze a
+ * browser for seconds), a bar saying how far *)
+let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code: on its way...", None)) ~(get : unit -> (directory, string) result option) () : unit =
+  let failed = ref None in
+  let pending = ref [] and total = ref 0 in
   let update (computer : Playground.computer) (m : alone) : alone =
     let made =
       match m.code with
@@ -365,15 +399,22 @@ let run_loading ~(get : unit -> (directory, string) result option) : unit =
           match get () with
           | None -> None
           | Some (Error why) ->
-              status := "its code: " ^ why;
+              failed := Some ("its code: " ^ why);
               None
           | Some (Ok d) ->
           let c = of_directory ?guide:d.guide ?colours:d.colours ?roots:d.roots ~area:(area_of computer.screen) ~name:d.name ~sources:d.sources () in
+          pending := Hashtbl.fold (fun _ f acc -> if Lazy.is_val f then acc else f :: acc) lexed [];
+          total := List.length !pending;
           Some (opened_at c (Playground_platform.flags ())))
     in
     match made with
     | None -> m
     | Some code ->
+    (* the files lexed in the background, 12 ms a frame *)
+    (if !pending <> [] then
+       let until = Sys.time () +. 0.012 in
+       let rec go = function f :: rest when Sys.time () < until -> ignore (Lazy.force f); go rest | l -> l in
+       pending := go !pending);
     let keys = computer.keyboard.keys in
     let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
     let (Time now) = computer.time in
@@ -389,8 +430,17 @@ let run_loading ~(get : unit -> (directory, string) result option) : unit =
   in
   let view (computer : Playground.computer) (m : alone) =
     match m.code with
-    | Some c -> view computer c
-    | None -> [ Playground.words (Playground.rgb 200 200 200) !status |> Playground.scale (20. /. Playground.words_font_size) ]
+    | Some c ->
+        let left = List.length !pending in
+        view computer c
+        @ if left = 0 then [] else progress_bar computer.screen (Printf.sprintf "reading the code: %d of %d files" (!total - left) !total) (Some (float_of_int (!total - left) /. float_of_int (max 1 !total)))
+    | None -> (
+        match !failed with
+        | Some why -> [ Playground.words (Playground.rgb 200 200 200) why |> Playground.scale (20. /. Playground.words_font_size) ]
+        | None ->
+            let text, frac = waiting () in
+            [ Playground.words (Playground.rgb 200 200 200) text |> Playground.scale (20. /. Playground.words_font_size) ]
+            @ match frac with Some f -> progress_bar { computer.screen with bottom = -60. ; left = -210. } "" (Some f) | None -> [])
   in
   let flags = Playground_platform.flags () in
   (* claude: style=streets, the map's style (Code_map); a directory's
@@ -401,4 +451,4 @@ let run_loading ~(get : unit -> (directory, string) result option) : unit =
 
 let run_directory ?guide ?colours ?roots ~(name : string) ~(sources : (string * string) list) () : unit =
   let d = Some (Ok { guide; colours; roots; name; sources }) in
-  run_loading ~get:(fun () -> d)
+  run_loading ~get:(fun () -> d) ()

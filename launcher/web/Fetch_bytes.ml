@@ -35,10 +35,16 @@ let bytes_of_response (response : Ojs.t) : string =
   Js_of_ocaml.Js.to_bytestring (Obj.magic whole : Js_of_ocaml.Js.js_string Js_of_ocaml.Js.t)
 
 (* an XMLHttpRequest for bytes, as the web platform's fetch_web *)
-let get (url : string) ~(ok : string -> unit) ~(failed : string -> unit) : unit =
+let get ?(progress : int -> int -> unit = fun _ _ -> ()) (url : string) ~(ok : string -> unit) ~(failed : string -> unit) : unit =
   let xhr = Ojs.new_obj (Ojs.get_prop_ascii Ojs.global "XMLHttpRequest") [||] in
   ignore (Ojs.call xhr "open" [| Ojs.string_to_js "GET"; Ojs.string_to_js url |]);
   Ojs.set_prop_ascii xhr "responseType" (Ojs.string_to_js "arraybuffer");
+  (* claude: the bytes come, their count and the whole's (0 when the
+   * server does not say, or says the compressed size only) *)
+  Ojs.set_prop_ascii xhr "onprogress"
+    (Ojs.fun_to_js 1 (fun ev ->
+         let known = Ojs.bool_of_js (Ojs.get_prop_ascii ev "lengthComputable") in
+         progress (Ojs.int_of_js (Ojs.get_prop_ascii ev "loaded")) (if known then Ojs.int_of_js (Ojs.get_prop_ascii ev "total") else 0)));
   Ojs.set_prop_ascii xhr "onload"
     (Ojs.fun_to_js 1 (fun _ ->
          let status = Ojs.int_of_js (Ojs.get_prop_ascii xhr "status") in

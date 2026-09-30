@@ -28,6 +28,13 @@
 
 open Playground
 
+(* claude: a list appended as @ does, but in constant stack: OCaml
+ * 4.14's @ recurses as deep as its left list, and a browser's stack is
+ * small -- a street's thousands of shapes overflowed it every frame, the
+ * web page frozen (the author: a on TinyInvaders.ml). The modules
+ * opening this one see it as @. *)
+let ( @ ) (a : 'a list) (b : 'a list) : 'a list = match b with [] -> a | _ -> List.rev_append (List.rev a) b
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)

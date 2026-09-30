@@ -69,7 +69,14 @@ type directory = {
   sources : (string * string) list;
 }
 
-val run_loading : get:(unit -> (directory, string) result option) -> unit
+(* claude: the definitions' uses counted before (Code_rank, a web page's
+   bundle), for every map made after: none counted by lexing every file *)
+val use_rank : Code_rank.t -> unit
+
+(* ... and [waiting], what to say meanwhile and how far (the bytes
+   fetched); once the map is up, every file lexed in the background, a
+   slice a frame, a bar saying how far *)
+val run_loading : ?waiting:(unit -> string * float option) -> get:(unit -> (directory, string) result option) -> unit -> unit
 
 (* the map of the program's own code alone, for a glance (tinybox's
    panel: Code_map.view ~chrome:false) *)

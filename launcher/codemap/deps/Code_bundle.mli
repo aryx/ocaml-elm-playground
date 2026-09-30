@@ -5,8 +5,10 @@
 
    The format is tinybox_sources.txt's (make_tinybox_data sources-file,
    Tinybox_web): each file its path, a newline, its length in bytes, a
-   newline, its text. Two entries are not files: "#name", the map's
-   name, and "#roots", the projects' tops, a line each. A config
+   newline, its text. Three entries are not files: "#name", the map's
+   name, "#roots", the projects' tops, a line each, and "#rank", what
+   lexing every file tells (Code_rank's, too slow to count in a
+   browser). A config
    (.codemapconfig) and what configs import (.libsonnet, .jsonnet) are
    files among the rest, told apart by their names.
 
@@ -20,6 +22,7 @@ type t = {
   sources : (string * string) list; (* path, text *)
   configs : string list; (* the .codemapconfig files' paths *)
   jsonnet : (string * string) list; (* the configs and what they import, path, text *)
+  rank : string option; (* claude: every definition's uses and the files' links, counted when made (Code_rank.to_string) *)
 }
 
 val to_string : t -> string

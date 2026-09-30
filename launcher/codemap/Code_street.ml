@@ -10,6 +10,9 @@
 
 (* See Code_street.mli *)
 
+(* claude: @ in constant stack, as Code_map_base's (a browser's stack is small) *)
+let ( @ ) = Code_map_base.( @ )
+
 type edge = { src : string; from_line : int; from_col : int; target : string; target_line : int; target_col : int; name : string }
 type panel = { path : string; ground : Code_ground.t; count : int }
 type mode = Uses | Users | Both
@@ -177,11 +180,32 @@ let paths (t : t) : (edge * (float * float) list) list =
         | _ -> None)
       t.users
 
+(* claude: the last street's roads and ends kept, drawn again as they
+ * are until the street, the line hovered or the area changes: a big
+ * one's (principia's proc.c, hundreds of ties) cost 0.6 s a frame in a
+ * browser *)
+let memo (cache : (t * (string * int) option * Code_map_base.area * Playground.shape list) option ref) hover a t (make : unit -> Playground.shape list) =
+  match !cache with
+  | Some (t', h, a', r) when t' == t && h = hover && a' = a -> r
+  | _ ->
+      let r = make () in
+      cache := Some (t, hover, a, r);
+      r
+
+let roads_cache = ref None
+let ends_cache = ref None
+
 let roads ?hover (a : Code_map_base.area) (t : t) : Playground.shape list =
+  memo roads_cache hover a t @@ fun () ->
   let lit, faint = List.partition (fun (e, _) -> lit_by hover e) (paths t) in
-  List.concat_map (fun (_, pts) -> Map_atlas.road a pts 2. 0.2) faint @ List.concat_map (fun (_, pts) -> Map_atlas.road a pts 5. 0.95) lit
+  (* claude: not @, whose recursion is as deep as its left list: a
+   * street's thousands of faint roads' shapes overflowed a browser's
+   * stack, every frame (the author: a on TinyInvaders.ml froze the web
+   * page) *)
+  List.rev_append (List.rev (List.concat_map (fun (_, pts) -> Map_atlas.road a pts 2. 0.2) faint)) (List.concat_map (fun (_, pts) -> Map_atlas.road a pts 5. 0.95) lit)
 
 let ends ?hover (a : Code_map_base.area) (t : t) : Playground.shape list =
+  memo ends_cache hover a t @@ fun () ->
   let frame (g : Code_ground.t) l color =
     if l >= Array.length g.places then []
     else
@@ -194,4 +218,4 @@ let ends ?hover (a : Code_map_base.area) (t : t) : Playground.shape list =
       else
         (match ground_of t e.src with Some g -> frame g e.from_line (Playground.rgb 90 220 120) | None -> [])
         @ match ground_of t e.target with Some g -> frame g e.target_line (Playground.rgb 250 80 70) | None -> [])
-    (t.uses @ t.users)
+    (List.rev_append (List.rev t.uses) t.users)

@@ -34,6 +34,9 @@ open Playground
 (* Layout *)
 (*****************************************************************************)
 
+(* claude: @ in constant stack, as Code_map_base's (a browser's stack is small) *)
+let ( @ ) (a : 'a list) (b : 'a list) : 'a list = match b with [] -> a | _ -> List.rev_append (List.rev a) b
+
 let top_y = 420. (* the panels' top edge *)
 let map_left = -480.
 let map_w = 110.

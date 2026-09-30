@@ -8,7 +8,7 @@
   files: {
     'Playground_platform.ml': {
       summary: 'The web run_app: a requestAnimationFrame loop, shapes rendered to SVG by a mini virtual DOM, Web Audio, phones.',
-      digest: '711365a53ee4',
+      digest: 'e4ae2d97f7b8',
       capitals: [{ at: 'def:run_app', say: 'every program in a browser: the frame loop, the SVG, the sound' }],
       important: [
         { at: 'comment:ocaml-vdom', say: "why our own mini virtual DOM, not Vdom's", weight: 3 },

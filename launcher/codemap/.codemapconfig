@@ -26,21 +26,21 @@
     'Code_file.ml': { digest: 'd540682f9965',
       summary: "OCaml's or C's highlighter run (plain text if it fails), its spans laid into the grid a byte a cell, the tricks marked.",
     },
-    'Codemap.mli': { digest: 'aa8a02a3ef3b',
+    'Codemap.mli': { digest: 'e9a0462cabf8',
       summary: "The code map as a program: a program's own code, then what it uses, then the whole repository; the tour in reading order.",
       capitals: [
         { at: 'def:run_directory', say: 'tinybox codemap <dir>: a directory mapped' },
         { at: 'def:make_own', say: "a program's map: its code and its kits" },
       ],
     },
-    'Codemap.ml': { digest: '0982deb1eddd',
+    'Codemap.ml': { digest: '475ca7787951',
       summary: "Which files a map shows (Code_deps), each lexed lazily, the configs loaded, the map and the file view switched.",
       important: [
         { at: 'def:guide_of', say: 'every .codemapconfig read once', weight: 2 },
         { at: 'def:next_stop', say: 'the tour: n to the next header or section', weight: 1 },
       ],
     },
-    'Code_map_base.mli': { digest: '6c247699d10d',
+    'Code_map_base.mli': { digest: 'ce99946271fb',
       summary: "The map's types and what every style draws with: the layout, the camera and its two spaces, colours, pixels.",
       capitals: [
         { at: 'type:t', say: 'the map: its layout, camera, index, configs, styles' },
@@ -51,7 +51,7 @@
         { at: 'def:relayout', say: 'the treemap laid out once, in units', weight: 2 },
       ],
     },
-    'Code_map_base.ml': { digest: 'aae13fd64c26',
+    'Code_map_base.ml': { digest: 'b4a83d54a3f9',
       summary: "The camera's arithmetic, the parts' colours, a file's code painted as SeeSoft's pixels or as letters.",
       important: [
         { at: 'def:paint_code', say: 'a file in miniature, or readable up close', weight: 3 },
@@ -85,7 +85,7 @@
         { at: 'def:labels', say: "v2's names, notes, cards and the X-ray" },
       ],
     },
-    'Map_v2.ml': { digest: '1bf1b92aa9f7',
+    'Map_v2.ml': { digest: '2ee5d1276176',
       summary: "Each level painted and named: the configs' cards and notes, peeks, the skeletons and the anatomy's plates.",
       important: [
         { at: 'def:paint_ground', say: 'a file as the whole map, lines as high as they matter', weight: 3 },
@@ -143,7 +143,7 @@
         { at: 'def:toggle', say: 'a row expanded into its parts', weight: 2 },
       ],
     },
-    'Code_dsm.ml': { digest: '0650b156582c',
+    'Code_dsm.ml': { digest: '5d11d140135a',
       summary: "The rows partitioned as codegraph does, the used before their users, a cycle's between; the matrix counted.",
       capitals: [
         { at: 'def:partition', say: 'the layers: a clean architecture lower-triangular' },
@@ -162,7 +162,7 @@
         { at: 'type:placed', say: 'a unit laid out: its rectangle and depth', weight: 2 },
       ],
     },
-    'Treemap.ml': { digest: '66ad116047b8',
+    'Treemap.ml': { digest: '1ab6db5cd63a',
       summary: "The three algorithms: the pivot by middle, the strips, Bruls' rows closed when the worst ratio grows.",
       important: [
         { at: 'def:ordered', say: 'pivot by middle: the alphabet kept', weight: 3 },
@@ -182,14 +182,14 @@
     'Code_units.ml': { digest: '961ded0d30ef',
       summary: 'Parent, children, the child toward a point, the sibling on a side, from the placed array.',
     },
-    'Code_rank.mli': { digest: 'ed982b6ded60',
+    'Code_rank.mli': { digest: '9abd66d4c391',
       summary: "A definition's population, as a city's: how much it is used, what the map writes bigger and shows first.",
       capitals: [
         { at: 'def:links', say: 'file to file, how many uses: every road and layer' },
         { at: 'def:score', say: "codemap's weight by kind, times a log of uses" },
       ],
     },
-    'Code_rank.ml': { digest: 'fdb7fd16dd77',
+    'Code_rank.ml': { digest: '96481fa64889',
       summary: "Every name resolved once over the map's files, the sure answers counted, own uses a third.",
       important: [
         { at: 'def:compute', say: 'only sure resolutions count: a guess is no use', weight: 2 },
@@ -214,7 +214,7 @@
         { at: 'def:matches', say: 'a query to its hits, ranked' },
       ],
     },
-    'Code_search.ml': { digest: '54def7eedcfe',
+    'Code_search.ml': { digest: '7e1128f761ec',
       summary: 'Hits ranked by how the query meets a name (whole, start, word, inside), directories first, shallower first.',
       important: [
         { at: 'def:score', say: 'whole name, start, word start, inside', weight: 2 },
@@ -251,7 +251,7 @@
         { at: 'type:mode', say: 'uses, users, or both', weight: 1 },
       ],
     },
-    'Code_street.ml': { digest: '7532b15b96b4',
+    'Code_street.ml': { digest: '6a7a7f44e8f0',
       summary: "Panels chosen (own code first, thrice the room), each a ground with the tied lines tall, roads bundled.",
       important: [
         { at: 'def:roads', say: 'green at the use, red at the definition', weight: 2 },
@@ -260,7 +260,7 @@
     'Code_view.mli': { digest: 'c6f487d5f91f',
       summary: "A source file read, codemap's colours, with the whole file beside it as SeeSoft drew one.",
     },
-    'Code_view.ml': { digest: '0329aafd5ab3',
+    'Code_view.ml': { digest: '3d282f4afc4f',
       summary: 'The page scrolled, the SeeSoft overview clicked, the names lit, the glow round a line.',
       important: [
         { at: 'def:overview_of', say: 'a pixel per character, the part shown framed', weight: 2 },

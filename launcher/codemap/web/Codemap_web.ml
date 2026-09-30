@@ -63,6 +63,10 @@ let get () : (Codemap.directory, string) result option =
             (* claude: a config's mistake said in the console, the map
              * drawn without it, as tinybox codemap <dir> *)
             let guide, mistakes = Code_guide.load ~read b.configs in
+            (* claude: the uses counted when the bundle was made: a, a
+             * capital's card and the matrix need them, and counting them
+             * here lexes every file, minutes in a browser *)
+            Option.iter (fun r -> Codemap.use_rank (Code_rank.of_string r)) b.rank;
             List.iter (fun m -> prerr_endline ("codemap: " ^ m)) mistakes;
             Ok { Codemap.guide = Some guide; colours = Some (Code_guide.colours guide); roots = Some b.roots; name = b.name; sources = b.sources }
       in
@@ -71,5 +75,19 @@ let get () : (Codemap.directory, string) result option =
 
 let main =
   Program.main __MODULE__ (fun () ->
-      Fetch_bytes.get (data_url ()) ~ok:(fun s -> fetched := Some (Ok s)) ~failed:(fun why -> fetched := Some (Error why));
-      Codemap.run_loading ~get)
+      (* claude: the bytes come, said with a bar (the author: the page
+       * seemed to hang) *)
+      let got = ref (0, 0) in
+      Fetch_bytes.get (data_url ())
+        ~progress:(fun n total -> got := (n, total))
+        ~ok:(fun s -> fetched := Some (Ok s))
+        ~failed:(fun why -> fetched := Some (Error why));
+      let mb n = float_of_int n /. 1e6 in
+      let waiting () =
+        match (!fetched, !got) with
+        | Some _, _ -> ("its code: read, the map being made...", Some 1.)
+        | None, (0, _) -> ("its code: on its way...", None)
+        | None, (n, total) when total >= n -> (Printf.sprintf "its code: %.1f of %.1f MB" (mb n) (mb total), Some (float_of_int n /. float_of_int total))
+        | None, (n, _) -> (Printf.sprintf "its code: %.1f MB" (mb n), None)
+      in
+      Codemap.run_loading ~waiting ~get ())

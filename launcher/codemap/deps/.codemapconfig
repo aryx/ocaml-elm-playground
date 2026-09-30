@@ -4,11 +4,11 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "Pure, for build time and the browser too: which files are a program's own code and its budget; which files a map leaves out; a directory's code as one file.",
   files: {
-    'Code_bundle.mli': { digest: 'dbb30094ab61',
+    'Code_bundle.mli': { digest: 'f0951a95baa6',
       summary: "A directory's code as one file, for a code map's web page: tinybox_sources.txt's format, a name and the projects' tops.",
       capitals: [{ at: 'type:t', say: 'what a web page is given of a directory' }],
     },
-    'Code_bundle.ml': { digest: '89a6af215ec7',
+    'Code_bundle.ml': { digest: 'd7bef33afe20',
       summary: 'Entries written and read back; configs and what they import told apart by their names.',
     },
     'Code_config.mli': { digest: 'ff08fd021ba2',

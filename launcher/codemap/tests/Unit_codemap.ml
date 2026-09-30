@@ -164,7 +164,7 @@ let tests =
       (* claude: Code_bundle.mli's worked example *)
       Testo.create "a directory's code as one file, and back" (fun () ->
           let b : Code_bundle.t =
-            { name = "ix"; roots = [ "" ]; sources = [ ("a.ml", "let x = 1") ]; configs = [ ".codemapconfig" ]; jsonnet = [ (".codemapconfig", "{}") ] }
+            { name = "ix"; roots = [ "" ]; sources = [ ("a.ml", "let x = 1") ]; configs = [ ".codemapconfig" ]; jsonnet = [ (".codemapconfig", "{}") ]; rank = Some "L\ta.ml\tb.ml\t2\n" }
           in
           Alcotest.(check bool) "the same" true (Code_bundle.of_string (Code_bundle.to_string b) = b));
       (* claude: Code_guide: configs in jsonnet, one per directory, what

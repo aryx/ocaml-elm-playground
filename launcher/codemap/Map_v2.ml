@@ -68,14 +68,25 @@ let at_ground (t : t) (c : camera) : entry option =
 
 (* what the config calls important in a file, found: its line, its
  * weight, its words; the capitals among them, weighing 3 *)
+(* claude: found once a file (an anchor found is a search of its lines:
+ * every frame, a big street's panels cost a browser 0.6 s a frame) *)
+let important_cache : (string, Code_guide.t * (int * int * string option) list) Hashtbl.t = Hashtbl.create 64
+
 let important (t : t) (e : entry) : (int * int * string option) list =
-  match Code_guide.file_note t.guide e.path with
-  | None -> []
-  | Some n ->
-      let f = Lazy.force e.file in
-      List.filter_map
-        (fun (it : Code_guide.item) -> match Code_guide.find f it.at with Ok l -> Some (l, it.weight, it.say) | Error _ -> None)
-        (n.important @ List.map (fun (it : Code_guide.item) -> { it with weight = 3 }) n.capitals)
+  match Hashtbl.find_opt important_cache e.path with
+  | Some (g, r) when g == t.guide -> r
+  | _ ->
+      let r =
+        match Code_guide.file_note t.guide e.path with
+        | None -> []
+        | Some n ->
+            let f = Lazy.force e.file in
+            List.filter_map
+              (fun (it : Code_guide.item) -> match Code_guide.find f it.at with Ok l -> Some (l, it.weight, it.say) | Error _ -> None)
+              (n.important @ List.map (fun (it : Code_guide.item) -> { it with weight = 3 }) n.capitals)
+      in
+      Hashtbl.replace important_cache e.path (t.guide, r);
+      r
 
 (* the file's lines laid out on the window's map (its pixels, not the
  * picture's, which may be more: Code_ground.scale), kept *)

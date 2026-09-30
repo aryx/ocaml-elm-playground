@@ -45,3 +45,10 @@ val links : t -> (string * string * int) list
 val bucket : int -> float
 val weight : Highlight_code.category -> float
 val score : t -> string -> int -> string -> Highlight_code.category -> float
+
+(* claude: the whole counted once and saved as text, a fact a line (a
+   web page's code map is given it in its bundle, make_codemap_data:
+   lexing every file of a big repository in the browser froze the page
+   on the first a) *)
+val to_string : t -> string
+val of_string : string -> t

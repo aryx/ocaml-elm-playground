@@ -449,10 +449,16 @@ let render_words color str x y angle s alpha =
 (* claude: Same as renderPolygon in elm-playground: the points are relative to
  * (x, y), and their y is negated since the svg y axis goes down (see
  * render_transform). *)
+(* claude: List.map in constant stack (OCaml 4.14's recurses as deep as
+ * the list, and a browser's stack is small): a code map's street drew a
+ * polygon of 8,800 points and a picture of thousands of shapes, the
+ * page frozen, an exception every frame *)
+let map_list (f : 'a -> 'b) (l : 'a list) : 'b list = List.rev (List.rev_map f l)
+
 let render_polygon color points x y angle s alpha =
   let points_str =
     points
-    |> List.map (fun (px, py) -> string_of_number px ^ "," ^ string_of_number (-. py))
+    |> map_list (fun (px, py) -> string_of_number px ^ "," ^ string_of_number (-. py))
     |> String.concat " "
   in
   Svg.polygon
@@ -557,7 +563,7 @@ let rec (render_shape: shape -> 'msg Svg.t) =
         (Svg.Attributes.transform (render_transform x y angle scale) ::
          render_alpha alpha
         )
-        (List.map render_shape shapes)
+        (map_list render_shape shapes)
 
 
 let (render: rendering:rendering -> screen -> shape list -> 'msg Svg.t) =
@@ -579,7 +585,7 @@ let (render: rendering:rendering -> screen -> shape list -> 'msg Svg.t) =
        * are inherited by all the shapes inside the <svg> *)
       (if rendering.antialiasing then [] else [V.attr "shape-rendering" "crispEdges"]) @
       (if rendering.smooth_images then [] else [Html.style "image-rendering" "pixelated"]))
-      (List.map render_shape shapes)
+      (map_list render_shape shapes)
 
 (*****************************************************************************)
 (* Event management *)

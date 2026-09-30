@@ -15,4 +15,6 @@
 (executable
  (name make_codemap_data)
  (modules make_codemap_data)
- (libraries tinybox_codedeps tinybox_codewalk))
+ (libraries tinybox_codedeps tinybox_codewalk
+   tinybox_codemap ; Code_file, Code_rank: every file lexed, the uses counted
+   elm_playground_native)) ; implem of virtual elm_playground, which tinybox_codemap needs

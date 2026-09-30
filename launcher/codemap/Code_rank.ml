@@ -88,3 +88,31 @@ let weight (c : Highlight_code.category) : float =
 let score (t : t) (path : string) (line : int) (name : string) (c : Highlight_code.category) : float =
   let u = uses t path line name in
   weight c *. bucket (u.others + (u.own / 3))
+
+(*****************************************************************************)
+(* Saved *)
+(*****************************************************************************)
+
+(* claude: a line a fact, tab-separated: U a definition's uses, B its
+ * uses by one file, L a link; paths and names hold no tab nor newline *)
+let to_string (t : t) : string =
+  let b = Buffer.create (1 lsl 20) in
+  Hashtbl.iter (fun (p, l, n) (u : use) -> Printf.bprintf b "U\t%s\t%d\t%s\t%d\t%d\t%d\n" p l n u.own u.others u.files) t.uses;
+  Hashtbl.iter (fun (p, l, n) by -> Hashtbl.iter (fun q k -> Printf.bprintf b "B\t%s\t%d\t%s\t%s\t%d\n" p l n q k) by) t.users;
+  Hashtbl.iter (fun (a, c) n -> Printf.bprintf b "L\t%s\t%s\t%d\n" a c n) t.links;
+  Buffer.contents b
+
+let of_string (s : string) : t =
+  let uses = Hashtbl.create 4096 and users = Hashtbl.create 4096 and links = Hashtbl.create 1024 in
+  List.iter
+    (fun line ->
+      match String.split_on_char '\t' line with
+      | [ "U"; p; l; n; o; x; f ] -> Hashtbl.replace uses (p, int_of_string l, n) { own = int_of_string o; others = int_of_string x; files = int_of_string f }
+      | [ "B"; p; l; n; q; k ] ->
+          let key = (p, int_of_string l, n) in
+          let by = match Hashtbl.find_opt users key with Some by -> by | None -> let by = Hashtbl.create 8 in Hashtbl.replace users key by; by in
+          Hashtbl.replace by q (int_of_string k)
+      | [ "L"; a; c; n ] -> Hashtbl.replace links (a, c) (int_of_string n)
+      | _ -> ())
+    (String.split_on_char '\n' s);
+  { uses; users; links }

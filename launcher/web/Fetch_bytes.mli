@@ -7,5 +7,6 @@
    (String.fromCharCode over 32 KB), then taken as they are: for 10 MB,
    a few dozen ms, where a byte at a time froze the page 1.4 s. *)
 
-(* [get url ~ok ~failed]: [ok] with the bytes, or [failed] with why not *)
-val get : string -> ok:(string -> unit) -> failed:(string -> unit) -> unit
+(* [get url ~ok ~failed]: [ok] with the bytes, or [failed] with why not;
+   [progress] told the bytes come so far and the whole's (0: unknown) *)
+val get : ?progress:(int -> int -> unit) -> string -> ok:(string -> unit) -> failed:(string -> unit) -> unit

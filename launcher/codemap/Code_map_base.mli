@@ -13,6 +13,10 @@
 
      pixel (px, py)  =  ((u - cx) * z + pw/2,  (v - cy) * z + ph/2) *)
 
+(* claude: @ in constant stack (OCaml 4.14's overflows a browser's with
+   a street's thousands of shapes); the modules opening this one use it *)
+val ( @ ) : 'a list -> 'a list -> 'a list
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)

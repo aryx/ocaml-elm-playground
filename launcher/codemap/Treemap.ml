@@ -11,6 +11,9 @@
 (* See Treemap.mli. After codemap's libs/treemap/treemap.ml (its literate
  * Treemap.tex.nw explains the squarified algorithm step by step). *)
 
+(* claude: @ in constant stack, as Code_map_base's (a browser's stack is small) *)
+let ( @ ) (a : 'a list) (b : 'a list) : 'a list = match b with [] -> a | _ -> List.rev_append (List.rev a) b
+
 type rect = { x : float; y : float; w : float; h : float }
 type 'a tree = Dir of string * 'a tree list | File of string * float * 'a
 type algo = Ordered | Squarified | Slice_and_dice

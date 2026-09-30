@@ -10,6 +10,9 @@
 
 (* See Code_dsm.mli *)
 
+(* claude: @ in constant stack, as Code_map_base's (a browser's stack is small) *)
+let ( @ ) (a : 'a list) (b : 'a list) : 'a list = match b with [] -> a | _ -> List.rev_append (List.rev a) b
+
 type node = Dir of string | File of string | Def of string * int * string
 type edge = { sdef : int option; dst : string; ddef : int; ename : string }
 
