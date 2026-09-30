@@ -67,7 +67,7 @@
   is a library of its own, tiny_libs.<name>.
 ")
   (depends
-    (ocaml (>= "4.07.0"))
+    (ocaml (>= "4.14.0"))
     (caps (>= "0.1.0"))
     logs
     (testo :with-test)
@@ -87,7 +87,7 @@
   a library of its own, tiny_languages.<name>.
 ")
   (depends
-    (ocaml (>= "4.07.0"))
+    (ocaml (>= "4.14.0"))
     (tiny_libs (= :version)) ; highlight_code, terminal, random
   )
 )
@@ -105,7 +105,7 @@
   tiny_appkits.<name>.
 ")
   (depends
-    (ocaml (>= "4.07.0"))
+    (ocaml (>= "4.14.0"))
     (tiny_libs (= :version))
     (tiny_languages (= :version))
   )
@@ -120,8 +120,10 @@
   elm_playground_3d.
 ")
   (depends
-    ; ocaml-ci reports "Unbound module Float" before (in core/)
-    (ocaml (>= "4.07.0"))
+    ; claude: 4.14 for the whole repository: the code uses In_channel
+    ; and Out_channel (4.14), String.starts_with, List.concat_map and
+    ; their kin (4.13), in more than 300 files
+    (ocaml (>= "4.14.0"))
     ; claude: capabilities, for Playground_platform's store/fetch/export
     ; (docs/claude_notes/plans/plan_caps.md); links under js_of_ocaml too
     (caps (>= "0.1.0"))
@@ -144,7 +146,7 @@
     ; missing unix error, but that got fixed upstream (probably in
     ; ctypes/ctypes-foreign, not tsdl itself): verified 2026-09-16 that
     ; OCaml 5.2.0 through 5.5.1 all build and pass the tests fine now.
-    (ocaml (>= "4.08.0"))
+    (ocaml (>= "4.14.0"))
     logs
     (cairo2 (>= "0.6.4"))
     tsdl
@@ -170,7 +172,7 @@
   ; claude: the algorithms are tiny_libs' graphics libraries; see
   ; notes_2d.md
   (depends
-    (ocaml (>= "4.08.0"))
+    (ocaml (>= "4.14.0"))
     logs
     tsdl
     (elm_playground (= :version))
@@ -187,8 +189,7 @@
   shapes drawn as SVG through vdom.
 ")
   (depends
-     ; gen_js_api fails to build in 4.10.0
-     (ocaml (>= "4.11.0"))
+     (ocaml (>= "4.14.0"))
      vdom
      (elm_playground (= :version))
   )
@@ -225,7 +226,7 @@
   Comanche. Each is a library of its own, elm_playground_gamekits.<name>.
 ")
   (depends
-    (ocaml (>= "4.08.0"))
+    (ocaml (>= "4.14.0"))
     (tiny_libs (= :version)) ; ai, audio, graphics_2d_geometry
     (elm_playground (= :version))
     (elm_playground_3d (= :version)) ; the 3D kits: racing/3d, brawler/3d
@@ -244,7 +245,7 @@
   ; (graphics/3d/, graphics/2d/ via Shape_render_software); SDL only
   ; opens the window and shows the pixels. See notes_3d.md.
   (depends
-    (ocaml (>= "4.08.0"))
+    (ocaml (>= "4.14.0"))
     tsdl
     (elm_playground_3d (= :version))
     (elm_playground_software (= :version)) ; Shape_render_software, for the HUD pass; the SDL loop
@@ -259,7 +260,7 @@
   platform to pick otherwise.
 ")
   (depends
-    (ocaml (>= "4.11.0"))
+    (ocaml (>= "4.14.0"))
     (elm_playground_3d (= :version))
     (elm_playground_web (= :version))
   )
@@ -273,7 +274,7 @@
 ")
   ; claude: see plan_opengl.md and notes_opengl.md
   (depends
-    (ocaml (>= "4.08.0"))
+    (ocaml (>= "4.14.0"))
     tsdl
     tgls
     (elm_playground_3d (= :version))
@@ -289,7 +290,7 @@
 ")
   ; claude: see plan_webgl.md
   (depends
-    (ocaml (>= "4.11.0"))
+    (ocaml (>= "4.14.0"))
     ; claude: 6.0 for Js_of_ocaml.Console (Firebug is deprecated since)
     ; and for the types the backend assumes: a canvas' naturalWidth an
     ; int rather than an optdef, and Js.number_t/WebGL.clampf an
@@ -310,7 +311,7 @@
 ")
   ; claude: see launcher/native/dune and plan_launcher.md
   (depends
-    (ocaml (>= "4.08.0"))
+    (ocaml (>= "4.14.0"))
     (elm_playground_native (= :version))
     (elm_playground_3d_opengl (= :version))
     (elm_playground_gamekits (= :version)) ; the games' kits

@@ -99,7 +99,8 @@ let redrum () : Rack_module.t =
     ~transport:(Voice_tr808.run v, tempo, step)
     (Voice_tr808.instrument v)
 
-let effect kind name color fx () = Rack_module.of_effect ~kind ~name ~color (fx ())
+(* claude: not [effect], a keyword since OCaml 5.3 *)
+let effect_unit kind name color fx () = Rack_module.of_effect ~kind ~name ~color (fx ())
 
 (* the rack, the studio: made when first asked for (tinybox) *)
 let studio = lazy (Studio_reason.create Studio_reason.empty)
@@ -111,12 +112,12 @@ let catalogue : Rack_module.catalogue =
     ("Hammond B-3", hammond);
     ("TR-808 (Redrum)", redrum);
     ("Matrix", Rack_module.matrix);
-    ("DDL-1 Delay", effect "ddl1" "DDL-1" (rgb 90 170 230) Delay.fx);
-    ("RV-7 Reverb", effect "rv7" "RV-7" (rgb 120 200 150) Reverb.fx);
-    ("D-11 Distortion", effect "d11" "D-11" (rgb 230 80 60) Drive.fx);
-    ("COMP-01", effect "comp01" "COMP-01" (rgb 200 200 90) Dynamics.fx);
-    ("PEQ-2", effect "peq2" "PEQ-2" (rgb 170 130 220) Eq.fx);
-    ("CF-101 Chorus", effect "cf101" "CF-101" (rgb 90 210 210) Modulation.fx);
+    ("DDL-1 Delay", effect_unit "ddl1" "DDL-1" (rgb 90 170 230) Delay.fx);
+    ("RV-7 Reverb", effect_unit "rv7" "RV-7" (rgb 120 200 150) Reverb.fx);
+    ("D-11 Distortion", effect_unit "d11" "D-11" (rgb 230 80 60) Drive.fx);
+    ("COMP-01", effect_unit "comp01" "COMP-01" (rgb 200 200 90) Dynamics.fx);
+    ("PEQ-2", effect_unit "peq2" "PEQ-2" (rgb 170 130 220) Eq.fx);
+    ("CF-101 Chorus", effect_unit "cf101" "CF-101" (rgb 90 210 210) Modulation.fx);
   ]
 
 (* the Hardware Interface's front: its name and the level going out *)

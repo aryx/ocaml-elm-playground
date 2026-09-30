@@ -188,7 +188,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'type:model', say: 'the patch, the fronts, the side shown, a cable in hand', weight: 3 },
         { at: 'type:drag', say: 'a cable dragged: one end plugged, a rope', weight: 2 },
         { at: 'def:catalogue', weight: 3 },
-        { at: 'def:effect', weight: 1 },
+        { at: 'def:effect_unit', weight: 1 },
         { at: 'def:update', weight: 2 },
         { at: 'def:view', weight: 1 },
       ],
