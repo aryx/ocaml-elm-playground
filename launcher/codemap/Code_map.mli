@@ -139,3 +139,7 @@ val searching : t -> bool
    definition around [l], with the comment just above it, not a syncweb
    marker (/*s: function [[f]] */) nor its trailing /*e: ... */ *)
 val peek_extent : Code_file.t -> string -> int -> int * int
+
+(* claude: the code map's version, 0.01, 0.02, ...: raised at each publish
+   of a change to the map, shown at the bottom right *)
+val version : string

@@ -1074,6 +1074,12 @@ let help_shapes (computer : computer) : shape list =
                words dim what |> scale (14. /. words_font_size) |> move (x0 +. 330. +. (text_width 14. what /. 2.)) y ])
          keys_help)
 
+(* claude: the code map's version, at the bottom right (the author: to
+ * see at once whether a page runs the latest, a browser keeping the
+ * program it has for a while): 0.01, 0.02, ..., raised by hand at each
+ * publish of a change to the map (make publish, make codemap-web) *)
+let version = "0.01"
+
 (* claude: a line of keys and what they do, centred at [y], the keys in
  * yellow, the rest dim; the widths Code_map_base.text_width's *)
 let key_line ~(y : float) (items : (string * string) list) : shape list =
@@ -1193,6 +1199,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
       ]
       (* claude: the keys in yellow, what they do dim (the author: "so it
        * reads better"), laid out from the centre *)
+      @ [ words dim ("code map " ^ version) |> scale (12. /. words_font_size) |> move (screen.right -. 60.) (screen.bottom +. 18.) ]
       @ key_line ~y:(screen.bottom +. 18.)
           (if t.style.units then
              [ ("h", "every key"); ("click", "in"); ("right click", "out"); ("/", "search"); ("a", "a file's neighbours"); ("x", "skeleton"); ("m", "marks"); ("l", "layers"); ("g", "the matrix"); ("esc", "back") ]
