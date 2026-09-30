@@ -168,6 +168,9 @@ ASSETS_URL=https://aryx.github.io/assets
 # claude: the site's icon (docs/favicon.svg), by URL so that a page at any
 # depth, or another project's code map, finds it
 FAVICON=<link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/favicon.svg" type="image/svg+xml">
+# claude: the code map's own icon, a treemap (docs/codemap-favicon.svg), on
+# its page here and on the ones it makes for other projects
+CODEMAP_FAVICON=<link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/codemap-favicon.svg" type="image/svg+xml">
 ODOC_DIRS=odoc.support \
   elm_playground elm_playground_native elm_playground_web\
   elm_playground_software elm_playground_3d elm_playground_3d_software
@@ -224,7 +227,7 @@ website:
 # is committed: make website builds from the working copy, so a program
 # being written there (another session's, its row already in CATALOG.md)
 # would go out with its page and its code map, its source not on GitHub.
-WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html style.css favicon.svg tinybox.html codemap.html)
+WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html style.css favicon.svg codemap-favicon.svg tinybox.html codemap.html)
 publish:
 	@if [ -n "$$(git status --porcelain -- . ':!docs')" ]; then \
 	  echo "make publish: changes not committed outside docs/ (git status): commit them, or stash them, first"; \
@@ -276,7 +279,7 @@ codemap-web:
 	install -m 644 _build/default/launcher/codemap/web/Codemap_web.bc.js $(ASSETS)/js/codemap/codemap.bc.js
 	./_build/default/launcher/codegen/make_codemap_data.exe $(DIR) $(NAME) > $(ASSETS)/codemap/$(NAME).txt
 	printf '<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset="utf-8">\n    <title>%s: code map</title>\n    %s\n    <style>body { margin: 0; background: #0e0c1c; }</style>\n    <script>var codemap_data = "%s";</script>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
-	  $(NAME) '$(FAVICON)' $(ASSETS_URL)/codemap/$(NAME).txt $(ASSETS_URL)/js/codemap/codemap.bc.js > $(PAGE)/codemap.html
+	  $(NAME) '$(CODEMAP_FAVICON)' $(ASSETS_URL)/codemap/$(NAME).txt $(ASSETS_URL)/js/codemap/codemap.bc.js > $(PAGE)/codemap.html
 
 ###############################################################################
 # Developer targets
