@@ -2,12 +2,11 @@
 ; section 16): what time it is by the music's clock, how close a press
 ; was, a chart played through, and charts made from a tune's notes.
 ; Used by TinyDDR (arrows), TinyGuitarHero (a guitar) and TinyRockBand
-; (a band). A
-; private library (only the games use it), installed with elm_playground
-; for its API documentation.
+; (a band). In the package elm_playground_gamekits, as
+; elm_playground_gamekits.kit_rhythm.
 (library
  (name kit_rhythm)
- (package elm_playground)
+ (public_name elm_playground_gamekits.kit_rhythm)
  (wrapped false)
  (libraries audio)
 )

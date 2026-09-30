@@ -1,0 +1,5 @@
+; claude: the front page of the package elm_playground_gamekits's API
+; documentation, the kits genre by genre
+(documentation
+  (package elm_playground_gamekits)
+  (mld_files index))

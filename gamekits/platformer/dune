@@ -3,12 +3,11 @@
 ; playground -- moving a box against a Tilemap one pixel at a time
 ; (Tile_move), climbing ladders (Ladder), and shaped ground felt by
 ; sensors (Slope). Used by TinyMario, TinyLodeRunner,
-; TinyRick, TinySonic and TinyMarioWorld. A private
-; library (only the games use it), installed with elm_playground for
-; its API documentation.
+; TinyRick, TinySonic and TinyMarioWorld. In the package
+; elm_playground_gamekits, as elm_playground_gamekits.kit_platformer.
 (library
  (name kit_platformer)
- (package elm_playground)
+ (public_name elm_playground_gamekits.kit_platformer)
  (wrapped false)
  (libraries elm_core elm_playground)
 )

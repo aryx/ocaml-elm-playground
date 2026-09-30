@@ -2,11 +2,10 @@
 ; section 4): a level the way Doom describes one, sectors with floor and
 ; ceiling heights, their lines found from their shared edges; the sector
 ; at a point; moving the player against the lines. Used by TinyDoom
-; (drawn with a BSP tree) and TinyDoom3d (with a z-buffer). A
-; private library (only the games use it), installed with elm_playground
-; for its API documentation.
+; (drawn with a BSP tree) and TinyDoom3d (with a z-buffer). In the
+; package elm_playground_gamekits, as elm_playground_gamekits.kit_sectors.
 (library
  (name kit_sectors)
- (package elm_playground)
+ (public_name elm_playground_gamekits.kit_sectors)
  (wrapped false)
 )

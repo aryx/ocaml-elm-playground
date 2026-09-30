@@ -173,7 +173,8 @@ FAVICON=<link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/favic
 CODEMAP_FAVICON=<link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/codemap-favicon.svg" type="image/svg+xml">
 ODOC_DIRS=odoc.support tiny_libs tiny_languages tiny_appkits \
   elm_playground elm_playground_native elm_playground_web\
-  elm_playground_software elm_playground_3d elm_playground_3d_software
+  elm_playground_software elm_playground_3d elm_playground_3d_software\
+  elm_playground_gamekits
 
 website:
 	make doc

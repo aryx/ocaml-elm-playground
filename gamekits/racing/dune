@@ -6,12 +6,11 @@
 ; (Topdown), used by TinyMicroMachines and TinyMarioKart (Mode
 ; 7), and by the ones from above -- TinyGranTrak10, TinySuperSprint,
 ; TinySupercars and TinySuperOffRoad (its walls, bounces and bumps); and
-; that car on ground with a height (Offroad), used by TinyIgnition. A
-; private library (only the games use it), installed with elm_playground
-; for its API documentation.
+; that car on ground with a height (Offroad), used by TinyIgnition. In
+; the package elm_playground_gamekits, as elm_playground_gamekits.kit_racing.
 (library
  (name kit_racing)
- (package elm_playground)
+ (public_name elm_playground_gamekits.kit_racing)
  (wrapped false)
  (libraries elm_playground)
 )

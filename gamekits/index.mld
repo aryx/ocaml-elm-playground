@@ -1,0 +1,110 @@
+{1 elm_playground_gamekits }
+
+What the games of a genre share, written from scratch for teaching: how
+each genre works, a kit per genre, one idea per module. They are above
+the {{:../elm_playground/index.html} Elm Playground}, most of them drawing
+with it, and use the from-scratch libraries of
+{{:../tiny_libs/index.html} tiny_libs} (ai, audio).
+
+Each is a library of its own, named [elm_playground_gamekits.<name>]
+outside this repository, for example in a dune file:
+
+{v
+(executable
+ (name main)
+ (libraries elm_playground elm_playground_native
+            elm_playground_gamekits.kit_platformer))
+v}
+
+The libraries are unwrapped: their modules are used by their own names,
+[Tile_move], [Ladder].
+
+{2:shmup Shoot 'em ups}
+
+Shots as values that move, the curves enemies fly along
+([elm_playground_gamekits.kit_shmup]):
+
+{!modules: Shots Path}
+
+{2:fighting Fighting games}
+
+Hit boxes, a move's frames, fighters as stick figures
+([elm_playground_gamekits.kit_brawler]); and in 3D, a fighter as a
+skeleton of boxes ([elm_playground_gamekits.kit_brawler3d]):
+
+{!modules: Hitbox Frame_data Stickman Skeleton}
+
+{2:platform Platformers}
+
+A box moved against a tilemap, ladders, shaped ground felt by sensors
+([elm_playground_gamekits.kit_platformer]); Crush's slices
+([elm_playground_gamekits.kit_crush]):
+
+{!modules: Tile_move Ladder Slope Crush}
+
+{2:arcade Mazes and arenas}
+
+A grid's corridors and the ways chosen in them
+([elm_playground_gamekits.kit_maze]); Tron's light cycles
+([elm_playground_gamekits.kit_lightcycles]):
+
+{!modules: Grid_move Chase Lightcycles}
+
+{2:puzzle Puzzles}
+
+Pushing on a grid, going back, Sokoban's rules, levels and solver
+([elm_playground_gamekits.kit_puzzle]):
+
+{!modules: Push Puzzle_undo Sokoban}
+
+{2:cards Cards}
+
+The 52 cards, Microsoft's numbered deals, a card drawn
+([elm_playground_gamekits.kit_cards]):
+
+{!modules: Cards}
+
+{2:adventure Adventures}
+
+The world as data and the player's sentences answered by rules
+([elm_playground_gamekits.kit_adventure]):
+
+{!modules: Adventure}
+
+{2:racing Racing}
+
+The road and a car on it, a car on a flat world or on ground with a
+height ([elm_playground_gamekits.kit_racing]); and in 3D, a course as a
+ribbon of quads ([elm_playground_gamekits.kit_racing3d]):
+
+{!modules: Road Car Topdown Offroad Track3d}
+
+{2:sports Sports}
+
+The ball pushed ahead, a side keeping its shape
+([elm_playground_gamekits.kit_sports]):
+
+{!modules: Free_ball Formation}
+
+{2:strategy Strategy}
+
+The three kinds of order and the walking
+([elm_playground_gamekits.kit_rts]):
+
+{!modules: Orders}
+
+{2:rhythm Rhythm games}
+
+The music's clock, the grades, charts played and made
+([elm_playground_gamekits.kit_rhythm]):
+
+{!modules: Rhythm}
+
+{2:worlds The worlds of 2.5D and 3D games}
+
+Doom's sectors ([elm_playground_gamekits.kit_sectors]), Descent's mine
+and its ship ([elm_playground_gamekits.kit_segments]), Comanche's
+terrain ([elm_playground_gamekits.kit_heightmap]), a world seen from
+one fixed angle ([elm_playground_gamekits.kit_isometric]):
+
+{!modules: Sectors Segments Sixdof Heightmap Isometric}

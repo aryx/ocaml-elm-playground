@@ -214,23 +214,9 @@ and the browsers (a page read, drawn, browsed and scripted):
 How each genre works, what the games of a genre share: shoot 'em ups,
 fighting games, platformers, mazes, puzzles, cards, adventures, racing,
 sports, strategy, rhythm games, and the levels of Doom, Descent and
-Comanche:
-
-{!modules:
-    Shots Path
-    Hitbox Frame_data Stickman
-    Tile_move Ladder Slope Crush
-    Grid_move Chase Lightcycles
-    Push Puzzle_undo Sokoban
-    Cards Adventure
-    Road Car Topdown Offroad
-    Free_ball Formation Orders Rhythm
-    Sectors Segments Sixdof Heightmap Isometric
-}
-
-and in 3D
-{{:../elm_playground_3d/Skeleton/index.html}Skeleton} and
-{{:../elm_playground_3d/Track3d/index.html}Track3d}.
+Comanche: a package of their own,
+{{:../elm_playground_gamekits/index.html}elm_playground_gamekits},
+whose front page lists their modules, genre by genre.
 
 {3:languages Languages}
 

@@ -4,11 +4,10 @@
 ; Used by TinyComanche (drawn in "Voxel Space", column by column)
 ; and TinyComanche3d (as triangles, with a z-buffer), and by
 ; TinyZeldaOcarina for Hyrule Field (its own heights, a valley in
-; hills, the generator giving only the bumps). A private
-; library (only the games use it), installed with elm_playground for
-; its API documentation.
+; hills, the generator giving only the bumps). In the package
+; elm_playground_gamekits, as elm_playground_gamekits.kit_heightmap.
 (library
  (name kit_heightmap)
- (package elm_playground)
+ (public_name elm_playground_gamekits.kit_heightmap)
  (wrapped false)
 )

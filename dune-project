@@ -210,6 +210,27 @@
     (elm_playground (= :version))
   )
 )
+;; claude: the genre kits of gamekits/, above the Playground (most draw
+;; with it), each public as elm_playground_gamekits.<its name>
+(package (name elm_playground_gamekits)
+  (synopsis "Genre kits for Playground games: platformers, racing, shoot 'em ups, fighting and more")
+  (description "\
+  What the games of a genre share, on top of the Playground: a
+  platformer's tiles, ladders and slopes, a racing game's road and cars,
+  a shoot 'em up's shots and flight paths, a fighting game's hit boxes
+  and frame data (and its fighters as 3D skeletons), mazes, grid
+  puzzles and Sokoban's solver, cards, an adventure's world and
+  sentences, a real-time strategy's orders, a team sport's formation, a
+  rhythm game's clock and charts, and the levels of Doom, Descent and
+  Comanche. Each is a library of its own, elm_playground_gamekits.<name>.
+")
+  (depends
+    (ocaml (>= "4.08.0"))
+    (tiny_libs (= :version)) ; ai, audio, graphics_2d_geometry
+    (elm_playground (= :version))
+    (elm_playground_3d (= :version)) ; the 3D kits: racing/3d, brawler/3d
+  )
+)
 (package (name elm_playground_3d_software)
   (synopsis "Native 3D playground platform with a from-scratch software rasterizer")
   (description "\
@@ -292,5 +313,6 @@
     (ocaml (>= "4.08.0"))
     (elm_playground_native (= :version))
     (elm_playground_3d_opengl (= :version))
+    (elm_playground_gamekits (= :version)) ; the games' kits
   )
 )

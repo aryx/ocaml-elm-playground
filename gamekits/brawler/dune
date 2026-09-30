@@ -3,11 +3,11 @@
 ; top of the playground -- boxes that hit and boxes that get hit
 ; (Hitbox), a move's frames (Frame_data), fighters as stick figures in
 ; poses (Stickman). Used by TinyFinalFight and
-; TinyStreetFighter. A private library (only the games
-; use it), installed with elm_playground for its API documentation.
+; TinyStreetFighter. In the package elm_playground_gamekits, as
+; elm_playground_gamekits.kit_brawler.
 (library
  (name kit_brawler)
- (package elm_playground)
+ (public_name elm_playground_gamekits.kit_brawler)
  (wrapped false)
  (libraries elm_core elm_playground)
 )

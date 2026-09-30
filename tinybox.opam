@@ -18,6 +18,7 @@ depends: [
   "ocaml" {>= "4.08.0"}
   "elm_playground_native" {= version}
   "elm_playground_3d_opengl" {= version}
+  "elm_playground_gamekits" {= version}
   "odoc" {with-doc}
 ]
 build: [
