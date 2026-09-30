@@ -96,7 +96,8 @@ type t = {
   mutable search_all : Code_search.hit array option; (* claude: what a search looks among, gathered once *)
   mutable tour_on : (Code_guide.tour * int) option; (* claude: a config's tour under way, its stop (n, p) *)
   mutable marks : mark list; (* claude: searches kept, each lit in its colour, all at once (ctrl+Enter in the search) *)
-  mutable mark_group : int; (* claude: the marks lit: -1 none, 0 those kept, k the configs' k-th (l cycling) *)
+  mutable mark_group : int; (* claude: the marks lit: -1 none, 0 those kept, k the configs' k-th (m cycling) *)
+  mutable layer : int; (* claude: the layer shown, the map coloured by a measure (l cycling): 0 none, 1 the call stack *)
   mutable guide_marks : (string * mark list) list option; (* claude: the configs' marks as the map's, their names, made once *)
   mutable flight : flight option; (* claude: a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* claude: the layout's point under the mouse, when on the map (view's) *)
@@ -199,7 +200,7 @@ let make ?(fan_in = lazy (Hashtbl.create 1)) ?counted ?(top_kept = false) ?(numb
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; tour_on = None; marks = []; mark_group = 0; guide_marks = None; flight = None; pointer = None;
+    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; tour_on = None; marks = []; mark_group = 0; layer = 0; guide_marks = None; flight = None; pointer = None;
     focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept; fan_in; counted; morph = None; help = false }
 
 (* claude: the map's files for Code_names and Code_rank *)

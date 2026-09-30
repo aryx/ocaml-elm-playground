@@ -97,3 +97,6 @@ val anchor_line : Code_map_base.t -> string -> string -> int option
 val mark_colours : (int * int * int) list
 
 val style : Code_map_base.style
+
+(* claude: the layers l cycles through (the call stack), how many *)
+val layer_count : int

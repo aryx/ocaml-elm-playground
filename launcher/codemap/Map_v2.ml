@@ -360,13 +360,18 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                         let impl = Filename.remove_extension path ^ ".ml" in
                         let at_impl = if Filename.check_suffix path ".mli" then (match Hashtbl.find_opt where impl with Some (_, ei) -> Option.map (fun l -> (impl, l)) (capital_line ei it.at) | None -> None) else None in
                         let q, l = match at_impl with Some x -> x | None -> (path, line) in
-                        Some (Code_rank.uses rank q l name)
+                        Some (Code_rank.uses rank q l name, Code_rank.reach rank q l)
                     | None -> None
                   in
-                  let many = match uses with Some u -> u.files >= 10 | None -> false in
+                  let many = match uses with Some (u, _) -> u.files >= 10 | None -> false in
+                  (* claude: green, the counterpart: a definition whose calls
+                   * reach 30 files or more, an entry point, a main loop (the
+                   * author: "stuff that is the entry point that exercises lots
+                   * of the code"); much used first, red *)
+                  let reaching = match uses with Some (_, r) -> r >= 30 && not (many || fan path >= 30) | None -> false in
                   (* claude: as large as central: the core's the map's largest;
                    * a definition used by many files as large as a central file's *)
-                  let size = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> if many then 19. else 15. in
+                  let size = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> if many || reaching then 19. else 15. in
                   let tw = 0.5 *. size *. float_of_int (String.length label) in
                   let x0 = px -. 6. and x1 = px +. 10. +. tw +. 4. in
                   (* claude: a definition many use is red, the map's colour of
@@ -375,7 +380,7 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                    * file's module named by 30 files, or it used by 10 (the
                    * author, at principia's rio: Window, its file named by
                    * 23, used by 15, was yellow) *)
-                  let colour = if fan path >= 30 || many then rgb 250 80 70 else yellow in
+                  let colour = if fan path >= 30 || many then rgb 250 80 70 else if reaching then rgb 90 220 120 else yellow in
                   let dot = circle colour (size /. 3.) |> move (sx a px) (sy a py) in
                   let ring = circle black ((size /. 3.) +. 2.) |> move (sx a px) (sy a py) in
                   let text = words colour label |> scale (size /. words_font_size) |> move (sx a (px +. 10. +. (tw /. 2.))) (sy a py) in
@@ -383,9 +388,10 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                   (* claude: how central, in the card (the author: "give an idea
                    * of how often it is used"): its module named by N files;
                    * its own uses *)
-                  let used = match uses with Some u when u.others > 0 -> [ Printf.sprintf "used %d times in %d other files" u.others u.files ] | _ -> [] in
+                  let used = match uses with Some (u, _) when u.others > 0 -> [ Printf.sprintf "used %d times in %d other files" u.others u.files ] | _ -> [] in
+                  let reaches = match uses with Some (_, r) when r > 0 -> [ Printf.sprintf "reaches %d files through its calls" r ] | _ -> [] in
                   let central = match fan path with 0 -> [] | n -> [ Printf.sprintf "its module named by %d files%s" n (if n >= 30 then ": the core" else "") ] in
-                  let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ central @ used @ [ "click: to its file" ] in
+                  let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ central @ used @ reaches @ [ "click: to its file" ] in
                   Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805. +. float_of_int (min 14 (fan path / 10)); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None; cap = Some (path, line, label) }
               | None -> None)
           | _ -> None)
@@ -2143,7 +2149,7 @@ let marks_shapes (t : t) (c : camera) : shape list =
       let q = if String.length l.mquery > 0 && (l.mquery.[0] = '"' || l.mquery.[0] = '@') then String.sub l.mquery 1 (String.length l.mquery - 1) else l.mquery in
       Printf.sprintf "%s  %d%s" q (List.length (mark_hits t l)) (match l.msay with Some s -> "   " ^ s | None -> "")
     in
-    let head = Printf.sprintf "%s   (l: next)" (if group = "kept" then "marks kept" else group) in
+    let head = Printf.sprintf "%s   (m: next)" (if group = "kept" then "marks kept" else group) in
     let n = List.length marks in
     let w = 30. +. List.fold_left (fun m l -> Float.max m (text_width 14. (line l))) (text_width 14. head) marks in
     let h = 12. +. (row *. float_of_int (n + 1)) in
@@ -2159,6 +2165,136 @@ let marks_shapes (t : t) (c : camera) : shape list =
              let str = line l in
              [ circle (rgb r g b) 5. |> move (sx a (x0 +. 12.)) (sy a y); label a ink 14. (x0 +. 22. +. (text_width 14. str /. 2.)) y str ])
            marks)
+
+(*****************************************************************************)
+(* The layers *)
+(*****************************************************************************)
+
+(* claude: the layers (l), codemap's: the whole map coloured by a
+ * measure, at two levels as codemap's (the author): from afar a file
+ * split by its lines' shares of each colour (the macro level), nearer
+ * each definition's lines in its own (the micro level), so that zooming
+ * in shows which definition made the file red. The first, the call
+ * stack (the author: "a heat map that shows what is used vs what is
+ * using, with the depth of the call stack"): each definition by its
+ * place in the call graph, depth over depth and height (Code_rank's
+ * places) -- green at the top, the entry points, red at the bottom,
+ * what everything ends up calling, a road's two ends' colours *)
+let layer_names = [ "the call stack" ]
+let layer_count = List.length layer_names
+let buckets = 5
+
+(* 0 green, 0.5 yellow, 1 red *)
+let heat (x : float) : int * int * int =
+  let mix (r0, g0, b0) (r1, g1, b1) k = (r0 + int_of_float (k *. float_of_int (r1 - r0)), g0 + int_of_float (k *. float_of_int (g1 - g0)), b0 + int_of_float (k *. float_of_int (b1 - b0))) in
+  if x < 0.5 then mix (90, 220, 120) (245, 225, 90) (x *. 2.) else mix (245, 225, 90) (250, 80, 70) ((x -. 0.5) *. 2.)
+
+let bucket_colour (k : int) : int * int * int = heat (float_of_int k /. float_of_int (buckets - 1))
+
+(* a file's definitions in the call graph: their first line, lines and
+ * bucket, by file; made once for the counted uses *)
+let layer_cache : (Code_rank.t * (string, (int * int * int) list) Hashtbl.t) option ref = ref None
+
+let layer_of (r : Code_rank.t) : (string, (int * int * int) list) Hashtbl.t =
+  match !layer_cache with
+  | Some (r', tbl) when r' == r -> tbl
+  | _ ->
+      let tbl = Hashtbl.create 1024 in
+      List.iter
+        (fun (p, l, (pl : Code_rank.place)) ->
+          if pl.depth + pl.height > 0 then begin
+            let x = float_of_int pl.depth /. float_of_int (pl.depth + pl.height) in
+            let k = min (buckets - 1) (int_of_float (x *. float_of_int buckets)) in
+            Hashtbl.replace tbl p ((l, pl.lines, k) :: Option.value (Hashtbl.find_opt tbl p) ~default:[])
+          end)
+        (Code_rank.places r);
+      layer_cache := Some (r, tbl);
+      tbl
+
+let layer_shapes (t : t) (c : camera) : shape list =
+  match (t.layer, t.rank) with
+  | 0, _ | _, None -> []
+  | _, Some r ->
+      let a = c.a in
+      let tbl = layer_of r in
+      let alpha = 0.55 in
+      let rect_px (x0, y0, x1, y1) (r, g, b) =
+        let w = x1 -. x0 and h = y1 -. y0 in
+        rectangle (rgb r g b) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade alpha
+      in
+      let tints =
+        match at_ground t c with
+        | Some e ->
+            (* at the ground, each line of each definition shown *)
+            List.concat_map
+              (fun (path, (g : Code_ground.t)) ->
+                List.concat_map
+                  (fun (l0, n, k) ->
+                    List.filter_map
+                      (fun l -> if l < Array.length g.places then let x0, y0, w, h = Code_ground.box g l in Some (rect_px (x0, y0, x0 +. w, y0 +. Float.max 1.5 h) (bucket_colour k)) else None)
+                      (List.init n (fun i -> l0 + i)))
+                  (Option.value (Hashtbl.find_opt tbl path) ~default:[]))
+              (grounds t e)
+        | None ->
+            Array.to_list t.placed
+            |> List.mapi (fun i p -> (i, p))
+            |> List.concat_map (fun (i, (p : entry Treemap.placed)) ->
+                   match (p.node, clip c p.rect, t.geometry.(i)) with
+                   | File (_, _, e), Some (x0, y0, x1, y1), geo when not (outside t p) -> (
+                       let defs = Option.value (Hashtbl.find_opt tbl p.path) ~default:[] in
+                       match geo with
+                       | Some g when g.cell_h *. c.z >= 1.5 ->
+                           (* the micro level: each definition's lines, a
+                            * rectangle per column they are in *)
+                           List.concat_map
+                             (fun (l0, n, k) ->
+                               let last = l0 + n - 1 in
+                               List.filter_map
+                                 (fun col ->
+                                   let first = max l0 (col * g.lpc) and upto = min last ((col * g.lpc) + g.lpc - 1) in
+                                   if upto < first then None
+                                   else
+                                     let ux, uy = line_pos p.rect g first in
+                                     let px0 = Float.max (float_of_int x0) (to_px c ux) and px1 = Float.min (float_of_int x1) (to_px c (ux +. g.colw)) in
+                                     let py0 = Float.max (float_of_int y0) (to_py c uy) and py1 = Float.min (float_of_int y1) (to_py c (uy +. (float_of_int (upto - first + 1) *. g.cell_h))) in
+                                     if px1 <= px0 || py1 <= py0 then None else Some (rect_px (px0, py0, px1, py1) (bucket_colour k)))
+                                 (List.init ((last / g.lpc) - (l0 / g.lpc) + 1) (fun j -> (l0 / g.lpc) + j)))
+                             defs
+                       | _ ->
+                           (* the macro level: bands as high as each
+                            * colour's share of the file's lines *)
+                           let share = Array.make buckets 0 in
+                           List.iter (fun (_, n, k) -> share.(k) <- share.(k) + n) defs;
+                           let total = float_of_int (max 1 e.nlines) in
+                           let fx0 = float_of_int x0 and fy0 = float_of_int y0 and h = float_of_int (y1 - y0) in
+                           let y = ref fy0 in
+                           List.filter_map
+                             (fun k ->
+                               if share.(k) = 0 then None
+                               else
+                                 let bh = h *. Float.min 1. (float_of_int share.(k) /. total) in
+                                 let top = !y in
+                                 y := !y +. bh;
+                                 Some (rect_px (fx0, top, float_of_int x1, Float.min (float_of_int y1) (top +. bh)) (bucket_colour k)))
+                             (List.init buckets Fun.id))
+                   | _ -> [])
+      in
+      (* the key, bottom right: the gradient, its two ends named *)
+      let name = Option.value (List.nth_opt layer_names (t.layer - 1)) ~default:"" in
+      let head = Printf.sprintf "layer: %s   (l: next)" name in
+      let w = 330. and h = 64. in
+      let x0 = float_of_int a.pw -. w -. 10. and y0 = float_of_int a.ph -. h -. 10. in
+      let bw = (w -. 24.) /. float_of_int buckets in
+      tints
+      @ [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
+      @ [ label a yellow 14. (x0 +. 12. +. (text_width 14. head /. 2.)) (y0 +. 14.) head ]
+      @ List.init buckets (fun k ->
+            let r, g, b = bucket_colour k in
+            rectangle (rgb r g b) (bw -. 2.) 10. |> move (sx a (x0 +. 12. +. (bw *. (float_of_int k +. 0.5)))) (sy a (y0 +. 34.)))
+      @ [
+          label a ink 12. (x0 +. 12. +. (text_width 12. "calls: the top" /. 2.)) (y0 +. 52.) "calls: the top";
+          label a ink 12. (x0 +. w -. 12. -. (text_width 12. "called: the bottom" /. 2.)) (y0 +. 52.) "called: the bottom";
+        ]
 
 (* claude: at the street, a panel's name under a pixel: a click there
  * goes to that file (the author) *)
@@ -2357,7 +2493,9 @@ let search_shapes (t : t) (c : camera) : shape list =
 
 let labels (t : t) (c : camera) (q : float) : shape list =
   let kept = names t c in
-  (match at_ground t c with
+  (* claude: the layer first, under the names *)
+  layer_shapes t c
+  @ (match at_ground t c with
   | Some e when t.street -> street_labels t c e @ line_lit t c e @ names_glow t c e
   | Some e -> notes t c e @ line_lit t c e @ names_glow t c e
   | None -> [])

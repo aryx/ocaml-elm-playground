@@ -25,6 +25,7 @@
  *   codemap.html?focus=kernel/proc.c&line=120       its definition there
  *   codemap.html?def=diff                           a definition by name
  *   codemap.html?code=TinyMario                     a program's own code
+ *   codemap.html?code=TinyTurboPascal&street        its file at the street
  *   codemap.html?data=other.txt                     another bundle
  *
  * The page's address follows the map (moved): a link to wherever one is.
@@ -97,7 +98,7 @@ let main =
        * bar a link to here (the author) *)
       let data = match List.assoc_opt "data" (Playground_platform.flags ()) with Some d -> [ ("data", d) ] | None -> [] in
       let moved place =
-        let query = String.concat "&" (List.map (fun (k, v) -> k ^ "=" ^ v) (place @ data)) in
+        let query = String.concat "&" (List.map (fun (k, v) -> if v = "" then k else k ^ "=" ^ v) (place @ data)) in
         let path = Ojs.string_of_js (Ojs.get_prop_ascii (Ojs.get_prop_ascii Ojs.global "location") "pathname") in
         ignore
           (Ojs.call (Ojs.get_prop_ascii Ojs.global "history") "replaceState"

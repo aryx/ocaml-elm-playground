@@ -23,6 +23,12 @@
 
 type use = { own : int; others : int; files : int }
 
+(* claude: a definition in the call graph (its calls resolved as its uses
+   are): the other files its calls reach, transitively; its depth, the
+   longest chain of callers above it, and its height, of callees below
+   it (a cycle one step); its lines, its head's to the next head's *)
+type place = { reach : int; depth : int; height : int; lines : int }
+
 type t
 
 (* [compute ?roots files]: the uses of every definition of [files] (the
@@ -45,6 +51,20 @@ val links : t -> (string * string * int) list
 val bucket : int -> float
 val weight : Highlight_code.category -> float
 val score : t -> string -> int -> string -> Highlight_code.category -> float
+
+(* claude: [reach t path line]: how many other files the definition
+   whose head is at [line] (from 0) of [path] reaches through its calls,
+   transitively (resolved as its uses are: sure answers only). An entry
+   point, a main loop reaches much: the map's green capitals (the
+   author: "stuff that is the entry point that exercises lots of the
+   code"), the counterpart of the red, much used *)
+val reach : t -> string -> int -> int
+
+(* claude: every definition in the call graph, by its file and its
+   head's line (from 0): the layer of the call stack (the map's l),
+   each definition by depth / (depth + height), green the top, red the
+   bottom *)
+val places : t -> (string * int * place) list
 
 (* claude: the whole counted once and saved as text, a fact a line (a
    web page's code map is given it in its bundle, make_codemap_data:

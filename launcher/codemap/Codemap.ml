@@ -341,7 +341,14 @@ let area_of (screen : Playground.screen) = (screen.left +. 20., screen.top -. 92
  *   def=<name>     a top-level definition so named, the first found
  *                  (under focus if given), peeked at
  *   code=<Program> a program's own code, as tinybox's menu shows it
- *                  (tinybox.html?code=), w widening it *)
+ *                  (tinybox.html?code=), w widening it
+ *   all            claude: with code=, all its own code at once, not
+ *                  flown into its main file (the author: a link saying
+ *                  "in 89 files" showing them)
+ *   street[=<n>]   claude: with a file, its street (a): the mode a would
+ *                  choose first, or 1 both sides, 2 its users, 3 what it
+ *                  uses (the author: a small main file's link showing
+ *                  what it stands on) *)
 let opened_at (c : t) (flags : (string * string) list) : t =
   (* claude: code=<Program>, its own code (as tinybox.html?code=: its
    * file and the kits' and languages' modules it names, Code_deps.own),
@@ -361,7 +368,7 @@ let opened_at (c : t) (flags : (string * string) list) : t =
             let own = Code_deps.own path in
             let colours = match c.guide with Some g -> Code_guide.colours g | None -> [] in
             let map = map_of ~style:None ~guide:c.guide ~roots:[] ~colours ~own ~area:c.area ~sources:c.sources ~program:name ~path ~scope:Own in
-            let map = if Code_map.style_name () = "v2" then Code_map.focus_on map path else map in
+            let map = if Code_map.style_name () = "v2" && not (List.mem_assoc "all" flags) then Code_map.focus_on map path else map in
             { c with program = name; path; scope = Own; own; map })
   in
   let focus = List.assoc_opt "focus" flags in
@@ -385,10 +392,22 @@ let opened_at (c : t) (flags : (string * string) list) : t =
     |> function (_, p, l) :: _ -> Some (p, l) | [] -> None
   in
   let line = Option.bind (List.assoc_opt "line" flags) int_of_string_opt in
+  let with_street (m : Code_map.t) : Code_map.t =
+    match List.assoc_opt "street" flags with
+    | None -> m
+    | Some v ->
+        let mode = match int_of_string_opt v with Some k when k >= 1 && k <= 3 -> k | _ -> Map_v2.best_street_mode m in
+        m.street_mode <- mode;
+        m.street <- true;
+        m.painted <- None;
+        m
+  in
+  (* claude: code= alone, the program's file its street's too *)
+  let c = match (focus, List.assoc_opt "code" flags) with None, Some _ when c.path <> "" -> { c with map = with_street c.map } | _ -> c in
   match (List.assoc_opt "def" flags, focus, line) with
   | Some name, _, _ -> ( match def_named name with Some (p, l) -> { c with map = Code_map.go_back_to c.map p (Some l) } | None -> c)
   | None, Some p, Some n when is_file p -> { c with map = Code_map.go_back_to c.map p (Some (n - 1)) }
-  | None, Some p, None when is_file p -> { c with map = Code_map.go_back_to c.map p None }
+  | None, Some p, None when is_file p -> { c with map = with_street (Code_map.go_back_to c.map p None) }
   | _ -> c
 
 type directory = { guide : Code_guide.t option; colours : (string * (int * int * int)) list option; roots : string list option; name : string; sources : (string * string) list }
@@ -403,7 +422,13 @@ let place (c : t) : (string * string) list =
   let code = match c.scope with Own | Uses | Whole -> [ ("code", c.program) ] | _ -> [] in
   match m.peek with
   | Some (p, first, _) when c.file = None -> code @ [ ("focus", p); ("line", string_of_int (first + 1)) ]
-  | _ -> code @ if unit = "" || (code <> [] && unit = c.path) then [] else [ ("focus", unit) ]
+  | _ ->
+      (* claude: the street, its mode, so that the link reopens it *)
+      let street = if m.street then [ ("street", string_of_int m.street_mode) ] else [] in
+      (* claude: a program's code seen whole, all, so that the link does
+       * not fly into its main file *)
+      let all = if code <> [] && unit = "" then [ ("all", "") ] else [] in
+      code @ all @ (if unit = "" || (code <> [] && unit = c.path) then [] else [ ("focus", unit) ]) @ street
 
 (* claude: a progress bar and what it counts, at the foot of the screen
  * (the author: the web page seemed to hang) *)

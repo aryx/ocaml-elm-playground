@@ -36,6 +36,23 @@ let tests =
            * its comment and return type, under its marker, to its brace;
            * a line inside it, the same *)
           Alcotest.(check (list (pair int int))) "peeks" [ (7, 10); (14, 22); (14, 22) ] (List.map (Code_map.peek_extent f "rio/dat.c") [ 7; 16; 19 ]));
+      (* claude: the calls' reach and the call stack (Code_rank.places):
+       * a main calling B.f calling C.g; a let () = body its own, not the
+       * definition above it's; kept through the bundle's text *)
+      Testo.create "reach and the call stack" (fun () ->
+          let files =
+            List.map
+              (fun (p, src) -> (p, lazy (Code_file.make p src)))
+              [ ("a/A.ml", "let helper () = 0\nlet main () = B.f ()\nlet () = ignore (C.g ())\n"); ("b/B.ml", "let f () = C.g ()\n"); ("c/C.ml", "let g () = 1\n") ]
+          in
+          let r = Code_rank.compute files in
+          Alcotest.(check (list int)) "reach: main 2 files, f 1, g 0, helper 0" [ 2; 1; 0; 0 ]
+            [ Code_rank.reach r "a/A.ml" 1; Code_rank.reach r "b/B.ml" 0; Code_rank.reach r "c/C.ml" 0; Code_rank.reach r "a/A.ml" 0 ];
+          let place p l = match List.find_opt (fun (p', l', _) -> p' = p && l' = l) (Code_rank.places r) with Some (_, _, (x : Code_rank.place)) -> (x.depth, x.height) | None -> (-1, -1) in
+          Alcotest.(check (list (pair int int))) "depth and height: main at the top, g at the bottom" [ (0, 2); (1, 1); (2, 0) ]
+            [ place "a/A.ml" 1; place "b/B.ml" 0; place "c/C.ml" 0 ];
+          let r' = Code_rank.of_string (Code_rank.to_string r) in
+          Alcotest.(check (list int)) "through the text" [ 2; 1 ] [ Code_rank.reach r' "a/A.ml" 1; Code_rank.reach r' "b/B.ml" 0 ]);
       Testo.create "squarified: the paper's example" (fun () ->
           Alcotest.(check (list string))
             "6 6 4 3 2 2 1 in 6 by 4"

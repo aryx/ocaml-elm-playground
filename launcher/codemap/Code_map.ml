@@ -537,6 +537,12 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
   if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
   (* claude: m, the marks hidden, shown (Map_v2) *)
+  (* claude: l, the layers, the map coloured by a measure, in turn, then
+   * none (Map_v2.layer_shapes); the uses counted first (Code_rank) *)
+  if pressed "l" && t.search = None then begin
+    t.layer <- (t.layer + 1) mod (Map_v2.layer_count + 1);
+    if t.layer > 0 then ignore (rank_of t)
+  end;
   (* claude: h, every key explained, again to close *)
   if pressed "h" && t.search = None then t.help <- not t.help;
   (* claude: m, the marks lit: those kept (ctrl+Enter), then each
@@ -1033,6 +1039,7 @@ let keys_help = [
   ("a", "at a file: its neighbours, what it uses, what uses it (a again: the next)");
   ("x", "the X-ray: the skeleton; x again, the next one; 1-5 the plates (hover the legend)");
   ("m", "the marks: patterns lit everywhere (the configs', and those kept)");
+  ("l", "the layers: the map coloured by a measure (the call stack: green calls, red is called)");
   ("Searching", "");
   ("/", "search: a name, or file: dir: def: type: view: tour: bone: text: ref:");
   ("  in the search", "Tab complete, up/down choose, Enter go, shift+Enter all found together, ctrl+Enter a mark");
@@ -1066,6 +1073,22 @@ let help_shapes (computer : computer) : shape list =
              [ words ink k |> scale (14. /. words_font_size) |> move (x0 +. 20. +. (text_width 14. k /. 2.)) y;
                words dim what |> scale (14. /. words_font_size) |> move (x0 +. 330. +. (text_width 14. what /. 2.)) y ])
          keys_help)
+
+(* claude: a line of keys and what they do, centred at [y], the keys in
+ * yellow, the rest dim; the widths Code_map_base.text_width's *)
+let key_line ~(y : float) (items : (string * string) list) : shape list =
+  let size = 12. and gap = "   " in
+  let pieces = List.concat_map (fun (k, d) -> [ (k, yellow); (" " ^ d ^ gap, dim) ]) items in
+  let width s = text_width size s in
+  let total = List.fold_left (fun acc (s, _) -> acc +. width s) 0. pieces -. width gap in
+  let x = ref (-.total /. 2.) in
+  List.map
+    (fun (s, col) ->
+      let w = width s in
+      let shape = words col s |> scale (size /. words_font_size) |> move (!x +. (w /. 2.)) y in
+      x := !x +. w;
+      shape)
+    pieces
 
 let view ?(chrome = true) (computer : computer) (t : t) : shape list =
   let c = t.cam in
@@ -1167,14 +1190,15 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
          in
          words yellow title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.));
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
-        words dim
-          (if t.style.units then
-             "h every key   click in   right click out   / search   a a file's neighbours   x skeleton   m marks   g the matrix   esc back"
-           else
-           Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
-        |> scale (12. /. words_font_size)
-        |> move 0. (screen.bottom +. 18.);
       ]
+      (* claude: the keys in yellow, what they do dim (the author: "so it
+       * reads better"), laid out from the centre *)
+      @ key_line ~y:(screen.bottom +. 18.)
+          (if t.style.units then
+             [ ("h", "every key"); ("click", "in"); ("right click", "out"); ("/", "search"); ("a", "a file's neighbours"); ("x", "skeleton"); ("m", "marks"); ("l", "layers"); ("g", "the matrix"); ("esc", "back") ]
+           else
+             [ ("wheel", "zoom"); ("drag", "pan"); ("click", "fly in, a name to its definition (b back)"); ("enter", "the file view"); ("right click", "up"); ("y", Printf.sprintf "style (%s)" t.style.sname);
+               ("t", Printf.sprintf "layout (%s)" algo); ("n", "tour (p back)"); ("o", Printf.sprintf "glass (%s)" (glass_name ())); ("0", "all"); ("esc", "back") ])
 
 (*****************************************************************************)
 (* The magnifying glass *)

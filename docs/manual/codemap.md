@@ -20,7 +20,7 @@ and how to describe a codebase for it: the `.codemapconfig` files.
 5. Reading: cards, peeks, capitals
 6. Searching
 7. The X-ray: skeletons and plates
-8. Marks
+8. Marks and layers
 9. Dependencies: ties, the tied view, the matrix
 10. Tours and views
 11. Every key
@@ -67,7 +67,8 @@ modes, `x` the skeletons, `m` the marks, `d` the tied view's modes.
 **The same colours mean the same thing everywhere.** Green is the user,
 red the used: a road from a use to a definition goes from green to red;
 a capital many files use is red (its file's module named by 30 files, or
-the definition itself used by 10); in the matrix, a row's dependencies
+the definition itself used by 10), and one whose calls reach many files
+(30), an entry point, a main loop, green; in the matrix, a row's dependencies
 turn red and its users green.
 
 ## 2. Starting it
@@ -75,9 +76,11 @@ turn red and its users green.
 ```
 tinybox codemap <dir>            the map of a directory (tinybox codemap ~/ix)
 tinybox codemap . focus=<path>   opened on a folder or file
-tinybox codemap . code=<Program> opened on a program's own code (w widens)
+tinybox codemap . code=<Program> opened on a program's own code (w widens);
+                                 all: all of it at once, not its main file
 tinybox codemap . def=<name>     opened on a definition, peeked at
                                  (focus=<file> line=<n>: the one there)
+tinybox codemap . focus=<file> street   the file at the street (a); street=<n> a mode
 tinybox                          the menu: s (or a click on the code under
                                  a program's preview) opens the program's map
 tinybox codemap -check <dir>     the configs checked (section 12)
@@ -126,6 +129,9 @@ codemap.html?focus=version_control/Commands.ml    a file, flown to
 codemap.html?focus=kernel/proc.c&line=120         the definition at that line, peeked at
 codemap.html?def=diff                             a definition by name (under focus= if given)
 codemap.html?code=TinyMario                       a program's own code, as tinybox's menu shows it (w widens)
+codemap.html?code=TinyChrome&all                  the same, all of it at once, not flown into its main file
+codemap.html?code=TinyTurboPascal&street          the same, its file at the street: what it stands on beside it
+codemap.html?focus=windows/rio/wind.c&street=3    a file at the street, in a mode (1 both sides, 2 its users, 3 its uses)
 codemap.html?data=<url>                           another bundle
 ```
 
@@ -148,7 +154,8 @@ their names written as large as their block allows (the top ones
 largest, their subfolders smaller). Files show as columns of tiny lines,
 the code's shape. *Capitals* are dots with a name: the definitions the
 configs call central, as large as the files depending on them are many
-(a red capital: a definition many files use). Hovering a folder's or
+(a red capital: a definition many files use; a green one: a definition
+whose calls reach many files, an entry point). Hovering a folder's or
 file's name shows its card (its description) and its ties (section 9).
 
 **A region** is a folder flown into. Its files show their cards and
@@ -166,6 +173,13 @@ left the files it uses, on the right the files using it, each laid out
 as a small ground with the lines that tie them to the file enlarged.
 Roads go from each use to its definition. `a` again cycles: uses,
 users, both, off (the first press picks what fits the file).
+
+A click on a panel's name makes that file the street's: it moves to the
+middle, its own neighbours round it. Clicking the files on the left one
+after the other walks down the dependencies, what uses what, a step at
+a time; on the right, up them. A link can open a file at the street
+(`&street`, section 2): a small program's main file shown with what it
+stands on.
 
 The title at the top says where one is: at the earth, the project's
 sentence; in a folder or a file, its description.
@@ -188,7 +202,7 @@ one is; its parts are clickable.
 **Cards.** Hovering a folder's or file's name shows its card: its path
 and what its config says of it ("not described yet" when nothing does).
 A capital's card adds how central it is ("its module named by 408 files:
-the core") and how often it is used.
+the core"), how often it is used, and how many files its calls reach.
 
 **Peeks.** A click on a name in the code opens a *peek*: the definition
 of that name, readable, over the map, with the comment just above it
@@ -261,7 +275,7 @@ key) turns it on or off:
 | 4 | lungs | the I/O: files, network, console, processes (`anatomy: lungs:`) |
 | 5 | skin | what a module exports: the `.mli`'s definitions barred, the private ones shaded |
 
-## 8. Marks
+## 8. Marks and layers
 
 A mark lights, everywhere at once and at any level, the lines matching
 its rules, each rule in its colour, with a legend at the bottom left.
@@ -274,6 +288,23 @@ to the disk, shows at once, with its count), none.
 
 Matches glow slowly, to tell them from capitals. Hovering one shows its
 line and the code around it; a click goes there.
+
+**Layers** colour the whole map by a measure, at two levels (as
+`~/codemap`'s): from afar a file is split into bands, as high as its
+lines' shares of each colour (the macro level); nearer, when a line is
+big enough to see, each definition's lines are in its own colour (the
+micro level), so that zooming in shows which definition makes a file
+red. `l` cycles through the layers, then none; a key at the bottom right
+names the colours.
+
+The first layer is **the call stack**: each definition by its place in
+the call graph (its calls resolved as its uses are), its depth (the
+longest chain of callers above it) over its depth and its height (the
+longest chain of callees below it). Green, the top: the entry points,
+what calls; red, the bottom: what everything ends up calling (a road's
+two ends' colours). The same graph gives a definition's *reach*, the
+files its calls reach, transitively: a capital reaching 30 or more is
+green.
 
 ## 9. Dependencies
 
@@ -363,6 +394,7 @@ The keys:
 | `a` | the street (cycles) |
 | `x` | the X-ray (cycles skeletons); `1`-`5` its plates |
 | `m` | the marks (cycles) |
+| `l` | the layers (cycles): the map coloured by a measure |
 | `g` | the matrix |
 | `d` | in the tied view: its modes |
 | `n`, `p` | a tour's next and previous stop |
@@ -497,6 +529,8 @@ keeps them honest.
 | a region's colour | its top folder's (configurable: `colors`) |
 | green, red | user, used: a road's two ends, a street's margin bars, the matrix's hover |
 | red capital | a definition many files use (its module named by 30, or it used by 10); yellow, the others |
+| green capital | a definition whose calls reach 30 files or more: an entry point, a main loop |
+| the layer's green to red | the call stack: the top (callers) to the bottom (what is called) |
 | ivory | the skeleton's bones and joints |
 | yellow glow | the search's matches, the chosen one pulsing |
 | a mark rule's colour | its matches, glowing |
@@ -513,3 +547,7 @@ keeps them honest.
 - The first use of the dependencies on a large repository takes a few
   seconds: every file's uses are resolved, then kept.
 - Only OCaml and C are read as code; other languages show as text.
+- The call graph (the reach, the call stack) follows the calls the names
+  resolve to: a call through a table of functions (tinybox's launcher
+  starting a program by its registered main) is not seen, so a
+  dispatcher does not reach what it dispatches to.
