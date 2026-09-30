@@ -135,7 +135,7 @@ codemap.html?focus=windows/rio/wind.c&street=3    a file at the street, in a mod
 codemap.html?data=<url>                           another bundle
 ```
 
-The map's version is at the bottom right ("code map 0.02"), raised at
+The map's version is at the bottom right ("code map 0.03"), raised at
 each publish of a change: a browser may keep the program it has for ten
 minutes, so a page not showing the latest one wants a reload that skips
 the cache (Cmd+Shift+R).
@@ -208,6 +208,11 @@ one is; its parts are clickable.
 and what its config says of it ("not described yet" when nothing does).
 A capital's card adds how central it is ("its module named by 408 files:
 the core"), how often it is used, and how many files its calls reach.
+The capitals that matter are larger (used by 10 files or more, or
+reaching 30) and win over a file's card where they meet. And each unit
+shows its **entry point** whether a config names it or not: of the
+definitions under it, the one whose calls reach the most files, green,
+its file said ("threadmain (rio.c)").
 
 **Peeks.** A click on a name in the code opens a *peek*: the definition
 of that name, readable, over the map, with the comment just above it

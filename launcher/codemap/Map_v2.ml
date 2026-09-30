@@ -331,7 +331,40 @@ let capitals_chosen (t : t) : (string, int * entry) Hashtbl.t * (string * Code_g
        * its genre *)
       (List.filter (fun (p, _) -> fan p >= 3 || depth (dir_of p) - depth top <= 1) sorted)
   in
-  (where, chosen)
+  (* claude: and the unit's entry point, a capital whether a config names
+   * it or not (the author, at principia's rio: "why the main or
+   * threadmain of rio is not a big green capital? ... it's useful to see
+   * the entry point usually, and in which file it's located"): of the
+   * definitions under the unit, the one whose calls reach the most files,
+   * if 30 or more; weight 0, never a config's, saying so *)
+  let entry =
+    match rank_if_counted t with
+    | None -> None
+    | Some r ->
+        let under p = top = "" || p = top || Code_search.starts p (top ^ "/") in
+        let best =
+          List.fold_left
+            (fun acc (p, l, (pl : Code_rank.place)) ->
+              if pl.reach >= 30 && under p && Hashtbl.mem where p then match acc with Some (_, _, r') when r' >= pl.reach -> acc | _ -> Some (p, l, pl.reach) else acc)
+            None (Code_rank.places r)
+        in
+        match best with
+        | Some (p, l, _) -> (
+            let _, e = Hashtbl.find where p in
+            match List.find_opt (fun (l', _, _) -> l' = l) (Lazy.force e.file).defs with
+            | Some (_, name, _) -> Some (p, name)
+            | None -> None)
+        | None -> None
+  in
+  (* a config's capital already: marked so, its file said too *)
+  let is_entry (q, (it : Code_guide.item)) = match entry with Some (p, name) -> q = p && Code_guide.anchor_name it.at = name | None -> false in
+  let chosen = List.map (fun ((q, (it : Code_guide.item)) as x) -> if is_entry x then (q, { it with weight = 0 }) else x) chosen in
+  let added =
+    match entry with
+    | Some (p, name) when not (List.exists is_entry chosen) -> [ (p, ({ at = "def:" ^ name; say = Some "the entry point: of the code here, what reaches the most"; weight = 0 } : Code_guide.item)) ]
+    | _ -> []
+  in
+  (where, added @ chosen)
 
 let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t) (chosen : (string * Code_guide.item) list) : name list =
   let a = c.a in
@@ -351,6 +384,8 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                   let label = Code_guide.anchor_name it.at in
                   (* claude: a name too short to say anything from afar (t), its module's with it *)
                   let label = if String.length label <= 2 then String.capitalize_ascii (Filename.remove_extension (Filename.basename path)) ^ "." ^ label else label in
+                  (* claude: the entry point found (weight 0), its file said *)
+                  let label = if it.weight = 0 then Printf.sprintf "%s (%s)" label (Filename.basename path) else label in
                   (* claude: its own uses once counted (Code_rank, not counted
                    * here: rank_if_counted), the .ml's for an .mli's *)
                   let uses =
@@ -371,7 +406,14 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                   let reaching = match uses with Some (_, r) -> r >= 30 && not (many || fan path >= 30) | None -> false in
                   (* claude: as large as central: the core's the map's largest;
                    * a definition used by many files as large as a central file's *)
-                  let size = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> if many || reaching then 19. else 15. in
+                  let size =
+                    let by_fan = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> 15. in
+                    (* claude: and by its own uses and reach, so that the one
+                     * that matters stands out (the author: Window, used by 15
+                     * files, as small as the rest) *)
+                    let by_own = match uses with Some (u, r) -> if u.files >= 20 || r >= 100 then 24. else if u.files >= 10 || r >= 30 then 22. else 15. | None -> 15. in
+                    Float.max by_fan by_own
+                  in
                   let tw = 0.5 *. size *. float_of_int (String.length label) in
                   let x0 = px -. 6. and x1 = px +. 10. +. tw +. 4. in
                   (* claude: a definition many use is red, the map's colour of
@@ -392,7 +434,7 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                   let reaches = match uses with Some (_, r) when r > 0 -> [ Printf.sprintf "reaches %d files through its calls" r ] | _ -> [] in
                   let central = match fan path with 0 -> [] | n -> [ Printf.sprintf "its module named by %d files%s" n (if n >= 30 then ": the core" else "") ] in
                   let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ central @ used @ reaches @ [ "click: to its file" ] in
-                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805. +. float_of_int (min 14 (fan path / 10)); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None; cap = Some (path, line, label) }
+                  Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = (if many || reaching || it.weight = 0 then 850. else 805. +. float_of_int (min 14 (fan path / 10))); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None; cap = Some (path, line, label) }
               | None -> None)
           | _ -> None)
       | _ -> None)
@@ -402,14 +444,14 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
  * unit looked at are the same, not chosen again every frame: sorting
  * and hashing principia's 2,200 files kept the map at 60% of a CPU with
  * nothing happening *)
-let capitals_cache : (entry Treemap.placed array * Code_guide.t * int * ((string, int * entry) Hashtbl.t * (string * Code_guide.item) list)) option ref = ref None
+let capitals_cache : (entry Treemap.placed array * Code_guide.t * int * bool * ((string, int * entry) Hashtbl.t * (string * Code_guide.item) list)) option ref = ref None
 
 let capitals_chosen_opti (t : t) : (string, int * entry) Hashtbl.t * (string * Code_guide.item) list =
   match !capitals_cache with
-  | Some (placed, guide, focus, r) when placed == t.placed && guide == t.guide && focus = t.focus -> r
+  | Some (placed, guide, focus, counted, r) when placed == t.placed && guide == t.guide && focus = t.focus && counted = (rank_if_counted t <> None) -> r
   | _ ->
       let r = capitals_chosen t in
-      capitals_cache := Some (t.placed, t.guide, t.focus, r);
+      capitals_cache := Some (t.placed, t.guide, t.focus, rank_if_counted t <> None, r);
       r
 
 let capitals (t : t) (c : camera) : name list =
@@ -546,7 +588,10 @@ let names (t : t) (c : camera) : name list =
     (fun kept n ->
       let free box = on_map box && not (List.exists (fun k -> overlaps box k.nbox) kept) in
       if free n.nbox then n :: kept
-      else if n.said <> None && n.nrank >= 815. && n.nrank < 820. then begin
+      (* claude: and a capital much used or reaching far, or the entry
+       * point (850: over a file's card, 820, the author: Window hidden
+       * under dat.h's) *)
+      else if n.said <> None && ((n.nrank >= 815. && n.nrank < 820.) || n.nrank = 850.) then begin
         (* claude: a hub's capital (fan-in 100 and more: ranked 815 and up)
          * that collides is nudged up or down a line or two, the core's
          * names shown near their place rather than not at all *)
