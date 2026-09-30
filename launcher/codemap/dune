@@ -6,4 +6,4 @@
 (library
  (name tinybox_codemap)
  (wrapped false)
- (libraries elm_playground graphics_rgba graphics_font lang_ocaml lang_c lang_asm lang_json lang_jsonnet highlight_code tinybox_codedeps graphics_animation))
+ (libraries elm_playground graphics_core graphics_rgba graphics_font lang_ocaml lang_c lang_asm lang_json lang_jsonnet highlight_code tinybox_codedeps graphics_animation))

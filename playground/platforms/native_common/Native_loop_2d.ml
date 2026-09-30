@@ -349,7 +349,10 @@ let latency (queued : int) : float = float_of_int (queued + 1024) /. float_of_in
 let queue_samples (device : Sdl.audio_device_id) ((left, right) : float array * float array) : unit =
   let n = Array.length left in
   let ba = Bigarray.Array1.create Bigarray.int16_signed Bigarray.c_layout (2 * n) in
-  let int16 x = max (-32768) (min 32767 (int_of_float (Float.round (x *. 32767.)))) in
+  (* claude: opti: Int's max and min, inline: Stdlib's, polymorphic,
+   * called the runtime's compare twice a sample, 88,200 times a second.
+   * old: max (-32768) (min 32767 (...)) *)
+  let int16 x = Int.max (-32768) (Int.min 32767 (int_of_float (Float.round (x *. 32767.)))) in
   for i = 0 to n - 1 do
     ba.{2 * i} <- int16 left.(i);
     ba.{(2 * i) + 1} <- int16 right.(i)

@@ -280,8 +280,9 @@ let capital_line (e : entry) (at : string) : int option =
 (* a capital: a dot where it is and its name, what the config says of it
  * on its card; under the names of the regions and of their
  * subdirectories (a genre's name says more from afar), above the rest *)
-let capitals (t : t) (c : camera) : name list =
-  let a = c.a in
+(* claude: the camera's no part of it: the files by path, and the
+ * capitals chosen among the configs' *)
+let capitals_chosen (t : t) : (string, int * entry) Hashtbl.t * (string * Code_guide.item) list =
   let where = Hashtbl.create 64 in
   Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, e) -> Hashtbl.replace where e.path (i, e) | Dir _ -> ()) t.placed;
   (* claude: from a unit, the capitals of files at most two directories
@@ -330,6 +331,12 @@ let capitals (t : t) (c : camera) : name list =
        * its genre *)
       (List.filter (fun (p, _) -> fan p >= 3 || depth (dir_of p) - depth top <= 1) sorted)
   in
+  (where, chosen)
+
+let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t) (chosen : (string * Code_guide.item) list) : name list =
+  let a = c.a in
+  let fans = Lazy.force t.fan_in in
+  let fan p = Code_deps.fan fans p in
   List.filter_map
     (fun (path, (it : Code_guide.item)) ->
       match Hashtbl.find_opt where path with
@@ -377,6 +384,24 @@ let capitals (t : t) (c : camera) : name list =
           | _ -> None)
       | _ -> None)
     chosen
+
+(* claude: opti: the chosen kept while the layout, the configs and the
+ * unit looked at are the same, not chosen again every frame: sorting
+ * and hashing principia's 2,200 files kept the map at 60% of a CPU with
+ * nothing happening *)
+let capitals_cache : (entry Treemap.placed array * Code_guide.t * int * ((string, int * entry) Hashtbl.t * (string * Code_guide.item) list)) option ref = ref None
+
+let capitals_chosen_opti (t : t) : (string, int * entry) Hashtbl.t * (string * Code_guide.item) list =
+  match !capitals_cache with
+  | Some (placed, guide, focus, r) when placed == t.placed && guide == t.guide && focus = t.focus -> r
+  | _ ->
+      let r = capitals_chosen t in
+      capitals_cache := Some (t.placed, t.guide, t.focus, r);
+      r
+
+let capitals (t : t) (c : camera) : name list =
+  let where, chosen = if !Opti.enabled then capitals_chosen_opti t else capitals_chosen t in
+  capitals_drawn t c where chosen
 
 (* the names over the map, the directories' first: a directory's centred
  * on it, as large as it fits (a region's up to 64, deeper ones smaller),
@@ -571,20 +596,10 @@ let unit_with_ties (t : t) (c : camera) : (string * string list * string list) o
           Some (h, users, uses)
       | _ -> None)
 
-let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
-  match t.pointer with
-  | None -> []
-  | Some (u, v) -> (
-      let mx = to_px c u and my = to_py c v in
-      (* claude: a unit's name, or a capital: the definition's own ties
-       * (the author: "hovering over a capital can also show its deps") *)
-      match List.find_opt (fun n -> within n.nbox mx my && (n.said = None || n.cap <> None)) kept with
-      | None -> []
-      | Some n ->
-          let h = t.placed.(n.node).path in
-          if n.node = 0 then []
-          else
-            let a = c.a in
+(* claude: a hovered unit's (or capital's) ties, the most used, and the
+ * units by path *)
+let ties_of (t : t) (n : name) : (string, int) Hashtbl.t * (string * int) list * (string * int) list =
+            let h = t.placed.(n.node).path in
             let inside p = p = h || Code_search.starts p (h ^ "/") in
             let parts p = String.split_on_char '/' p in
             (* the unit on [q]'s side where it parts from [h] *)
@@ -631,9 +646,38 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
                       (Code_street.uses ~index:(index_of t) ~roots:t.roots ~path:p f)
                 | None -> ()));
             let top tbl = Hashtbl.fold (fun k n acc -> (k, n) :: acc) tbl [] |> List.sort (fun (_, x) (_, y) -> compare y x) |> List.filteri (fun i _ -> i < (if t.top_kept then 30 else 12)) in
+            (index, top users, top uses)
+
+(* claude: opti: kept while the same one is hovered on the same layout,
+ * not found again every frame over every link (principia's 2,200 files:
+ * the map busy with the mouse resting on a name) *)
+let ties_cache : (entry Treemap.placed array * int * (string * int * string) option * bool * ((string, int) Hashtbl.t * (string * int) list * (string * int) list)) option ref = ref None
+
+let ties_of_opti (t : t) (n : name) : (string, int) Hashtbl.t * (string * int) list * (string * int) list =
+  match !ties_cache with
+  | Some (placed, node, cap, counted, r) when placed == t.placed && node = n.node && cap = n.cap && counted = (rank_if_counted t <> None) -> r
+  | _ ->
+      let r = ties_of t n in
+      ties_cache := Some (t.placed, n.node, n.cap, rank_if_counted t <> None, r);
+      r
+
+let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
+  match t.pointer with
+  | None -> []
+  | Some (u, v) -> (
+      let mx = to_px c u and my = to_py c v in
+      (* claude: a unit's name, or a capital: the definition's own ties
+       * (the author: "hovering over a capital can also show its deps") *)
+      match List.find_opt (fun n -> within n.nbox mx my && (n.said = None || n.cap <> None)) kept with
+      | None -> []
+      | Some n ->
+          if n.node = 0 then []
+          else
+            let a = c.a in
+            let index, top_users, top_uses = if !Opti.enabled then ties_of_opti t n else ties_of t n in
             let x0, y0, x1, y1 = n.nbox in
             let hx = (x0 +. x1) /. 2. and hy = (y0 +. y1) /. 2. in
-            let biggest = List.fold_left (fun m (_, n) -> max m n) 1 (top users @ top uses) in
+            let biggest = List.fold_left (fun m (_, n) -> max m n) 1 (top_users @ top_uses) in
             let centre k =
               match Hashtbl.find_opt index k with
               | Some i -> (match clip c t.placed.(i).rect with Some (a0, b0, a1, b1) -> Some (float_of_int (a0 + a1) /. 2., float_of_int (b0 + b1) /. 2.) | None -> None)
@@ -652,8 +696,8 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
               let str = Printf.sprintf "%s %d" (Filename.basename k) n in
               [ rectangle (rgb 18 16 36) (text_width 13. str +. 8.) 17. |> move (sx a x) (sy a (y -. 14.)) |> fade 0.85; Code_map_base.label a col 13. x (y -. 14.) str ]
             in
-            List.concat_map (fun (k, n) -> match centre k with Some p -> road p (hx, hy) n @ label p k n (rgb 90 220 120) | None -> []) (top users)
-            @ List.concat_map (fun (k, n) -> match centre k with Some p -> road (hx, hy) p n @ label p k n (rgb 250 80 70) | None -> []) (top uses))
+            List.concat_map (fun (k, n) -> match centre k with Some p -> road p (hx, hy) n @ label p k n (rgb 90 220 120) | None -> []) top_users
+            @ List.concat_map (fun (k, n) -> match centre k with Some p -> road (hx, hy) p n @ label p k n (rgb 250 80 70) | None -> []) top_uses)
 
 (* the card of the name under the mouse, beside it, on the map: its path,
  * and its description, readable; "not described yet" where no config
@@ -953,10 +997,56 @@ let grounds (t : t) (e : entry) : (string * Code_ground.t) list =
     (e.path, s.focus) :: List.map (fun (p : Code_street.panel) -> (p.path, p.ground)) (Code_street.panels s)
   else [ (e.path, ground_of t e) ]
 
-let entry_of (t : t) (path : string) : entry option = List.find_opt (fun (x : entry) -> x.path = path) (t.entries @ t.beyond)
+let entry_of_simple (t : t) (path : string) : entry option = List.find_opt (fun (x : entry) -> x.path = path) (t.entries @ t.beyond)
+
+(* claude: opti: the entries by path in a table, one per map's entries,
+ * kept: each bone of the X-ray, every frame, copied the list of all of
+ * them and went through it (principia's 2,200) *)
+let entries_index_cache : (entry list * entry list * (string, entry) Hashtbl.t) option ref = ref None
+
+let entry_of_opti (t : t) (path : string) : entry option =
+  let ix =
+    match !entries_index_cache with
+    | Some (es, bs, ix) when es == t.entries && bs == t.beyond -> ix
+    | _ ->
+        let ix = Hashtbl.create 1024 in
+        (* the first of a path kept, as List.find_opt found it *)
+        List.iter (fun (x : entry) -> if not (Hashtbl.mem ix x.path) then Hashtbl.replace ix x.path x) (t.entries @ t.beyond);
+        entries_index_cache := Some (t.entries, t.beyond, ix);
+        ix
+  in
+  Hashtbl.find_opt ix path
+
+let entry_of (t : t) (path : string) : entry option = if !Opti.enabled then entry_of_opti t path else entry_of_simple t path
 
 (* where a file's line is on the map now: its left, its middle's height,
  * the end of its text *)
+(* claude: a unit on the map, by its path *)
+let placed_of_simple (t : t) (path : string) : int option =
+  let found = ref None in
+  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = path then found := Some i) t.placed;
+  !found
+
+(* claude: opti: the units by path in a table, one per layout, kept, not
+ * all of them gone through for one: spot and unit_spot find one for
+ * every bone of the X-ray, every frame (principia's 2,200: a slow frame
+ * the X-ray on) *)
+let placed_index_cache : (entry Treemap.placed array * (string, int) Hashtbl.t) option ref = ref None
+
+let placed_of_opti (t : t) (path : string) : int option =
+  let ix =
+    match !placed_index_cache with
+    | Some (placed, ix) when placed == t.placed -> ix
+    | _ ->
+        let ix = Hashtbl.create (Array.length t.placed) in
+        Array.iteri (fun i (p : entry Treemap.placed) -> Hashtbl.replace ix p.path i) t.placed;
+        placed_index_cache := Some (t.placed, ix);
+        ix
+  in
+  Hashtbl.find_opt ix path
+
+let placed_of (t : t) (path : string) : int option = if !Opti.enabled then placed_of_opti t path else placed_of_simple t path
+
 let spot (t : t) (c : camera) (path : string) (line : int) : (float * float * float) option =
   match at_ground t c with
   | Some e -> (
@@ -969,9 +1059,8 @@ let spot (t : t) (c : camera) (path : string) (line : int) : (float * float * fl
           Some (x, y +. (h /. 2.), Float.min (x +. w) (x +. (float_of_int !last *. Code_ground.cell_w g line)))
       | _ -> None)
   | None -> (
-      let found = ref None in
-      Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, x) when x.path = path -> found := Some i | _ -> ()) t.placed;
-      match !found with
+      let found = match placed_of t path with Some i when (match t.placed.(i).node with File _ -> true | Dir _ -> false) -> Some i | _ -> None in
+      match found with
       | Some i -> (
           match (clip c t.placed.(i).rect, t.geometry.(i)) with
           | Some _, Some g ->
@@ -989,9 +1078,7 @@ let bone_line (t : t) (b : Code_guide.bone) : int option =
 (* where a whole file or directory is on the map: its top left corner, a
  * little in (its name is at its centre) *)
 let unit_spot (t : t) (c : camera) (path : string) : (float * float * float) option =
-  let found = ref None in
-  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = path then found := Some i) t.placed;
-  match !found with
+  match placed_of t path with
   | Some i -> (
       match clip c t.placed.(i).rect with
       | Some (x0, y0, x1, y1) when x1 - x0 > 30 && y1 - y0 > 30 -> (
@@ -1139,9 +1226,14 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   (* claude: a folder laid out alone (top_kept): its root is the folder,
    * not the repository's (the author, in ~/ix's builder: the root's
    * skeletons came instead of builder's) *)
+  (* claude: opti: the children of the top asked only when they matter,
+   * a folder laid out alone looked at from its top: Code_units.children
+   * goes through every unit, every frame of the X-ray.
+   * old: match (t.focus, Code_units.children t.placed 0) with
+   *      | 0, [ i ] when t.top_kept -> t.placed.(i).path | _ -> ... *)
   let here =
-    match (t.focus, Code_units.children t.placed 0) with
-    | 0, [ i ] when t.top_kept -> t.placed.(i).path
+    match t.focus with
+    | 0 when t.top_kept -> ( match Code_units.children t.placed 0 with [ i ] -> t.placed.(i).path | _ -> t.placed.(t.focus).path)
     | _ -> t.placed.(t.focus).path
   in
   let parent d = match String.rindex_opt d '/' with Some i -> String.sub d 0 i | None -> "" in
@@ -1399,12 +1491,11 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
  * opening at once), kept *)
 let facts_cache : (string, Code_anatomy.facts) Hashtbl.t = Hashtbl.create 256
 
-let facts_of (t : t) ?(budget = ref max_int) (e : entry) : Code_anatomy.facts option =
+let facts_of (t : t) ?(until = infinity) (e : entry) : Code_anatomy.facts option =
   match Hashtbl.find_opt facts_cache e.path with
   | Some f -> Some f
-  | None when !budget <= 0 -> None
+  | None when Sys.time () > until -> None
   | None ->
-      decr budget;
       let public =
         if Filename.check_suffix e.path ".ml" then Option.map (fun (m : entry) -> Code_anatomy.public_names (Lazy.force m.file)) (entry_of t (e.path ^ "i")) else None
       in
@@ -1465,7 +1556,11 @@ let anatomy_shapes (t : t) (c : camera) : shape list =
   | None ->
       (* from afar: a file tinted by its muscles, a dot for its nerves and
        * one for its lungs, as big as they are many, its skin a frame *)
-      let budget = ref 30 in
+      (* claude: opti: 8 ms of a frame, not 30 files: a file's facts cost
+       * from nothing to milliseconds, and 30 big ones made a frame of
+       * half a second.
+       * old: let budget = ref 30 in (facts_of ~budget, decr budget) *)
+      let until = Sys.time () +. 0.008 in
       (* the muscles relative: the strongest sixth of the files known *)
       (* a file's strength: its definitions', weighed by their lines *)
       let strength (fs : Code_anatomy.facts) =
@@ -1478,7 +1573,7 @@ let anatomy_shapes (t : t) (c : camera) : shape list =
       |> List.concat_map (fun (p : entry Treemap.placed) ->
              match (p.node, clip c p.rect) with
              | File (_, _, e), Some (x0, y0, x1, y1) when not (outside t p) -> (
-                 match facts_of t ~budget e with
+                 match facts_of t ~until e with
                  | None -> []
                  | Some fs ->
                      let x0 = float_of_int x0 and y0 = float_of_int y0 and x1 = float_of_int x1 and y1 = float_of_int y1 in

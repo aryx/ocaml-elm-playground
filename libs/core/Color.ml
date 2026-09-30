@@ -2,8 +2,12 @@ type t =
   | Hex of string
   | Rgb of int * int * int
 
+(* claude: opti: Basics.clamp's comparisons, but on ints, where OCaml
+ * compares them inline: the polymorphic clamp called the runtime's
+ * compare three times a colour.
+ * old: Basics.clamp 0 255 number *)
 let (color_clamp : int -> int) = fun number ->
-  Basics.clamp 0 255 number
+  if number < 0 then 0 else if number > 255 then 255 else number
 
 let (rgb : int -> int -> int -> t) = fun r g b ->
   Rgb (color_clamp r, color_clamp g, color_clamp b)

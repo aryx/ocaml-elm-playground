@@ -632,3 +632,39 @@ The same run also measures a stall that is not a bug: `/` pressed
 while the files are still being lexed in the background makes the
 search lex the rest at once (Map_v2's `search_all`), a
 `longest_gap_ms` of 2 to 3 s, once.
+
+## 12. A native program that freezes or runs hot: sample it, then ask lldb
+
+claude: `tinybox codemap ~/principia` froze on a click, and later used
+60% of a CPU doing nothing (the author). The fixes and the tricks of
+speed are in `notes_opti_ocaml.md` (sections 17, 18); the steps that
+found them:
+
+1. **Reproduce without a window, with numbers.** Clicks can't be
+   scripted in the SDL window, so a small driver
+   (`launcher/codemap/bench/codemap_bench.exe <dir> x,y@frame
+   key@frame`) calls the map's `update` and `view` per frame and prints
+   the frames over 1/30 s. "It freezes" became "the view takes 6.8 s on
+   frames 5 to 14".
+2. **Change one thing in the driver to test a guess.** The author
+   noticed the web was fast; the web is given the counted uses. The
+   driver given them too (`RANK=once`): the click took 17 ms. Guess
+   confirmed in one run, before touching the program.
+3. **Sample the running program** (`sample <pid> 5 -file out.txt`,
+   macOS): the hottest functions. Run the real program under
+   `SDL_VIDEODRIVER=dummy` to sample it without a window. Check the
+   elapsed time with `ps -o etime -p <pid>`: an old run still alive got
+   sampled once instead of the new one.
+4. **Find who calls the hot function.** `sample` can't see past
+   `caml_c_call`; `lldb -p <pid>` with a breakpoint on it and `bt`
+   can. Or a temporary `Printexc.get_callstack` printed where the work
+   starts (a `lazy` forced): it named `Map_v2.unit_ties`, the hover,
+   starting the 9 s count on the first frame the mouse rested on a
+   name.
+5. **A cost that stays after the first fix**: time it late (frame
+   3,000), not only at the start: the X-ray's facts were still being
+   computed 30 at a time after 900 frames, and once they were, the
+   bones' lookups were the next cost.
+6. **Check the fix is the same answer**: the count's output compared
+   byte for byte before and after (`make_codemap_data`, `cmp`); the
+   driver run with `OPTI=off` gives the old behaviour back.

@@ -220,17 +220,18 @@ let rank_of (t : t) : Code_rank.t =
   | None ->
       (* claude: over the files beyond too (a program's map's, a folder
        * laid out alone's): its users are wherever they are *)
-      (* claude: counted for all the maps of these sources, not again for
-       * each: a click on a folder makes a new map, and counting cost 9 s
-       * on principia's 2,200 files (the author: "I can't even click") *)
+      (* claude: opti: the count shared by all the maps of these sources
+       * when Codemap gives it ([counted], Codemap.rank_of_sources), else
+       * this map's own, the simple way *)
       let r = match t.counted with Some c -> Lazy.force c | None -> Code_rank.compute ~roots:t.roots (files_of t @ List.map (fun (e : entry) -> (e.path, e.file)) t.beyond) in
       t.rank <- Some r;
       r
 
-(* claude: the uses if counted already, for what the mouse passing over
- * shows (a unit's ties): not counted then, which would lex every file
- * not yet read, seconds in one frame (principia's first hover); a map
- * of its own (no [counted]) counts them as before *)
+(* claude: opti: the uses if counted already, for what the mouse passing
+ * over shows (a unit's ties): not counted then, which would lex every
+ * file not yet read, seconds in one frame (principia's first hover); a
+ * map of its own (no [counted], or Opti off) counts them as before.
+ * old: rank_of t *)
 let rank_if_counted (t : t) : Code_rank.t option =
   match (t.rank, t.counted) with
   | Some r, _ -> Some r
@@ -404,9 +405,13 @@ let fill (img : Rgba_image.t) (x0 : int) (y0 : int) (x1 : int) (y1 : int) ((r, g
   end
 
 (* a rectangle's pixels on the map, clipped: None if off it *)
+(* claude: opti: Int's min and max, compared inline, not Stdlib's
+ * polymorphic ones (the runtime's compare, four times a unit a frame:
+ * principia's map busy doing nothing).
+ * old: let x0 = max 0 (...) and x1 = min c.a.pw (...) *)
 let clip (c : camera) (r : Treemap.rect) : (int * int * int * int) option =
-  let x0 = max 0 (int_of_float (Float.round (to_px c r.x))) and x1 = min c.a.pw (int_of_float (Float.round (to_px c (r.x +. r.w)))) in
-  let y0 = max 0 (int_of_float (Float.round (to_py c r.y))) and y1 = min c.a.ph (int_of_float (Float.round (to_py c (r.y +. r.h)))) in
+  let x0 = Int.max 0 (int_of_float (Float.round (to_px c r.x))) and x1 = Int.min c.a.pw (int_of_float (Float.round (to_px c (r.x +. r.w)))) in
+  let y0 = Int.max 0 (int_of_float (Float.round (to_py c r.y))) and y1 = Int.min c.a.ph (int_of_float (Float.round (to_py c (r.y +. r.h)))) in
   if x1 <= x0 || y1 <= y0 then None else Some (x0, y0, x1, y1)
 
 (* A file's code, each pixel found from the layout: the cell under it

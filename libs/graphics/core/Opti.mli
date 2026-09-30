@@ -15,7 +15,19 @@
  * - Blit.draw: forward differencing and inlined samplers, not a matrix
  *   product and a sampling function per pixel (Blit.draw_simple);
  * - Pixelate.nearest: a block's rows after its first copied whole, not
- *   pixel by pixel (Pixelate.nearest_simple). *)
+ *   pixel by pixel (Pixelate.nearest_simple).
+ *
+ * claude: and tinybox's code map (launcher/codemap/, flag opti=off;
+ * timed by launcher/codemap/bench/codemap_bench.exe, OPTI=off):
+ * - Code_names.resolve_include: an include among the files of its base
+ *   name, each resolved once (resolve_include_simple: every C file);
+ * - Codemap.map_of: the uses counted once for all the maps of the same
+ *   sources (the simple way: each map its own, Code_map_base.rank_of);
+ * - Code_anatomy.line_has: words tried where one can start, compared in
+ *   place (line_has_simple);
+ * - Map_v2.capitals and unit_ties: what does not depend on the camera
+ *   kept (capitals_chosen, ties_of); placed_of and entry_of: a table by
+ *   path (placed_of_simple, entry_of_simple: a scan). *)
 
 (* true: use the optimized versions (the default) *)
 val enabled : bool ref

@@ -281,6 +281,9 @@ async function waitForChrome() {
   console.log("screenshot:", out);
   ws.close();
   child.kill();
-  fs.rmSync(profile, { recursive: true, force: true });
+  // claude: Chrome may still be writing its profile as it quits
+  try {
+    fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch {}
   process.exit(0);
 })();

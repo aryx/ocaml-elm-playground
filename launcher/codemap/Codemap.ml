@@ -93,11 +93,13 @@ let fan_in_of (sources : (string * string) list) : (string, int) Hashtbl.t Lazy.
 let given_rank : Code_rank.t option ref = ref None
 let use_rank (r : Code_rank.t) : unit = given_rank := Some r
 
-(* claude: else counted when first asked, once for a set of sources (as
- * fan_in_of): each map of them (a folder clicked makes one) counting
- * them again froze the map for 9 s on principia (the author: "the web
- * version is fast", given them by its bundle). A map's files and those
- * beyond it are all the sources, so the count is the same for each. *)
+(* claude: opti: else counted when first asked, once for a set of
+ * sources (as fan_in_of), not by each map of them (Code_map_base.rank_of
+ * counting its own, the simple way): a folder clicked makes a map, and
+ * each counting again froze the map for 9 s on principia (the author:
+ * "the web version is fast", given them by its bundle). A map's files
+ * and those beyond it are all the sources, so the count is the same for
+ * each. *)
 let ranks : ((string * string) list * Code_rank.t Lazy.t) list ref = ref []
 
 let rank_of_sources ~(roots : string list) (sources : (string * string) list) (files : (string * Code_file.t Lazy.t) list) : Code_rank.t Lazy.t =
@@ -150,11 +152,16 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Whole | Directory _ -> []
   in
   let top_kept = match scope with Selection _ | Tied _ -> true | _ -> false in
-  let counted = match !given_rank with Some r -> Lazy.from_val r | None -> rank_of_sources ~roots sources (List.map (fun (e : Code_map.entry) -> (e.path, e.file)) (entries @ beyond)) in
-  let (m : Code_map.t) = Code_map.make ~fan_in:(fan_in_of sources) ~counted ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries in
+  let counted =
+    match !given_rank with
+    | Some r -> Some (Lazy.from_val r)
+    | None when !Opti.enabled -> Some (rank_of_sources ~roots sources (List.map (fun (e : Code_map.entry) -> (e.path, e.file)) (entries @ beyond)))
+    | None -> None
+  in
+  let (m : Code_map.t) = Code_map.make ~fan_in:(fan_in_of sources) ?counted ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries in
   (* the same for every map of these sources: the map's files and those
    * beyond it are all of them *)
-  if Lazy.is_val counted then m.rank <- Some (Lazy.force counted);
+  (match counted with Some c when Lazy.is_val c -> m.rank <- Some (Lazy.force c) | _ -> ());
   m
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
@@ -494,6 +501,9 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
             @ match frac with Some f -> progress_bar { computer.screen with bottom = -60. ; left = -210. } "" (Some f) | None -> [])
   in
   let flags = Playground_platform.flags () in
+  (* claude: opti=off, the simple code instead of the optimized (Opti.mli:
+   * the code map's list there), to see what each buys *)
+  if List.assoc_opt "opti" flags = Some "off" then Opti.enabled := false;
   (* claude: style=streets, the map's style (Code_map); a directory's
    * map is drawn by default in the new one, Map_v2 *)
   Code_map.choose_style (Option.value (List.assoc_opt "style" flags) ~default:"v2");

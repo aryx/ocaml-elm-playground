@@ -92,11 +92,37 @@ let found_at (f : Code_file.t) (l : int) (s : string) (i : int) (word : string) 
   && (i = 0 || not (is_ident s.[i - 1]))
   && (match Code_file.at f l i with Some (Comment | Comment_section | String) -> false | _ -> true)
 
-let line_has (f : Code_file.t) (l : int) (words : string list) : bool =
+let line_has_simple (f : Code_file.t) (l : int) (words : string list) : bool =
   let s = line_text f l in
   let n = String.length s in
   let rec at i = i < n && (List.exists (found_at f l s i) words || at (i + 1)) in
   at 0
+
+(* claude: opti: the words tried only where one can start -- after no
+ * letter of a name (found_at's own test, done first), and, when they all
+ * start with one, on a letter -- not at every character; and compared
+ * in place, not by a String.sub for every character and every word: 15
+ * ms a file, the X-ray of principia's 2,200 files half a minute of slow
+ * frames *)
+let found_at_opti (f : Code_file.t) (l : int) (s : string) (i : int) (word : string) : bool =
+  let n = String.length word in
+  let rec same k = k = n || (s.[i + k] = word.[k] && same (k + 1)) in
+  i + n <= String.length s
+  && same 0
+  && (match Code_file.at f l i with Some (Comment | Comment_section | String) -> false | _ -> true)
+
+let line_has_opti (f : Code_file.t) (l : int) (words : string list) : bool =
+  let s = line_text f l in
+  let n = String.length s in
+  let named = List.for_all (fun w -> w <> "" && is_ident w.[0]) words in
+  let rec at i =
+    i < n
+    && (((i = 0 || not (is_ident s.[i - 1])) && ((not named) || is_ident s.[i]) && List.exists (found_at_opti f l s i) words)
+       || at (i + 1))
+  in
+  at 0
+
+let line_has (f : Code_file.t) (l : int) (words : string list) : bool = if !Opti.enabled then line_has_opti f l words else line_has_simple f l words
 
 (*****************************************************************************)
 (* The facts *)

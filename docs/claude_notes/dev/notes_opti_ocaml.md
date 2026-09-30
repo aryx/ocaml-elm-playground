@@ -35,6 +35,27 @@ one.
 - **In the program**: a view drawing more than what's on the screen, a
   game falling below 60 fps -- the `-uncapped` flag, `-dump-frame n`
   timed, the fps counter.
+- claude: **Per frame, without a window**: a driver that builds the
+  program's model and calls its `update` and `view` in a loop, timing
+  each, clicks and keys at given frames, printing only the frames over
+  1/30 s. `launcher/codemap/bench/codemap_bench.exe <dir> x,y@frame
+  key@frame` does it for the code map (`IDLE=n` more quiet frames
+  averaged, `OPTI=off` the simple code, section 18); it found every
+  case of section 17.
+- claude: **On macOS, no valgrind**: `sample <pid> 5 -file out.txt`
+  samples a running program (1 ms), its "Sort by top of stack" the
+  hottest functions. Its call tree stops at `caml_c_call` (it cannot
+  walk past OCaml 4.14's frames), and `atos` finds no lines (no dSYM),
+  so two more tools:
+  - **who calls it**: `lldb -p <pid> -b -o "br set -r 'camlCode_anatomy__found_at'"
+    -o c -o "bt 12" -o "process detach"` -- lldb does walk OCaml's
+    stack (the unwind tables): a breakpoint on the hot function, a
+    backtrace, a few times;
+  - **which closure is `camlMap_v2__fun_4678`**: `otool -tV -p
+    _camlMap_v2__fun_4678 prog.exe`, the functions it calls
+    (`outside`, `text`, `wrap`: the labelling loop of `Map_v2.names`).
+  - a quicker `lldb`: `Printexc.get_callstack` printed once inside the
+    expensive function (a `lazy`'s first force), removed after.
 
 Names to recognize in a profile, each a section below:
 
@@ -49,6 +70,9 @@ Names to recognize in a profile, each a section below:
 | one function's cost growing with the file, not the screen | work redone each frame | 7 |
 | the renderer's fills, the decoder fast | a picture drawn as shapes | 8 |
 | `mark_slice`, `sweep_slice` (the major GC) high, the program's own code not | a minor heap too small for the program's short-lived data | 16 |
+| `Hashtbl.replace`, `insert_all_buckets`, `List.sort` high while nothing happens | a table or a sort rebuilt every frame from data that did not change | 17 |
+| `Hashtbl.fold`, `List.find`, `Array.iteri` over everything, to find one | a scan where an index would do | 17 |
+| `String.sub`, `Bytes.sub` in a search | a copy made to compare | 17 |
 
 ## 1. Polymorphic comparison: `min`, `max`, `compare`, `=`
 
@@ -72,7 +96,14 @@ let clamp (lo : int) (hi : int) (v : int) : int = if v < lo then lo else if v > 
 **Where, and what**: `Mpeg1.clamp` (motion compensation, the pixels
 written, the coefficients): an .mpg's 352 x 288 frames from 65 ms to 24
 ms each. `Yuv.clamp`, `Jpeg.clamp`, `Signal.to_int16` (2 calls of
-`caml_lessequal` per sample written to a WAV).
+`caml_lessequal` per sample written to a WAV). claude: and, found with
+`lldb` (above), the Playground's own: `Color.color_clamp` (typed `int
+-> int`, but calling the polymorphic `Basics.clamp`: the type written
+on the outside does not reach inside a function of another module),
+the native loop's audio `int16` (twice a sample, 88,200 samples a
+second, every program), Cairo's alpha (`Shape_render_native`), the code
+map's `clip` (4 a unit a frame). `Int.min`, `Int.max`, `Float.min`
+compare inline.
 
 Also: `=` on a variant, an option or a list (`r = []`, `code = Some
 0xB5`) is a C call too -- harmless once per slice, costly per pixel;
@@ -471,6 +502,83 @@ in instructions (callgrind), each line with the changes above it:
 (Before the first line, in wall time: 65 ms a frame; after it, 24;
 at the end, 13, where 25 frames a second need 40. Then the drawing,
 section 8.)
+
+## 17. A frame's work: what does not change, done once
+
+claude: tinybox's code map on principia (2,213 C files), measured by the
+per-frame driver (above): a click froze it 7 s, the X-ray half a
+minute, and with nothing happening it used 60% of a CPU. The web page
+of the same map was fast: its bundle brings the uses counted by
+`make_codemap_data`. Six cases, all the same mistake, work redone that
+could be kept:
+
+- **A count redone for each new map** (`Code_rank.compute`, 9 s): a
+  click on a folder makes a map, and each counted the uses of every
+  definition again. Counted once for a set of sources (a `lazy` in a
+  list keyed by `==` on the sources, `Codemap.rank_of_sources`), as the
+  web's bundle gives them once. 7 s a click to 20 ms.
+- **A scan for every include of every file**
+  (`Code_names.resolve_include`): the header named by `#include
+  "dat.h"` was searched among all 2,200 files, for each of the ~20
+  includes of each file. Only the files of that base name can be it:
+  an index by base name, built in the table's own order so that ties
+  fall as before, and each include resolved once per directory, what
+  its answer depends on. The count 9.4 s to 1.1 s, its result the same
+  byte for byte (the bundle compared).
+- **Per frame, what does not depend on the camera** (`Map_v2.capitals`,
+  `unit_ties`): the capitals chosen among the configs' (a sort, a
+  table of the 2,200 units) and a hovered unit's ties (every link gone
+  through) were computed every frame; kept, keyed by `==` on the
+  layout, the configs and the unit looked at. The camera-dependent part
+  (positions) stays per frame.
+- **A scan to find one** (`entry_of`, `spot`, `unit_spot`): for each of
+  a skeleton's bones, every frame, the list of all entries copied
+  (`@`) and searched, the array of units gone through. A table by path,
+  one per layout.
+- **A copy to compare** (`Code_anatomy.found_at`): a line searched for
+  15 words by `String.sub s i n = word` at every character: a string
+  allocated per character per word. Compared in place, and only where
+  a word can start (after no letter of a name: the check that was last,
+  done first). 15 ms a file to ~1.
+- **A budget in items, not time** (`Map_v2.facts_of`): 30 files' facts
+  a frame, when one costs from nothing to milliseconds: frames of half
+  a second. 8 ms a frame, as the background lexing. And the hover no
+  longer starts work it cannot finish in a frame (the uses counted
+  after the background reading, `rank_if_counted`).
+
+Result: a click 7 s to 20 ms, the X-ray's frames 480 ms to 5 ms, the
+map at rest 63% of a CPU to 44% (the rest is Cairo drawing 2,000 labels
+60 times a second: a map that redraws only when something changes
+would be the next step, the Playground's, not the map's).
+
+The memos' keys are `==`: the layout, the entries, the configs are
+values made once and replaced, not mutated, so a new one is a new key.
+A memo is only right if nothing it leaves out changes the answer:
+`OPTI=off` (section 18) runs the old code, to compare.
+
+## 18. Keeping the simple code: the `Opti` switch
+
+claude: the rule for the fixes (top of this note) is the old code in a
+comment. When the fast path is really more complex than the old one
+(an index and a memo instead of a fold, a cache around a function), the
+old one is better kept *runnable*: in its own function, the fast one in
+another, and a dispatch on `Opti.enabled` (`libs/graphics/core/Opti.mli`,
+which lists them all; the optimized path by default):
+
+```ocaml
+let resolve_include_simple ix from inc = nearest_include from inc (every C file)
+let resolve_include_opti ix from inc = (* memo, by base name *) ...
+let resolve_include ix from inc =
+  if !Opti.enabled then resolve_include_opti ix from inc else resolve_include_simple ix from inc
+```
+
+The reader reads the simple one to understand, the `_opti` one to learn
+the trick; the switch (`o` in the software platforms, `opti=off` for the
+code map, `OPTI=off` for its driver) shows what each buys, and checks
+the two agree. Not for everything: a one-line change (`Int.max` for
+`max`, a test moved first) keeps the old line in its `opti:` comment,
+no switch. The comments of either kind say `claude: opti:` (`grep -rn
+"opti:"`).
 
 ## Not done, deliberately
 

@@ -32,7 +32,10 @@ let set_color cr color alpha =
           (f a, f b, f c)
         else failwith (spf "wrong color format: %s" s)
   in
-  Cairo.set_source_rgba cr r g b (clamp 0. 1. alpha)
+  (* claude: opti: Float's, not Basics.clamp, polymorphic: the runtime's
+   * compare twice a shape drawn.
+   * old: Cairo.set_source_rgba cr r g b (clamp 0. 1. alpha) *)
+  Cairo.set_source_rgba cr r g b (Float.min 1. (Float.max 0. alpha))
 
 (* Cairo (0,0) is at the top left of the screen, in which as y goes up,
  * the coordinates are down on the physical screen. Elm uses a better
