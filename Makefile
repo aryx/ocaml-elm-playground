@@ -165,6 +165,9 @@ doc:
 VERSION=$(shell sed -n 's/^(version "\(.*\)")/\1/p' dune-project)
 ASSETS ?= $(HOME)/github/assets
 ASSETS_URL=https://aryx.github.io/assets
+# claude: the site's icon (docs/favicon.svg), by URL so that a page at any
+# depth, or another project's code map, finds it
+FAVICON=<link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/favicon.svg" type="image/svg+xml">
 ODOC_DIRS=odoc.support \
   elm_playground elm_playground_native elm_playground_web\
   elm_playground_software elm_playground_3d elm_playground_3d_software
@@ -192,6 +195,7 @@ website:
 	    install -m 644 $$js $(ASSETS)/$$a/; \
 	    install -m 644 $$d/web/$$b.html docs/$$d/; \
 	    perl -pi -e "s|src=\"$$b.bc.js\"|src=\"$(ASSETS_URL)/$$a/$$b.bc.js\"|" docs/$$d/$$b.html; \
+	    perl -pi -e 's|<head>|<head>\n    $(FAVICON)|' docs/$$d/$$b.html; \
 	  done; \
 	done
 	mkdir -p docs/examples/svg
@@ -208,8 +212,8 @@ website:
 	install -m 644 _build/default/launcher/web/Tinybox_web.bc.js $(ASSETS)/js/launcher/
 	dune build launcher/codegen/make_codemap_data.exe
 	./_build/default/launcher/codegen/make_codemap_data.exe -tinybox > $(ASSETS)/js/launcher/tinybox_sources.txt
-	printf '<html>\n  <head>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
-	  $(ASSETS_URL)/js/launcher/Tinybox_web.bc.js > docs/tinybox.html
+	printf '<html>\n  <head>\n    %s\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
+	  '$(FAVICON)' $(ASSETS_URL)/js/launcher/Tinybox_web.bc.js > docs/tinybox.html
 	make codemap-web DIR=. PAGE=docs NAME=ocaml-elm-playground
 
 # claude: make website, then both repositories committed and pushed: the
@@ -220,7 +224,7 @@ website:
 # is committed: make website builds from the working copy, so a program
 # being written there (another session's, its row already in CATALOG.md)
 # would go out with its page and its code map, its source not on GitHub.
-WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html tinybox.html codemap.html)
+WEBSITE_PATHS=$(addprefix docs/,$(ODOC_DIRS) examples games apps by-size index.html style.css favicon.svg tinybox.html codemap.html)
 publish:
 	@if [ -n "$$(git status --porcelain -- . ':!docs')" ]; then \
 	  echo "make publish: changes not committed outside docs/ (git status): commit them, or stash them, first"; \
@@ -271,8 +275,8 @@ codemap-web:
 	mkdir -p $(ASSETS)/js/codemap $(ASSETS)/codemap $(PAGE)
 	install -m 644 _build/default/launcher/codemap/web/Codemap_web.bc.js $(ASSETS)/js/codemap/codemap.bc.js
 	./_build/default/launcher/codegen/make_codemap_data.exe $(DIR) $(NAME) > $(ASSETS)/codemap/$(NAME).txt
-	printf '<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset="utf-8">\n    <title>%s: code map</title>\n    <style>body { margin: 0; background: #0e0c1c; }</style>\n    <script>var codemap_data = "%s";</script>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
-	  $(NAME) $(ASSETS_URL)/codemap/$(NAME).txt $(ASSETS_URL)/js/codemap/codemap.bc.js > $(PAGE)/codemap.html
+	printf '<!DOCTYPE html>\n<html>\n  <head>\n    <meta charset="utf-8">\n    <title>%s: code map</title>\n    %s\n    <style>body { margin: 0; background: #0e0c1c; }</style>\n    <script>var codemap_data = "%s";</script>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
+	  $(NAME) '$(FAVICON)' $(ASSETS_URL)/codemap/$(NAME).txt $(ASSETS_URL)/js/codemap/codemap.bc.js > $(PAGE)/codemap.html
 
 ###############################################################################
 # Developer targets

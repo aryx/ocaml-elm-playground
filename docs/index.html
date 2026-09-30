@@ -1,46 +1,230 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <title>index</title>
-    <link rel="stylesheet" href="./odoc.support/odoc.css"/>
-    <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  </head>
-  <body>
-    <main class="content">
-      <div class="by-name">
-	<h2><a href="https://github.com/aryx/ocaml-elm-playground?tab=readme-ov-file#ocaml-elm-playground">README</a></h2>
-	  
-	<h2>OCaml package documentation</h2>
-	<p>The most important module below is elm_playground.
-      <ol>
-      <li><a href="elm_playground/index.html">elm_playground</a> <span class="version">0.3.0</span></li>
-      <li><a href="elm_playground_3d/index.html">elm_playground_3d</a> <span class="version">0.3.0</span></li>
-      <li><a href="elm_playground_software/index.html">elm_playground_software</a> <span class="version">0.3.0</span></li>
-      <li><a href="elm_playground_3d_software/index.html">elm_playground_3d_software</a> <span class="version">0.3.0</span></li>
-      </ol>
-      <h2>The library, area by area</h2>
-      <p>Everything written from scratch, one idea per module, each interface explaining its idea:
-      <a href="elm_playground/index.html#playground">the playground</a>,
-      <a href="elm_playground/index.html#graphics">graphics</a>,
-      <a href="elm_playground/index.html#physics">physics</a>,
-      <a href="elm_playground/index.html#audio">audio</a>,
-      <a href="elm_playground/index.html#ai">AI</a>,
-      <a href="elm_playground/index.html#gui">GUI</a>,
-      <a href="elm_playground/index.html#networking">networking, cryptography and compression</a>,
-      <a href="elm_playground/index.html#terminal">the terminal</a>,
-      <a href="elm_playground/index.html#appkits">application engines</a>,
-      <a href="elm_playground/index.html#gamekits">game kits</a>,
-      <a href="elm_playground/index.html#languages">languages</a>.
-      <h2>Play online</h2>
-      <p><a href="tinybox.html">tinybox</a>: every game and app in one menu, as the native tinybox (arrows, Enter to play, Back to return).
-      <p><a href="codemap.html">The code map</a>: this whole repository as a map, zoomed into down to the code (<code>h</code> for its keys; <a href="manual/codemap.html">its manual</a>).
-      <p><a href="games/">Games</a>: every game, by genre, in your browser.
-      <p><a href="apps/">Apps</a>: the applications, by category.
-      <p><a href="by-size/">By size</a>: the games and apps together, the smallest first (lines of code).
-      <p><a href="examples/">Examples</a>: the demos of one feature each, 2D and 3D.
-      <p>See <a href="toy-web-example/static/Toy.html">toy</a> for the toy example used in the README.
-      </div>
-    </main>
-  </body>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCaml Elm Playground &mdash; Pictures, Animations, Games and Apps in OCaml</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+
+<div class="github-ribbon"><a href="https://github.com/aryx/ocaml-elm-playground">Clone me on GitHub</a></div>
+
+<h1>OCaml Elm Playground</h1>
+<p><em>Pictures, animations, games and applications in OCaml, in 2D and 3D</em></p>
+
+<p><small>
+<a href="#news">What's New</a> &middot;
+<a href="#play">Play Online</a> &middot;
+<a href="#codemap">The Code Map</a> &middot;
+<a href="#library">The Library</a> &middot;
+<a href="#docs">Documentation</a> &middot;
+<a href="#ai">AI Disclaimer</a>
+</small></p>
+
+<p>
+The playground is a small OCaml library for putting shapes on screen
+and working up to games. It started as a port of Evan Czaplicki's
+<a href="https://github.com/evancz/elm-playground">Elm playground</a>
+package, and keeps its spirit:
+</p>
+
+<blockquote><p>
+This is the package I wanted when I was learning programming. Start by
+putting shapes on screen and work up to making games. I hope this
+package will be fun for a broad range of ages and backgrounds!
+<em>&mdash; Evan Czaplicki</em>
+</p></blockquote>
+
+<p>
+Around that library, the repository holds <strong>145 games and 53
+applications</strong> written with it: the programs that made computing
+history, from Pong, Breakout and Pac-Man to Doom and Quake, from
+VisiCalc and MacPaint to Turbo Pascal and Smalltalk-80. Each one is
+rebuilt in miniature but working, with its story, and small enough to
+read whole: a few hundred lines to a few thousand. Each runs natively on
+your desktop and in your browser, from the same source file.
+</p>
+
+<table>
+<tr>
+<td><a href="games/arcade/TinyBreakout.html"><img src="screenshots/game-breakout.png" width="320" alt="TinyBreakout"></a></td>
+<td><a href="apps/devtools/TinyTurboPascal.html"><img src="screenshots/app-turbopascal.png" width="320" alt="TinyTurboPascal"></a></td>
+</tr>
+<tr>
+<td>Breakout (Atari, 1976): <a href="codemap.html?code=TinyBreakout">525 lines</a>, in one file.</td>
+<td>Turbo Pascal 7 (Borland, 1992): the editor, the compiler and the debugger, <a href="codemap.html?code=TinyTurboPascal">3,213 lines</a>.</td>
+</tr>
+</table>
+
+<ul>
+<li><a href="https://github.com/aryx/ocaml-elm-playground#readme"><strong>The README</strong></a>
+&mdash; everything about the playground: the library, how to install it
+and write a first program, and what the project has become.</li>
+<li><a href="tinybox.html"><strong>tinybox</strong></a>
+&mdash; every game and app in one menu, in your browser
+(<a href="#play">below</a>).</li>
+<li><a href="codemap.html"><strong>The code map</strong></a>
+&mdash; the whole repository, explored in the browser
+(<a href="#codemap">below</a>).</li>
+<li><a href="https://github.com/aryx/ocaml-elm-playground/blob/master/CATALOG.md">The catalog</a>
+&mdash; every game and app, with the original it is after.</li>
+<li><a href="https://github.com/aryx/ocaml-elm-playground">The source code</a> on GitHub.</li>
+<li><a href="#ai">AI disclaimer</a> &mdash; most of the code around the
+library is written by Claude.</li>
+</ul>
+
+<hr>
+
+<h2 id="news">What's New</h2>
+
+<ul>
+<li><strong>September 2026</strong> &mdash; <a href="tinybox.html">tinybox</a>:
+every game and app in one menu, and one executable, after BusyBox.</li>
+<li><strong>September 2026</strong> &mdash; <a href="codemap.html">The code map</a>,
+a new <a href="https://github.com/aryx/codemap">codemap</a>: a codebase
+drawn as a map, from the whole down to a line; it runs on any directory
+(<a href="manual/codemap.html">its manual</a>).</li>
+<li><strong>September 2026</strong> &mdash; From a handful of games to 145
+games and 53 applications, a GUI toolkit, physics, audio, a 3D
+rasterizer, networking and a dozen languages, mostly written by Claude
+(<a href="#ai">AI disclaimer</a>).</li>
+<li><strong>December 2024</strong> &mdash; Version 0.2.0, and the first website.</li>
+<li><strong>November 2020</strong> &mdash; Project started, as a port of the Elm playground.</li>
+</ul>
+
+<hr>
+
+<h2 id="play">Play Online</h2>
+
+<ul>
+<li><a href="tinybox.html"><strong>tinybox</strong></a> &mdash; every game
+and app in one menu, as the native tinybox (arrows, Enter to play, Back
+to return).</li>
+<li><a href="games/">Games</a> &mdash; every game, by genre.</li>
+<li><a href="apps/">Apps</a> &mdash; the applications, by category.</li>
+<li><a href="by-size/">By size</a> &mdash; the games and apps together,
+the smallest first (lines of code).</li>
+<li><a href="examples/">Examples</a> &mdash; the demos of one feature
+each, 2D and 3D.</li>
+<li><a href="toy-web-example/static/Toy.html">Toy</a> &mdash; the toy
+example used in the README.</li>
+</ul>
+
+<hr>
+
+<h2 id="codemap">The Code Map</h2>
+
+<p>
+<a href="codemap.html">The code map</a> shows the whole repository as a
+map: each folder a region, each file a block the size of its code, each
+block the code itself once you zoom in. <code>h</code> lists every key,
+and <a href="manual/codemap.html">its manual</a> says the rest. A link
+can open it on one program's own code, as the README's tables do:
+</p>
+<ul>
+<li><a href="codemap.html?code=TinyMario"><code>codemap.html?code=TinyMario</code></a>
+&mdash; a program, its file and the modules it uses (<code>w</code>
+widens it to what it uses, then to everything).</li>
+</ul>
+
+<p>
+It is tinybox's code visualizer, after the author's
+<a href="https://github.com/aryx/codemap">codemap</a>, and runs on any
+directory: <a href="https://aryx.github.io/xix/codemap.html">xix</a> and
+<a href="https://aryx.github.io/IX/codemap.html">IX</a> have theirs.
+</p>
+
+<hr>
+
+<h2 id="library">The Library</h2>
+
+<p>
+Everything is written from scratch, one idea per module, each interface
+explaining its idea:
+<a href="elm_playground/index.html#playground">the playground</a>,
+<a href="elm_playground/index.html#graphics">graphics</a>,
+<a href="elm_playground/index.html#physics">physics</a>,
+<a href="elm_playground/index.html#audio">audio</a>,
+<a href="elm_playground/index.html#ai">AI</a>,
+<a href="elm_playground/index.html#gui">GUI</a>,
+<a href="elm_playground/index.html#networking">networking, cryptography and compression</a>,
+<a href="elm_playground/index.html#terminal">the terminal</a>,
+<a href="elm_playground/index.html#appkits">application engines</a>,
+<a href="elm_playground/index.html#gamekits">game kits</a>,
+<a href="elm_playground/index.html#languages">languages</a>.
+</p>
+
+<hr>
+
+<h2 id="docs">Documentation</h2>
+
+<p>
+The OCaml package documentation, generated by odoc. The most important
+package is elm_playground.
+</p>
+<ol>
+<li><a href="elm_playground/index.html">elm_playground</a> <span class="version">0.3.0</span></li>
+<li><a href="elm_playground_3d/index.html">elm_playground_3d</a> <span class="version">0.3.0</span></li>
+<li><a href="elm_playground_software/index.html">elm_playground_software</a> <span class="version">0.3.0</span></li>
+<li><a href="elm_playground_3d_software/index.html">elm_playground_3d_software</a> <span class="version">0.3.0</span></li>
+</ol>
+
+<p>
+And beyond the API:
+</p>
+<ul>
+<li><a href="manual/codemap.html">The code map's manual</a>.</li>
+<li><a href="https://github.com/aryx/ocaml-elm-playground/tree/master/docs/claude_notes">docs/claude_notes/</a>
+&mdash; the plans and tutorial notes for each subject; for the
+applications, start with
+<a href="https://github.com/aryx/ocaml-elm-playground/blob/master/docs/claude_notes/tutorials/notes_gui.md">notes_gui.md</a>.</li>
+</ul>
+
+<hr>
+
+<h2 id="ai">AI disclaimer</h2>
+
+<p>
+The 2D playground API and the ideas behind it are the work of Evan
+Czaplicki, for Elm. I (Yoann Padioleau) ported the API and its ideas,
+and some of the web backend, to OCaml, and added a native backend: that
+is the playground up to
+<a href="https://github.com/aryx/ocaml-elm-playground/tree/0.1.7">version 0.1.7</a>
+(December 2024), with a few games (Pong, Snake, Tetris, Asteroid).
+<code>Playground3d</code> is adapted from Luca Mugnaini's elm-playground-3d.
+</p>
+
+<p>
+Since September 2026, almost everything around that library is written
+by AI: by Claude, Anthropic's model, in Claude Code. The repository is
+now about 280,000 lines of OCaml, tests included: the games and apps,
+the other APIs (<code>Physics</code>, <code>Audio</code>,
+<code>Ai</code>, <code>Gui</code>, ...), the rasterizers, tinybox, the
+code map, and this website.
+</p>
+
+<p>
+What I do is direct the work: I choose what to build, its design, which
+programs to rebuild and at what size, and I review the code. The
+originals, and their designs, are the work of their authors, named in
+each program's header and in the README's
+<a href="https://github.com/aryx/ocaml-elm-playground#trademarks-and-originals">Trademarks and originals</a>;
+the README's
+<a href="https://github.com/aryx/ocaml-elm-playground#ai-disclaimer">AI disclaimer</a>
+says more.
+</p>
+
+<hr>
+<p><small>
+The OCaml Elm Playground is by Yoann Padioleau, after Evan Czaplicki's
+Elm playground, mostly written by Claude (<a href="#ai">AI disclaimer</a>),
+and a companion to
+<a href="https://aryx.github.io/xix/">xix</a>,
+<a href="https://aryx.github.io/IX/">IX</a> and
+<a href="https://aryx.github.io/principia-softwarica/">Principia Softwarica</a>.
+</small></p>
+
+</body>
 </html>

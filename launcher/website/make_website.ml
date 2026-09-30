@@ -68,6 +68,7 @@ let page ~(title : string) (body : string) : string =
     <link rel="stylesheet" href="../odoc.support/odoc.css"/>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/favicon.svg" type="image/svg+xml"/>
     <style>
       .grid { display: grid; gap: 16px;
               grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
