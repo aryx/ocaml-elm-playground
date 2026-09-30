@@ -18,5 +18,8 @@
    (glob_files_rec %{project_root}/playground/*.{ml,mli})
    (glob_files_rec %{project_root}/libs/*.{ml,mli})
    (glob_files_rec %{project_root}/launcher/*.{ml,mli})
+   ; claude: the configs point into examples/ too (a related file), which
+   ; a build of tinybox alone (dune build -p tinybox) does not compile
+   (glob_files_rec %{project_root}/examples/*.{ml,mli})
    (glob_files %{project_root}/tests/2d/golden/*.png)
    (glob_files %{project_root}/tests/3d/golden/*.png)))
