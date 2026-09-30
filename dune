@@ -23,7 +23,12 @@
          ; gives us better error messages
          --enable with-js-error))))
   (release
-       (flags (:standard)))
+       (flags (:standard))
+       ; claude: opam builds in release (dune build -p): the golden frames
+       ; are a check for whoever changes the drawing, on this machine's
+       ; Cairo and fonts, not for a user installing tinybox; skipped there
+       ; as make test-lite skips them (Testutil_golden.mli)
+       (env-vars (GOLDEN none)))
   ; with release-js Animation.bc.js is =~120KB
   ; if you give a fake profile like dune build example_js --profile=foo
   ; you can get even lower with 90KB but maybe the options below are useful
