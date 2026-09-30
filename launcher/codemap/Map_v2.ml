@@ -606,7 +606,7 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
                   (fun (src, dst, n) ->
                     if inside dst && not (inside src) then add users (side src) n
                     else if inside src && not (inside dst) then add uses (side dst) n)
-                  (Code_rank.links (rank_of t))
+                  (match rank_if_counted t with Some r -> Code_rank.links r | None -> [])
             | Some (p, line, name) ->
                 (* the definition's users, file by file; and its body's
                  * uses of other files' names *)
@@ -620,7 +620,7 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
                     | None -> (p, line)
                   else (p, line)
                 in
-                List.iter (fun (q, k) -> if q <> p && q <> rp then add users (side q) k) (Code_rank.users (rank_of t) rp rl short);
+                List.iter (fun (q, k) -> if q <> p && q <> rp then add users (side q) k) (match rank_if_counted t with Some r -> Code_rank.users r rp rl short | None -> []);
                 (match List.find_opt (fun (x : entry) -> x.path = p) (t.entries @ t.beyond) with
                 | Some e ->
                     let f = Lazy.force e.file in

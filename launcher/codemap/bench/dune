@@ -1,0 +1,7 @@
+; claude: the code map's frames timed, natively, without a window:
+;   dune exec launcher/codemap/bench/codemap_bench.exe -- ~/principia
+; (see notes_debugging_techniques.md, "a slow frame")
+(executable
+ (name codemap_bench)
+ (libraries tinybox_codemap tinybox_codewalk tinybox_codedeps unix
+   elm_playground_native)) ; implem of virtual elm_playground

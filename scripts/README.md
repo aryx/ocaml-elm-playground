@@ -27,6 +27,11 @@ does, why, and how to use it; the techniques behind them are in
   - `web_headless.js`: a game's `.bc.js` in node with a fake DOM:
     hangs, exceptions, the DOM after scripted keys (see
     `docs/claude_notes/dev/notes_headless.md`)
+  - `chrome_cdp.js`: a page in a real headless Chrome, over the
+    DevTools protocol: keys pressed at given seconds, the console, the
+    exceptions with their stacks, the frames and the longest gap
+    between two, screenshots (see `notes_debugging_techniques.md`,
+    section 11)
 - `input/`: driving a real window
   - `xdrive.py`: mouse moves, clicks, keys, through X11's XTEST
 - `stats/`: numbers about the repository

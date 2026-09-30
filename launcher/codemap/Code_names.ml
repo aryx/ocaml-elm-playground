@@ -51,6 +51,12 @@ type index = {
    * transitively, made when first asked *)
   cfiles : (string, Code_file.t Lazy.t) Hashtbl.t;
   closure : (string, string list) Hashtbl.t;
+  (* claude: the C files by base name, in cfiles' own order, and the
+   * includes resolved, by the includer's directory: resolving one
+   * scanned every C file, for every include of every file (9 s of
+   * principia's 2,200 files' uses counted, the map frozen) *)
+  by_base : (string, string list) Hashtbl.t;
+  resolved : (string * string, string option) Hashtbl.t;
   (* claude: the system's headers, by base name: included from many top
    * folders (~/principia's libc.h, from 30), so sharing one does not
    * make two files one program (troff "using" sam's linep) *)
@@ -110,7 +116,10 @@ let index (files : (string * Code_file.t Lazy.t) list) : index =
   in
   let cfiles = Hashtbl.create 256 in
   List.iter (fun (p, lf) -> if is_c p then Hashtbl.replace cfiles p lf) files;
-  { ml; c; cfiles; closure = Hashtbl.create 256; system = lazy (system_headers files) }
+  let by_base = Hashtbl.create 256 in
+  Hashtbl.iter (fun p _ -> let b = Filename.basename p in Hashtbl.replace by_base b (p :: Option.value (Hashtbl.find_opt by_base b) ~default:[])) cfiles;
+  Hashtbl.filter_map_inplace (fun _ l -> Some (List.rev l)) by_base;
+  { ml; c; cfiles; closure = Hashtbl.create 256; by_base; resolved = Hashtbl.create 1024; system = lazy (system_headers files) }
 
 (* an include resolved: the file of that path's tail, the nearest *)
 let resolve_include (ix : index) (from : string) (inc : string) : string option =
@@ -124,7 +133,18 @@ let resolve_include (ix : index) (from : string) (inc : string) : string option 
    * x86 file's "dat.h" is core/386/'s, not core/arm/'s) *)
   let common p = let b = String.split_on_char '/' (Filename.dirname from) in List.length (List.filter (fun x -> List.mem x b) (String.split_on_char '/' (Filename.dirname p))) in
   let key p = (shared p from, common p) in
-  Hashtbl.fold (fun p _ acc -> if ends p then (match acc with Some q when key q >= key p -> acc | _ -> Some p) else acc) ix.cfiles None
+  (* claude: only the files of the include's base name can end so, taken
+   * in cfiles' order, the ties falling as before *)
+  let k = (Filename.dirname from, inc) in
+  match Hashtbl.find_opt ix.resolved k with
+  | Some r -> r
+  | None ->
+      let r =
+        List.fold_left (fun acc p -> if ends p then (match acc with Some q when key q >= key p -> acc | _ -> Some p) else acc) None
+          (Option.value (Hashtbl.find_opt ix.by_base (Filename.basename inc)) ~default:[])
+      in
+      Hashtbl.replace ix.resolved k r;
+      r
 
 (* a C file's headers, transitively *)
 let header_closure (ix : index) (p : string) : string list =

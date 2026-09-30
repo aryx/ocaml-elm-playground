@@ -17,6 +17,15 @@
    a street's thousands of shapes); the modules opening this one use it *)
 val ( @ ) : 'a list -> 'a list -> 'a list
 
+(* claude: List.map and List.mapi in constant stack too (a search's hits
+   are tens of thousands for a letter typed), the rest Stdlib's *)
+module List : sig
+  include module type of List
+
+  val map : ('a -> 'b) -> 'a list -> 'b list
+  val mapi : (int -> 'a -> 'b) -> 'a list -> 'b list
+end
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -80,6 +89,7 @@ type t = {
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
   mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
   fan_in : (string, int) Hashtbl.t Lazy.t; (* claude: each module's fan-in, the files naming it (Code_deps.fan_in): how central *)
+  counted : Code_rank.t Lazy.t option; (* claude: the uses counted once for every map of the same sources (Codemap), rank_of's *)
   mutable morph : (string Transition.t * float) option; (* claude: the layout's rectangles moving from another layout's places, since a time (Transition: a folder laid out anew) *)
   mutable help : bool; (* claude: h, every key explained *)
   top_kept : bool; (* claude: a lone top directory drawn, not merged into the root (relayout): a selection's *)
@@ -140,6 +150,7 @@ val home : area -> camera
 
 val make :
   ?fan_in:(string, int) Hashtbl.t Lazy.t ->
+  ?counted:Code_rank.t Lazy.t ->
   ?top_kept:bool ->
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->
@@ -159,6 +170,10 @@ val make :
 val files_of : t -> (string * Code_file.t Lazy.t) list
 val index_of : t -> Code_names.index
 val rank_of : t -> Code_rank.t
+
+(* claude: the same if counted already (Codemap counts them after
+   reading every file), for a hover; else None *)
+val rank_if_counted : t -> Code_rank.t option
 
 (* the files shown and their lines; 12345 as "12,345 lines" *)
 val lines_of : entry list -> int

@@ -35,6 +35,16 @@ open Playground
  * opening this one see it as @. *)
 let ( @ ) (a : 'a list) (b : 'a list) : 'a list = match b with [] -> a | _ -> List.rev_append (List.rev a) b
 
+(* claude: List.map and List.mapi in constant stack too, for the same
+ * reason: a search's hits (Map_v2) are tens of thousands for a letter
+ * typed. Seen as List.map by the modules opening this one. *)
+module List = struct
+  include List
+
+  let map f l = List.rev (List.rev_map f l)
+  let mapi f l = List.rev (snd (List.fold_left (fun (i, acc) x -> (i + 1, f i x :: acc)) (0, []) l))
+end
+
 (*****************************************************************************)
 (* Types *)
 (*****************************************************************************)
@@ -101,6 +111,7 @@ type t = {
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
   mutable peek_stack : ((string * int * int) * int) list; (* claude: the peeks under it, and their scrolls: a peek of a peek (a click on a name in one) *)
   fan_in : (string, int) Hashtbl.t Lazy.t; (* claude: each module's fan-in, the files naming it (Code_deps.fan_in): how central *)
+  counted : Code_rank.t Lazy.t option; (* claude: the uses counted once for every map of the same sources (Codemap), rank_of's *)
   mutable morph : (string Transition.t * float) option; (* claude: the layout's rectangles moving from another layout's places, since a time (Transition: a folder laid out anew) *)
   mutable help : bool; (* claude: h, every key explained *)
   top_kept : bool; (* claude: a lone top directory drawn (relayout) *)
@@ -180,7 +191,7 @@ let fit (a : area) (r : Treemap.rect) : camera =
 
 let home (a : area) : camera = { (fit a (root_rect a)) with z = 1. }
 
-let make ?(fan_in = lazy (Hashtbl.create 1)) ?(top_kept = false) ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ?(beyond = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
+let make ?(fan_in = lazy (Hashtbl.create 1)) ?counted ?(top_kept = false) ?(numbered = false) ?(colours = []) ?(roots = []) ?(guide = Code_guide.empty) ?(beyond = []) ~(style : style) ~(area : float * float * int * int) ~(title : string) ~(marked : string list) (entries : entry list) : t =
   let left, top, pw, ph = area in
   let a = { left; top; pw; ph } in
   let placed, geometry = relayout ~top_kept a Ordered entries in
@@ -189,7 +200,7 @@ let make ?(fan_in = lazy (Hashtbl.create 1)) ?(top_kept = false) ?(numbered = fa
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
     back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; tour_on = None; layers = []; layer_group = 0; guide_layers = None; flight = None; pointer = None;
-    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept; fan_in; morph = None; help = false }
+    focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept; fan_in; counted; morph = None; help = false }
 
 (* claude: the map's files for Code_names and Code_rank *)
 let files_of (t : t) : (string * Code_file.t Lazy.t) list = List.map (fun (e : entry) -> (e.path, e.file)) t.entries
@@ -209,9 +220,22 @@ let rank_of (t : t) : Code_rank.t =
   | None ->
       (* claude: over the files beyond too (a program's map's, a folder
        * laid out alone's): its users are wherever they are *)
-      let r = Code_rank.compute ~roots:t.roots (files_of t @ List.map (fun (e : entry) -> (e.path, e.file)) t.beyond) in
+      (* claude: counted for all the maps of these sources, not again for
+       * each: a click on a folder makes a new map, and counting cost 9 s
+       * on principia's 2,200 files (the author: "I can't even click") *)
+      let r = match t.counted with Some c -> Lazy.force c | None -> Code_rank.compute ~roots:t.roots (files_of t @ List.map (fun (e : entry) -> (e.path, e.file)) t.beyond) in
       t.rank <- Some r;
       r
+
+(* claude: the uses if counted already, for what the mouse passing over
+ * shows (a unit's ties): not counted then, which would lex every file
+ * not yet read, seconds in one frame (principia's first hover); a map
+ * of its own (no [counted]) counts them as before *)
+let rank_if_counted (t : t) : Code_rank.t option =
+  match (t.rank, t.counted) with
+  | Some r, _ -> Some r
+  | None, Some c when not (Lazy.is_val c) -> None
+  | None, _ -> Some (rank_of t)
 
 (* claude: the lines of the files shown, for a title *)
 let lines_of (entries : entry list) : int = List.fold_left (fun n (e : entry) -> n + e.nlines) 0 entries

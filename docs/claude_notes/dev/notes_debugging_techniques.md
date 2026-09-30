@@ -544,3 +544,91 @@ few techniques with no script:
   A `dune build` sitting at 0% CPU with no other build running is the
   same thing with a stale lock: kill it (`ps aux | grep dune`) and run
   it again, rather than waiting.
+
+## 11. A web page that freezes on a key: real Chrome, driven from a script
+
+claude: the code map on the web froze when `/` was pressed (the
+author). Section 6's fake DOM can't run the code map (it fetches a 17 MB
+bundle, and the bug needed a real JavaScript engine's stack), so the
+page was run in a real headless Chrome, driven over the DevTools
+protocol by `scripts/web/chrome_cdp.js`: keys pressed at given seconds,
+the console and the uncaught exceptions printed, the frames counted.
+
+```bash
+# the program, the bundle and a page naming them, served over http
+# (make codemap-web's page names the published assets, not local ones)
+dune build launcher/codemap/web/Codemap_web.bc.js launcher/codegen/make_codemap_data.exe
+mkdir -p /tmp/site
+cp _build/default/launcher/codemap/web/Codemap_web.bc.js /tmp/site/codemap.bc.js
+./_build/default/launcher/codegen/make_codemap_data.exe . ocaml-elm-playground > /tmp/site/data.txt
+printf '<html><head><meta charset="utf-8"><script>var codemap_data = "data.txt";</script><script src="codemap.bc.js"></script></head><body></body></html>' > /tmp/site/codemap.html
+(cd /tmp/site && python3 -m http.server 8123 &)
+# at 5 s press /, at 6 s s, at 7 s t; a screenshot after each key
+node scripts/web/chrome_cdp.js http://127.0.0.1:8123/codemap.html 9 /tmp/cm.png "5:/ 6:s 7:t"
+```
+
+What it printed with the bug:
+
+```
+EXCEPTION: Uncaught RangeError: Maximum call stack size exceeded
+    at (anonymous) codemap.bc.js:87197
+    at caml_call1 codemap.bc.js:11143
+    at map codemap.bc.js:11297 x4000
+t=6s {"frames":52,"longest_gap_ms":2367, ...}
+```
+
+Each line of the output answers a question:
+
+- **Is it a hang or an exception?** A hang stops the frames (`frames`
+  stays put, `longest_gap_ms` grows). An exception every frame keeps
+  the frames coming but nothing changes on the screen, and to the user
+  that is the same "freeze". Here it was the exception.
+- **Where?** Build the dev profile (`dune build
+  launcher/codemap/web/Codemap_web.bc.js`, no `--profile=release-js`):
+  its JavaScript keeps the OCaml locations as comments,
+  `/*<<launcher/codemap/Code_search.ml:27:6>>*/`, so the line an
+  exception names is found by searching backwards from it for the last
+  `<<...>>`:
+  ```bash
+  awk -v L=87197 'NR<=L && /<<[^>]*>>/ {last=$0} NR==L {print last; exit}' codemap.bc.js | grep -o '<<[^>]*>>' | tail -1
+  ```
+- **Why only on the web?** OCaml 4.14's `List.map`, `List.mapi` and
+  `@` recurse as deep as their list. Natively, the stack is 8 MB and a
+  list of 100,000 is fine; a browser allows a few thousand JavaScript
+  frames. A list as long as the repository's definitions (the search's
+  candidates) or as its hits (a letter typed finds 9,000) overflows it.
+  The fix is the one Code_map_base already had for `@`: its own `List`
+  module with `map` and `mapi` in constant stack (`rev (rev_map ...)`),
+  which the modules opening it see as `List.map`. **Don't forget the
+  `.mli`**: without the module in the interface, the modules opening
+  Code_map_base still got Stdlib's `List.map`, and the second run still
+  overflowed, now at `Map_v2.ml:2087`.
+
+Traps met on the way, each costing a run:
+
+- **A key down and up at once is never seen.** The Playground reads
+  the keys held at each frame, so a key released before the next frame
+  was never down as far as the game knows. The script holds each key
+  200 ms. The first "no freeze, fixed" came from keys the game had
+  never received: **check the screenshot** (here: is the search box
+  there, and does it say how many it found?) before believing a
+  measurement.
+- **It depends on when.** A late `/` did not overflow: by then Chrome
+  had compiled the code (JIT), and compiled frames are smaller than
+  interpreted ones, so the same recursion fit in the stack. A stack
+  bug on the web can come and go with timing: try the key early (while
+  the page is still loading, here while the files are still being
+  lexed) and late.
+- **Chrome caches the `.bc.js`.** A rebuilt program copied over the old
+  one still ran the old one. The exception's line numbers did not
+  match the new file, and that was the giveaway. `chrome_cdp.js` starts
+  a fresh profile each run; a driver that reuses a Chrome must send
+  `Network.setCacheDisabled`.
+- **Chrome and the sandbox on macOS**: the script finds macOS's Chrome
+  itself (`CHROME=` for another). Under Claude Code's sandbox, give it
+  `TMPDIR=<the scratchpad>` for its profile.
+
+The same run also measures a stall that is not a bug: `/` pressed
+while the files are still being lexed in the background makes the
+search lex the rest at once (Map_v2's `search_all`), a
+`longest_gap_ms` of 2 to 3 s, once.

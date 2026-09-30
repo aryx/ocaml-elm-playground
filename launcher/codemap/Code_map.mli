@@ -37,6 +37,7 @@ type t = Code_map_base.t
    what the directories' .codemapconfig say (Code_guide) *)
 val make :
   ?fan_in:(string, int) Hashtbl.t Lazy.t ->
+  ?counted:Code_rank.t Lazy.t ->
   ?top_kept:bool ->
   ?numbered:bool ->
   ?colours:(string * (int * int * int)) list ->

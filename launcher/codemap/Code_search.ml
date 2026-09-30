@@ -13,6 +13,17 @@
 (* claude: @ in constant stack, as Code_map_base's (a browser's stack is small) *)
 let ( @ ) (a : 'a list) (b : 'a list) : 'a list = match b with [] -> a | _ -> List.rev_append (List.rev a) b
 
+(* claude: and List.map, List.mapi: 4.14's recurse as deep as their list
+ * too, and a repository's tens of thousands of definitions (candidates)
+ * overflowed a browser's stack on the first / -- an exception every
+ * frame, the page frozen (the author) *)
+module List = struct
+  include List
+
+  let map f l = List.rev (List.rev_map f l)
+  let mapi f l = List.rev (snd (List.fold_left (fun (i, acc) x -> (i + 1, f i x :: acc)) (0, []) l))
+end
+
 type kind = Dir | File | Def | Text | View | Tour
 type hit = { kind : kind; path : string; line : int; name : string }
 

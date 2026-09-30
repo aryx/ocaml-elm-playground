@@ -93,6 +93,21 @@ let fan_in_of (sources : (string * string) list) : (string, int) Hashtbl.t Lazy.
 let given_rank : Code_rank.t option ref = ref None
 let use_rank (r : Code_rank.t) : unit = given_rank := Some r
 
+(* claude: else counted when first asked, once for a set of sources (as
+ * fan_in_of): each map of them (a folder clicked makes one) counting
+ * them again froze the map for 9 s on principia (the author: "the web
+ * version is fast", given them by its bundle). A map's files and those
+ * beyond it are all the sources, so the count is the same for each. *)
+let ranks : ((string * string) list * Code_rank.t Lazy.t) list ref = ref []
+
+let rank_of_sources ~(roots : string list) (sources : (string * string) list) (files : (string * Code_file.t Lazy.t) list) : Code_rank.t Lazy.t =
+  match List.find_opt (fun (s, _) -> s == sources) !ranks with
+  | Some (_, r) -> r
+  | None ->
+      let r = lazy (Code_rank.compute ~roots files) in
+      ranks := (sources, r) :: !ranks;
+      r
+
 let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) ~(roots : string list) ~(colours : (string * (int * int * int)) list) ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string)
     ~(scope : scope) : Code_map.t =
   let paths =
@@ -135,10 +150,11 @@ let map_of ~(style : Code_map_base.style option) ~(guide : Code_guide.t option) 
     | Whole | Directory _ -> []
   in
   let top_kept = match scope with Selection _ | Tied _ -> true | _ -> false in
-  let (m : Code_map.t) = Code_map.make ~fan_in:(fan_in_of sources) ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries in
+  let counted = match !given_rank with Some r -> Lazy.from_val r | None -> rank_of_sources ~roots sources (List.map (fun (e : Code_map.entry) -> (e.path, e.file)) (entries @ beyond)) in
+  let (m : Code_map.t) = Code_map.make ~fan_in:(fan_in_of sources) ~counted ~top_kept ~numbered ~colours ~roots ?guide ~beyond ?style ~area ~title ~marked:[ path ] entries in
   (* the same for every map of these sources: the map's files and those
    * beyond it are all of them *)
-  Option.iter (fun r -> m.rank <- Some r) !given_rank;
+  if Lazy.is_val counted then m.rank <- Some (Lazy.force counted);
   m
 
 let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sources : (string * string) list) ~(program : string) ~(path : string) : t =
@@ -408,6 +424,9 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
     ~(get : unit -> (directory, string) result option) () : unit =
   let failed = ref None and last_place = ref [] in
   let pending = ref [] and total = ref 0 in
+  (* claude: then the uses counted (Code_rank), once, a frame after saying
+   * so: 1 s on principia, what a hover's ties wait for *)
+  let counting = ref `Not_yet in
   let update (computer : Playground.computer) (m : alone) : alone =
     let made =
       match m.code with
@@ -428,10 +447,18 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
     | None -> m
     | Some code ->
     (* the files lexed in the background, 12 ms a frame *)
-    (if !pending <> [] then
+    (if !pending <> [] then begin
        let until = Sys.time () +. 0.012 in
        let rec go = function f :: rest when Sys.time () < until -> ignore (Lazy.force f); go rest | l -> l in
-       pending := go !pending);
+       pending := go !pending
+     end
+     else
+       match !counting with
+       | `Not_yet -> counting := `Said
+       | `Said ->
+           if code.map.counted <> None then ignore (Code_map_base.rank_of code.map);
+           counting := `Done
+       | `Done -> ());
     let keys = computer.keyboard.keys in
     let pressed k = Set_.mem k keys && not (Set_.mem k m.before) in
     let (Time now) = computer.time in
@@ -457,7 +484,7 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
     | Some c ->
         let left = List.length !pending in
         view computer c
-        @ if left = 0 then [] else progress_bar computer.screen (Printf.sprintf "reading the code: %d of %d files" (!total - left) !total) (Some (float_of_int (!total - left) /. float_of_int (max 1 !total)))
+        @ if left = 0 then (if !counting = `Said then progress_bar computer.screen "counting the uses..." None else []) else progress_bar computer.screen (Printf.sprintf "reading the code: %d of %d files" (!total - left) !total) (Some (float_of_int (!total - left) /. float_of_int (max 1 !total)))
     | None -> (
         match !failed with
         | Some why -> [ Playground.words (Playground.rgb 200 200 200) why |> Playground.scale (20. /. Playground.words_font_size) ]

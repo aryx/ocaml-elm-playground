@@ -19,15 +19,28 @@
 // it works. Here the waiting is real.
 //
 // usage:
-//   node scripts/web/chrome_cdp.js <url> [seconds] [out.png]
+//   node scripts/web/chrome_cdp.js <url> [seconds] [out.png] [keys]
 // e.g.
 //   node scripts/web/chrome_cdp.js \
 //     file://$PWD/_build/default/games/fps/web/TinyMinecraft.html 30 /tmp/mc.png
 //
+// claude: [keys], keys pressed at given seconds, "second:key" separated
+// by spaces ("5:/ 6:s 7:Escape"), each held 200 ms (a key down and up at
+// once falls between two frames and the game never sees it), a
+// screenshot after each (out-1.png, out-2.png, ...). A page that freezes
+// on a key (the code map's /) is found this way, over http:// (a page
+// that fetches its data needs a server: python3 -m http.server).
+// CHROME=... names the browser (default: macOS's Chrome if there, else
+// google-chrome).
+//
 // It prints the page's console messages and uncaught errors, and a line
 // per second with the number of animation frames the page has drawn
 // since it started (so a page that is slow, stuck, or dead is easy to
-// tell apart).
+// tell apart), and the longest gap between two frames in that second (a
+// freeze of 3 s is a gap of 3000 ms). An uncaught exception is printed
+// with its stack, a frame repeated shown once with its count: "at map
+// x5000" is a recursion as deep as a list, a stack overflow in a
+// browser, where the stack is much smaller than a native program's.
 //
 // No dependencies: the WebSocket client below is the ~60 lines of RFC
 // 6455 that a client needs (masked text frames out, unmasked frames in).
@@ -40,13 +53,17 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const [, , url, secondsArg, outArg] = process.argv;
+const [, , url, secondsArg, outArg, keysArg] = process.argv;
 if (!url) {
   console.error("usage: chrome_cdp.js <url> [seconds] [out.png]");
   process.exit(2);
 }
 const seconds = parseInt(secondsArg || "20", 10);
 const out = outArg || "/tmp/chrome_cdp.png";
+const keys = (keysArg || "").split(" ").filter((k) => k).map((k) => {
+  const i = k.indexOf(":");
+  return { at: parseInt(k.slice(0, i), 10), key: k.slice(i + 1) };
+});
 const port = 9333 + (process.pid % 200);
 
 // ---------------------------------------------------------------------------
@@ -134,7 +151,8 @@ function connect(wsUrl, onMessage, onOpen) {
 // Chrome
 // ---------------------------------------------------------------------------
 
-const chrome = process.env.CHROME || "google-chrome";
+const mac = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+const chrome = process.env.CHROME || (fs.existsSync(mac) ? mac : "google-chrome");
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "chrome_cdp_"));
 const child = spawn(
   chrome,
@@ -180,6 +198,11 @@ async function waitForChrome() {
   const targets = await waitForChrome();
   const page = targets.find((t) => t.type === "page");
   let id = 0;
+  // claude: the requests sent once the handshake is answered: written
+  // before it, they reached Chrome ahead of the upgrade request, and the
+  // script waited forever (seen with Chrome 154 on macOS)
+  let opened;
+  const open = new Promise((r) => (opened = r));
   const waiting = new Map();
   const ws = connect(
     page.webSocketDebuggerUrl,
@@ -191,13 +214,22 @@ async function waitForChrome() {
         console.log("console:", msg.params.args.map((a) => a.value ?? a.description).join(" "));
       } else if (msg.method === "Runtime.exceptionThrown") {
         const d = msg.params.exceptionDetails;
-        console.log("EXCEPTION:", d.text, d.exception && d.exception.description);
+        console.log("EXCEPTION:", d.text, d.exception && d.exception.description.split("\n")[0]);
+        // the stack, a frame repeated shown once with its count
+        const frames = (d.stackTrace ? d.stackTrace.callFrames : []).map((f) => `${f.functionName || "(anonymous)"} ${f.url.split("/").pop()}:${f.lineNumber + 1}`);
+        const runs = [];
+        for (const f of frames) {
+          if (runs.length && runs[runs.length - 1].f === f) runs[runs.length - 1].n++;
+          else runs.push({ f, n: 1 });
+        }
+        for (const r of runs.slice(0, 12)) console.log(`    at ${r.f}${r.n > 1 ? ` x${r.n}` : ""}`);
       } else if (msg.method === "Log.entryAdded") {
         console.log(`log[${msg.params.entry.level}]:`, msg.params.entry.text);
       }
     },
-    () => {}
+    () => opened()
   );
+  await open;
   const send = (method, params) =>
     new Promise((resolve) => {
       const mine = ++id;
@@ -211,16 +243,34 @@ async function waitForChrome() {
   // count the frames the page draws, from before its own scripts run
   await send("Page.addScriptToEvaluateOnNewDocument", {
     source:
-      "window.__frames = 0; var r = window.requestAnimationFrame;" +
-      "window.requestAnimationFrame = function (f) { return r(function (t) { window.__frames++; return f(t); }); };",
+      "window.__frames = 0; window.__gap = 0; window.__last = 0; var r = window.requestAnimationFrame;" +
+      "window.requestAnimationFrame = function (f) { return r(function (t) { window.__frames++;" +
+      " if (window.__last) window.__gap = Math.max(window.__gap, t - window.__last); window.__last = t; return f(t); }); };",
   });
   await send("Page.navigate", { url });
 
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  let shots = 0;
   for (let s = 1; s <= seconds; s++) {
-    await new Promise((r) => setTimeout(r, 1000));
+    await sleep(1000);
+    for (const k of keys.filter((k) => k.at === s)) {
+      // a key's code and virtual key code, as a browser sends them
+      const named = { "/": ["Slash", 191], " ": ["Space", 32], Enter: ["Enter", 13], Escape: ["Escape", 27], Tab: ["Tab", 9], Backspace: ["Backspace", 8], ArrowLeft: ["ArrowLeft", 37], ArrowUp: ["ArrowUp", 38], ArrowRight: ["ArrowRight", 39], ArrowDown: ["ArrowDown", 40] };
+      const [code, vk] = named[k.key] || ["Key" + k.key.toUpperCase(), k.key.toUpperCase().charCodeAt(0)];
+      const text = k.key.length === 1 ? k.key : undefined;
+      console.log(`t=${s}s key ${k.key}`);
+      await send("Input.dispatchKeyEvent", { type: "keyDown", key: k.key, code, text, windowsVirtualKeyCode: vk });
+      await sleep(200);
+      await send("Input.dispatchKeyEvent", { type: "keyUp", key: k.key, code, windowsVirtualKeyCode: vk });
+      await sleep(300);
+      const shot = await send("Page.captureScreenshot", { format: "png" });
+      const file = out.replace(/\.png$/, `-${++shots}.png`);
+      fs.writeFileSync(file, Buffer.from(shot.data, "base64"));
+      console.log("  screenshot:", file);
+    }
     const res = await send("Runtime.evaluate", {
       expression:
-        "JSON.stringify({frames: window.__frames|0, canvas: (document.getElementsByTagName('canvas')[0]||{}).width|0," +
+        "JSON.stringify({frames: window.__frames|0, longest_gap_ms: Math.round((function () { var g = window.__gap; window.__gap = 0; return g; })()), canvas: (document.getElementsByTagName('canvas')[0]||{}).width|0," +
         " text: (document.body && document.body.innerText || '').slice(0, 120)})",
       returnByValue: true,
     });
