@@ -46,7 +46,7 @@
         { at: 'def:walk', weight: 2 },
         { at: 'def:save', weight: 1 },
       ],
-      related: ['../../../appkits/tests/Unit_embed.ml'],
+      related: ['../tests/Unit_embed.ml'],
     },
   },
   skeletons: [

@@ -3,6 +3,7 @@
 ; bytes and opened into what it holds; TinyWinamp's tags and EQ
 (test
  (name Test)
+ (package tinybox)
  (modules Test Unit_media Unit_winamp)
  (libraries alcotest testo audio audio_signal audio_mpeg graphics_movie graphics_yuv graphics_mpeg1 media_player)
 )

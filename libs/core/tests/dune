@@ -3,5 +3,6 @@
 
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo elm_core)
 )

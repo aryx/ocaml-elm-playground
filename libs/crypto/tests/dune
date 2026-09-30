@@ -2,5 +2,6 @@
 ; test vectors
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo crypto)
 )

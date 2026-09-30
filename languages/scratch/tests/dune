@@ -3,5 +3,6 @@
 ; threads -- their turns, their values, their messages
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo scratch)
 )

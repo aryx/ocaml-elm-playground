@@ -2,5 +2,6 @@
 ; each other frame by frame, run by 'make test' (dune runtest).
 (test
  (name Test)
+ (package tinybox)
  (libraries alcotest testo elm_core gui gui4)
 )

@@ -4,5 +4,6 @@
 ; bytes, a non-local return, 100 factorial, a debugger session
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo smalltalk)
 )

@@ -2,5 +2,6 @@
 ; .mli's worked example, the path grammar, arcs, the fill rules
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo graphics_svg graphics_rgba)
 )

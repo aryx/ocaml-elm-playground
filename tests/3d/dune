@@ -2,6 +2,7 @@
 ; test' (dune runtest); see Golden_frames.ml, and the scenes in Scenes_3d.ml
 (test
  (name Test)
+ (package tinybox)
  (libraries
    alcotest
    testo

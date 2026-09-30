@@ -1,9 +1,12 @@
 ; claude: unit tests for appkits/, run by 'make test' (dune runtest):
 ; the .mli's worked examples, and the two properties a document rests
 ; on -- that dirty is a comparison rather than a flag, and that going
-; back to the version you saved leaves nothing to save.
+; back to the version you saved leaves nothing to save. The package
+; tiny_appkits' tests: no Playground (the kits that draw are tested
+; beside them, apps/internet/tests, apps/office/tests).
 (test
  (name Test)
+ (package tiny_appkits)
  (libraries
    alcotest
    testo
@@ -12,7 +15,6 @@
    appkit_typeset
    appkit_richtext
    appkit_paint
-   appkit_embed
    appkit_slides
    appkit_draw
    appkit_sketch ; Sketch, Relax
@@ -34,10 +36,6 @@
    appkit_editor ; Gap_buffer, Tui_emacs, Tui_vi
    appkit_indexed ; Indexed, Cycling
    terminal ; Vt, the screen a BASIC session is read from
-   appkit_browser ; Browser_history, Browser_forms, ...
-   javascript ; Js_value, what Unit_browser_script reads
-   lang_html lang_css browser_layout ; Dom, Html_layout, for them
-   elm_playground_software ; an implem of virtual elm_playground, to link
    gui ; Text_edit, under Rich
  )
 )

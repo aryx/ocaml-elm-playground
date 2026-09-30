@@ -5,6 +5,7 @@
 ; our bell encoded by others' encoders, see make_mpeg.sh there)
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo audio_signal audio_mod audio_mpeg compression audio_testutil)
  (modules Test Unit_mod Unit_mod_player Unit_mpeg_audio)
  (deps (glob_files golden/*.wav) (glob_files mpeg/*))

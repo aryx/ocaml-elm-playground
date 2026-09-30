@@ -73,6 +73,7 @@
     (testo :with-test)
     (alcotest :with-test)
     (cairo2 :with-test) ; to compare our pixels with Cairo's (graphics/tests)
+    (js_of_ocaml-compiler :with-test) ; graphics/tests/js, where node is installed
   )
 )
 (package (name tiny_languages)
@@ -89,6 +90,9 @@
   (depends
     (ocaml (>= "4.14.0"))
     (tiny_libs (= :version)) ; highlight_code, terminal, random
+    (testo :with-test)
+    (alcotest :with-test)
+    (js_of_ocaml-compiler :with-test) ; smalltalk/tests/js, where node is installed
   )
 )
 (package (name tiny_appkits)
@@ -108,6 +112,8 @@
     (ocaml (>= "4.14.0"))
     (tiny_libs (= :version))
     (tiny_languages (= :version))
+    (testo :with-test)
+    (alcotest :with-test)
   )
 )
 (package (name elm_playground)
@@ -230,6 +236,9 @@
     (tiny_libs (= :version)) ; ai, audio, graphics_2d_geometry
     (elm_playground (= :version))
     (elm_playground_3d (= :version)) ; the 3D kits: racing/3d, brawler/3d
+    (elm_playground_software (and :with-test (= :version))) ; a platform, to link the kits' tests
+    (testo :with-test)
+    (alcotest :with-test)
   )
 )
 (package (name elm_playground_3d_software)
@@ -249,6 +258,8 @@
     tsdl
     (elm_playground_3d (= :version))
     (elm_playground_software (= :version)) ; Shape_render_software, for the HUD pass; the SDL loop
+    (testo :with-test)
+    (alcotest :with-test)
   )
 )
 (package (name elm_playground_3d_web)
@@ -315,5 +326,11 @@
     (elm_playground_native (= :version))
     (elm_playground_3d_opengl (= :version))
     (elm_playground_gamekits (= :version)) ; the games' kits
+    ; claude: its tests are the whole repository's (the golden frames,
+    ; tests/games, the catalogue, the apps'), since tinybox has every
+    ; program
+    (elm_playground_3d_software (and :with-test (= :version)))
+    (testo :with-test)
+    (alcotest :with-test)
   )
 )

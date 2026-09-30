@@ -2,5 +2,6 @@
 ; the worked examples of its .mli comments
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo compression)
 )

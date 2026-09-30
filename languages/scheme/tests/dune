@@ -2,5 +2,6 @@
 ; language (Unit_scheme) and the stepper (Unit_scheme_step)
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo sexpr scheme)
 )

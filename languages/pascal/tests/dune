@@ -5,5 +5,6 @@
 ; the machine's run-time errors and Pascal's rules for reading
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo pascal terminal)
 )

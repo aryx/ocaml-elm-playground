@@ -2,6 +2,7 @@
 ; test' (dune runtest); see Golden_frames.ml, and the scenes in Scenes_2d.ml
 (test
  (name Test)
+ (package tinybox)
  (libraries testo testutil golden_scenes)
  (deps
    (glob_files golden/*.png)

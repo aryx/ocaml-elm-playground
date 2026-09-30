@@ -24,6 +24,8 @@ depends: [
   "ocaml" {>= "4.14.0"}
   "tiny_libs" {= version}
   "tiny_languages" {= version}
+  "testo" {with-test}
+  "alcotest" {with-test}
   "odoc" {with-doc}
 ]
 build: [

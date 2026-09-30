@@ -2,4 +2,5 @@
 ; test' (dune runtest): the worked examples of the .mlis
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo lang_ocaml highlight_code))

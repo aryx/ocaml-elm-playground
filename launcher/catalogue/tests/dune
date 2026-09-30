@@ -1,5 +1,6 @@
 ; claude: Catalogue's worked examples, and CATALOG.md itself read
 (test
  (name Test)
+ (package tinybox)
  (libraries alcotest testo catalogue)
  (deps %{project_root}/CATALOG.md))

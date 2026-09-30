@@ -4,6 +4,7 @@
 ; that a renamed function breaks a test, not the map
 (test
  (name Test)
+ (package tinybox)
  (libraries alcotest testo tinybox_codemap tinybox_codedeps highlight_code
    elm_playground_native) ; implem of virtual elm_playground
  (deps

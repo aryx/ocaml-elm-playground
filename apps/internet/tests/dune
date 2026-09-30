@@ -1,7 +1,16 @@
 ; claude: unit tests for the internet applications' own libraries, run
-; by 'make test' (dune runtest): so far TinyEudora's built-in mailboxes,
-; read and written back byte for byte, and its nicknames
+; by 'make test' (dune runtest): TinyEudora's built-in mailboxes, read
+; and written back byte for byte, and its nicknames; and the browsers'
+; kit, browser/ (Unit_browser, Unit_browser_script). The package
+; tinybox's tests, as are all the apps'.
 (test
  (name Test)
- (libraries alcotest testo networking_mail internet_mail appkit_pim)
+ (package tinybox)
+ (libraries
+   alcotest testo networking_mail internet_mail appkit_pim
+   appkit_browser ; Browser_history, Browser_forms, ...
+   javascript ; Js_value, what Unit_browser_script reads
+   lang_html lang_css browser_layout ; Dom, Html_layout, for them
+   elm_playground_software ; an implem of virtual elm_playground, to link
+ )
 )

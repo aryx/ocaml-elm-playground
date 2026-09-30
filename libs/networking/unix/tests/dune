@@ -3,5 +3,6 @@
 ; without the Internet
 (test
  (name Test)
+ (package tiny_libs)
  (libraries unix caps alcotest testo networking networking_unix networking_tls)
 )

@@ -196,5 +196,6 @@
 ; programs of one name, Program.main's) fails the tests, not the user
 (rule
  (alias runtest)
+ (package tinybox)
  (action
   (with-stdout-to tinybox_list.out (run %{exe:Tinybox.exe} list))))

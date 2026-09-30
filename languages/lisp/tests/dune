@@ -4,5 +4,6 @@
 ; errors caught with the changes before them kept
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo lisp)
 )

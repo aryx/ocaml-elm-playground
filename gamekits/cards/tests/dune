@@ -1,4 +1,5 @@
 ; claude: the cards kit's worked examples (Cards.mli), run by 'make test'
 (test
  (name Test)
+ (package elm_playground_gamekits)
  (libraries alcotest testo elm_playground elm_playground_software kit_cards))

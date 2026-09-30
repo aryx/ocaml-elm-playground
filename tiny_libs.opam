@@ -26,6 +26,7 @@ depends: [
   "testo" {with-test}
   "alcotest" {with-test}
   "cairo2" {with-test}
+  "js_of_ocaml-compiler" {with-test}
   "odoc" {with-doc}
 ]
 build: [

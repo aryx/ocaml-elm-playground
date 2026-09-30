@@ -8,6 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () =
-  Testo.interpret_argv ~project_name:"internet" (fun _env ->
-      List.concat [ Unit_our_mail.tests; Unit_browser.tests; Unit_browser_script.tests ])
+let () = Testo.interpret_argv ~project_name:"office" (fun _env -> Unit_embed.tests)

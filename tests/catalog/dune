@@ -4,6 +4,7 @@
 ; own code, README). See Unit_catalog.ml.
 (test
  (name Test)
+ (package tinybox)
  (libraries
    alcotest
    testo

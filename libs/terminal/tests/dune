@@ -3,5 +3,6 @@
 ; the screen out, compared as text
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo terminal)
 )

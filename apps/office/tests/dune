@@ -1,0 +1,14 @@
+; claude: unit tests for the office's own libraries, run by 'make test'
+; (dune runtest): so far compound documents, embed/ (Unit_embed). The
+; package tinybox's tests, as are all the apps'.
+(test
+ (name Test)
+ (package tinybox)
+ (libraries
+   alcotest testo
+   appkit_embed
+   appkit_document ; Undo
+   elm_playground_software ; an implem of virtual elm_playground, to link
+   gui ; Widget.box, the rectangle a part is given
+ )
+)

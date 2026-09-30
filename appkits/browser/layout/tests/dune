@@ -2,5 +2,6 @@
 ; .mlis' worked examples, on strings, no network needed
 (test
  (name Test)
+ (package tiny_appkits)
  (libraries alcotest testo lang_html lang_css browser_layout)
 )

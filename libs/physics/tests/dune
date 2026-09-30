@@ -3,6 +3,7 @@
 ; forms, conservation, convergence orders)
 (test
  (name Test)
+ (package elm_playground_3d_software) ; claude: the package with every library it links
  (libraries
    alcotest
    testo

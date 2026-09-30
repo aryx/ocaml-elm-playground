@@ -2,5 +2,6 @@
 ; example, Park and Miller's own check value
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo random)
 )

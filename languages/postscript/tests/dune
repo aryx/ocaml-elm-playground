@@ -4,5 +4,6 @@
 ; LaserWriter's errors, and every program of the disk run to its end
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo postscript)
 )

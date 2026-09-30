@@ -2,6 +2,7 @@
 ; test'
 (test
  (name Test)
+ (package elm_playground_gamekits)
  (libraries
    alcotest
    testo

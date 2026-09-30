@@ -3,5 +3,6 @@
 ; structures, and the message path
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo hypertalk)
 )

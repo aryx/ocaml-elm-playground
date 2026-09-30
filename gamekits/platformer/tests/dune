@@ -2,6 +2,7 @@
 ; Ladder.mli, Slope.mli), run by 'make test'
 (test
  (name Test)
+ (package elm_playground_gamekits)
  (libraries
    alcotest
    testo

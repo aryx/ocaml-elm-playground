@@ -11,6 +11,7 @@
 
 (rule
  (alias runtest)
+ (package tiny_libs)
  (enabled_if %{bin-available:node})
  (deps
    Test_js.bc.js

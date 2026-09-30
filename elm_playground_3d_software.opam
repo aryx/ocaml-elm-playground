@@ -20,6 +20,8 @@ depends: [
   "tsdl"
   "elm_playground_3d" {= version}
   "elm_playground_software" {= version}
+  "testo" {with-test}
+  "alcotest" {with-test}
   "odoc" {with-doc}
 ]
 build: [

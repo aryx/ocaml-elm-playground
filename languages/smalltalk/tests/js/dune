@@ -12,6 +12,7 @@
 
 (rule
  (alias runtest)
+ (package tiny_languages)
  (enabled_if %{bin-available:node})
  (deps Test_js.bc.js)
  (action (run node %{dep:Test_js.bc.js})))

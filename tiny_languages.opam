@@ -21,6 +21,9 @@ depends: [
   "dune" {>= "3.0"}
   "ocaml" {>= "4.14.0"}
   "tiny_libs" {= version}
+  "testo" {with-test}
+  "alcotest" {with-test}
+  "js_of_ocaml-compiler" {with-test}
   "odoc" {with-doc}
 ]
 build: [

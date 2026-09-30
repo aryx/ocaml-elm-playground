@@ -3,6 +3,7 @@
 ; embedded stills are still the scene's (Unit_myst.ml)
 (test
  (name Test)
+ (package tinybox)
  (libraries
    alcotest
    testo

@@ -19,6 +19,9 @@ depends: [
   "elm_playground_native" {= version}
   "elm_playground_3d_opengl" {= version}
   "elm_playground_gamekits" {= version}
+  "elm_playground_3d_software" {with-test & = version}
+  "testo" {with-test}
+  "alcotest" {with-test}
   "odoc" {with-doc}
 ]
 build: [

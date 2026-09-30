@@ -3,5 +3,6 @@
 ; the .mlis
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo javascript)
 )

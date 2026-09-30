@@ -2,5 +2,6 @@
 ; .mli's worked examples, and the laws every curve keeps
 (test
  (name Test)
+ (package tiny_libs)
  (libraries alcotest testo juice)
 )

@@ -5,6 +5,7 @@
 ; that they paint the same picture from the same input.
 (test
  (name Test)
+ (package tiny_libs)
  (libraries
    alcotest
    testo

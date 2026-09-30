@@ -2,5 +2,6 @@
 ; reader's worked example and spans, each dialect's syntax, its errors
 (test
  (name Test)
+ (package tiny_languages)
  (libraries alcotest testo sexpr)
 )
