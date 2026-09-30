@@ -259,6 +259,10 @@ let update (computer : Playground.computer) ~(pressed : string -> bool) ~(arrow 
         | map, Select (what, set) ->
             let scope = Selection (what, set, { t with map }) in
             let next = map_of ~style:None ~guide:t.guide ~roots:[] ~colours:(match t.guide with Some g -> Code_guide.colours g | None -> []) ~own:t.own ~area:t.area ~sources:t.sources ~program:t.program ~path:t.path ~scope in
+            (* claude: a folder laid out alone: looked at already, not the
+             * root holding it, so that one click then goes to a file or
+             * subfolder inside (the author: "one click to further zoom in") *)
+            let next = match set with [ p ] -> Code_map.focus_on next p | _ -> next in
             (* claude: its rectangles moving from where they were *)
             Code_map.morph_from ~old:map next ~now;
             Some { t with scope; map = next; tour = None }

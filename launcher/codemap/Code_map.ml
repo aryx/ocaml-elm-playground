@@ -636,7 +636,10 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   let target = match jumped_to with Some c -> c | None -> target in
   (* claude: up from the map's top (a folder laid out anew, below): back
    * to the map it was taken from (Codemap) *)
-  let up_from_top = units && t.focus = 0 && t.peek = None && (pressed "Backspace" || pressed "-" || (mouse.mrdown && not t.before_right) || mouse.mwheel < 0.) in
+  (* claude: a lone top folder kept (top_kept, a folder laid out alone)
+   * is the top too: up from it leaves, not to the root around it *)
+  let at_top = t.focus = 0 || (t.top_kept && Code_units.children t.placed 0 = [ t.focus ]) in
+  let up_from_top = units && at_top && t.peek = None && (pressed "Backspace" || pressed "-" || (mouse.mrdown && not t.before_right) || mouse.mwheel < 0.) in
   let moved = if units && not up_from_top then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
   (* claude: going in, a folder holding a single unit goes on to it (the
    * author, at Linux 0.01's init/: three clicks to reach main.c) *)
