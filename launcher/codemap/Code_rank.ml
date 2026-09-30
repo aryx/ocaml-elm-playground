@@ -14,8 +14,9 @@ type use = { own : int; others : int; files : int }
 
 (* claude: a definition in the call graph: the other files its calls
  * reach; its depth, the longest chain of callers above it, and its
- * height, of callees below it (a cycle one step); its lines *)
-type place = { reach : int; depth : int; height : int; lines : int }
+ * height, of callees below it (a cycle one step); its lines; the other
+ * files using it *)
+type place = { reach : int; depth : int; height : int; lines : int; used : int }
 
 (* a definition by its file, its line and its (last) name; and the files
  * using it, how many times each *)
@@ -233,8 +234,13 @@ let compute ?roots (files : (string * Code_file.t Lazy.t) list) : t =
     let next = Array.fold_left (fun acc h -> if h > l && h < acc then h else acc) nl hs in
     next - l
   in
+  (* the other files using a head's definitions, the most of its names' *)
+  let used = Hashtbl.create 4096 in
+  Hashtbl.iter (fun (p, l, _) (u : use) -> Hashtbl.replace used (p, l) (max u.files (Option.value (Hashtbl.find_opt used (p, l)) ~default:0))) h;
   let reach = Hashtbl.create (max 16 n) in
-  Array.iteri (fun i k -> Hashtbl.replace reach k { reach = counts.(i); depth = depth.(i); height = height.(i); lines = lines_of k }) where;
+  Array.iteri
+    (fun i k -> Hashtbl.replace reach k { reach = counts.(i); depth = depth.(i); height = height.(i); lines = lines_of k; used = Option.value (Hashtbl.find_opt used k) ~default:0 })
+    where;
   { uses = h; users; links; reach }
 
 let reach (t : t) (path : string) (line : int) : int = match Hashtbl.find_opt t.reach (path, line) with Some p -> p.reach | None -> 0
@@ -275,7 +281,7 @@ let to_string (t : t) : string =
   Hashtbl.iter (fun (p, l, n) (u : use) -> Printf.bprintf b "U\t%s\t%d\t%s\t%d\t%d\t%d\n" p l n u.own u.others u.files) t.uses;
   Hashtbl.iter (fun (p, l, n) by -> Hashtbl.iter (fun q k -> Printf.bprintf b "B\t%s\t%d\t%s\t%s\t%d\n" p l n q k) by) t.users;
   Hashtbl.iter (fun (a, c) n -> Printf.bprintf b "L\t%s\t%s\t%d\n" a c n) t.links;
-  Hashtbl.iter (fun (p, l) (x : place) -> Printf.bprintf b "R\t%s\t%d\t%d\t%d\t%d\t%d\n" p l x.reach x.depth x.height x.lines) t.reach;
+  Hashtbl.iter (fun (p, l) (x : place) -> Printf.bprintf b "R\t%s\t%d\t%d\t%d\t%d\t%d\t%d\n" p l x.reach x.depth x.height x.lines x.used) t.reach;
   Buffer.contents b
 
 let of_string (s : string) : t =
@@ -289,7 +295,7 @@ let of_string (s : string) : t =
           let by = match Hashtbl.find_opt users key with Some by -> by | None -> let by = Hashtbl.create 8 in Hashtbl.replace users key by; by in
           Hashtbl.replace by q (int_of_string k)
       | [ "L"; a; c; n ] -> Hashtbl.replace links (a, c) (int_of_string n)
-      | [ "R"; p; l; n; d; hh; k ] -> Hashtbl.replace reach (p, int_of_string l) { reach = int_of_string n; depth = int_of_string d; height = int_of_string hh; lines = int_of_string k }
+      | [ "R"; p; l; n; d; hh; k; u ] -> Hashtbl.replace reach (p, int_of_string l) { reach = int_of_string n; depth = int_of_string d; height = int_of_string hh; lines = int_of_string k; used = int_of_string u }
       | _ -> ())
     (String.split_on_char '\n' s);
   { uses; users; links; reach }

@@ -135,7 +135,7 @@ codemap.html?focus=windows/rio/wind.c&street=3    a file at the street, in a mod
 codemap.html?data=<url>                           another bundle
 ```
 
-The map's version is at the bottom right ("code map 0.01"), raised at
+The map's version is at the bottom right ("code map 0.02"), raised at
 each publish of a change: a browser may keep the program it has for ten
 minutes, so a page not showing the latest one wants a reload that skips
 the cache (Cmd+Shift+R).
@@ -295,21 +295,29 @@ Matches glow slowly, to tell them from capitals. Hovering one shows its
 line and the code around it; a click goes there.
 
 **Layers** colour the whole map by a measure, at two levels (as
-`~/codemap`'s): from afar a file is split into bands, as high as its
-lines' shares of each colour (the macro level); nearer, when a line is
-big enough to see, each definition's lines are in its own colour (the
-micro level), so that zooming in shows which definition makes a file
-red. `l` cycles through the layers, then none; a key at the bottom right
-names the colours.
+`~/codemap`'s): from afar a file in one colour (the macro level); nearer,
+when a line is big enough to see, each definition's lines in its own
+(the micro level), so that zooming in shows which definition makes a
+file red. Under a layer the regions lose their colours, the layer's the
+only ones. `l` cycles through the layers, then none; a key at the bottom
+right names the colours.
 
-The first layer is **the call stack**: each definition by its place in
-the call graph (its calls resolved as its uses are), its depth (the
-longest chain of callers above it) over its depth and its height (the
-longest chain of callees below it). Green, the top: the entry points,
-what calls; red, the bottom: what everything ends up calling (a road's
-two ends' colours). The same graph gives a definition's *reach*, the
-files its calls reach, transitively: a capital reaching 30 or more is
-green.
+**Used vs using**, the first, orients: what is the bottom of the
+project, the middle, the top. The parts of the unit looked at (at the
+earth the top folders, in a region its subfolders and files) are each
+coloured by the uses coming into them from the other parts over those
+and the uses going out to them: red, the bottom, what is used (at
+principia's earth, lib_core and include); yellow, the middle (the
+libraries on them); green, the top, what uses (the programs). Flying in
+recomputes it for the new unit's parts. Nearer, each definition by the
+files using it over those and the files its calls reach.
+
+**The call depth**, the second: each definition by its place in the call
+graph (its calls resolved as its uses are), its depth (the longest chain
+of callers above it) over its depth and its height (the longest chain of
+callees below it), ranked among all; a file, its definitions' mean. The
+same graph gives a definition's *reach*, the files its calls reach,
+transitively: a capital reaching 30 or more is green.
 
 ## 9. Dependencies
 
@@ -535,7 +543,7 @@ keeps them honest.
 | green, red | user, used: a road's two ends, a street's margin bars, the matrix's hover |
 | red capital | a definition many files use (its module named by 30, or it used by 10); yellow, the others |
 | green capital | a definition whose calls reach 30 files or more: an entry point, a main loop |
-| the layer's green to red | the call stack: the top (callers) to the bottom (what is called) |
+| the layer's green to red | the top (what uses) to the bottom (what is used), the regions grey under it |
 | ivory | the skeleton's bones and joints |
 | yellow glow | the search's matches, the chosen one pulsing |
 | a mark rule's colour | its matches, glowing |
@@ -555,4 +563,6 @@ keeps them honest.
 - The call graph (the reach, the call stack) follows the calls the names
   resolve to: a call through a table of functions (tinybox's launcher
   starting a program by its registered main) is not seen, so a
-  dispatcher does not reach what it dispatches to.
+  dispatcher does not reach what it dispatches to. Nor a system call: a
+  kernel, the bottom of any running system, is not seen used by the
+  programs calling it.

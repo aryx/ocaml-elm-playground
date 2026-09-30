@@ -350,8 +350,14 @@ let mix ((r, g, b) : int * int * int) (a : float) ((r2, g2, b2) : int * int * in
   (f r r2, f g g2, f b b2)
 
 let dark = (12, 10, 28)
-let file_background (t : t) (path : string) = mix (archi t.colours path) 0.18 (20, 22, 30)
-let dir_colour (t : t) (path : string) (depth : int) = mix (archi t.colours path) (0.12 +. (0.04 *. float_of_int (min depth 4))) dark
+
+(* claude: a region's colour, painted; a neutral grey while a layer is on,
+ * its colours the only ones (the author: "maybe we can fully remove the
+ * color of the directory") *)
+let region_colour (t : t) (path : string) : int * int * int = if t.layer > 0 then (150, 150, 160) else archi t.colours path
+
+let file_background (t : t) (path : string) = mix (region_colour t path) 0.18 (20, 22, 30)
+let dir_colour (t : t) (path : string) (depth : int) = mix (region_colour t path) (0.12 +. (0.04 *. float_of_int (min depth 4))) dark
 let palette : (int * int * int) array = Array.map Highlight_code.rgb Highlight_code.all
 
 (*****************************************************************************)

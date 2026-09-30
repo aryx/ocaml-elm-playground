@@ -215,6 +215,9 @@ val name_pos : Treemap.rect -> geometry -> int -> int -> float * float
 val archi : (string * (int * int * int)) list -> string -> int * int * int
 val mix : int * int * int -> float -> int * int * int -> int * int * int
 val dark : int * int * int
+(* claude: a region's colour as painted: archi's, a neutral grey while a
+   layer is on (the layer's colours the only ones) *)
+val region_colour : t -> string -> int * int * int
 val file_background : t -> string -> int * int * int
 val dir_colour : t -> string -> int -> int * int * int
 

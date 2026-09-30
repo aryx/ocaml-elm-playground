@@ -26,8 +26,9 @@ type use = { own : int; others : int; files : int }
 (* claude: a definition in the call graph (its calls resolved as its uses
    are): the other files its calls reach, transitively; its depth, the
    longest chain of callers above it, and its height, of callees below
-   it (a cycle one step); its lines, its head's to the next head's *)
-type place = { reach : int; depth : int; height : int; lines : int }
+   it (a cycle one step); its lines, its head's to the next head's; the
+   other files using it *)
+type place = { reach : int; depth : int; height : int; lines : int; used : int }
 
 type t
 

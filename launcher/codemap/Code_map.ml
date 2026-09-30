@@ -541,6 +541,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
    * none (Map_v2.layer_shapes); the uses counted first (Code_rank) *)
   if pressed "l" && t.search = None then begin
     t.layer <- (t.layer + 1) mod (Map_v2.layer_count + 1);
+    (* the map painted again, its regions grey under a layer *)
+    t.painted <- None;
     if t.layer > 0 then ignore (rank_of t)
   end;
   (* claude: h, every key explained, again to close *)
@@ -1039,7 +1041,7 @@ let keys_help = [
   ("a", "at a file: its neighbours, what it uses, what uses it (a again: the next)");
   ("x", "the X-ray: the skeleton; x again, the next one; 1-5 the plates (hover the legend)");
   ("m", "the marks: patterns lit everywhere (the configs', and those kept)");
-  ("l", "the layers: the map coloured by a measure (the call stack: green calls, red is called)");
+  ("l", "the layers: the map coloured by a measure (used vs using, the call depth: green the top, red the bottom)");
   ("Searching", "");
   ("/", "search: a name, or file: dir: def: type: view: tour: bone: text: ref:");
   ("  in the search", "Tab complete, up/down choose, Enter go, shift+Enter all found together, ctrl+Enter a mark");
@@ -1078,7 +1080,7 @@ let help_shapes (computer : computer) : shape list =
  * see at once whether a page runs the latest, a browser keeping the
  * program it has for a while): 0.01, 0.02, ..., raised by hand at each
  * publish of a change to the map (make publish, make codemap-web) *)
-let version = "0.01"
+let version = "0.02"
 
 (* claude: a line of keys and what they do, centred at [y], the keys in
  * yellow, the rest dim; the widths Code_map_base.text_width's *)
