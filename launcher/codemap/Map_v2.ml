@@ -2320,7 +2320,7 @@ let marks_shapes (t : t) (c : camera) : shape list =
  * the files using it over those and the files its calls reach, ranked. The call depth: a definition by its depth over its depth and
  * height in the call graph, a file its definitions' mean. Green the top,
  * what uses; red the bottom, what is used: a road's two ends' colours *)
-let layer_names = [ "used vs using"; "the call depth"; "roles" ]
+let layer_names = [ "used vs using"; "the call depth"; "roles"; "tested"; "described" ]
 let layer_count = List.length layer_names
 
 
@@ -2419,9 +2419,12 @@ let roles_of (t : t) (r : Code_rank.t) : (string, Code_roles.category) Hashtbl.t
       roles_cache := Some (r, t.entries, tbl);
       tbl
 
-let roles_shapes (t : t) (c : camera) (r : Code_rank.t) : shape list * shape list =
+(* claude: a layer of files each in a colour of a short list (roles,
+ * tested, described): [kind path] its row, a name and a colour, or none
+ * (drawn as the map is); the rows in the key in [rows]' order, how many
+ * files each under the unit looked at *)
+let file_layer (t : t) (c : camera) ~(title : string) ~(rows : (string * (int * int * int)) list) (kind : string -> (string * (int * int * int)) option) : shape list * shape list =
   let a = c.a in
-  let tbl = roles_of t r in
   let tints =
     if at_ground t c <> None then []
     else
@@ -2429,35 +2432,78 @@ let roles_shapes (t : t) (c : camera) (r : Code_rank.t) : shape list * shape lis
       |> List.filter_map (fun (p : entry Treemap.placed) ->
              match (p.node, clip c p.rect) with
              | File _, Some (x0, y0, x1, y1) when not (outside t p) -> (
-                 match Hashtbl.find_opt tbl p.path with
-                 | Some cat when cat <> Code_roles.Plain ->
-                     let r, g, b = Code_roles.colour cat in
+                 match kind p.path with
+                 | Some (_, (r, g, b)) ->
                      let w = float_of_int (x1 - x0) and h = float_of_int (y1 - y0) in
                      Some (rectangle (rgb r g b) w h |> move (sx a (float_of_int x0 +. (w /. 2.))) (sy a (float_of_int y0 +. (h /. 2.))) |> fade 0.75)
-                 | _ -> None)
+                 | None -> None)
              | _ -> None)
   in
-  (* the key: the roles under the unit, how many files each *)
   let top = t.placed.(t.focus).path in
   let under p = top = "" || p = top || Code_search.starts p (top ^ "/") in
-  let counts = List.map (fun cat -> (cat, List.length (List.filter (fun (e : entry) -> under e.path && Hashtbl.find_opt tbl e.path = Some cat) t.entries))) Code_roles.all in
-  let rows = List.filter (fun (cat, n) -> n > 0 && cat <> Code_roles.Plain) counts in
-  let head = "layer: roles   (l: next, shift+l: back)" in
+  let kinds = List.filter_map (fun (e : entry) -> if under e.path then Option.map fst (kind e.path) else None) t.entries in
+  let rows = List.filter_map (fun (name, col) -> match List.length (List.filter (( = ) name) kinds) with 0 -> None | n -> Some (name, col, n)) rows in
+  let head = Printf.sprintf "layer: %s   (l: next, shift+l: back)" title in
   let row = 18. in
-  let w = 20. +. List.fold_left (fun m (cat, n) -> Float.max m (30. +. text_width 13. (Printf.sprintf "%s  %d" (Code_roles.name cat) n))) (text_width 14. head) rows in
+  let w = 20. +. List.fold_left (fun m (name, _, n) -> Float.max m (30. +. text_width 13. (Printf.sprintf "%s  %d" name n))) (text_width 14. head) rows in
   let h = 30. +. (row *. float_of_int (List.length rows)) in
   let x0 = float_of_int a.pw -. w -. 10. and y0 = float_of_int a.ph -. h -. 10. in
   ( tints,
-  [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
-  @ [ label a yellow 14. (x0 +. 10. +. (text_width 14. head /. 2.)) (y0 +. 14.) head ]
-  @ List.concat
-      (List.mapi
-         (fun i (cat, n) ->
-           let r, g, b = Code_roles.colour cat in
-           let y = y0 +. 32. +. (float_of_int i *. row) in
-           let str = Printf.sprintf "%s  %d" (Code_roles.name cat) n in
-           [ circle (rgb r g b) 5. |> move (sx a (x0 +. 16.)) (sy a y); label a ink 13. (x0 +. 28. +. (text_width 13. str /. 2.)) y str ])
-         rows) )
+    [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
+    @ [ label a yellow 14. (x0 +. 10. +. (text_width 14. head /. 2.)) (y0 +. 14.) head ]
+    @ List.concat
+        (List.mapi
+           (fun i (name, (r, g, b), n) ->
+             let y = y0 +. 32. +. (float_of_int i *. row) in
+             let str = Printf.sprintf "%s  %d" name n in
+             [ circle (rgb r g b) 5. |> move (sx a (x0 +. 16.)) (sy a y); label a ink 13. (x0 +. 28. +. (text_width 13. str /. 2.)) y str ])
+           rows) )
+
+let roles_shapes (t : t) (c : camera) (r : Code_rank.t) : shape list * shape list =
+  let tbl = roles_of t r in
+  let rows = List.filter_map (fun cat -> if cat = Code_roles.Plain then None else Some (Code_roles.name cat, Code_roles.colour cat)) Code_roles.all in
+  file_layer t c ~title:"roles" ~rows (fun p -> match Hashtbl.find_opt tbl p with Some cat when cat <> Code_roles.Plain -> Some (Code_roles.name cat, Code_roles.colour cat) | _ -> None)
+
+(* claude: tested (the author, a layer proposed): the tests' files (their
+ * role, Code_roles), and each other file by whether the tests reach it,
+ * through the files they use and those use, transitively (the links,
+ * Code_rank): green reached, red not -- where tests are missing; an
+ * interface, checked through its implementation, left out *)
+let tested_cache : (Code_rank.t * entry list * (string, int) Hashtbl.t) option ref = ref None
+
+let tested_shapes (t : t) (c : camera) (r : Code_rank.t) : shape list * shape list =
+  let roles = roles_of t r in
+  let reached =
+    match !tested_cache with
+    | Some (r', es, tbl) when r' == r && es == t.entries -> tbl
+    | _ ->
+        let succ = Hashtbl.create 1024 in
+        List.iter (fun (a, b, _) -> Hashtbl.replace succ a (b :: Option.value (Hashtbl.find_opt succ a) ~default:[])) (Code_rank.links r);
+        let tbl = Hashtbl.create 1024 in
+        let rec go p = if not (Hashtbl.mem tbl p) then begin Hashtbl.replace tbl p 0; List.iter go (Option.value (Hashtbl.find_opt succ p) ~default:[]) end in
+        Hashtbl.iter (fun p cat -> if cat = Code_roles.Test then List.iter go (Option.value (Hashtbl.find_opt succ p) ~default:[])) roles;
+        tested_cache := Some (r, t.entries, tbl);
+        tbl
+  in
+  (* the tests blue here: the roles' green is the reached's *)
+  let test = ("tests", (90, 150, 245)) and yes = ("reached by the tests", (90, 220, 120)) and no = ("not reached", (240, 80, 70)) in
+  file_layer t c ~title:"tested" ~rows:[ test; yes; no ] (fun p ->
+      match Hashtbl.find_opt roles p with
+      | Some Code_roles.Test -> Some test
+      | Some Code_roles.Interface -> None
+      | _ -> Some (if Hashtbl.mem reached p then yes else no))
+
+(* claude: described (the author, a layer proposed): each file by what its
+ * config says of it (Code_guide.file_note): a summary and capitals or
+ * important lines, green; a summary alone, yellow; nothing, red -- where
+ * the configs are still to write (codemapconfig_guidelines.md) *)
+let described_shapes (t : t) (c : camera) : shape list * shape list =
+  let full = ("summary and capitals", (90, 220, 120)) and some = ("a summary", (245, 225, 90)) and none = ("not described", (240, 80, 70)) in
+  file_layer t c ~title:"described" ~rows:[ full; some; none ] (fun p ->
+      match Code_guide.file_note t.guide p with
+      | Some n when n.summary <> None && (n.capitals <> [] || n.important <> []) -> Some full
+      | Some n when n.summary <> None -> Some some
+      | _ -> Some none)
 
 (* claude: a layer's tints, under the names, and its key, over them *)
 let layer_shapes (t : t) (c : camera) : shape list * shape list =
@@ -2465,6 +2511,8 @@ let layer_shapes (t : t) (c : camera) : shape list * shape list =
   | 0, _ -> ([], [])
   | _, None -> ([], counting c)
   | 3, Some r -> roles_shapes t c r
+  | 4, Some r -> tested_shapes t c r
+  | 5, _ -> described_shapes t c
   | _, Some r ->
       let a = c.a in
       let data = layer_of t t.layer t.placed.(t.focus).path r in

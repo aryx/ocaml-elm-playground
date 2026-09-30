@@ -135,7 +135,7 @@ codemap.html?focus=windows/rio/wind.c&street=3    a file at the street, in a mod
 codemap.html?data=<url>                           another bundle
 ```
 
-The map's version is at the bottom right ("code map 0.06"), raised at
+The map's version is at the bottom right ("code map 0.07"), raised at
 each publish of a change: a browser may keep the program it has for ten
 minutes, so a page not showing the latest one wants a reload that skips
 the cache (Cmd+Shift+R).
@@ -344,6 +344,14 @@ substrings; and the map's own knowledge counts: a file nothing uses but
 that uses others is an entry point, a `.ml` beside its `.mll` or `.mly`
 generated, assembly per CPU. A file gets the first role, in that order,
 it has evidence for.
+
+**Tested**, the fourth: the tests' files blue, and each other file green
+if the tests reach it (through the files they use, and those use,
+transitively), red if not -- where tests are missing (interfaces left
+out, checked through their implementations). **Described**, the fifth:
+each file by what its config says of it -- a summary and capitals or
+important lines, green; a summary alone, yellow; nothing, red -- where
+the configs are still to write.
 
 ## 9. Dependencies
 
