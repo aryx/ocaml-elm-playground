@@ -11,6 +11,7 @@
    ojs ; the page's location
    web_fetch ; the sources' request
    tinybox_codedeps ; Code_bundle, the sources' format
+   tinybox_codemap ; Codemap.use_rank, Code_rank: the uses counted before
    elm_playground_web ; implem of virtual elm_playground
  )
  (modes js)

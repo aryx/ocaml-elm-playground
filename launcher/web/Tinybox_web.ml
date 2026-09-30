@@ -56,7 +56,17 @@ let sources : Tinybox_menu.sources option ref = ref None
 let fetch_sources () : unit =
   sources := Some Tinybox_menu.Loading;
   Fetch_bytes.get (sources_url ())
-    ~ok:(fun s -> sources := Some (match Code_bundle.entries s with files -> Tinybox_menu.Sources files | exception Failure _ -> Tinybox_menu.No_sources "not read"))
+    ~ok:(fun s ->
+      sources :=
+        Some
+          (match Code_bundle.entries s with
+          | files ->
+              (* claude: the uses counted when the file was made
+               * (make_codemap_data -tinybox): counting them here lexes
+               * every file, and the first a froze the page *)
+              Option.iter (fun r -> Codemap.use_rank (Code_rank.of_string r)) (List.assoc_opt "#rank" files);
+              Tinybox_menu.Sources (List.filter (fun (p, _) -> p <> "#rank") files)
+          | exception Failure _ -> Tinybox_menu.No_sources "not read"))
     ~failed:(fun why -> sources := Some (Tinybox_menu.No_sources why))
 
 let get_sources () : Tinybox_menu.sources =

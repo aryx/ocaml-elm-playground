@@ -17,9 +17,32 @@
  * the files tinybox codemap <dir> would show and its configs, read the
  * same way (Code_walk), written in Code_bundle's format, with the
  * definitions' uses counted (Code_rank). The name is the directory's
- * own by default. *)
+ * own by default.
+ *
+ *   make_codemap_data -tinybox > tinybox_sources.txt   (from the root)
+ *
+ * claude: tinybox's sources for the web's menu (Tinybox_web), what
+ * make_tinybox_data sources-file writes, with their "#rank" first: the
+ * first a on a program's map lexed the whole repository in the browser
+ * and froze the page. Here and not in make_tinybox_data, whose other
+ * uses (the native menu's data, thumbnails) would be rebuilt by any
+ * change of the code map. *)
+
+(* claude: counted as the menu's maps count them (Code_map_base, the
+ * map's files and those beyond it: every source, no roots) *)
+let tinybox () =
+  let sources = Code_deps.repository_sources ~root:"." in
+  let files = List.map (fun (p, src) -> (p, lazy (Code_file.make p src))) sources in
+  let rank = Code_rank.to_string (Code_rank.compute ~roots:[] files) in
+  set_binary_mode_out stdout true;
+  List.iter (fun (path, text) -> Printf.printf "%s\n%d\n%s" path (String.length text) text)
+    ((("#rank", rank) :: sources) @ Code_deps.repository_configs ~root:".")
 
 let () =
+  if Array.to_list Sys.argv = [ Sys.argv.(0); "-tinybox" ] then begin
+    tinybox ();
+    exit 0
+  end;
   let dir, name =
     match Array.to_list Sys.argv with
     | [ _; dir ] ->

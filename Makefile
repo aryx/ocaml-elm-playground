@@ -206,7 +206,8 @@ website:
 	./_build/default/launcher/website/make_website.exe $(ASSETS_URL)
 	mkdir -p $(ASSETS)/js/launcher
 	install -m 644 _build/default/launcher/web/Tinybox_web.bc.js $(ASSETS)/js/launcher/
-	./_build/default/launcher/codegen/make_tinybox_data.exe sources-file > $(ASSETS)/js/launcher/tinybox_sources.txt
+	dune build launcher/codegen/make_codemap_data.exe
+	./_build/default/launcher/codegen/make_codemap_data.exe -tinybox > $(ASSETS)/js/launcher/tinybox_sources.txt
 	printf '<html>\n  <head>\n    <script src="%s"></script>\n  </head>\n  <body>\n  </body>\n</html>\n' \
 	  $(ASSETS_URL)/js/launcher/Tinybox_web.bc.js > docs/tinybox.html
 	make codemap-web DIR=. PAGE=docs NAME=ocaml-elm-playground
