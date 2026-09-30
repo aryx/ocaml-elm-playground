@@ -7,11 +7,11 @@
 ; Scheme_step (the Beginning Student stepper). Read by sexpr/'s reader,
 ; shared with lisp/. TinyDrScheme (apps/devtools/) is its host.
 ;
-; Pure OCaml, no Playground. A private library, installed as part of
-; elm_playground.
+; Pure OCaml, no Playground. In the package tiny_languages, as
+; tiny_languages.scheme.
 (library
  (name scheme)
- (package elm_playground)
+ (public_name tiny_languages.scheme)
  (wrapped false)
  (libraries sexpr)
 )

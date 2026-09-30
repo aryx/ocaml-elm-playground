@@ -5,11 +5,11 @@
 ; Ast_ml and Parse_ml (the names and what they are, recursive descent,
 ; Parse_ml.mli says why not ocamlyacc).
 ;
-; Pure OCaml, no Playground (languages/README.md). A private
-; library, installed as part of elm_playground.
+; Pure OCaml, no Playground (languages/README.md). In the package
+; tiny_languages, as tiny_languages.lang_ocaml.
 (library
  (name lang_ocaml)
- (package elm_playground)
+ (public_name tiny_languages.lang_ocaml)
  (wrapped false)
  (modules_without_implementation Ast_ml)
  (libraries highlight_code))

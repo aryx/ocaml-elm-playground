@@ -58,7 +58,7 @@
       bones: [
         { at: "Figure.ml", role: "one figure: a line, rectangle, oval, text or group; hit, moved, resized" },
         { at: "Drawing.ml", role: "the figures by id, back to front: what the tools change" },
-        { at: "../draw_view/", role: "the figures drawn as shapes" },
+        { at: "../../apps/graphics/draw_view/", role: "the figures drawn as shapes" },
         { at: "../../apps/graphics/TinyMacDraw.ml", role: "MacDraw: the tools, the selection, the handles" },
         { at: "../../apps/office/Part_drawing.ml", role: "the office's drawing part, over the same model" },
       ],
@@ -66,7 +66,7 @@
         { from: "Drawing.ml", to: "Figure.ml", say: "holds, hits, moves" },
         { from: "../../apps/graphics/TinyMacDraw.ml", to: "Drawing.ml", say: "every edit" },
         { from: "../../apps/office/Part_drawing.ml", to: "Drawing.ml", say: "every edit" },
-        { from: "../draw_view/", to: "Figure.ml", say: "draws" },
+        { from: "../../apps/graphics/draw_view/", to: "Figure.ml", say: "draws" },
       ],
     },
     {

@@ -4,7 +4,7 @@
 ; (networking/unix/Tls_client has them); the primitives are crypto's.
 (library
  (name networking_tls)
- (package elm_playground)
+ (public_name tiny_libs.networking_tls)
  (wrapped false)
  (libraries
    crypto ; the hashes, ciphers and signatures

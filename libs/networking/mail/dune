@@ -6,7 +6,7 @@
 ; them, Smtp and Pop3. Pure OCaml, no sockets.
 (library
  (name networking_mail)
- (package elm_playground)
+ (public_name tiny_libs.networking_mail)
  (wrapped false)
  (libraries
    elm_core ; Base64 (MIME's), Civil and Clock (the dates)

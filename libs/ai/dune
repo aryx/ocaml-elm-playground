@@ -5,10 +5,10 @@
 ;
 ; A library per subdirectory (ai/README.md says which and why); this
 ; one, 'ai', has no module of its own: it is all of them, for the games
-; and examples that say (libraries ai).
+; and examples that say (libraries ai), and tiny_libs.ai outside.
 (library
  (name ai)
- (package elm_playground)
+ (public_name tiny_libs.ai)
  (wrapped false) ; claude: wrapped, dune would make it a module Ai, hiding the Playground's Ai
  (modules)
  (libraries ai_movement ai_decision ai_search ai_bots ai_learning)

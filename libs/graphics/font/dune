@@ -1,10 +1,11 @@
 ; claude: fonts: Hershey's stroke font (Hershey), turning a string into
 ; pen strokes, and the VGA's bitmap font (Vga_font), a character's 8 by 16
 ; pixels. Depends on nothing. See docs/claude_notes/notes_font.md.
-; A private library, see graphics/core/dune.
+; In the package tiny_libs, as tiny_libs.graphics_font, see
+; graphics/core/dune.
 (library
  (name graphics_font)
- (package elm_playground_software)
+ (public_name tiny_libs.graphics_font)
  (wrapped false)
 )
 

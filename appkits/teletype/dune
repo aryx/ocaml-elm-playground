@@ -6,11 +6,11 @@
 ;
 ; Over libs/terminal's Talk, no Playground: the Teletype way is what
 ; puts them on a screen (its programs have no model, no update, no
-; view). A private library, installed as part of elm_playground, pure
-; OCaml, so every backend can run them.
+; view). In the package tiny_appkits, as tiny_appkits.appkit_teletype,
+; pure OCaml, so every backend can run them.
 (library
  (name appkit_teletype)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_teletype)
  (wrapped false)
  (libraries terminal) ; Talk
 )

@@ -3,11 +3,11 @@
 ; mouth lies, where a dragged stack snaps (Block_layout), and the
 ; program changed by a drag, a drop or a slot typed in (Block_edit).
 ; Over languages/scratch's blocks, no shapes: TinyScratch draws
-; the pieces. A private library, installed as part of elm_playground:
-; pure OCaml.
+; the pieces. In the package tiny_appkits, as
+; tiny_appkits.appkit_blocks: pure OCaml.
 (library
  (name appkit_blocks)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_blocks)
  (wrapped false)
  (libraries scratch)
 )

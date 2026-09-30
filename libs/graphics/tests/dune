@@ -3,7 +3,7 @@
 ; .mli comments, so those examples can't silently become wrong.
 (test
  (name Test)
- (package elm_playground_software)
+ (package tiny_libs)
  (libraries
    alcotest
    testo

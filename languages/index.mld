@@ -1,0 +1,120 @@
+{1 tiny_languages }
+
+Languages as text, parsed and run, written from scratch for teaching:
+one library per language, each interface with its grammar, a worked
+example and its references. None of them knows the
+{{:../elm_playground/index.html} Elm Playground}: what a program can
+touch outside itself is a host, a record of functions its caller gives
+(a sheet's cells, a page's elements). They stand on
+{{:../tiny_libs/index.html} tiny_libs}.
+
+Each is a library of its own, named [tiny_languages.<name>] outside this
+repository, for example in a dune file:
+
+{v
+(executable
+ (name main)
+ (libraries tiny_languages.scheme tiny_languages.lang_html))
+v}
+
+The libraries are unwrapped: their modules are used by their own names,
+[Scheme_eval], [Html_tree].
+
+{2:formula The spreadsheet's formulas}
+
+[tiny_languages.formula]: arithmetic over numbers and cells, SUM and its
+kin over ranges; recursive descent, the parser to know first.
+
+{!modules: Formula}
+
+{2:basic BASIC}
+
+[tiny_languages.basic]: Tiny BASIC, Integer BASIC and Applesoft; a
+program run as a {{:../tiny_libs/Talk/index.html}Talk} conversation.
+
+{!modules: Basic_parse Basic_run Basic_session Basic_disk}
+
+{2:lisps The Lisps}
+
+s-expressions, the syntax they share ([tiny_languages.sexpr]), a small
+Emacs Lisp ([tiny_languages.lisp]), a small Scheme and HtDP's Beginning
+Student, run by a CESK machine, with its stepper
+([tiny_languages.scheme]):
+
+{!modules:
+    Sexpr Sexpr_read
+    Lisp Lisp_read Lisp_eval Lisp_prelude
+    Scheme Scheme_image Scheme_syntax Scheme_prims Scheme_prelude
+    Scheme_eval Scheme_step
+}
+
+{2:pascal Pascal}
+
+[tiny_languages.pascal]: compiled in one pass to P-code and run on a
+P-machine, with its debugger.
+
+{!modules: Pascal_lexer Pascal_compile Pcode Pmachine Pdebug Pascal_disk}
+
+{2:hypertalk HyperTalk}
+
+[tiny_languages.hypertalk]: HyperCard's language, the cards the host's.
+
+{!modules: Hypertalk}
+
+{2:smalltalk Smalltalk-80}
+
+[tiny_languages.smalltalk]: from the Blue Book, compiled to its bytecodes
+and run by its interpreter over an object table, its kernel classes in
+Smalltalk bootstrapped from their text.
+
+{!modules:
+    St_lexer St_ast St_parse St_chunk St_memory St_class St_bytecode
+    St_compile St_interp St_primitives St_kernel St_boot St_debug
+    St_image St_bitblt
+}
+
+{2:scratch Scratch and Snap!}
+
+[tiny_languages.scratch]: the blocks as one table of specs, their text,
+a project run as green threads.
+
+{!modules: Scratch_blocks Scratch_text Scratch_run}
+
+{2:postscript PostScript}
+
+[tiny_languages.postscript]: a page described as a program; the letters
+are the host's.
+
+{!modules: Ps_lexer Ps_graphics Ps_machine Ps_disk}
+
+{2:web The web: JavaScript, HTML, CSS}
+
+A small JavaScript ([tiny_languages.javascript]), HTML read
+([tiny_languages.lang_html]), what a page's elements look like, the
+cascade and computed styles ([tiny_languages.lang_css]):
+
+{!modules:
+    Js_lexer Js_ast Js_parse Js_value Js_eval Js_builtins Js_regexp
+    Charset Entities Html_lexer Dom Dtd Html_tree Line_mode Forms
+    Looks Css_syntax Selectors Css Css_values Cascade Computed Ua_sheet
+}
+
+{2:config JSON and jsonnet}
+
+[tiny_languages.lang_json] (over JavaScript's lexer) and
+[tiny_languages.lang_jsonnet], for configuration files:
+
+{!modules: Json Jsonnet Jsonnet_lexer Jsonnet_ast Jsonnet_parse}
+
+{2:code Code read, not run}
+
+OCaml ([tiny_languages.lang_ocaml]), C ([tiny_languages.lang_c]) and
+assembly ([tiny_languages.lang_asm]), read for a code visualizer, their
+tokens coloured by
+{{:../tiny_libs/Highlight_code/index.html}Highlight_code}'s categories:
+
+{!modules:
+    Token_ml Lexer_ml Ast_ml Parse_ml Highlight_ml
+    Token_c Lexer_c Ast_c Parse_c Highlight_c
+    Highlight_asm
+}

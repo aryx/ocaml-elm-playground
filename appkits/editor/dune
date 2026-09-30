@@ -11,11 +11,11 @@
 ; TinyTurboPascal) and in a real terminal by Tty_unix
 ; (apps/devtools/tty/).
 ;
-; Pure OCaml, no playground: a private library, installed as part of
-; elm_playground.
+; Pure OCaml, no playground: in the package tiny_appkits, as
+; tiny_appkits.appkit_editor.
 (library
  (name appkit_editor)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_editor)
  (wrapped false)
  (libraries terminal lisp pascal random)
 )

@@ -56,7 +56,7 @@
  * sheet, and the chart here is a panel of bars rather than the
  * linked chart *document* Excel 1.0 had -- which, in this
  * repository's terms, is a component in a document, and so is
- * appkits/embed's business (phase 10).
+ * appkit_embed's business (phase 10).
  *
  * Exercises: formatting -- alignment and decimal places, the Format
  * menu this has none of; column widths you can drag, which is the

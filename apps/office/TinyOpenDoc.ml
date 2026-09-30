@@ -30,7 +30,7 @@
  * where a page is made of embedded things none of which the page's
  * author wrote, and a notebook is cells of different kinds.
  *
- * What it uses: appkits/embed (Component, what a part is; Compound, a
+ * What it uses: appkit_embed (Component, what a part is; Compound, a
  * document of parts), and four kinds of part, each a small editor
  * over the engine of the application it is taken from -- Part_text
  * (TinyWord's), Part_sheet (TinyExcel's), Part_picture

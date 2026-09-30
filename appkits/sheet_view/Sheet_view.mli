@@ -6,7 +6,7 @@
  * applications (TinyVisiCalc's interface of 1979 and TinyExcel's of
  * 1985) share an engine, and the one with a mouse shares this too --
  * and a sheet has to be drawable *inside a document* one day, which
- * is the same question again (appkits/embed's component protocol: a
+ * is the same question again (appkit_embed's component protocol: a
  * size, a drawing into a rectangle, events while it is active).
  *
  *     head_w

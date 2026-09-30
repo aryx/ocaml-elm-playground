@@ -4,10 +4,10 @@
 ; by Tty_unix (examples/tty/). Tui_snake.
 ;
 ; Pure OCaml, no playground (so a real terminal's program links none):
-; a private library, installed as part of elm_playground.
+; in the package tiny_appkits, as tiny_appkits.appkit_tui.
 (library
  (name appkit_tui)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_tui)
  (wrapped false)
  (libraries terminal random)
 )

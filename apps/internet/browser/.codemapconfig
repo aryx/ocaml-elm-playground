@@ -1,4 +1,4 @@
-// appkits/browser/: what the code map says of it (plan_codemap_v2.md,
+// apps/internet/browser/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
@@ -206,33 +206,30 @@
       summary: "The devtools' three panels made from the page, the cascade's explanation and the tab's log.",
     },
   },
-  dirs: {
-    layout: { summary: "The layout: the tree as boxes and lines, two engines (Mosaic's looks, CSS's box model), and hit testing." },
-  },
   skeletons: [
     {
       name: 'A page, from bytes to shapes',
       bones: [
         { at: 'Browser_tab.ml:def:got', role: 'the bytes arrive from the network' },
         { at: 'Browser_page.ml:def:read', role: 'the pipeline, every stage kept' },
-        { at: '../../languages/html/Html_lexer.ml:def:tokenize', role: 'text into tokens' },
-        { at: '../../languages/html/Html_tree.ml:def:parse', role: 'tokens into the tree' },
+        { at: '../../../languages/html/Html_lexer.ml:def:tokenize', role: 'text into tokens' },
+        { at: '../../../languages/html/Html_tree.ml:def:parse', role: 'tokens into the tree' },
         { at: 'Browser_script.ml:def:run_scripts', role: 'scripts change the tree' },
         { at: 'Browser_page.ml:def:lay_out', role: 'styles and layout, one of two engines' },
-        { at: '../../languages/css/Computed.ml:def:styles', role: "each element's computed style" },
-        { at: 'layout/Box_layout.ml:def:layout', role: 'the box model: boxes placed' },
+        { at: '../../../languages/css/Computed.ml:def:styles', role: "each element's computed style" },
+        { at: '../../../appkits/browser/layout/Box_layout.ml:def:layout', role: 'the box model: boxes placed' },
         { at: 'Browser_boxes.ml:def:draw', role: 'boxes painted as shapes' },
       ],
       joints: [
         { from: 'Browser_tab.ml:def:got', to: 'Browser_page.ml:def:read', say: 'the bytes' },
-        { from: 'Browser_page.ml:def:read', to: '../../languages/html/Html_lexer.ml:def:tokenize', say: 'the text' },
-        { from: '../../languages/html/Html_lexer.ml:def:tokenize', to: '../../languages/html/Html_tree.ml:def:parse', say: 'the tokens' },
-        { from: '../../languages/html/Html_tree.ml:def:parse', to: 'Browser_page.ml:def:lay_out', say: 'the tree' },
+        { from: 'Browser_page.ml:def:read', to: '../../../languages/html/Html_lexer.ml:def:tokenize', say: 'the text' },
+        { from: '../../../languages/html/Html_lexer.ml:def:tokenize', to: '../../../languages/html/Html_tree.ml:def:parse', say: 'the tokens' },
+        { from: '../../../languages/html/Html_tree.ml:def:parse', to: 'Browser_page.ml:def:lay_out', say: 'the tree' },
         { from: 'Browser_tab.ml:def:got', to: 'Browser_script.ml:def:run_scripts', say: 'the page read' },
         { from: 'Browser_script.ml:def:run_scripts', to: 'Browser_page.ml:def:lay_out', say: 'the tree changed' },
-        { from: 'Browser_page.ml:def:lay_out', to: '../../languages/css/Computed.ml:def:styles', say: 'the sheets' },
-        { from: '../../languages/css/Computed.ml:def:styles', to: 'layout/Box_layout.ml:def:layout', say: 'the styles' },
-        { from: 'layout/Box_layout.ml:def:layout', to: 'Browser_boxes.ml:def:draw', say: 'the boxes' },
+        { from: 'Browser_page.ml:def:lay_out', to: '../../../languages/css/Computed.ml:def:styles', say: 'the sheets' },
+        { from: '../../../languages/css/Computed.ml:def:styles', to: '../../../appkits/browser/layout/Box_layout.ml:def:layout', say: 'the styles' },
+        { from: '../../../appkits/browser/layout/Box_layout.ml:def:layout', to: 'Browser_boxes.ml:def:draw', say: 'the boxes' },
       ],
     },
     {
@@ -240,7 +237,7 @@
       bones: [
         { at: 'Browser_tab.ml', role: 'a tab: going somewhere, fetching' },
         { at: 'Browser_page.ml', role: 'a page: the pipeline run' },
-        { at: 'layout/', role: 'the tree as geometry' },
+        { at: '../../../appkits/browser/layout/', role: 'the tree as geometry' },
         { at: 'Browser_draw.ml', role: 'the teaching browsers draw' },
         { at: 'Browser_boxes.ml', role: 'TinyChrome draws' },
         { at: 'Browser_script.ml', role: 'the DOM for JavaScript' },
@@ -250,7 +247,7 @@
         { from: 'Browser_tab.ml', to: 'Browser_page.ml', say: 'reads' },
         { from: 'Browser_tab.ml', to: 'Browser_script.ml', say: 'runs' },
         { from: 'Browser_tab.ml', to: 'Browser_forms.ml', say: 'submits' },
-        { from: 'Browser_page.ml', to: 'layout/', say: 'lays out with' },
+        { from: 'Browser_page.ml', to: '../../../appkits/browser/layout/', say: 'lays out with' },
         { from: 'Browser_page.ml', to: 'Browser_draw.ml', say: 'draws with' },
         { from: 'Browser_page.ml', to: 'Browser_boxes.ml', say: 'draws with' },
       ],
@@ -416,6 +413,6 @@
     },
   ],
   views: [
-    { name: 'The browser engine and its languages', files: ['Browser_page.ml', 'layout/', '../../languages/html/', '../../languages/css/'] },
+    { name: 'The browser engine and its languages', files: ['Browser_page.ml', '../../../appkits/browser/layout/', '../../../languages/html/', '../../../languages/css/'] },
   ],
 }

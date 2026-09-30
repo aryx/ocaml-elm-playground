@@ -30,7 +30,7 @@
  *     share it exactly as written;
  *   - the sheet's drawing is one function taking a rectangle
  *     ([draw_sheet] below), because a sheet has to be drawable inside
- *     a document one day: that is the shape appkits/embed's component
+ *     a document one day: that is the shape appkit_embed's component
  *     protocol asks for -- a size, a drawing into a rectangle, and
  *     events while it is active;
  *   - and Sheet can write itself down and read itself back, which is
@@ -85,7 +85,7 @@ let initial =
 (* The sheet *)
 (*****************************************************************************)
 (* drawn by appkits/sheet_view, which TinyExcel uses too and
-   appkits/embed will wrap: a sheet drawn into a rectangle, with a
+   appkit_embed will wrap: a sheet drawn into a rectangle, with a
    selection (of one cell here) and a way back from a click to a cell *)
 
 let geometry = Sheet_view.default

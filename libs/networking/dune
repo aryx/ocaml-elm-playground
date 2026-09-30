@@ -9,11 +9,12 @@
 ;
 ; A library per subdirectory, protocols/ then netcode/ on it; this one,
 ; 'networking', has no module of its own: it is both, for what says
-; (libraries networking). Unwrapped, or dune would make it a module
-; Networking.
+; (libraries networking), tiny_libs.networking outside (in the package
+; tiny_libs, as are all of networking/'s libraries). Unwrapped, or dune
+; would make it a module Networking.
 (library
  (name networking)
- (package elm_playground)
+ (public_name tiny_libs.networking)
  (wrapped false)
  (modules)
  (libraries networking_protocols networking_netcode networking_mail)

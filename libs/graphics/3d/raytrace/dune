@@ -2,13 +2,13 @@
 ; notes_raytracing.md): for each pixel, what does the eye see through
 ; it? One idea per module, as graphics/3d's rasterizer, which it is the
 ; counterpart of. Pure OCaml over geometry/ (Vec3, Camera, Ray,
-; Material) and Rgba_image, so it runs natively and in a browser. A
-; private library (see graphics/core/dune), in the elm_playground
-; package: the Povray way, in the 2D playground, is its user, with the
-; software 3D backend's -raytrace and "y".
+; Material) and Rgba_image, so it runs natively and in a browser. In
+; the package tiny_libs, as tiny_libs.graphics_raytrace (see
+; graphics/core/dune): the Povray way, in the 2D playground, is its
+; user, with the software 3D backend's -raytrace and "y".
 (library
  (name graphics_raytrace)
- (package elm_playground)
+ (public_name tiny_libs.graphics_raytrace)
  (wrapped false)
  (libraries
    random ; Lehmer, the soft shadows' and the path tracer's numbers

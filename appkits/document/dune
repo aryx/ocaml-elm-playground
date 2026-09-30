@@ -6,11 +6,11 @@
 ; games of a genre share, appkits/ is what applications share.
 ;
 ; Independent of everything -- no gui, no playground, no shapes: a
-; document is a value, and these are the rules about values. A private
-; library, installed as part of elm_playground: pure OCaml, so every
-; backend, the web one included, can use it.
+; document is a value, and these are the rules about values. In the
+; package tiny_appkits, as tiny_appkits.appkit_document: pure OCaml, so
+; every backend, the web one included, can use it.
 (library
  (name appkit_document)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_document)
  (wrapped false)
 )

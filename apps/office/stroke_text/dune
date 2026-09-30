@@ -2,7 +2,10 @@
 ; Stroke_text.mli): bold, italic, underline and strike out of one
 ; stroke font, with the widths the layout measured. First the office
 ; apps' (TinyBravo, TinyWord, ...), then TinyMosaic's pages
-; (apps/internet/, plan_browser_teaching.md).
+; (apps/internet/, plan_browser_teaching.md), and TinyMacDraw's text.
+; It draws with the Playground, so it is here beside the apps it helps
+; rather than in appkits/ (tiny_appkits): a private library, installed
+; as part of elm_playground.
 (library
  (name appkit_stroke_text)
  (package elm_playground)

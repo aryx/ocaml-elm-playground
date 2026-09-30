@@ -1,0 +1,110 @@
+{1 tiny_appkits }
+
+What applications share, written from scratch for teaching: the
+engines under the Tiny applications, one idea per module, each
+interface explaining its idea. None of them draws with the
+{{:../elm_playground/index.html} Elm Playground}: a document, a sheet, a
+drawing, a model are values, and the application draws them (the kits
+that draw, a File menu, compound documents, the browsers' drawing, are
+the Playground's, beside the apps they help). They stand on
+{{:../tiny_libs/index.html} tiny_libs} and
+{{:../tiny_languages/index.html} tiny_languages}.
+
+Each is a library of its own, named [tiny_appkits.<name>] outside this
+repository, for example in a dune file:
+
+{v
+(executable
+ (name main)
+ (libraries tiny_appkits.appkit_sheet tiny_appkits.browser_layout))
+v}
+
+The libraries are unwrapped: their modules are used by their own names,
+[Sheet.set], [Box_layout.layout].
+
+{2:documents Documents}
+
+A document as a value, its undo and its clipboard
+([tiny_appkits.appkit_document]):
+
+{!modules: Document Undo Clipboard Saved}
+
+{2:office The office}
+
+The spreadsheet's engine ([tiny_appkits.appkit_sheet]) and a sheet
+drawn in a rectangle ([tiny_appkits.appkit_sheet_view]); diagrams whose
+geometry is a sheet ([tiny_appkits.appkit_diagram]); text with looks,
+laid out on pages ([tiny_appkits.appkit_richtext]); a paragraph broken
+into lines, greedy or by Knuth and Plass ([tiny_appkits.appkit_typeset]);
+a presentation as an outline ([tiny_appkits.appkit_slides]); NLS's tree
+of statements ([tiny_appkits.appkit_nls]):
+
+{!modules:
+    Sheet Sheet_view Diagram Ortho_route
+    Rich Style Page Flow Linebreak
+    Outline Nls_doc
+}
+
+{2:graphics Pictures and drawings}
+
+MacPaint's bitmap ([tiny_appkits.appkit_paint]), Deluxe Paint's colour
+numbers and palette cycling ([tiny_appkits.appkit_indexed]), MacDraw's
+figures ([tiny_appkits.appkit_draw]), a 3D modeller's scene
+([tiny_appkits.appkit_modeler]):
+
+{!modules:
+    Bitmap Pattern Paint Seed_fill
+    Indexed Cycling
+    Figure Drawing
+    Modeler Modeler_view
+}
+
+{2:cad CAD}
+
+Sketchpad ([tiny_appkits.appkit_sketch]), AutoCAD
+([tiny_appkits.appkit_cad]), SketchUp ([tiny_appkits.appkit_pushpull]):
+
+{!modules:
+    Sketch Relax
+    Cad_geom Cad_drawing Cad_edit Cad_snap Cad_session Dxf
+    Skp_model Skp_infer Skp_view Bsp
+}
+
+{2:text Text mode}
+
+The editors as full-screen programs, vi, Emacs over its Lisp, Turbo
+Pascal's IDE ([tiny_appkits.appkit_editor]); a full-screen game
+([tiny_appkits.appkit_tui]); the teletype's games
+([tiny_appkits.appkit_teletype]):
+
+{!modules:
+    Gap_buffer Emacs_editor Emacs_simple Tui_vi Tui_emacs Tui_turbo
+    Tui_snake
+    Tty_hangman Tty_guess Tty_wumpus
+}
+
+{2:programming Programming by blocks}
+
+Where each block lies and where a dragged stack snaps
+([tiny_appkits.appkit_blocks]):
+
+{!modules: Block_layout Block_edit}
+
+{2:web A web page's layout}
+
+Blocks and lines, tables, CSS's box model and flexbox, and the way back
+from a point to a link ([tiny_appkits.browser_layout]):
+
+{!modules: Html_layout Table_layout Box_layout Flex_layout Hit}
+
+{2:pim Time, the sky, money}
+
+iCalendar and vCard ([tiny_appkits.appkit_pim]), a planetarium's
+astronomy ([tiny_appkits.appkit_astronomy]), a checking account
+([tiny_appkits.appkit_money]):
+
+{!modules:
+    Ics Vcard
+    Celestial Ephemeris Bright_stars Stereographic
+    Money Ledger Reconcile Qif
+}

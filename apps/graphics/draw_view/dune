@@ -2,7 +2,10 @@
 ; (Figure_shapes): what TinyMacDraw (apps/graphics/) shows, and the
 ; drawing part of the office's compound documents (Part_drawing). Its
 ; own library beside appkit_draw, which stays pure OCaml, as
-; appkit_sheet_view is beside appkit_sheet.
+; appkit_sheet_view is beside appkit_sheet. It draws with the
+; Playground, so it is here beside the apps it helps rather than in
+; appkits/ (tiny_appkits): a private library, installed as part of
+; elm_playground.
 (library
  (name appkit_draw_view)
  (package elm_playground)

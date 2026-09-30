@@ -54,7 +54,7 @@
  * (the display). Not: Scene2d, Sprite, the physics, File_menu yet.
  *
  * Exercises: saving and opening patches with the File menu
- * (appkits/file_menu; the text is Voice_minimoog.to_string); the
+ * (appkit_file_menu; the text is Voice_minimoog.to_string); the
  * reissue's additions (a separate LFO, a choice of note priority, the
  * filter contour as a modulation source); velocity on the filter, from
  * a MIDI keyboard; a second voice, the Minimoog made duophonic like the

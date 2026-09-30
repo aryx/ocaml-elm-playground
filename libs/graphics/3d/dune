@@ -2,12 +2,13 @@
 ; rasterizer, one classic idea per module (see
 ; docs/claude_notes/done/plan_code_reorg_teaching_3d.md), drawing into
 ; graphics/core's Framebuffer like the 2D ones. Like the rest of
-; graphics/, independent of the Playground. A private library (see
-; graphics/core/dune), installed as part of elm_playground_3d_software,
-; its only user (what the other 3D backends share is in geometry/).
+; graphics/, independent of the Playground. In the package tiny_libs,
+; as tiny_libs.graphics_3d (see graphics/core/dune); its user here is
+; elm_playground_3d_software (what the other 3D backends share is in
+; geometry/).
 (library
  (name graphics_3d)
- (package elm_playground_3d_software)
+ (public_name tiny_libs.graphics_3d)
  (wrapped false)
  (libraries
    graphics_3d_geometry ; Vec3, Camera, Lighting

@@ -7,12 +7,12 @@
 ; graphics/core/'s Blit in playground/platforms/software/, the 3D backends'
 ; samplers and GL textures).
 ;
-; A private library (see graphics/core/dune), installed as part of
-; elm_playground_software, the package all the native backends depend
-; on (see playground/platforms/native_common/dune for why).
+; In the package tiny_libs, as tiny_libs.graphics_images (see
+; graphics/core/dune); native only, its Download needing Unix's
+; sockets.
 (library
  (name graphics_images)
- (package elm_playground_software)
+ (public_name tiny_libs.graphics_images)
  (wrapped false)
  (libraries
    logs

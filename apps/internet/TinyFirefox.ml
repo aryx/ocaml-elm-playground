@@ -16,7 +16,7 @@
  * page is also a program, in JavaScript, which the browser runs. This
  * one runs it with an engine written from scratch
  * (languages/javascript: a lexer, a Pratt parser, a tree walker)
- * over the page's tree (appkits/browser's Browser_script: the DOM, the
+ * over the page's tree (appkit_browser's Browser_script: the DOM, the
  * events, the timers), and shows what the scripts do in a panel under
  * the page, after Firebug (Joe Hewitt, 2006, a Firefox extension, the
  * ancestor of every browser's developer tools):
@@ -50,7 +50,7 @@
  * flags url= (about:firefox), the first page; panel=off, no panel;
  * seed=n, Math.random's.
  *
- * Uses: appkits/browser (the page, the tab, the scripts, the drawing,
+ * Uses: appkit_browser (the page, the tab, the scripts, the drawing,
  * the forms), languages/javascript through it, the built-in site
  * (Site); web's Hit. Its own: the chrome, the panel, the dialogs.
  *

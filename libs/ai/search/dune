@@ -1,10 +1,10 @@
 ; claude: board games, thinking ahead: minimax and alpha-beta
 ; (Minimax), the tricks that buy depth (Deepening, Zobrist), Monte Carlo
-; tree search (Mcts); notes_ai.md sections 7 to 10. A private library,
-; installed as part of elm_playground; see ai/README.md.
+; tree search (Mcts); notes_ai.md sections 7 to 10. In the package
+; tiny_libs, as tiny_libs.ai_search; see ai/README.md.
 (library
  (name ai_search)
- (package elm_playground)
+ (public_name tiny_libs.ai_search)
  (wrapped false)
  (libraries random) ; claude: Lehmer, Mcts's playouts the same on every OCaml
 )

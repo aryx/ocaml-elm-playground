@@ -6,11 +6,11 @@
 ; TinyExcel's of 1985.
 ;
 ; Independent of everything -- no gui, no playground: a spreadsheet is
-; a graph of values. A private library, installed as part of
-; elm_playground: pure OCaml, so every backend can use it.
+; a graph of values. In the package tiny_appkits, as
+; tiny_appkits.appkit_sheet: pure OCaml, so every backend can use it.
 (library
  (name appkit_sheet)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_sheet)
  (wrapped false)
  (libraries formula)
 )

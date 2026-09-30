@@ -4,11 +4,11 @@
 ; guesses what a point in 3D means from a point on the screen
 ; (Skp_infer); the camera orbiting what you build (Skp_view); and the
 ; BSP tree that draws the faces in order without a z-buffer (Bsp).
-; Used by TinySketchup. A private library, installed as part of
-; elm_playground: pure OCaml.
+; Used by TinySketchup. In the package tiny_appkits, as
+; tiny_appkits.appkit_pushpull: pure OCaml.
 (library
  (name appkit_pushpull)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_pushpull)
  (wrapped false)
  (libraries
    graphics_3d_geometry ; Vec3, Camera

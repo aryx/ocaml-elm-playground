@@ -4,10 +4,10 @@
 ; first to know. Used by appkits/sheet (Sheet, the grid that
 ; recalculates) and so by TinyVisiCalc and TinyExcel.
 ;
-; Pure OCaml, no Playground (languages/README.md). A private
-; library, installed as part of elm_playground.
+; Pure OCaml, no Playground (languages/README.md). In the package
+; tiny_languages, as tiny_languages.formula.
 (library
  (name formula)
- (package elm_playground)
+ (public_name tiny_languages.formula)
  (wrapped false)
 )

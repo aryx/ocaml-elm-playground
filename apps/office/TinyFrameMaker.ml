@@ -25,7 +25,7 @@
  * - **anchored frames**: a sheet, a picture, a drawing tied to a place
  *   in the text and set just below its line, so that typing above it
  *   carries it down, from column to column and page to page. Its
- *   frames hold the same parts as TinyOpenDoc (appkits/embed), edited
+ *   frames hold the same parts as TinyOpenDoc (appkit_embed), edited
  *   in place the same way: click once to select, again to edit, and
  *   the part's menu joins the bar.
  *
@@ -55,7 +55,7 @@
  * Pages (2005), AppleWorks' successor, with its text flowing round
  * frames.
  *
- * What it uses: appkits/richtext (Rich, Page, Flow), appkits/embed
+ * What it uses: appkits/richtext (Rich, Page, Flow), appkit_embed
  * (Component) and the parts of apps/ (Part_sheet, Part_picture,
  * Part_drawing), Stroke_text, appkits/document's Undo, and the
  * playground's menus.

@@ -7,11 +7,11 @@
 ; (apps/devtools/) and by TinyTerminal's shell as its command basic.
 ;
 ; Over libs/terminal's Talk, no Playground (languages/README.md):
-; the Teletype way is what puts it on a screen. A private library,
-; installed as part of elm_playground.
+; the Teletype way is what puts it on a screen. In the package
+; tiny_languages, as tiny_languages.basic.
 (library
  (name basic)
- (package elm_playground)
+ (public_name tiny_languages.basic)
  (wrapped false)
  (libraries terminal)
 )

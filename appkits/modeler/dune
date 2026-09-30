@@ -2,11 +2,11 @@
 ; placed by location, rotation and scale, Boolean modifiers, their
 ; wireframes (Modeler), and the four views -- three orthographic, one
 ; through the camera -- and picking in them (Modeler_view). Used by
-; TinyBlender, which renders it with the Povray way. A private
-; library, installed as part of elm_playground: pure OCaml.
+; TinyBlender, which renders it with the Povray way. In the package
+; tiny_appkits, as tiny_appkits.appkit_modeler: pure OCaml.
 (library
  (name appkit_modeler)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_modeler)
  (wrapped false)
  (libraries
    graphics_3d_geometry ; Camera, the ray tracer's own projection

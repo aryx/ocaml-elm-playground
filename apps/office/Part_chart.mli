@@ -1,4 +1,4 @@
-(* A bar chart, as a part of a compound document (appkits/embed): a
+(* A bar chart, as a part of a compound document (appkit_embed): a
  * label and a number per bar, drawn into whatever rectangle it is
  * given, with a size of its own (300 x 200) for a host to scale.
  *

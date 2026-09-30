@@ -1,0 +1,6 @@
+; claude: the front page of the package tiny_libs's API documentation,
+; the libraries of libs/ area by area (README.md here says the same for
+; the repository's reader)
+(documentation
+  (package tiny_libs)
+  (mld_files index))

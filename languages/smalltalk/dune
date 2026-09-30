@@ -9,11 +9,11 @@
 ; (the whole memory saved and loaded), St_bitblt (Form and BitBlt, the
 ; display). TinySmalltalk80 (apps/devtools/) is its environment.
 ;
-; Pure OCaml, no Playground (languages/README.md). A private
-; library, installed as part of elm_playground.
+; Pure OCaml, no Playground (languages/README.md). In the package
+; tiny_languages, as tiny_languages.smalltalk.
 (library
  (name smalltalk)
- (package elm_playground)
+ (public_name tiny_languages.smalltalk)
  (wrapped false)
 )
 

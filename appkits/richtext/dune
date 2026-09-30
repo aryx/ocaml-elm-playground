@@ -3,10 +3,11 @@
 ; to 9d): the engine TinyBravo (1974) and TinyWord (1985) share, as
 ; TinyVisiCalc and TinyExcel share appkits/sheet. It never sees a
 ; font: the widths of the glyphs are the caller's, as Linebreak's
-; word widths are.
+; word widths are. In the package tiny_appkits, as
+; tiny_appkits.appkit_richtext.
 (library
  (name appkit_richtext)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_richtext)
  (wrapped false)
  (libraries gui) ; Text, Text_edit: the characters, the caret, the piece table
 )

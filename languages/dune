@@ -1,0 +1,6 @@
+; claude: the front page of the package tiny_languages's API
+; documentation, the languages one by one (README.md here says the same
+; for the repository's reader)
+(documentation
+  (package tiny_languages)
+  (mld_files index))

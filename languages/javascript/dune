@@ -9,10 +9,11 @@
 ;
 ; Pure OCaml, no Playground (languages/README.md); the modules
 ; are Js_ because the libraries are unwrapped and js_of_ocaml's own
-; module is Js. A private library, installed as part of elm_playground.
+; module is Js. In the package tiny_languages, as
+; tiny_languages.javascript.
 (library
  (name javascript)
- (package elm_playground)
+ (public_name tiny_languages.javascript)
  (wrapped false)
  (libraries random) ; Lehmer, Math.random's seeded numbers
 )

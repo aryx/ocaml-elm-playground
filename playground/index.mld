@@ -147,194 +147,66 @@ Other ways to program, each building a Playground [app] for you:
 
 and {{:../elm_playground_3d/Logo3d/index.html}Logo3d}.
 
-What Elm's core gives, and a few more:
+What Elm's core gives, and a few more, is
+{{:../tiny_libs/index.html#core}tiny_libs' core}.
 
-{!modules:
-    Cmd Sub Program Set_ Base64 Lehmer Civil Clock Julian Recur
-}
+The libraries under the playground, from graphics to the terminal, know
+nothing of it: they are a package of their own,
+{{:../tiny_libs/index.html}tiny_libs}, whose front page lists their
+modules, area by area.
 
 {3:graphics Graphics}
 
-The 2D rasterizer:
-
-{!modules: Fill Line Circle Curve Stroke Affine Vec2 Magnifier}
-
-and {{:../elm_playground_software/Hershey/index.html}Hershey}'s fonts
-and the {{:../elm_playground_software/Vga_font/index.html}VGA's}.
-
-The 3D rasterizer (package
-{{:../elm_playground_3d_software/index.html}elm_playground_3d_software}):
-{{:../elm_playground_3d_software/Project/index.html}Project},
-{{:../elm_playground_3d_software/Clip/index.html}Clip},
-{{:../elm_playground_3d_software/Cull/index.html}Cull},
-{{:../elm_playground_3d_software/Triangle/index.html}Triangle},
-{{:../elm_playground_3d_software/Interpolate/index.html}Interpolate},
-{{:../elm_playground_3d_software/Zbuffer/index.html}Zbuffer},
-{{:../elm_playground_3d_software/Painter/index.html}Painter},
-{{:../elm_playground_3d_software/Shading/index.html}Shading},
-{{:../elm_playground_3d_software/Texture/index.html}Texture},
-{{:../elm_playground_3d_software/Render/index.html}Render};
-over the geometry every 3D backend shares:
-
-{!modules: Vec3 Mat4 Camera Lighting Ray Material}
-
-The ray tracer:
-
-{!modules: Solid Transform Csg Bvh Raytrace Perlin}
-
-Pixels, and image processing:
-
-{!modules:
-    Framebuffer Blit Opti Pixelate Matting
-    Rgba_image Lut Histogram Hsl Convolve Gaussian Sobel Median
-    Add_noise Scale Mask Composite Blend Brush Gradient Layers Pixels
-}
-
-Images and videos, read and written by our own code:
-
-{!modules:
-    Png Gif Jpeg Jpeg_encode Dct Xpm Ilbm Svg
-    Movie Yuv Psnr Y4m Fli Avi Mpeg1 Mpeg1_vlc Motion Mpeg1_encode
-    Mpeg_system
-}
+The 2D and 3D rasterizers, the ray tracer, image processing, the image
+and video formats: {{:../tiny_libs/index.html#graphics}tiny_libs'
+graphics}.
 
 {3:physics Physics}
 
-{!modules:
-    Body Shape Force Integrate Broadphase Collide Contact Resolve Solver
-    Joint2d Springs Energy Particles Kepler Planets
-}
-
-and in 3D
-{{:../elm_playground_3d/Quat/index.html}Quat},
-{{:../elm_playground_3d/Mat3/index.html}Mat3},
-{{:../elm_playground_3d/Body3d/index.html}Body3d},
-{{:../elm_playground_3d/Force3d/index.html}Force3d},
-{{:../elm_playground_3d/Integrate3d/index.html}Integrate3d},
-{{:../elm_playground_3d/Broadphase3d/index.html}Broadphase3d},
-{{:../elm_playground_3d/Collide3d/index.html}Collide3d},
-{{:../elm_playground_3d/Sweep3d/index.html}Sweep3d},
-{{:../elm_playground_3d/Contact3d/index.html}Contact3d},
-{{:../elm_playground_3d/Resolve3d/index.html}Resolve3d},
-{{:../elm_playground_3d/Solver3d/index.html}Solver3d},
-{{:../elm_playground_3d/Joint3d/index.html}Joint3d},
-{{:../elm_playground_3d/Energy3d/index.html}Energy3d},
-{{:../elm_playground_3d/Hitbox3d/index.html}Hitbox3d}.
+In 2D and 3D: {{:../tiny_libs/index.html#physics}tiny_libs' physics}.
 
 {3:audio Audio}
 
-Signals and synthesis:
-
-{!modules:
-    Signal Resample Mix Spectrum
-    Oscillator Noise Fm Pluck Envelope Filter
-}
-
-The engine:
-
-{!modules:
-    Synth Sfx Pitch_effect Music Space Mixer Tape Instrument Control
-}
-
-A synthesizer's live blocks:
-
-{!modules:
-    Vco Lfo Drift Voicing Moog_ladder Diode_ladder Svf Modal
-    Fm_algorithm Dx_envelope Polyphony Sampler Sequencer
-}
-
-Effects:
-
-{!modules:
-    Effect Rack Drive Eq Modulation Modulated_delay Phaser Delay Reverb
-    Dynamics Leslie
-}
-
-Files: WAV, MIDI, ABC, solfège, MOD, and MPEG audio (MP2, MP3):
-
-{!modules:
-    Wav Midi Abc Doremi Mod Mod_player Paula
-    Mpeg_audio Mpeg_audio_header Layer2 Layer3 Layer3_tables Imdct
-    Polyphase
-}
+Signals, synthesis, the engine, a synthesizer's live blocks, effects, and
+the files (WAV, MIDI, ABC, solfège, MOD, MP2, MP3):
+{{:../tiny_libs/index.html#audio}tiny_libs' audio}.
 
 {3:ai AI}
 
-{!modules:
-    Pathfind Steering Flock
-    Fsm Behavior Utility
-    Sense Bot
-    Minimax Deepening Zobrist Mcts
-    Matrix Neuron Net Backprop Grad Train Qlearn
-}
+{{:../tiny_libs/index.html#ai}tiny_libs' game AI}.
 
 {3:gui GUI}
 
-{!modules:
-    Widget Layout Focus Text Text_edit Grid Theme Look
-    Retained Mvc Mvu Immediate
-}
-
-and the game juice:
-
-{!modules: Ease Tween Follow Squash Trauma Emitter Hash}
+{{:../tiny_libs/index.html#gui}tiny_libs' GUI}, and the
+{{:../tiny_libs/index.html#juice}game juice}.
 
 {3:networking Networking, cryptography, compression}
 
-The protocols as bytes in, bytes out:
-
-{!modules:
-    Url Http Urlencoded Websocket Irc Wire Transport
-    Mime Mail Mail_thread Mbox Pop3 Smtp
-    Checksum Sim_net Inputs Lockstep Rollback Snapshot Prediction
-    Interpolation
-    Asn1 Pem X509 Tls13
-}
-
-and their sockets, native only (package
-{{:../elm_playground_software/index.html}elm_playground_software}):
-{{:../elm_playground_software/Tcp/index.html}Tcp},
-{{:../elm_playground_software/Udp/index.html}Udp},
-{{:../elm_playground_software/Http_client/index.html}Http_client},
-{{:../elm_playground_software/Tls_client/index.html}Tls_client},
-{{:../elm_playground_software/Server/index.html}Server},
-{{:../elm_playground_software/Relay/index.html}Relay}.
-
-Cryptography, what TLS 1.3 needs:
-
-{!modules:
-    Sha1 Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305
-    Aes Gcm Bignum X25519 Ecdsa Rsa
-}
-
-Compression:
-
-{!modules: Huffman Inflate Deflate Zlib Crc32 Adler32 Lzw Packbits Bits Vlc}
+{{:../tiny_libs/index.html#networking}The protocols, the netcode, TLS
+1.3 and the sockets}, {{:../tiny_libs/index.html#crypto}cryptography}
+and {{:../tiny_libs/index.html#compression}compression}.
 
 {3:terminal The terminal}
 
-{!modules: Vt Line_discipline Talk Curses Tui}
+{{:../tiny_libs/index.html#terminal}tiny_libs' terminal}.
 
 {3:appkits Application engines}
 
 What a few applications share: a spreadsheet, rich text, paint and
-draw, compound documents, a browser's engine, editors, CAD, ...
+draw, a browser's layout, editors, CAD, ... None of them draws with the
+playground: a package of their own,
+{{:../tiny_appkits/index.html}tiny_appkits}, whose front page lists
+their modules.
+
+The kits that draw with it are here, beside the apps they help: the
+File menu, compound documents, letters in a look, a drawing's figures,
+and the browsers (a page read, drawn, browsed and scripted):
 
 {!modules:
-    Sheet Sheet_view Rich Style Flow Page Linebreak Outline
-    Bitmap Paint Pattern Seed_fill Indexed Cycling
-    Drawing Figure Figure_shapes
-    Document Component Compound Clipboard Undo Saved File_menu Stroke_text
+    File_menu Component Compound Stroke_text Figure_shapes
     Browser_page Browser_draw Browser_history Browser_forms Browser_tab
     Browser_script Browser_text Browser_boxes Browser_picture Browser_url
-    Browser_devtools Box_layout Flex_layout Table_layout Html_layout Hit
-    Gap_buffer Emacs_editor Emacs_simple Tui_vi Tui_emacs Tui_turbo
-    Tui_snake Tty_guess Tty_hangman Tty_wumpus
-    Block_layout Block_edit
-    Sketch Relax Cad_geom Cad_drawing Cad_edit Cad_snap Cad_session Dxf
-    Skp_model Skp_infer Skp_view Bsp Modeler Modeler_view
-    Celestial Ephemeris Bright_stars Stereographic Ics Vcard
-    Money Ledger Reconcile Qif Nls_doc Diagram Ortho_route
+    Browser_devtools
 }
 
 {3:gamekits Game kits}
@@ -364,26 +236,8 @@ and in 3D
 
 Languages as text, parsed and run: a spreadsheet's formulas, BASIC,
 s-expressions, Emacs Lisp, Scheme, Pascal, HyperTalk, Smalltalk-80,
-Scratch, PostScript, JavaScript, HTML and CSS, and JSON and jsonnet
-(the code map's configurations):
-
-{!modules:
-    Formula
-    Basic_parse Basic_run Basic_session Basic_disk
-    Sexpr Sexpr_read
-    Lisp Lisp_read Lisp_eval Lisp_prelude
-    Scheme Scheme_image Scheme_syntax Scheme_prims Scheme_prelude
-    Scheme_eval Scheme_step
-    Pascal_lexer Pascal_compile Pcode Pmachine Pdebug Pascal_disk
-    Hypertalk
-    St_lexer St_parse St_ast St_compile St_bytecode St_chunk St_memory
-    St_class St_kernel St_interp St_primitives St_bitblt St_image
-    St_boot St_debug
-    Scratch_blocks Scratch_text Scratch_run
-    Ps_lexer Ps_graphics Ps_machine Ps_disk
-    Js_lexer Js_parse Js_ast Js_value Js_eval Js_builtins Js_regexp
-    Html_lexer Html_tree Dtd Entities Charset Dom Forms Line_mode
-    Css Css_syntax Css_values Selectors Cascade Computed Looks Ua_sheet
-    Highlight_code Highlight_ml Lexer_ml Token_ml
-    Json Jsonnet Jsonnet_lexer Jsonnet_ast Jsonnet_parse
-}
+Scratch, PostScript, JavaScript, HTML and CSS, JSON and jsonnet (the
+code map's configurations), and OCaml, C and assembly read for the code
+map. They know nothing of the playground either: a package of their
+own, {{:../tiny_languages/index.html}tiny_languages}, whose front page
+lists their modules, language by language.

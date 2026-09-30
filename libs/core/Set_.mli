@@ -126,7 +126,7 @@ val elements : 'elt t -> 'elt list
 (** Return the list of all elements of the given set.
     The returned list is sorted in increasing order with respect
     to the ordering [Ord.compare], where [Ord] is the argument
-    given to {!Set.Make}. *)
+    given to [Stdlib.Set.Make]. *)
 
 val min_elt : 'elt t -> 'elt
 (** Return the smallest element of the given set
@@ -134,7 +134,7 @@ val min_elt : 'elt t -> 'elt
     [Not_found] if the set is empty. *)
 
 val max_elt : 'elt t -> 'elt
-(** Same as {!Set.S.min_elt}, but returns the largest element of the
+(** Same as {!min_elt}, but returns the largest element of the
     given set. *)
 
 val choose : 'elt t -> 'elt

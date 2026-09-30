@@ -3,10 +3,12 @@
 ; content on lines, and Hit, the way back, from a point to a link;
 ; Table_layout; and Box_layout, CSS 2.1's box model over Computed's
 ; styles, with Flex_layout, flexbox's arithmetic (TinyChrome's). Pure OCaml, no shapes and no font: boxes and
-; fragments with positions, the widths the caller's.
+; fragments with positions, the widths the caller's. In the package
+; tiny_appkits, as tiny_appkits.browser_layout; the rest of the
+; browsers' kit draws, so it is apps/internet/browser.
 (library
  (name browser_layout)
- (package elm_playground)
+ (public_name tiny_appkits.browser_layout)
  (wrapped false)
  (libraries lang_html lang_css)
 )

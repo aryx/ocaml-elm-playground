@@ -2,8 +2,9 @@
 ; timing curves as cubic Beziers (Timing), a value on its way from one
 ; place to another and implicit animations (Animation), a layout's
 ; rectangles moving to another layout (Transition). Plain numbers and
-; rectangles, no Playground; pure OCaml, native and web.
+; rectangles, no Playground; pure OCaml, native and web. In the package
+; tiny_libs, as tiny_libs.graphics_animation.
 (library
  (name graphics_animation)
- (package elm_playground)
+ (public_name tiny_libs.graphics_animation)
  (wrapped false))

@@ -39,11 +39,11 @@
       bones: [
         { at: "Linebreak.ml", role: "a paragraph broken into lines: greedy, or Knuth and Plass" },
         { at: "../../examples/TypesetParagraph.ml", role: "the two ways side by side, their badness shown" },
-        { at: "../browser/", role: "wrap=pretty: the page's paragraphs set by Knuth and Plass" },
+        { at: "../../apps/internet/browser/", role: "wrap=pretty: the page's paragraphs set by Knuth and Plass" },
       ],
       joints: [
         { from: "../../examples/TypesetParagraph.ml", to: "Linebreak.ml", say: "greedy, optimal" },
-        { from: "../browser/", to: "Linebreak.ml", say: "optimal" },
+        { from: "../../apps/internet/browser/", to: "Linebreak.ml", say: "optimal" },
       ],
     },
     {

@@ -31,13 +31,13 @@
  * The plan had turned this program down, since stripped of its looks a
  * slide is a title and a list, which the toolkit already draws -- unless
  * it came as a host of components. It does: a slide can carry a sheet
- * or a picture, the same parts as TinyOpenDoc's (appkits/embed), edited
+ * or a picture, the same parts as TinyOpenDoc's (appkit_embed), edited
  * where they sit. And the four views are one lesson of their own: a
  * slide's drawing is a list of shapes made at one size, so the sorter's
  * thumbnails and the show's full screen are the same list, scaled -- no
  * second renderer, no cached bitmaps.
  *
- * What it uses: appkits/slides (Outline), appkits/embed (Component)
+ * What it uses: appkits/slides (Outline), appkit_embed (Component)
  * and the parts of apps/ (Part_sheet, Part_picture, Part_drawing), appkits/richtext
  * (Rich, Page) with Stroke_text for the text, appkits/document's
  * Undo, and the playground's text area and menus.

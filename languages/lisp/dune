@@ -6,11 +6,11 @@
 ; in Lisp: when, dolist...). TinyEmacs (apps/devtools/) is its host:
 ; appkits/editor's Emacs_editor gives it a buffer to change.
 ;
-; Pure OCaml, no Playground. A private library, installed as part of
-; elm_playground.
+; Pure OCaml, no Playground. In the package tiny_languages, as
+; tiny_languages.lisp.
 (library
  (name lisp)
- (package elm_playground)
+ (public_name tiny_languages.lisp)
  (wrapped false)
  (libraries sexpr) ; Lisp_read's reading, the syntax shared with Scheme
 )

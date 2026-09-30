@@ -3,11 +3,11 @@
 ; (Indexed: dots, lines, rectangles, ellipses, the bucket, brushes cut
 ; from the picture, symmetry) and the palette turning (Cycling). Over
 ; libs/graphics/images/ilbm, the Amiga's file format, whose ranges
-; Cycling turns. Pure OCaml, no playground: a private library,
-; installed as part of elm_playground. TinyDeluxePaint's.
+; Cycling turns. Pure OCaml, no playground: in the package
+; tiny_appkits, as tiny_appkits.appkit_indexed. TinyDeluxePaint's.
 (library
  (name appkit_indexed)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_indexed)
  (wrapped false)
  (libraries graphics_ilbm)
 )

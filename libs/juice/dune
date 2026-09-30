@@ -2,11 +2,11 @@
 ; module, each .mli with its diagram, worked example and references,
 ; like physics/, audio/ and ai/ (see
 ; docs/claude_notes/plans/plan_juice_teaching.md). Independent of the
-; Playground; Juice.ml is the adapter. A private library,
-; installed as part of elm_playground: pure OCaml, so every backend,
-; the web one included, can use it.
+; Playground; Juice.ml is the adapter. In the package tiny_libs, as
+; tiny_libs.juice: pure OCaml, so every backend, the web one included,
+; can use it.
 (library
  (name juice)
- (package elm_playground)
+ (public_name tiny_libs.juice)
  (wrapped false)
 )

@@ -121,6 +121,10 @@ let starts (prefix : string) (s : string) : bool = String.length s >= String.len
  * its budget, 5,000 lines, counts this, tests/catalog *)
 let own (program_path : string) (p : string) : bool =
   Filename.dirname p = Filename.dirname program_path || starts "gamekits/" p || starts "appkits/" p || starts "languages/" p
+  (* claude: the kits that draw with the Playground, not in appkits/
+   * (tiny_appkits) but in a subfolder of the apps they help:
+   * apps/internet/browser/, apps/office/file_menu/, ... *)
+  || (match String.split_on_char '/' p with "apps" :: _ :: _ :: _ :: _ -> true | _ -> false)
 
 (* claude: a module's implementation: its .ml, or the lexer or parser
  * its .ml is generated from (Lexer_ml.mll) *)

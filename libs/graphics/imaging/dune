@@ -4,10 +4,11 @@
 ; geometry (Scale), selections (Mask, Composite), painting (Brush,
 ; Gradient) and layers (Blend, the modes; Layers, the stack flattened), over Rgba_image, each operation giving a new image. Pure
 ; OCaml, no Playground; TinyPhotoshop (apps/graphics/) is its program.
-; Tests in graphics/tests/ (Unit_imaging).
+; Tests in graphics/tests/ (Unit_imaging). In the package tiny_libs, as
+; tiny_libs.graphics_imaging.
 (library
  (name graphics_imaging)
- (package elm_playground)
+ (public_name tiny_libs.graphics_imaging)
  (wrapped false)
  (libraries graphics_rgba random) ; random: Lehmer, Add_noise's seeded numbers
 )

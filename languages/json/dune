@@ -4,10 +4,10 @@
 ; of its own: # comments, text blocks), whose values are manifested as
 ; this module's Json.t.
 ;
-; Pure OCaml, no Playground (languages/README.md). A private
-; library, installed as part of elm_playground.
+; Pure OCaml, no Playground (languages/README.md). In the package
+; tiny_languages, as tiny_languages.lang_json.
 (library
  (name lang_json)
- (package elm_playground)
+ (public_name tiny_languages.lang_json)
  (wrapped false)
  (libraries javascript))

@@ -18,7 +18,7 @@
 ;  - a sound editor (SoundEdit, Audacity): a waveform to cut, fade and
 ;    filter, audio/'s samples and Spectrum;
 ;  - a score editor (Finale, MuseScore): ABC in, staff notation out.
-; Built on audio/ (synth, mixer, ABC, MIDI), gui/, and appkits/file_menu
+; Built on audio/ (synth, mixer, ABC, MIDI), gui/, and appkit_file_menu
 ; for their File menu.
 
 ; the synthesizers' voices and our songs, apart from their programs:

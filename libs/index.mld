@@ -1,0 +1,210 @@
+{1 tiny_libs }
+
+The libraries under the {{:../elm_playground/index.html} Elm Playground},
+written from scratch for teaching: one idea per module, each interface
+with its diagram, its worked example and its references. None of them
+knows the Playground: a module here speaks pixels, samples, bodies,
+bytes or rectangles, never shapes.
+
+Each is a library of its own, named [tiny_libs.<name>] outside this
+repository, for example in a dune file:
+
+{v
+(executable
+ (name main)
+ (libraries tiny_libs.crypto tiny_libs.graphics_png))
+v}
+
+The libraries are unwrapped: their modules are used by their own names,
+[Sha256.digest], [Png.decode].
+
+{2:core Core}
+
+[tiny_libs.core]: a small part of Elm's core, and a calendar.
+
+{!modules: Basics Color Set_ Keyboard Time Cmd Sub Program Base64 Civil Clock Julian Recur}
+
+[tiny_libs.random]: the seeded generator, the same numbers natively and
+in a browser.
+
+{!modules: Lehmer}
+
+{2:crypto Cryptography}
+
+[tiny_libs.crypto]: SHA-1, and what TLS 1.3 needs.
+
+{!modules:
+    Sha1 Sha256 Sha512 Hmac Hkdf Chacha20 Poly1305 Chacha20_poly1305
+    Aes Gcm Bignum X25519 Ecdsa Rsa
+}
+
+{2:compression Compression}
+
+[tiny_libs.compression]: what the image, video and audio formats share.
+
+{!modules: Huffman Inflate Deflate Zlib Crc32 Adler32 Lzw Packbits Bits Vlc}
+
+{2:graphics Graphics}
+
+The core ([tiny_libs.graphics_core]) and 2D geometry
+([tiny_libs.graphics_2d_geometry]):
+
+{!modules: Framebuffer Blit Matting Opti Pixelate Vec2 Affine Curve}
+
+The 2D rasterizer ([tiny_libs.graphics_2d]) and the fonts
+([tiny_libs.graphics_font]):
+
+{!modules: Fill Line Circle Stroke Magnifier Hershey Vga_font}
+
+The 3D rasterizer ([tiny_libs.graphics_3d]) and the geometry all 3D
+renderers share ([tiny_libs.graphics_3d_geometry]):
+
+{!modules:
+    Project Clip Cull Triangle Interpolate Zbuffer Painter Shading
+    Texture Render
+    Vec3 Mat4 Camera Lighting Ray Material
+}
+
+The ray tracer ([tiny_libs.graphics_raytrace]), and the GPU's retained
+meshes ([tiny_libs.graphics_gpu]):
+
+{!modules: Solid Transform Csg Bvh Raytrace Perlin Mesh_cache}
+
+Image formats, a library each ([tiny_libs.graphics_rgba],
+[tiny_libs.graphics_png], [tiny_libs.graphics_gif],
+[tiny_libs.graphics_jpeg], [tiny_libs.graphics_xpm],
+[tiny_libs.graphics_ilbm], [tiny_libs.graphics_svg]), and their loading,
+native only ([tiny_libs.graphics_images]):
+
+{!modules:
+    Rgba_image Png Gif Dct Jpeg Jpeg_encode Xpm Ilbm Svg
+    Download Image_decode Texture_decode
+}
+
+Image processing ([tiny_libs.graphics_imaging]):
+
+{!modules:
+    Lut Histogram Hsl Convolve Gaussian Sobel Median Add_noise Scale
+    Mask Composite Brush Gradient Blend Layers Pixels
+}
+
+Video formats, a library each ([tiny_libs.graphics_movie],
+[tiny_libs.graphics_yuv], [tiny_libs.graphics_y4m],
+[tiny_libs.graphics_fli], [tiny_libs.graphics_avi],
+[tiny_libs.graphics_mpeg1], [tiny_libs.graphics_mpeg_system]):
+
+{!modules: Movie Yuv Psnr Y4m Fli Avi Mpeg1_vlc Mpeg1 Motion Mpeg1_encode Mpeg_system}
+
+Animation, Core Animation's ideas ([tiny_libs.graphics_animation]):
+
+{!modules: Timing Animation Transition}
+
+{2:physics Physics}
+
+In 2D ([tiny_libs.physics_2d]):
+
+{!modules:
+    Body Shape Force Integrate Broadphase Collide Contact Resolve Solver
+    Joint2d Springs Particles Energy Kepler Planets
+}
+
+In 3D ([tiny_libs.physics_3d]):
+
+{!modules:
+    Quat Mat3 Body3d Force3d Integrate3d Broadphase3d Collide3d Sweep3d
+    Contact3d Resolve3d Solver3d Joint3d Energy3d Hitbox3d
+}
+
+{2:audio Audio}
+
+The samples ([tiny_libs.audio_signal]) and the building blocks of a
+sound ([tiny_libs.audio_synthesis]):
+
+{!modules: Signal Resample Mix Spectrum Oscillator Noise Fm Pluck Envelope Filter}
+
+The engine ([tiny_libs.audio]):
+
+{!modules: Synth Sfx Pitch_effect Music Space Mixer Instrument Control Tape}
+
+The formats, a library each ([tiny_libs.audio_wav],
+[tiny_libs.audio_midi], [tiny_libs.audio_abc], [tiny_libs.audio_mod],
+[tiny_libs.audio_mpeg]):
+
+{!modules:
+    Wav Midi Abc Doremi Mod Mod_player Paula
+    Mpeg_audio Mpeg_audio_header Layer2 Layer3 Layer3_tables Imdct Polyphase
+}
+
+A synthesizer's live blocks ([tiny_libs.audio_instruments]) and effects
+([tiny_libs.audio_effects]):
+
+{!modules:
+    Vco Lfo Drift Voicing Polyphony Moog_ladder Diode_ladder Svf Modal
+    Fm_algorithm Dx_envelope Sampler Sequencer
+    Effect Drive Eq Modulation Modulated_delay Phaser Delay Reverb
+    Dynamics Leslie Rack
+}
+
+{2:ai Game AI}
+
+Moving ([tiny_libs.ai_movement]), deciding ([tiny_libs.ai_decision]),
+bots ([tiny_libs.ai_bots]), searching ([tiny_libs.ai_search]),
+learning ([tiny_libs.ai_learning]); all five are [tiny_libs.ai]:
+
+{!modules:
+    Pathfind Steering Flock
+    Fsm Behavior Utility
+    Sense Bot
+    Minimax Deepening Zobrist Mcts
+    Matrix Neuron Net Backprop Grad Train Qlearn
+}
+
+{2:networking Networking}
+
+The protocols as bytes in, bytes out ([tiny_libs.networking_protocols]),
+mail ([tiny_libs.networking_mail]), the netcode of multiplayer games
+([tiny_libs.networking_netcode]); all three are [tiny_libs.networking]:
+
+{!modules:
+    Url Urlencoded Http Websocket Irc Smtp Pop3 Wire Transport
+    Mail Mime Mbox Mail_thread
+    Checksum Sim_net Inputs Lockstep Rollback Snapshot Prediction
+    Interpolation
+}
+
+TLS 1.3 ([tiny_libs.networking_tls]):
+
+{!modules: Asn1 Pem X509 Tls13}
+
+The sockets, native only ([tiny_libs.networking_unix]):
+
+{!modules:
+    Tcp Udp Worker Http_client Http_request Http_server Tls_client
+    Tls_tunnel Server Relay Relay_client Universe_server Irc_server
+    Mail_server Connect
+}
+
+{2:gui GUI}
+
+[tiny_libs.gui]: widgets, the four architectures, layout, text.
+
+{!modules: Widget Theme Look Immediate Retained Mvc Mvu Layout Grid Focus Text Text_edit}
+
+{2:juice Game feel}
+
+[tiny_libs.juice]:
+
+{!modules: Ease Tween Follow Squash Trauma Emitter Hash}
+
+{2:terminal The terminal}
+
+[tiny_libs.terminal], and running in a real terminal, native only
+([tiny_libs.terminal_unix]):
+
+{!modules: Vt Line_discipline Talk Curses Tui Tty_unix}
+
+{2:code Code}
+
+[tiny_libs.highlight_code]: what a code view needs to colour a file.
+
+{!modules: Highlight_code}

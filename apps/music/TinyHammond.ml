@@ -44,7 +44,7 @@
  * keyboard, its own drawbars, and 25 pedals of 16' and 8'); the
  * drawbars heard while a note sounds (here from the next note); the
  * Leslie's brake (stopped rotors, a still sound between the speeds);
- * saving registrations with the File menu (appkits/file_menu).
+ * saving registrations with the File menu (appkit_file_menu).
  *)
 open Playground
 open Basics (* float arithmetics *)

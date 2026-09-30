@@ -186,6 +186,7 @@ local skeletons = import '../../skeletons.libsonnet';
     },
   ],
   dirs: {
+    browser: { summary: "The web browsers' engine room: a page fetched, read, laid out, drawn, browsed and scripted, for Mosaic to Chrome." },
     site: { summary: "The built-in site the browsers show with no network, and tiny_httpd serves." },
     mail: { summary: "TinyEudora's built-in mailboxes as mbox files, and its nicknames as vCards." },
     tests: { summary: 'The built-in mail read back: headers, encodings and threads as the messages mean.' },
@@ -193,6 +194,6 @@ local skeletons = import '../../skeletons.libsonnet';
     web: { summary: 'The apps compiled to JavaScript, and their pages.' },
   },
   views: [
-    { name: 'The browsers, oldest first', files: ['TinyMosaic.ml', 'TinyNetscape.ml', 'TinyFirefox.ml', 'TinyChrome.ml', '../../appkits/browser/'] },
+    { name: 'The browsers, oldest first', files: ['TinyMosaic.ml', 'TinyNetscape.ml', 'TinyFirefox.ml', 'TinyChrome.ml', 'browser/'] },
   ],
 }

@@ -1,4 +1,4 @@
-// appkits/stroke_text/: what the code map says of it (plan_codemap_v2.md,
+// apps/office/stroke_text/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
@@ -28,16 +28,16 @@
       name: "Stroke_text: Hershey's strokes in a look, for the text apps",
       bones: [
         { at: "Stroke_text.ml", role: "a character in a look: its width, and its strokes as shapes" },
-        { at: "../../libs/graphics/font/", role: "Hershey's glyphs: pen strokes in font units" },
-        { at: "../richtext/", role: "the look: size, bold, italic" },
-        { at: "../browser/", role: "the browsers' letters" },
-        { at: "../../apps/office/", role: "Word, PowerPoint, Office: laid out and drawn with it" },
+        { at: "../../../libs/graphics/font/", role: "Hershey's glyphs: pen strokes in font units" },
+        { at: "../../../appkits/richtext/", role: "the look: size, bold, italic" },
+        { at: "../../internet/browser/", role: "the browsers' letters" },
+        { at: "../", role: "Word, PowerPoint, Office: laid out and drawn with it" },
       ],
       joints: [
-        { from: "Stroke_text.ml", to: "../../libs/graphics/font/", say: "Hershey.glyph" },
-        { from: "Stroke_text.ml", to: "../richtext/", say: "Style.t" },
-        { from: "../browser/", to: "Stroke_text.ml", say: "metrics, glyph" },
-        { from: "../../apps/office/", to: "Stroke_text.ml", say: "metrics, glyph" },
+        { from: "Stroke_text.ml", to: "../../../libs/graphics/font/", say: "Hershey.glyph" },
+        { from: "Stroke_text.ml", to: "../../../appkits/richtext/", say: "Style.t" },
+        { from: "../../internet/browser/", to: "Stroke_text.ml", say: "metrics, glyph" },
+        { from: "../", to: "Stroke_text.ml", say: "metrics, glyph" },
       ],
     },
     {

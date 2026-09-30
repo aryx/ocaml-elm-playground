@@ -1,4 +1,4 @@
-(* A text with looks, as a part of a compound document (appkits/embed):
+(* A text with looks, as a part of a compound document (appkit_embed):
  * TinyWord's engine (Rich, Page, Stroke_text) behind the four
  * functions a document asks of a part. Active, it takes clicks, drags,
  * typing, and its Text menu; inactive, it is only drawn. *)

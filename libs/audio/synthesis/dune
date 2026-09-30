@@ -3,11 +3,11 @@
 ; noise (Noise), FM (Fm), a plucked string (Pluck), the envelope
 ; (Envelope), the filters (Filter). Each a formula or a small state
 ; over samples, used by the engine above (Synth renders with them) and
-; by instruments/ and effects/. A private library, installed as part
-; of elm_playground.
+; by instruments/ and effects/. In the package tiny_libs, as
+; tiny_libs.audio_synthesis.
 (library
  (name audio_synthesis)
- (package elm_playground)
+ (public_name tiny_libs.audio_synthesis)
  (wrapped false)
  (libraries audio_signal)
 )

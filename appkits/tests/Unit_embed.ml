@@ -8,7 +8,7 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-(* appkits/embed: a document of parts it does not know, tested with
+(* appkit_embed: a document of parts it does not know, tested with
  * two kinds of part made up here -- a note (some text) and a counter
  * (a number, as tall as a quarter of its width). The .mli's saved
  * example byte for byte, a layout computed by hand, the paths, and

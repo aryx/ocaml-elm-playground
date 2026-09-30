@@ -7,10 +7,11 @@
 ; playing one on a Vt (BASIC's, the teletype games', TinyTerminal's). And Curses (a screen drawn whole, sent as what changed) and Tui (a
 ; full-screen program, Model-View-Update), which the Textmode way runs
 ; on the playground and unix/'s Tty_unix in a real terminal. See
-; docs/claude_notes/plans/plan_terminal.md.
+; docs/claude_notes/plans/plan_terminal.md. In the package tiny_libs, as
+; tiny_libs.terminal.
 (library
  (name terminal)
- (package elm_playground)
+ (public_name tiny_libs.terminal)
  (wrapped false)
  (libraries random) ; Lehmer, Talk's seeded numbers
 )

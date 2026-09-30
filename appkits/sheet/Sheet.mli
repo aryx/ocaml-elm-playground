@@ -119,6 +119,6 @@ val recalculate : order -> t -> t
  * Small enough to read, and the reason it is here rather than in an
  * application: a sheet that can be embedded in a document has to be
  * able to write itself down (the component protocol of
- * plan_gui_teaching.md's appkits/embed). *)
+ * plan_gui_teaching.md's appkit_embed). *)
 val to_string : t -> string
 val of_string : string -> t

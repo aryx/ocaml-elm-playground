@@ -94,7 +94,7 @@
  * view=page|source|tokens|tree|line (page); wrap=greedy|pretty
  * (greedy); width= (976, the page area's), the page's width.
  *
- * Uses: the appkit appkits/browser, what a browser is made of beyond
+ * Uses: the kit appkit_browser, what a browser is made of beyond
  * the engine and what TinyNetscape shares -- a page read and laid out
  * (Browser_page, over web's Charset ... Html_layout), drawn
  * (Browser_draw: Hershey's letters by Stroke_text, the pictures, Motif's
@@ -118,7 +118,7 @@ open Playground
 (* The model *)
 (*****************************************************************************)
 
-(* a page fetched, read, laid out, drawn (appkits/browser) *)
+(* a page fetched, read, laid out, drawn (appkit_browser) *)
 type page = Browser_page.t
 
 (* a page that could not be fetched is shown too: an error page, of

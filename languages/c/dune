@@ -4,11 +4,11 @@
 ; are, recursive descent, no preprocessor: Parse_c.mli's heuristics) and
 ; Highlight_c (each token's category, highlight/'s Highlight_code).
 ;
-; Pure OCaml, no Playground (languages/README.md). A private
-; library, installed as part of elm_playground.
+; Pure OCaml, no Playground (languages/README.md). In the package
+; tiny_languages, as tiny_languages.lang_c.
 (library
  (name lang_c)
- (package elm_playground)
+ (public_name tiny_languages.lang_c)
  (wrapped false)
  (modules_without_implementation Ast_c)
  (libraries highlight_code))

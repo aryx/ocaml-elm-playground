@@ -7,11 +7,11 @@
 ; seasons, the phases and the tides of the education apps to come
 ; would share it.
 ;
-; Pure OCaml, no gui, no playground: a private library, installed as
-; part of elm_playground, so every backend, the web one included, can
-; use it.
+; Pure OCaml, no gui, no playground: in the package tiny_appkits, as
+; tiny_appkits.appkit_astronomy, so every backend, the web one
+; included, can use it.
 (library
  (name appkit_astronomy)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_astronomy)
  (wrapped false)
 )

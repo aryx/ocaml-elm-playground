@@ -34,7 +34,8 @@ val fan : (string, int) Hashtbl.t -> string -> int
 val count_lines : string -> int
 
 (* [own program_path p]: [p] is the program's own code -- its folder's,
-   the kits' (gamekits/, appkits/) and the languages' (languages/); not
+   the kits' (gamekits/, appkits/, and a subfolder of an apps/ category,
+   apps/internet/browser/) and the languages' (languages/); not
    the Playground's nor the from-scratch libraries' (libs/). What a
    program's budget counts (at most 5,000 lines, tests/catalog) *)
 val own : string -> string -> bool

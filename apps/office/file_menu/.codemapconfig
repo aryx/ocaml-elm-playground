@@ -1,4 +1,4 @@
-// appkits/file_menu/: what the code map says of it (plan_codemap_v2.md,
+// apps/office/file_menu/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
@@ -36,14 +36,14 @@
       name: "The File menu: over the store, for every app",
       bones: [
         { at: "File_menu.ml", role: "New, Open, Save, Save As, Export, and their dialogs" },
-        { at: "../document/", role: "Saved: a document as bytes with its magic" },
-        { at: "../../playground/", role: "the platform's store: stored, fetched, exported" },
-        { at: "../../apps/", role: "the apps: MacDraw, Blender, Office, Calendar..." },
+        { at: "../../../appkits/document/", role: "Saved: a document as bytes with its magic" },
+        { at: "../../../playground/", role: "the platform's store: stored, fetched, exported" },
+        { at: "../../", role: "the apps: MacDraw, Blender, Office, Calendar..." },
       ],
       joints: [
-        { from: "../../apps/", to: "File_menu.ml", say: "menu_in, dialog, view" },
-        { from: "File_menu.ml", to: "../document/", say: "to_string, of_string" },
-        { from: "File_menu.ml", to: "../../playground/", say: "store, fetch" },
+        { from: "../../", to: "File_menu.ml", say: "menu_in, dialog, view" },
+        { from: "File_menu.ml", to: "../../../appkits/document/", say: "to_string, of_string" },
+        { from: "File_menu.ml", to: "../../../playground/", say: "store, fetch" },
       ],
     },
     {

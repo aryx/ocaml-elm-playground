@@ -1,9 +1,9 @@
 ; claude: a bot, playing the game the way a player does (Bot),
 ; and what it is allowed to know (Sense); the end of notes_ai.md
-; section 6. A private library,
-; installed as part of elm_playground; see ai/README.md.
+; section 6. In the package tiny_libs, as tiny_libs.ai_bots; see
+; ai/README.md.
 (library
  (name ai_bots)
- (package elm_playground)
+ (public_name tiny_libs.ai_bots)
  (wrapped false)
 )

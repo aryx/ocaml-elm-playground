@@ -17,6 +17,12 @@ cells, a page's elements), so that a test runs it against a list of
 strings and an app against its screen. One library per language, each
 `.mli` with its grammar, a worked example and its references.
 
+They are the opam package `tiny_languages`, on `tiny_libs` (`libs/`):
+each library public as `tiny_languages.<its name>`
+(`tiny_languages.scheme`, `tiny_languages.lang_html`, ...), so that a
+program outside this repository can use it; inside, the short name is
+enough. Their API documentation's front page is `index.mld` here.
+
 | folder | language | used by |
 |---|---|---|
 | `formula/` | the spreadsheet's formulas (VisiCalc, 1979): arithmetic over numbers and cells, SUM and its kin over ranges; recursive descent, the parser to know first | `appkits/sheet`, and so TinyVisiCalc and TinyExcel |
@@ -33,8 +39,8 @@ strings and an app against its screen. One library per language, each
 | `json/` | JSON read (`Json`), over JavaScript's lexer (`Js_lexer`), only the grammar here; comments and trailing commas taken, as jsonnet does | tinybox's `.codemapconfig` (`launcher/codemap/Code_config`) |
 | `jsonnet/` | jsonnet (Google, 2014), JSON with variables, functions, conditionals, comprehensions, imports and objects that inherit, semgrep's language for its rules: its own lexer (`Jsonnet_lexer`: # comments, text blocks, verbatim strings, operators as runs of symbols), recursive descent (`Jsonnet_parse`, the sugar taken off), and a lazy evaluator (`Jsonnet`: objects as layers, late-bound self and super, `+:`, hidden fields, the part of std configurations need), its value manifested as `Json.t`; the official spec its reference (not ojsonnet, semgrep's) | tinybox's `.codemapconfig` (`plan_codemap_v2.md`) |
 | `c/` | C read, not run, the same way: `Lexer_c` (the preprocessor's lines kept, marked), `Parse_c` (recursive descent, no preprocessor: an #if's first branch read, heuristics for the types the headers would declare and for macros, `Parse_c.mli`) building `Ast_c`, `Highlight_c`. Reads 97% of Principia Softwarica's C files whole | tinybox's code map (`launcher/codemap/`) |
-| `javascript/` | a small modern core of JavaScript, for TinyFirefox: read (`Js_lexer`, `Js_ast`, `Js_parse`: recursive descent and Pratt, and why not yacc) and run (`Js_value`, `Js_eval`, a tree walker with closures, `this` and the coercions; `Js_builtins`); the DOM is `appkits/browser`'s `Browser_script` | TinyFirefox (`plan_tiny_firefox.md`) |
-| `html/` | HTML read, not run (from `libs/web/html`): the bytes to text (`Charset`), the entities, the tokens (`Html_lexer`, the WHATWG's state machine), the tree (`Dom`, `Dtd`, `Html_tree`, the stack of open elements), the tree as the Line Mode Browser showed it (`Line_mode`), the forms (`Forms`) | the browsers (`appkits/browser`), TinyMosaic to TinyChrome |
+| `javascript/` | a small modern core of JavaScript, for TinyFirefox: read (`Js_lexer`, `Js_ast`, `Js_parse`: recursive descent and Pratt, and why not yacc) and run (`Js_value`, `Js_eval`, a tree walker with closures, `this` and the coercions; `Js_builtins`); the DOM is `appkit_browser`'s `Browser_script` | TinyFirefox (`plan_tiny_firefox.md`) |
+| `html/` | HTML read, not run (from `libs/web/html`): the bytes to text (`Charset`), the entities, the tokens (`Html_lexer`, the WHATWG's state machine), the tree (`Dom`, `Dtd`, `Html_tree`, the stack of open elements), the tree as the Line Mode Browser showed it (`Line_mode`), the forms (`Forms`) | the browsers (`appkit_browser`), TinyMosaic to TinyChrome |
 | `css/` | what a page's elements look like (from `libs/web/style`): Mosaic's fixed table (`Looks`), style sheets read (`Css_syntax`), `Selectors`, the cascade (`Css`), and TinyChrome's values, cascade and computed styles (`Css_values`, `Cascade`, `Computed`, over `ua.css`) | the same; laid out by `appkits/browser/layout` |
 
 What is not here, and why: the Playground's *ways* (`playground/ways/`:

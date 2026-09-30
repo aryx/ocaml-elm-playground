@@ -1,4 +1,4 @@
-(* A drawing, as a part of a compound document (appkits/embed):
+(* A drawing, as a part of a compound document (appkit_embed):
  * TinyMacDraw's engine (Figure, Drawing) behind the functions a
  * document asks of a part -- the fourth kind of part, added without
  * the hosts knowing anything of drawings but a line in their registry

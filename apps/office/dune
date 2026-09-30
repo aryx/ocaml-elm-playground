@@ -10,8 +10,9 @@
 ; The modules here that are not programs are shared by them: the
 ; parts of a compound document (Part_text, Part_sheet, Part_picture,
 ; Part_drawing, Part_chart). When an app of another category needs one,
-; it becomes an appkit, as File_menu, Stroke_text and Figure_shapes did
-; (appkits/file_menu, appkits/stroke_text, appkits/draw_view).
+; it becomes a library of its own: in appkits/ (tiny_appkits) if it
+; draws nothing, else in a subfolder here, beside the apps it helps, as
+; file_menu/, stroke_text/ and embed/ are (and graphics' draw_view/).
 (executables
   (names
     TinyNLS TinyVisiCalc TinyLotus123 TinyExcel TinyBravo TinyWord TinyOpenDoc TinyPowerPoint TinyHyperCard TinyFrameMaker TinyOffice

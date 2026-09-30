@@ -3,10 +3,10 @@
 ; (Cad_geom), entities on layers and blocks (Cad_drawing), OFFSET, TRIM,
 ; EXTEND, FILLET (Cad_edit), object snaps (Cad_snap), the DXF file
 ; (Dxf), and the session, the command line as a machine that asks and
-; is answered (Cad_session). Used by TinyAutoCAD. A private library,
-; installed as part of elm_playground: pure OCaml.
+; is answered (Cad_session). Used by TinyAutoCAD. In the package
+; tiny_appkits, as tiny_appkits.appkit_cad: pure OCaml.
 (library
  (name appkit_cad)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_cad)
  (wrapped false)
 )

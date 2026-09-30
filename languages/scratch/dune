@@ -6,10 +6,10 @@
 ; script a thread that yields at the end of every loop's turn
 ; (Scratch_run). Used by TinyScratch (apps/devtools/), whose editor is
 ; appkits/blocks. No Playground: the stage is numbers, the app draws
-; it. A private library, installed as part of elm_playground: pure
+; it. In the package tiny_languages, as tiny_languages.scratch: pure
 ; OCaml.
 (library
  (name scratch)
- (package elm_playground)
+ (public_name tiny_languages.scratch)
  (wrapped false)
 )

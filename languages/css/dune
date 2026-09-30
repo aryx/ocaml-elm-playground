@@ -5,10 +5,11 @@
 ; rule is for), Css (the cascade); and TinyChrome's (plan_tiny_chrome.md):
 ; Css_values (lengths, colours, calc(), var()), Cascade (@media, origins,
 ; the rule index), Computed (a style per element, over ua.css: Ua_sheet). Pure OCaml, no shapes: a
-; look is numbers and flags, the app draws it.
+; look is numbers and flags, the app draws it. In the package
+; tiny_languages, as tiny_languages.lang_css.
 (library
  (name lang_css)
- (package elm_playground)
+ (public_name tiny_languages.lang_css)
  (wrapped false)
  (libraries lang_html) ; Dom
 )

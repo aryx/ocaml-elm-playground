@@ -4,9 +4,9 @@
 ; planned, TinyWord's justified paragraphs, greedy by default
 ; since that is what Word does). Independent of
 ; everything: a paragraph is words with widths, and the widths are the
-; caller's.
+; caller's. In the package tiny_appkits, as tiny_appkits.appkit_typeset.
 (library
  (name appkit_typeset)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_typeset)
  (wrapped false)
 )

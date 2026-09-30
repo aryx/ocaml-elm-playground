@@ -160,7 +160,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:update', weight: 1 },
         { at: 'def:view', weight: 1 },
       ],
-      related: ['TinyOffice.ml', 'TinyFrameMaker.ml', 'web/TinyOpenDoc.html', '../../appkits/embed/'],
+      related: ['TinyOffice.ml', 'TinyFrameMaker.ml', 'web/TinyOpenDoc.html', 'embed/'],
     },
     'TinyOffice.ml': { digest: 'add6f43bcfac',
       summary: "Today's office suites (Microsoft 365, iWork, LibreOffice): five kinds of document, each holding the others.",
@@ -228,16 +228,19 @@ local skeletons = import '../../skeletons.libsonnet';
     },
   },
   dirs: {
+    embed: { summary: 'Parts in a document (OLE, OpenDoc): a sheet in a letter, a synth panel in a rack.' },
+    file_menu: { summary: 'The File menu every application shares: New, Open, Save, Save As, and their dialogs.' },
+    stroke_text: { summary: "Letters drawn as Hershey's strokes in a look, for the drawing and browsing apps." },
     software: { summary: 'The same office apps against our own software rasterizer, for the golden frames.' },
     web: { summary: "The office apps in the browser: each app's page, compiled by js_of_ocaml." },
   },
   // the parts: each an engine behind the functions a document asks of a
-  // part (appkits/embed), held by the hosts
+  // part (embed/), held by the hosts
   skeletons: [
     {
       name: 'Documents made of parts',
       bones: [
-        { at: '../../appkits/embed/Component.mli', role: 'what a part is: drawn, fed input, saved' },
+        { at: 'embed/Component.mli', role: 'what a part is: drawn, fed input, saved' },
         { at: 'Part_text.mli', role: "TinyWord's text, as a part" },
         { at: 'Part_sheet.mli', role: "TinyExcel's sheet, as a part" },
         { at: 'Part_picture.mli', role: "TinyMacPaint's picture, as a part" },
@@ -247,13 +250,13 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'TinyOffice.ml', role: 'every kind a host of the others' },
       ],
       joints: [
-        { from: 'Part_text.mli', to: '../../appkits/embed/Component.mli', say: 'a part' },
-        { from: 'Part_sheet.mli', to: '../../appkits/embed/Component.mli', say: 'a part' },
-        { from: 'Part_picture.mli', to: '../../appkits/embed/Component.mli', say: 'a part' },
-        { from: 'Part_drawing.mli', to: '../../appkits/embed/Component.mli', say: 'a part' },
-        { from: '../../appkits/embed/Component.mli', to: 'TinyOpenDoc.ml', say: 'held by' },
-        { from: '../../appkits/embed/Component.mli', to: 'TinyFrameMaker.ml', say: 'held by' },
-        { from: '../../appkits/embed/Component.mli', to: 'TinyOffice.ml', say: 'held by' },
+        { from: 'Part_text.mli', to: 'embed/Component.mli', say: 'a part' },
+        { from: 'Part_sheet.mli', to: 'embed/Component.mli', say: 'a part' },
+        { from: 'Part_picture.mli', to: 'embed/Component.mli', say: 'a part' },
+        { from: 'Part_drawing.mli', to: 'embed/Component.mli', say: 'a part' },
+        { from: 'embed/Component.mli', to: 'TinyOpenDoc.ml', say: 'held by' },
+        { from: 'embed/Component.mli', to: 'TinyFrameMaker.ml', say: 'held by' },
+        { from: 'embed/Component.mli', to: 'TinyOffice.ml', say: 'held by' },
       ],
     },
     skeletons.game('TinyNLS.ml', 'def:execute', 'a command, verb then noun, done to the tree', say='a command complete', init='def:initial'),

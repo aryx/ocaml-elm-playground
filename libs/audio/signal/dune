@@ -2,10 +2,10 @@
 ; rate, time), Resample (read between samples: at other pitches and
 ; rates), Mix (adding, gains, decibels, clipping), Spectrum (the Fourier
 ; transform). Below the rest of audio/ and its formats, and used by the
-; video formats for their sound. A private library, installed as part
-; of elm_playground.
+; video formats for their sound. In the package tiny_libs, as
+; tiny_libs.audio_signal.
 (library
  (name audio_signal)
- (package elm_playground)
+ (public_name tiny_libs.audio_signal)
  (wrapped false)
 )

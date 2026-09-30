@@ -43,7 +43,73 @@
 ;;
 ;; The libraries the platforms share but nobody else should use are
 ;; private (no .opam of their own), see playground/platforms/native_common/dune.
+;;
+;; claude: under all of them, tiny_libs: the from-scratch libraries of
+;; libs/, which know nothing of the Playground, each public as
+;; tiny_libs.<its name> (tiny_libs.crypto, tiny_libs.graphics_png, ...),
+;; for programs outside this repository (libs/README.md); and on them,
+;; tiny_languages: the languages of languages/, as text parsed and run,
+;; each public as tiny_languages.<its name> (languages/README.md); and
+;; on both, tiny_appkits: the application kits of appkits/, the engines
+;; the apps share, each public as tiny_appkits.<its name> (the kits that
+;; draw with the Playground are in apps/, beside the apps they help).
 
+(package (name tiny_libs)
+  (synopsis "From-scratch libraries for teaching: graphics, audio, compression, crypto, networking, ...")
+  (description "\
+  The libraries under the Playground, written from scratch for teaching,
+  one idea per module, each interface with its diagram, worked example
+  and references: 2D and 3D software rasterizers, image and video formats
+  (PNG, GIF, JPEG, MPEG-1, ...), a software synthesizer and the audio
+  formats (WAV, MIDI, MOD, MP3, ...), compression (Deflate, LZW, ...),
+  cryptography and TLS 1.3, network protocols and netcode, physics, game
+  AI, a GUI toolkit, a terminal. None of them knows the Playground; each
+  is a library of its own, tiny_libs.<name>.
+")
+  (depends
+    (ocaml (>= "4.07.0"))
+    (caps (>= "0.1.0"))
+    logs
+    (testo :with-test)
+    (alcotest :with-test)
+    (cairo2 :with-test) ; to compare our pixels with Cairo's (graphics/tests)
+  )
+)
+(package (name tiny_languages)
+  (synopsis "Small languages from scratch: Scheme, Lisp, Smalltalk-80, Pascal, BASIC, JavaScript, HTML, CSS, ...")
+  (description "\
+  Languages as text, parsed and run, written from scratch for teaching:
+  a spreadsheet's formulas, BASIC, s-expressions, Emacs Lisp, Scheme and
+  HtDP's teaching languages, Pascal compiled to P-code, HyperTalk,
+  Smalltalk-80 from the Blue Book, Scratch's blocks, PostScript,
+  JavaScript, HTML and CSS, JSON and jsonnet, and OCaml, C and assembly
+  read for a code visualizer. None of them knows the Playground; each is
+  a library of its own, tiny_languages.<name>.
+")
+  (depends
+    (ocaml (>= "4.07.0"))
+    (tiny_libs (= :version)) ; highlight_code, terminal, random
+  )
+)
+(package (name tiny_appkits)
+  (synopsis "Application engines from scratch: a spreadsheet, rich text, paint, draw, CAD, editors, ...")
+  (description "\
+  What applications share, written from scratch for teaching: a
+  spreadsheet's engine and its view, rich text laid out on pages, line
+  breaking by Knuth and Plass, MacPaint's bitmap and Deluxe Paint's
+  palette, MacDraw's figures, a document with undo and a clipboard, CAD
+  (Sketchpad, AutoCAD, SketchUp), a 3D modeller, the text editors (vi,
+  Emacs, Turbo Pascal's IDE), a block editor's geometry, a web page's
+  layout, a planetarium's astronomy, iCalendar and vCard, money. None
+  of them draws with the Playground; each is a library of its own,
+  tiny_appkits.<name>.
+")
+  (depends
+    (ocaml (>= "4.07.0"))
+    (tiny_libs (= :version))
+    (tiny_languages (= :version))
+  )
+)
 (package (name elm_playground)
   (synopsis "Interface of the Playground: pictures, animations and games")
   (description "\
@@ -59,6 +125,9 @@
     ; claude: capabilities, for Playground_platform's store/fetch/export
     ; (docs/claude_notes/plans/plan_caps.md); links under js_of_ocaml too
     (caps (>= "0.1.0"))
+    (tiny_libs (= :version))
+    (tiny_languages (= :version))
+    (tiny_appkits (= :version)) ; for the kits in apps/, installed with it
   )
 )
 (package (name elm_playground_native)
@@ -80,8 +149,8 @@
     (cairo2 (>= "0.6.4"))
     tsdl
     (elm_playground (= :version))
-    ; claude: for playground/platforms/native_common/ and graphics/images/, private
-    ; libraries installed as part of it (see native_common/dune for why)
+    ; claude: for playground/platforms/native_common/, private libraries
+    ; installed as part of it (see native_common/dune for why)
     (elm_playground_software (= :version))
   )
 )
@@ -95,11 +164,11 @@
   circles, image warping, compositing, antialiasing, a stroke font) are
   written to be read, with references to the papers that introduced
   them. It is also the 2D platform of the native 3D programs, whose HUD
-  it draws, and installs the SDL event loops and the image loading
-  shared by all the native platforms.
+  it draws, and installs the SDL event loops shared by all the native
+  platforms.
 ")
-  ; claude: the algorithms are graphics/'s private libraries, installed
-  ; as part of this package; see notes_2d.md
+  ; claude: the algorithms are tiny_libs' graphics libraries; see
+  ; notes_2d.md
   (depends
     (ocaml (>= "4.08.0"))
     logs
@@ -157,7 +226,7 @@
     (ocaml (>= "4.08.0"))
     tsdl
     (elm_playground_3d (= :version))
-    (elm_playground_software (= :version)) ; graphics/core and graphics/2d, used by graphics/3d; Shape_render_software, for the HUD pass; the SDL loop; graphics/images (Texture_decode)
+    (elm_playground_software (= :version)) ; Shape_render_software, for the HUD pass; the SDL loop
   )
 )
 (package (name elm_playground_3d_web)
@@ -187,7 +256,7 @@
     tsdl
     tgls
     (elm_playground_3d (= :version))
-    (elm_playground_software (= :version)) ; the private libraries it installs: graphics/2d (the HUD's rasterizer, compiled here as Hud_render), graphics/core (Matting); the SDL loop; graphics/images (Texture_decode)
+    (elm_playground_software (= :version)) ; the SDL loop, the private library it installs (graphics/2d, the HUD's rasterizer compiled here as Hud_render, and graphics/core's Matting are tiny_libs')
   )
 )
 (package (name elm_playground_3d_webgl)

@@ -27,10 +27,16 @@ place a game meets them.
 | `juice/` | game feel: easing, tweens, squash, trauma, particles | `notes_juice.md` |
 | `terminal/` | the VT100's screen (`Vt`: bytes and escape sequences into a grid of cells), the tty's line discipline (`Line_discipline`: echo, Backspace, a line on Enter), `Talk` (the programs that ask and wait, as values, and the machine playing one on a `Vt`), `Curses` (a screen drawn whole, sent as what changed) and `Tui` (a full-screen program, Model-View-Update); `unix/`'s `Tty_unix` runs one in a real terminal, native only | `plan_terminal.md` |
 
-They are private libraries, each installed as part of one of the opam
-packages (its dune file's `(package ...)`), pure OCaml unless the
-folder says otherwise (`networking/unix/`: the sockets, native only),
-so every backend, the web one included, can use them.
+They are the opam package `tiny_libs`, which knows nothing of the
+Playground: each library is public, `tiny_libs.<its name>`
+(`tiny_libs.crypto`, `tiny_libs.graphics_png`, ...), so a program
+outside this repository can use it, `(libraries tiny_libs.crypto)`;
+inside, the short name is enough, `(libraries crypto)`. Their API
+documentation's front page is `index.mld` here, the same areas as the
+table above. Pure OCaml unless the folder says otherwise
+(`networking/unix/`, `terminal/unix/`, `graphics/images/`: the sockets
+and the terminal, native only), so every backend, the web one
+included, can use them.
 
 Among themselves they depend little: `core/`, `random/`, `crypto/` and
 `compression/` at the bottom; `networking/` on the first three;

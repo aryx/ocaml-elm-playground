@@ -7,7 +7,7 @@
 ; stanza of its own, so it says (include_subdirs no).
 (library
  (name elm_core)
- (public_name elm_playground.core)
+ (public_name tiny_libs.core)
  (wrapped false)
  (libraries
    ; commons; was for Set_.ml but now included here

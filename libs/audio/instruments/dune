@@ -5,12 +5,12 @@
 ; made of, not a voice: the instruments themselves are the apps' (a
 ; Minimoog is apps/music's), and the interface they play through,
 ; Instrument.mli, is audio/'s, since its Mixer holds them. On signal/
-; and synthesis/ only. A private
-; library, installed as part of elm_playground: pure OCaml, so the web
+; and synthesis/ only. In the package
+; tiny_libs, as tiny_libs.audio_instruments: pure OCaml, so the web
 ; backend has it too.
 (library
  (name audio_instruments)
- (package elm_playground)
+ (public_name tiny_libs.audio_instruments)
  (wrapped false)
  (libraries audio_signal audio_synthesis)
 )

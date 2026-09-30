@@ -3,10 +3,10 @@
 ; and parser, an evaluator, the part of std configurations need; its
 ; value manifested as JSON (Json).
 ;
-; Pure OCaml, no Playground (languages/README.md). A private
-; library, installed as part of elm_playground.
+; Pure OCaml, no Playground (languages/README.md). In the package
+; tiny_languages, as tiny_languages.lang_jsonnet.
 (library
  (name lang_jsonnet)
- (package elm_playground)
+ (public_name tiny_languages.lang_jsonnet)
  (wrapped false)
  (libraries lang_json))

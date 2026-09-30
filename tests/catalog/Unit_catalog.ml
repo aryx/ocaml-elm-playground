@@ -127,10 +127,10 @@ let rows_test =
  * budget is taken off this list (the test says so) *)
 let over_budget =
   [
-    ("apps/internet/TinyMosaic.ml", "the browser's engine: HTML, CSS, the layout (all of it, through appkits/browser's Browser_page)");
+    ("apps/internet/TinyMosaic.ml", "the browser's engine: HTML, CSS, the layout (all of it, through appkit_browser's Browser_page)");
     ("apps/internet/TinyChrome.ml", "JavaScript, and the browser's engine");
     ("apps/internet/TinyFirefox.ml", "JavaScript, and the browser's engine");
-    ("apps/internet/TinyNetscape.ml", "JavaScript, through appkits/browser, which it shares with TinyFirefox");
+    ("apps/internet/TinyNetscape.ml", "JavaScript, through appkit_browser, which it shares with TinyFirefox");
     ("apps/office/TinyOffice.ml", "the spreadsheet's formulas and HyperTalk, every office part in one");
     ("apps/devtools/TinySmalltalk80.ml", "Smalltalk-80, a whole system");
   ]

@@ -63,7 +63,7 @@
  * panel=network, the tools open; search=duckduckgo, the omnibox's
  * engine (wikipedia).
  *
- * Uses: appkits/browser (the tab, the page, Browser_boxes,
+ * Uses: appkit_browser (the tab, the page, Browser_boxes,
  * Browser_devtools, the forms), the web engine (Cascade, Computed, Box_layout,
  * Flex_layout, and Hit through the page's Html_layout view),
  * graphics/images/svg (Svg) through Browser_boxes and Browser_picture,

@@ -6,10 +6,10 @@
 ; TinyPostScript (apps/graphics/).
 ;
 ; No Playground and no font (languages/README.md): the letters' strokes
-; are the host's, a function the caller gives. A private library,
-; installed as part of elm_playground.
+; are the host's, a function the caller gives. In the package
+; tiny_languages, as tiny_languages.postscript.
 (library
  (name postscript)
- (package elm_playground)
+ (public_name tiny_languages.postscript)
  (wrapped false)
 )

@@ -1,8 +1,8 @@
 ; claude: deciding what to do: states and transitions (Fsm), a
-; tree of fallbacks (Behavior), scores (Utility); notes_ai.md section 6. A private library,
-; installed as part of elm_playground; see ai/README.md.
+; tree of fallbacks (Behavior), scores (Utility); notes_ai.md section 6. In the package
+; tiny_libs, as tiny_libs.ai_decision; see ai/README.md.
 (library
  (name ai_decision)
- (package elm_playground)
+ (public_name tiny_libs.ai_decision)
  (wrapped false)
 )

@@ -1,4 +1,4 @@
-(* A spreadsheet, as a part of a compound document (appkits/embed):
+(* A spreadsheet, as a part of a compound document (appkit_embed):
  * TinyExcel's engine and its drawing (Sheet, Sheet_view) behind the
  * four functions a document asks of a part. Active, a click selects a
  * cell and typing goes straight into it -- Enter to put it in, Escape

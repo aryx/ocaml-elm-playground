@@ -4,12 +4,12 @@
 ; vCard (Vcard), one family of text, a property per line, read with
 ; the same layers. The time they hold is core's time/ (Civil, Recur).
 ;
-; Pure OCaml, no gui, no playground: a private library, installed as
-; part of elm_playground, so every backend, the web one included, can
+; Pure OCaml, no gui, no playground: in the package tiny_appkits, as
+; tiny_appkits.appkit_pim, so every backend, the web one included, can
 ; use it.
 (library
  (name appkit_pim)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_pim)
  (wrapped false)
  (libraries elm_core)
 )

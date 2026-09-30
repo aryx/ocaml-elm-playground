@@ -2,7 +2,7 @@
 ; 'make test' (dune runtest)
 (test
  (name Test)
- (package elm_playground)
+ (package tiny_libs)
  (modules Test Unit_movie Unit_yuv Unit_psnr Unit_y4m Unit_fli Unit_avi Unit_mpeg1 Unit_mpeg1_encode Unit_mpeg_system)
  (libraries alcotest testo graphics_rgba graphics_movie graphics_yuv graphics_y4m graphics_fli graphics_avi audio_signal graphics_mpeg1
    graphics_mpeg_system compression ; Crc32, the streams checked

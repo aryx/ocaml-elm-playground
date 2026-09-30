@@ -54,7 +54,7 @@
  * modes and the layers' flattening), our own JPEG
  * and PNG readers and writers, the photographs of photos/ (NASA's,
  * public domain, make_photos.sh), appkits/document (Undo), the File menu
- * (appkits/file_menu), and gui/'s immediate widgets.
+ * (appkit_file_menu), and gui/'s immediate widgets.
  *
  * What it deliberately does not do: layer masks and adjustment layers
  * (Photoshop 4.0, 1996); moving a layer (the move tool); channels,

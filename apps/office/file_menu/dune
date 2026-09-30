@@ -5,8 +5,10 @@
 ; apps' patches (plan_synth_teaching.md).
 ;
 ; Unlike appkit_document it needs the toolkit and the playground (its
-; dialogs are drawn, and Playground_platform is where files go); a
-; private library, installed as part of elm_playground.
+; dialogs are drawn, and Playground_platform is where files go), so it
+; is here beside the apps it helps (the office's, graphics', pim's)
+; rather than in appkits/ (tiny_appkits): a private library, installed
+; as part of elm_playground.
 (library
  (name appkit_file_menu)
  (package elm_playground)

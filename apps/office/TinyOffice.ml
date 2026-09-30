@@ -90,7 +90,7 @@
  *   time it is drawn -- OLE's *linking*, beside its embedding -- so its
  *   bars follow the numbers as they are typed, in place.
  *
- * What it uses: appkits/embed (Component, the protocol, and its
+ * What it uses: appkit_embed (Component, the protocol, and its
  * draw_in/input_in scaling), the parts of apps/ (Part_text, Part_sheet,
  * Part_picture, Part_drawing, and Part_chart for the charts) as both
  * the main content of the sheet, picture and drawing documents and the

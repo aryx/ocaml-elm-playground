@@ -6,7 +6,7 @@
 ; Pure OCaml. See networking/README.md.
 (library
  (name networking_netcode)
- (package elm_playground)
+ (public_name tiny_libs.networking_netcode)
  (wrapped false)
  (libraries
    random ; Lehmer, Sim_net's seeded network

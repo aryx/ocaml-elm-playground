@@ -171,7 +171,7 @@ FAVICON=<link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/favic
 # claude: the code map's own icon, a treemap (docs/codemap-favicon.svg), on
 # its page here and on the ones it makes for other projects
 CODEMAP_FAVICON=<link rel="icon" href="https://aryx.github.io/ocaml-elm-playground/codemap-favicon.svg" type="image/svg+xml">
-ODOC_DIRS=odoc.support \
+ODOC_DIRS=odoc.support tiny_libs tiny_languages tiny_appkits \
   elm_playground elm_playground_native elm_playground_web\
   elm_playground_software elm_playground_3d elm_playground_3d_software
 

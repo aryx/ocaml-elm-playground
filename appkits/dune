@@ -1,0 +1,5 @@
+; claude: the front page of the package tiny_appkits's API documentation,
+; the kits area by area
+(documentation
+  (package tiny_appkits)
+  (mld_files index))

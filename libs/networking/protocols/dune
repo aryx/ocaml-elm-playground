@@ -6,7 +6,7 @@
 ; OCaml, no sockets (networking/unix/ has them). See networking/README.md.
 (library
  (name networking_protocols)
- (package elm_playground)
+ (public_name tiny_libs.networking_protocols)
  (wrapped false)
  (libraries
    crypto ; Sha1, for Websocket's handshake

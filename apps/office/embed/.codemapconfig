@@ -1,4 +1,4 @@
-// appkits/embed/: what the code map says of it (plan_codemap_v2.md,
+// apps/office/embed/: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
 {
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
@@ -46,7 +46,7 @@
         { at: 'def:walk', weight: 2 },
         { at: 'def:save', weight: 1 },
       ],
-      related: ['../tests/Unit_embed.ml'],
+      related: ['../../../appkits/tests/Unit_embed.ml'],
     },
   },
   skeletons: [
@@ -55,15 +55,15 @@
       bones: [
         { at: "Component.ml", role: "a part: a record of functions any host can draw, feed and save" },
         { at: "Compound.ml", role: "OpenDoc's document: columns and rows of parts, sized, saved" },
-        { at: "../../apps/office/TinyOpenDoc.ml", role: "the compound document editor" },
-        { at: "../../apps/office/TinyOffice.ml", role: "a letter with a sheet or a drawing in it" },
-        { at: "../../apps/music/TinyReface.ml", role: "a synthesizer's panel as a part" },
+        { at: "../TinyOpenDoc.ml", role: "the compound document editor" },
+        { at: "../TinyOffice.ml", role: "a letter with a sheet or a drawing in it" },
+        { at: "../../music/TinyReface.ml", role: "a synthesizer's panel as a part" },
       ],
       joints: [
         { from: "Compound.ml", to: "Component.ml", say: "its leaves" },
-        { from: "../../apps/office/TinyOpenDoc.ml", to: "Compound.ml", say: "the document" },
-        { from: "../../apps/office/TinyOffice.ml", to: "Component.ml", say: "registry, draw_in" },
-        { from: "../../apps/music/TinyReface.ml", to: "Component.ml", say: "draw_in, input_in" },
+        { from: "../TinyOpenDoc.ml", to: "Compound.ml", say: "the document" },
+        { from: "../TinyOffice.ml", to: "Component.ml", say: "registry, draw_in" },
+        { from: "../../music/TinyReface.ml", to: "Component.ml", say: "draw_in, input_in" },
       ],
     },
     {

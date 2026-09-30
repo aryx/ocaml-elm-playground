@@ -3,8 +3,8 @@
 ; diagram, worked example and references (see
 ; docs/claude_notes/plan_audio_teaching.md and notes_audio.md).
 ; Independent of the Playground (Audio.ml is the adapter).
-; Private libraries, installed as part of elm_playground: pure OCaml,
-; so every backend, the web one included, can use them.
+; Libraries of the package tiny_libs (this one tiny_libs.audio): pure
+; OCaml, so every backend, the web one included, can use them.
 ;
 ; A library per subdirectory, each on the ones before it:
 ;  - signal/: the samples, and what's computed on them (Signal,
@@ -21,7 +21,7 @@
 ;    and the live effects (plan_synth_teaching.md, notes_synth.md).
 (library
  (name audio)
- (package elm_playground)
+ (public_name tiny_libs.audio)
  (wrapped false)
  (libraries audio_signal audio_synthesis audio_wav audio_midi audio_abc)
 )

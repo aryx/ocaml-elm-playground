@@ -136,6 +136,7 @@ local skeletons = import '../../skeletons.libsonnet';
     },
   ],
   dirs: {
+    draw_view: { summary: "Figures drawn as Playground shapes, shared by TinyMacDraw and the office's drawing part." },
     software: { summary: 'The same apps on the software rasterizer, for the golden frames.' },
     web: { summary: 'The same apps in the browser, and their pages.' },
   },

@@ -2,13 +2,12 @@
 ; the software rasterizer, OpenGL) and the ray tracer: vectors (Vec3),
 ; the camera (Camera) and its matrices (Mat4), the lighting formula
 ; (Lighting), rays and what they hit (Ray, shared with physics/3d) and
-; what a surface does with light (Material). Depends on nothing. A
-; private library (see graphics/core/dune), installed as part of
-; elm_playground, not elm_playground_3d: the Povray way, in the 2D
-; playground, needs it too (plan_raytracing_teaching.md, the phase 0
-; review), and every 3D package depends on elm_playground anyway.
+; what a surface does with light (Material). Depends on nothing. In
+; the package tiny_libs, as tiny_libs.graphics_3d_geometry (see
+; graphics/core/dune); the Povray way, in the 2D playground, needs it
+; too (plan_raytracing_teaching.md, the phase 0 review).
 (library
  (name graphics_3d_geometry)
- (package elm_playground)
+ (public_name tiny_libs.graphics_3d_geometry)
  (wrapped false)
 )

@@ -4,12 +4,12 @@
 ; (Reconcile), and the file every personal finance program exchanged
 ; (Qif). The dates are core's Civil.
 ;
-; Pure OCaml, no gui, no playground: a private library, installed as
-; part of elm_playground, so every backend, the web one included, can
-; use it; tested without a screen in appkits/tests/.
+; Pure OCaml, no gui, no playground: in the package tiny_appkits, as
+; tiny_appkits.appkit_money, so every backend, the web one included,
+; can use it; tested without a screen in appkits/tests/.
 (library
  (name appkit_money)
- (package elm_playground)
+ (public_name tiny_appkits.appkit_money)
  (wrapped false)
  (libraries elm_core)
 )

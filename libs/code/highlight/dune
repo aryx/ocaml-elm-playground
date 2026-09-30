@@ -7,9 +7,9 @@
 ; language (to come: the modules a file uses, a generic AST, dataflow),
 ; not in languages/: not a language.
 ;
-; Pure OCaml, no Playground. A private
-; library, installed as part of elm_playground.
+; Pure OCaml, no Playground. In the
+; package tiny_libs, as tiny_libs.highlight_code.
 (library
  (name highlight_code)
- (package elm_playground)
+ (public_name tiny_libs.highlight_code)
  (wrapped false))

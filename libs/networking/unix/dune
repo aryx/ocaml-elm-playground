@@ -1,13 +1,11 @@
 ; claude: the protocols of networking/ over real sockets: a TCP
 ; connection (Tcp), and an HTTP GET with its redirections
 ; (Http_client), which is what graphics/images/'s Download uses for
-; http:// URLs. The operating system's side (Unix), so native only. A
-; private library, installed as part of elm_playground_software, like
-; graphics_images, its user (see playground/platforms/native_common/dune for why
-; that package).
+; http:// URLs. The operating system's side (Unix), so native only. In
+; the package tiny_libs, as tiny_libs.networking_unix.
 (library
  (name networking_unix)
- (package elm_playground_software)
+ (public_name tiny_libs.networking_unix)
  (wrapped false)
  (libraries
    unix

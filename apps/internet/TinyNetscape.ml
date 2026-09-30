@@ -57,7 +57,7 @@
  * pictures the text flows around (floats). Its home page, about:netscape,
  * has them all; TinyMosaic shows the same page without them.
  *
- * Uses: the appkit appkits/browser (a page read, laid out, drawn; the
+ * Uses: the kit appkit_browser (a page read, laid out, drawn; the
  * history; forms; the tab, Browser_tab: the page, its history, its
  * pictures four at a time -- shared with TinyFirefox), and with
  * TinyMosaic the built-in site (Site); web's Hit; Playground.Http. Its

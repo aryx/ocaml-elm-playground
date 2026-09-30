@@ -6,9 +6,9 @@
 ; and the Amiga's ILBM's as ByteRun1); and the pieces of MPEG's bitstreams, a reader of bits most
 ; significant first (Bits) and fixed code tables (Vlc). Independent of
 ; any format, so that audio's may use them as images' and videos' do.
-; A private library, installed as part of elm_playground, pure OCaml.
+; In the package tiny_libs, as tiny_libs.compression, pure OCaml.
 (library
  (name compression)
- (package elm_playground)
+ (public_name tiny_libs.compression)
  (wrapped false)
 )

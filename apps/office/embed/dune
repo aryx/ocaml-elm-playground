@@ -5,8 +5,11 @@
 ; OpenDoc's parts, in two small modules.
 ;
 ; It knows no kind of part: a sheet, a text, a picture are the
-; applications', and it reaches them only through the protocol. A
-; private library, installed as part of elm_playground.
+; applications', and it reaches them only through the protocol. A part
+; draws with the Playground, so it is here beside the apps it helps
+; (the office's, and music's TinyReface) rather than in appkits/
+; (tiny_appkits): a private library, installed as part of
+; elm_playground.
 (library
  (name appkit_embed)
  (package elm_playground)
