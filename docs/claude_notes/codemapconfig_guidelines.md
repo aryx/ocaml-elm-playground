@@ -392,6 +392,84 @@ them):
 - `-facts` takes one directory and analyses the whole project each
   time; `.y` files are not read, so a yacc action's calls are unseen.
 
+### What ~/github/xix taught (its first pass, 2026-09-30)
+
+Seven agents wrote xix's 109 configs (1,100 OCaml and kernel C files,
+Plan 9's programs ported, each with its book) in about twelve minutes,
+from a root config, `skeletons.libsonnet` and a brief written first
+(`xix/docs/claude_notes/codemap_brief_xix.md`: the next project starts
+from it). Their reports:
+
+- **Check a book's tables against the directory.** occ.nw, oas.nw,
+  olk.nw, orio.nw and CompilerGenerator.nw have empty "Code
+  organization" and "Software architecture" headings; orc.nw's and
+  ogit.nw's tables name files renamed, moved or never written. The
+  pipelines came from each `CLI.main` instead.
+- **The shapes asked for, now in xix's libsonnet** (copy them to the
+  next project's): `onefile` (a program in one file, no Main.ml or
+  CLI.ml: ar.ml, ogit's main.ml, the utilities), `module_calls` (a star
+  of a module's own functions, bare names), `select` (a thread looping
+  on `Event.select`, a bone per case, each back to the loop). Still
+  wanted: a per-architecture fan (`assemble5/6/7/v/i`: each config
+  defined its own locals), the `X_`/`X` split (types, then functions:
+  OCaml forbids the cycles C's dat.h allowed), a dispatcher's match
+  cases (`code:"| O.Pipe ->"` reaches a case; a case is no `def:`).
+  `calls(...) + { bones+:, joints+: }` combines a star with a loop.
+- **A module that is one function** (Layout5, Rewrite5, Datagen) gets
+  its bones from its comments (`comment:"step1: mark"`): they count.
+- **Unbuilt and empty files are still demanded** (18 empty `sys*.ml`
+  placeholders, `todo/` directories, a `.ml` in no build file): say so
+  in the summary; an empty file's digest is `d41d8cd98f00`.
+- **Invisible calls, said in the joints**: records of functions
+  (ogit's `cmd.Cmd_.f`, `Client.fetch`), `Obj.magic` records choosing
+  an architecture (`Arch_linker.of_arch`), OCaml's `external`s into C,
+  and `caml_startup`, defined in a generated `ocaml.c` not in the tree
+  (`def:` lands on the prototype).
+- **Two builds, one name**: dune links opam's fpath, logs and the
+  stdlib, the mkfile xix's own (lib_core/base, collections, core are
+  ocaml-light's stdlib, mk only); an unbuilt copy (concurrency/todo's
+  `event.ml`) steals "used by" by name. A directory's summary says
+  which build it belongs to.
+- **Anchors:**
+  - `code:` never matches a commented-out line or a `//` line:
+    `comment:` there.
+  - In `.ml` files `(` and escaped quotes in `code:` work
+    (`code:"| \"44\""`); in `.s` files `(`, `*`, `$` and `,` do not.
+    A `\t` in jsonnet is a real tab, never matched.
+  - `code:` also matches inside a string literal (handy in OCaml).
+  - `code:"name(Type arg"` can land on a Plan 9 prototype that keeps
+    its parameters' names (`zsort`): check the line.
+  - A syncweb marker is the best anchor in OCaml too: `comment:"The
+    globals"` reached editor's second `type t`.
+- **The format, as -check teaches it**: a tour stop needs an anchor (a
+  bare path is refused, "a stop names its file"); `links` are
+  `{from, to}`, no `say`; the totals line ("N configs, N mistakes, N
+  warnings, N missing") is what proves the configs were read -- an empty
+  grep of one's paths proves nothing.
+
+The tools, fixed after the pass (2026-09-30):
+
+- A `.codemapignore` below the root is read, for the paths under its
+  own directory, as git's: xix's `caps/` (a submodule, its own project)
+  leaves out its `tests/` and `scripts/` itself. Only the root's was
+  read, and an agent wrote seven configs for fixtures the author had
+  already ignored: look for the subprojects' ignore files first.
+
+The tools, still to fix (xix's reports):
+
+- The facts' "Sections" garble OCaml comments too ("to be updated once
+  you insert tex; tod; less"), and a file starting with a syncweb marker
+  and code shows a fragment of code as its header.
+- `-facts` stars module aliases (`module R = Runtime`) among the most
+  used, and calls a `.mll` "a program nobody names"; -check calls
+  `Lexer_asm.mll` "a hub (named by 0 files)". `.mll`/`.mly` are read and
+  anchorable (`Parser_asm5.mly:def:program`) but never demanded.
+- A program `let _ = Cap.main` in a `tests/` file is sometimes not
+  flagged as one (hellorio.ml, hellodraw2.ml).
+- `<string.h>` still counts toward `Libmemdraw/string.c`'s fan-in.
+- Headers of 150 lines or more (`mlvalues.h`) are never asked for a
+  skeleton.
+
 ### Centrality, not size (the author, 2026-09-29)
 
 "Playground.computer, Playground.game ... are arguably the most

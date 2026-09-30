@@ -6,7 +6,8 @@
    Walked in name order, leaving out:
    - hidden entries (.git) and directories starting with _ (_build,
      _opam; a file may: Linux 0.01's lib/_exit.c);
-   - what its .codemapignore says (Code_config);
+   - what its .codemapignore says (Code_config), and any met below
+     it, each for the paths under its own directory (as git's);
    - symbolic links (not followed: a link back up would loop).
 
    A project's top is a directory holding a .git or a dune-project (not
