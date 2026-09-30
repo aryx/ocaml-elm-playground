@@ -1,8 +1,104 @@
 # -*- org -*-
 
-* 0.3 (Q4 2026) (3D playground, from-scratch software rasterizers, OpenGL/WebGL, physics/ai/audio/juice/gui libs, games and apps)
+* 0.3 (Q4 2026) (3D playground, from-scratch libraries, 146 games and 60 apps, languages, tinybox, new opam packages)
 # unless mentioned otherwise, everything below was done by Claude Code
 # (with direction from me)
+
+** layout, catalogue and packaging
+- the repository by kind: libs/ (the from-scratch libraries, knowing
+  nothing of the Playground), languages/, appkits/, playground/ (apis/,
+  layers/, ways/, platforms/), gamekits/, games/<genre>/ (15 genres, 2D,
+  2.5D and 3D side by side: games2.5d/, games3d/ and kits/ are gone),
+  apps/<category>/ (11 categories), examples/, launcher/ (tinybox)
+- CATALOG.md: every game and app, a row each (how it is drawn, its
+  original, what it brought); tests/catalog checks each has its row, its
+  golden frame, its web page, and its budget: at most 5,000 lines of
+  its own code (its file, its folder's, its kits' and languages'), six
+  exceptions listed, each carrying a whole language
+- every program's main is Program.main (libs/core), so that tinybox can
+  link them all; checked by semgrep
+- new opam packages: tiny_libs (libs/, each library tiny_libs.<name>,
+  elm_core now tiny_libs.core), tiny_languages, tiny_appkits (all three
+  usable without the Playground), elm_playground_gamekits, tinybox;
+  the kits that draw with the Playground live beside the apps they help
+  (apps/internet/browser, apps/office/file_menu, ...); each package with
+  its odoc front page
+- no more C dependencies but SDL, Cairo and OpenGL: stb_image replaced
+  by our own image readers, curl by our own HTTP and TLS 1.3
+
+** tinybox (new)
+- every game and app in one binary, after BusyBox: tinybox list,
+  tinybox mario, tinybox TinyVi -tty
+- its menu (after Batocera's and RetroBox's front ends), the same
+  natively and in a browser (docs/tinybox.html, 0.4 MB, each program its
+  own page), each program's first golden frame as its screenshot
+- the code map (after the author's codemap): a program's code, then all
+  it uses, then the whole repository, as a treemap under a camera,
+  readable up close; layers (roles, call depth, uses), skeletons and
+  reading order from .codemapconfig files (jsonnet); OCaml, C and
+  assembly highlighted by our own parsers; also on the web
+
+** apps (new, the Tiny applications, apps/<category>/)
+- office: TinyBravo, TinyWord, TinyFrameMaker, TinyNLS, TinyVisiCalc,
+  TinyLotus123, TinyExcel, TinyPowerPoint, TinyHyperCard,
+  TinyOpenDoc, TinyOffice
+  (compound documents: parts in documents, OLE's and OpenDoc's idea)
+- graphics: TinyMacPaint, TinyMacDraw, TinyDeluxePaint (colour
+  cycling), TinyPhotoshop, TinyVisio, TinyBlender (rendered by the ray
+  tracer), TinyPostScript; cad: TinySketchpad, TinyAutoCAD, TinySketchup
+- music: TinySoundtracker, TinyMinimoog, TinyHammond, TinyTB303,
+  TinyDX7, TinyRhodes, TinyCS80, TinyJuno, TinyTR808, TinyReBirth,
+  TinyOp1, TinyOpxy, TinyReface, TinyReason (a rack of them, cables as
+  ropes); media: TinyMediaPlayer, TinyWinamp
+- internet: TinyIRC, TinyEudora, TinyMosaic, TinyNetscape, TinyFirefox
+  (JavaScript, a Firebug), TinyChrome (CSS's box model, flexbox, SVG,
+  tabs, devtools; reads Hacker News, Wikipedia, GitHub)
+- devtools: TinyBasic, TinyVi, TinyEmacs, TinyTurboPascal (and its
+  debugger), TinySmalltalk80, TinyScratch, TinySnap, TinyDrScheme (and
+  its stepper); system: TinyTerminal (a VT100 and a shell)
+- pim: TinyClock, TinyCalendar, TinyPalmPilot, TinyQuicken; education:
+  TinyStellarium, TinyInteractivePhysics; gamedev: TinyAseprite,
+  TinyTiled (and games' level editors, TinySokobanEd)
+
+** languages/ (new, languages as text, parsed and run)
+- a spreadsheet's formulas, BASIC (Tiny BASIC, Applesoft), s-expressions,
+  Emacs Lisp, Scheme and HtDP's Beginning Student (a CESK machine,
+  call/cc, a stepper), Pascal compiled to P-code, HyperTalk,
+  Smalltalk-80 from the Blue Book (bytecodes, its kernel in Smalltalk),
+  Scratch and Snap!, PostScript, JavaScript (ES5 core), HTML, CSS (the
+  cascade, computed styles), JSON and jsonnet; OCaml, C and assembly
+  read for the code map
+
+** libs/ (new areas)
+- images, our own readers and writers: PNG, GIF, JPEG (baseline, and a
+  writer), XPM, IFF ILBM, SVG; imaging (TinyPhotoshop's filters)
+- videos: MPEG-1 (decoded I/P/B, and encoded), MPEG system streams, AVI
+  (Motion JPEG), FLI/FLC, Y4M; audio formats: MP2, MP3, MOD, WAV, MIDI,
+  ABC
+- compression (Huffman, Inflate/Deflate, zlib, LZW, PackBits), crypto
+  (SHA-1/2, HMAC, HKDF, ChaCha20-Poly1305, AES-GCM, X25519, ECDSA, RSA)
+  and TLS 1.3 (checked against RFC 8448's trace)
+- networking: HTTP, WebSocket, IRC, SMTP, POP3, mail, and the netcode
+  (lockstep, rollback, client-server), under playground/Multiplayer
+  (net=simulate, host, join, relay); servers for IRC, HTTP, relays
+- graphics: a ray tracer (CSG, BVH, soft shadows, path tracing),
+  animation (Core Animation's timing curves); physics/3d (see below)
+- audio: instruments (VCO, ladder filters, FM algorithms, sampler,
+  sequencer) and effects (drive, EQ, chorus, phaser, delay, reverb,
+  dynamics, Leslie); ai: decisions (FSM, behavior trees, utility), bots,
+  search (MCTS, Zobrist), learning (neural nets, backprop, Q-learning)
+- gui (widgets, the four architectures, layout, text), juice (easing,
+  tweens, trauma, particles), terminal (VT100, line discipline, curses,
+  full-screen programs, a real terminal by Tty_unix)
+
+** playground (new APIs)
+- ways of programming, each building an app for you: Logo and Logo3d,
+  Bigbang and Universe (HtDP's worlds), Puzzlescript, Karel, Povray
+  (scenes ray traced progressively), Teletype, Textmode
+- apis: Gui, Juice, Ai, Multiplayer (and their 3D twins); layers:
+  Camera3d, Character3d, Ragdoll3d, Portal3d
+- Http.get (Elm's), resizable native windows (-size, -fullscreen),
+  artwork=shapes/sprites for pixel-art games
 
 ** playground3d (new)
 - new elm_playground_3d library (Playground3d.mli), same Model-View-Update
@@ -423,9 +519,8 @@
 - examples_js/ and games_js/ symlinks replaced by examples/js/ and
   games/js/ with dune copy_files (one real source file per example)
 - new opam packages for the new backends (elm_playground_software,
-  elm_playground_native_common, elm_playground_3d{,_web,_software,
-  _opengl,_webgl,_native_common}); elm_core/elm_system become
-  sub-libraries elm_playground.core/.system
+  elm_playground_3d{,_web,_software,_opengl,_webgl}); see also "layout,
+  catalogue and packaging" above
 - website: publish the 3D examples (web and WebGL) under docs/, make
   serve-build
 
