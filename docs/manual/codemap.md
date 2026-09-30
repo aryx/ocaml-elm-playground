@@ -135,7 +135,7 @@ codemap.html?focus=windows/rio/wind.c&street=3    a file at the street, in a mod
 codemap.html?data=<url>                           another bundle
 ```
 
-The map's version is at the bottom right ("code map 0.04"), raised at
+The map's version is at the bottom right ("code map 0.05"), raised at
 each publish of a change: a browser may keep the program it has for ten
 minutes, so a page not showing the latest one wants a reload that skips
 the cache (Cmd+Shift+R).
@@ -212,7 +212,9 @@ The capitals that matter are larger (used by 10 files or more, or
 reaching 30) and win over a file's card where they meet. And each unit
 shows its **entry point** whether a config names it or not: of the
 definitions under it, the one whose calls reach the most files, green,
-its file said ("threadmain (rio.c)").
+its file said ("threadmain (rio.c)"; an OCaml program's unnamed
+`let () = ...`, "main (Tinybox.ml)"). A definition's reach follows its
+calls to other files and within its own (a helper calling on).
 
 **Peeks.** A click on a name in the code opens a *peek*: the definition
 of that name, readable, over the map, with the comment just above it
@@ -265,6 +267,14 @@ around it; a click goes there.
 each with its role) and the joints between them, roads from a bone to
 the next. `x` again shows the next skeleton of the unit; past the last,
 the X-ray turns off.
+
+The joints give the order to read it in: each bone is numbered and
+coloured by its depth, the longest chain of joints leading to it from a
+bone nothing leads to -- 1, green, where to start (the main), then on
+through yellow to red, the end; a joint goes from its start's colour to
+its end's, and the bones of a cycle share a number. A skeleton without
+joints stays ivory. Its name and the plates' legend move to the corner
+where they hide the fewest bones.
 
 The skeleton is always the unit's own: at a file, the file's; at a
 folder, the folder's. It comes from the configs; where none is written,

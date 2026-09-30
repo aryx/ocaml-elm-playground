@@ -353,7 +353,8 @@ let capitals_chosen (t : t) : (string, int * entry) Hashtbl.t * (string * Code_g
             let _, e = Hashtbl.find where p in
             match List.find_opt (fun (l', _, _) -> l' = l) (Lazy.force e.file).defs with
             | Some (_, name, _) -> Some (p, name)
-            | None -> None)
+            (* claude: OCaml's unnamed let () = ..., a program's main *)
+            | None -> Some (p, Printf.sprintf "line:%d" (l + 1)))
         | None -> None
   in
   (* a config's capital already: marked so, its file said too *)
@@ -361,7 +362,9 @@ let capitals_chosen (t : t) : (string, int * entry) Hashtbl.t * (string * Code_g
   let chosen = List.map (fun ((q, (it : Code_guide.item)) as x) -> if is_entry x then (q, { it with weight = 0 }) else x) chosen in
   let added =
     match entry with
-    | Some (p, name) when not (List.exists is_entry chosen) -> [ (p, ({ at = "def:" ^ name; say = Some "the entry point: of the code here, what reaches the most"; weight = 0 } : Code_guide.item)) ]
+    | Some (p, name) when not (List.exists is_entry chosen) ->
+        let at = if Code_search.starts name "line:" then name else "def:" ^ name in
+        [ (p, ({ at; say = Some "the entry point: of the code here, what reaches the most"; weight = 0 } : Code_guide.item)) ]
     | _ -> []
   in
   (where, added @ chosen)
@@ -385,7 +388,7 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                   (* claude: a name too short to say anything from afar (t), its module's with it *)
                   let label = if String.length label <= 2 then String.capitalize_ascii (Filename.remove_extension (Filename.basename path)) ^ "." ^ label else label in
                   (* claude: the entry point found (weight 0), its file said *)
-                  let label = if it.weight = 0 then Printf.sprintf "%s (%s)" label (Filename.basename path) else label in
+                  let label = if it.weight = 0 then Printf.sprintf "%s (%s)" (if Code_search.starts it.at "line:" then "main" else label) (Filename.basename path) else label in
                   (* claude: its own uses once counted (Code_rank, not counted
                    * here: rank_if_counted), the .ml's for an .mli's *)
                   let uses =
@@ -1047,6 +1050,12 @@ let names_glow (t : t) (c : camera) (e : entry) : shape list =
  * an end off the map, a stub to the map's edge naming it *)
 let ivory = (245, 232, 200)
 
+(* claude: the gradient of the layers and the skeleton's order: 0 green
+ * (the top, the start), 0.5 yellow, 1 red (the bottom, the end) *)
+let heat (x : float) : int * int * int =
+  let mix (r0, g0, b0) (r1, g1, b1) k = (r0 + int_of_float (k *. float_of_int (r1 - r0)), g0 + int_of_float (k *. float_of_int (g1 - g0)), b0 + int_of_float (k *. float_of_int (b1 - b0))) in
+  if x < 0.5 then mix (90, 220, 120) (245, 225, 90) (x *. 2.) else mix (245, 225, 90) (250, 80, 70) ((x -. 0.5) *. 2.)
+
 (* the grounds on the map now, a file's path and its layout: the focus's
  * and, at the street, the panels' *)
 let grounds (t : t) (e : entry) : (string * Code_ground.t) list =
@@ -1266,7 +1275,22 @@ let derived_dir (t : t) (here : string) : Code_guide.skeleton option =
  * width, for a hover (bone_card) and a click (Code_map) *)
 let drawn_bones : (Code_guide.bone * float * float * float) list ref = ref []
 
+(* claude: the last frame's, for placing the panels (least_bones): this
+ * frame's are drawn after its banner is placed *)
+let last_bones : (Code_guide.bone * float * float * float) list ref = ref []
+
+(* claude: of boxes (left, top, width, height) where a panel of the X-ray
+ * may go, the one over the fewest bones (the last frame's, their dots
+ * and roles), the first as good (the author: "sometimes the skeleton
+ * legend is on code that is actually part of the bones") *)
+let least_bones (boxes : (float * float * float * float) list) : float * float * float * float =
+  let covers (x0, y0, w, h) = List.length (List.filter (fun (_, x, y, bw) -> x +. bw >= x0 && x -. 8. <= x0 +. w && y +. 10. >= y0 && y -. 10. <= y0 +. h) !last_bones) in
+  match boxes with
+  | [] -> (0., 0., 0., 0.)
+  | first :: rest -> snd (List.fold_left (fun (n, b) b' -> let n' = covers b' in if n' < n then (n', b') else (n, b)) (covers first, first) rest)
+
 let skeleton_shapes (t : t) (c : camera) : shape list =
+  last_bones := !drawn_bones;
   drawn_bones := [];
   let a = c.a in
   let ground = at_ground t c in
@@ -1356,10 +1380,15 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
     | [ s ] ->
         let text = Printf.sprintf "X-ray: %s   (%d/%d, x: %s)" s.sname (t.xray_n + 1) k (if t.xray_n + 1 < k then "the next" else "off") in
         let tw = 0.5 *. 16. *. float_of_int (String.length text) in
+        let w = tw +. 20. and h = 26. in
+        let pw = float_of_int a.pw and ph = float_of_int a.ph in
+        (* at the map's foot (the bones sit at the regions' top corners),
+         * else where it hides fewest *)
+        let x0, y0, _, _ = least_bones [ ((pw -. w) /. 2., ph -. 29., w, h); ((pw -. w) /. 2., 30., w, h); (10., ph -. 29., w, h); (pw -. w -. 10., ph -. 29., w, h) ] in
+        let cx = x0 +. (w /. 2.) and cy = y0 +. (h /. 2.) in
         [
-          (* at the map's foot: the bones sit at the regions' top corners *)
-          rectangle (rgb 18 16 36) (tw +. 20.) 26. |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph -. 16.)) |> fade 0.92;
-          words (let r, g, b = ivory in rgb r g b) text |> scale (16. /. words_font_size) |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph -. 16.));
+          rectangle (rgb 18 16 36) w h |> move (sx a cx) (sy a cy) |> fade 0.92;
+          words (let r, g, b = ivory in rgb r g b) text |> scale (16. /. words_font_size) |> move (sx a cx) (sy a cy);
         ]
     | _ -> []
   in
@@ -1397,6 +1426,50 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
   let r, g, b = ivory in
   let ink_i = rgb r g b in
   let bones = List.concat_map (fun (s : Code_guide.skeleton) -> s.bones) shown in
+  (* claude: the order to read a skeleton in (the author: "infer an order
+   * between things, a starting point, like the main then app, and color
+   * the edges and bones depending on the depth, so you would know where
+   * to start and what to follow"): its joints a graph, each bone's depth
+   * the longest chain of joints to it from a bone nothing leads to (a
+   * cycle one step, Code_rank's components); a bone with a joint
+   * numbered by its depth, then top to bottom (a cycle's bones one
+   * number), coloured by it -- green the start, red the end, the layers'
+   * gradient; a skeleton without joints, ivory, unnumbered *)
+  let order : (string, (int * int * int) * int) Hashtbl.t = Hashtbl.create 32 in
+  List.iter
+    (fun (sk : Code_guide.skeleton) ->
+      let ids = Hashtbl.create 16 in
+      List.iteri (fun i (bn : Code_guide.bone) -> if not (Hashtbl.mem ids bn.bat) then Hashtbl.replace ids bn.bat i) sk.bones;
+      let n = List.length sk.bones in
+      let succ = Array.make n [] and linked = Array.make n false in
+      List.iter
+        (fun (j : Code_guide.joint) ->
+          match (Hashtbl.find_opt ids j.jfrom, Hashtbl.find_opt ids j.jto) with
+          | Some a, Some b when a <> b ->
+              succ.(a) <- b :: succ.(a);
+              linked.(a) <- true;
+              linked.(b) <- true
+          | _ -> ())
+        sk.joints;
+      if Array.exists Fun.id linked then begin
+        let ((comp, _) as comps) = Code_rank.components succ in
+        let depth, _ = Code_rank.depth_height succ comps in
+        let last = Array.fold_left max 0 depth in
+        let spot_y (bn : Code_guide.bone) = match bone_spot bn with Some (_, (_, y, _)) -> y | None -> infinity in
+        let arr = Array.of_list sk.bones in
+        let ranked = List.filter (fun i -> linked.(i)) (List.init n Fun.id) |> List.stable_sort (fun i j -> compare (depth.(i), spot_y arr.(i)) (depth.(j), spot_y arr.(j))) in
+        (* numbered in that order, a component's bones the first's number *)
+        let numbers = Hashtbl.create 16 in
+        let next = ref 1 in
+        List.iter
+          (fun i ->
+            let k = match Hashtbl.find_opt numbers comp.(i) with Some k -> k | None -> let k = !next in incr next; Hashtbl.replace numbers comp.(i) k; k in
+            let x = if last = 0 then 0. else float_of_int depth.(i) /. float_of_int last in
+            Hashtbl.replace order arr.(i).bat (heat x, k))
+          ranked
+      end)
+    shown;
+  let colour_of at = match Hashtbl.find_opt order at with Some (c, _) -> c | None -> ivory in
   (* the shade: from afar the whole map; at the ground, every line but
    * the bones' definitions *)
   let shade =
@@ -1440,7 +1513,9 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                 let bend = Float.min 70. (Float.max 30. (0.12 *. len)) in
                 let mx = ((ax +. bx) /. 2.) +. (-.dy /. len *. bend) and my = ((ay +. by) /. 2.) +. (dx /. len *. bend) in
                 let pts = Map_atlas.bspline [| (ax, ay); (mx, my); (bx, by) |] in
-                (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 6. 0.85 else [])
+                (* claude: from its start's colour to its end's (ivory
+                 * without an order) *)
+                (if skeleton_on then Map_atlas.road ~colours:(colour_of j.jfrom, colour_of j.jto) a pts 6. 0.85 else [])
                 @ (match j.jsay with Some w when skeleton_on -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | _ -> [])
             | Some (_, Some (_, _, (ax0, ay, _))), Some (bn, None) | Some (bn, None), Some (_, Some (_, _, (ax0, ay, _))) ->
                 (* an end off the map: a stub to its port on the edge (below) *)
@@ -1459,15 +1534,18 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
         | None -> []
         | Some (_, (x, y, _)) ->
             let size = 14. in
-            let tw = 0.5 *. size *. float_of_int (String.length bn.role) in
+            (* claude: its number in the reading order, and its colour *)
+            let (cr, cg, cb), role = match Hashtbl.find_opt order bn.bat with Some (c, k) -> (c, Printf.sprintf "%d. %s" k bn.role) | None -> (ivory, bn.role) in
+            let ink_b = rgb cr cg cb in
+            let tw = 0.5 *. size *. float_of_int (String.length role) in
             (* above the header's start, over the shaded line before it *)
             let lx = x in
             drawn_bones := (bn, x -. 12., y, tw) :: !drawn_bones;
             [
               circle (rgb 20 16 30) 8. |> move (sx a (x -. 12.)) (sy a y);
-              circle ink_i 6. |> move (sx a (x -. 12.)) (sy a y);
+              circle ink_b 6. |> move (sx a (x -. 12.)) (sy a y);
               rectangle (rgb 18 16 36) (tw +. 10.) (size +. 6.) |> move (sx a (lx +. (tw /. 2.))) (sy a (y -. 24.)) |> fade 0.9;
-              words ink_i bn.role |> scale (size /. words_font_size) |> move (sx a (lx +. (tw /. 2.))) (sy a (y -. 24.));
+              words ink_b role |> scale (size /. words_font_size) |> move (sx a (lx +. (tw /. 2.))) (sy a (y -. 24.));
             ])
       bones
   in
@@ -1651,9 +1729,16 @@ let anatomy_shapes (t : t) (c : camera) : shape list =
              | _ -> [])
 
 (* the atlas's key: the plates, the ones shown bright *)
+(* claude: the plates' legend's corner, top right unless it hides more
+ * bones there than elsewhere; legend_row_at's too *)
+let legend_origin (c : camera) : float * float =
+  let pw = float_of_int c.a.pw and ph = float_of_int c.a.ph in
+  let x0, y0, _, _ = least_bones [ (pw -. 420., 36., 410., 150.); (pw -. 420., ph -. 160., 410., 150.); (10., ph -. 160., 410., 150.); (10., 36., 410., 150.) ] in
+  (x0, y0)
+
 let legend ?pointer (c : camera) : shape list =
   let a = c.a in
-  let x0 = float_of_int a.pw -. 420. and y0 = 36. in
+  let x0, y0 = legend_origin c in
   let row i s =
     let r, g, b = Code_anatomy.colour s in
     let on = List.mem s !Code_anatomy.shown in
@@ -2238,10 +2323,6 @@ let marks_shapes (t : t) (c : camera) : shape list =
 let layer_names = [ "used vs using"; "the call depth" ]
 let layer_count = List.length layer_names
 
-(* 0 green, 0.5 yellow, 1 red *)
-let heat (x : float) : int * int * int =
-  let mix (r0, g0, b0) (r1, g1, b1) k = (r0 + int_of_float (k *. float_of_int (r1 - r0)), g0 + int_of_float (k *. float_of_int (g1 - g0)), b0 + int_of_float (k *. float_of_int (b1 - b0))) in
-  if x < 0.5 then mix (90, 220, 120) (245, 225, 90) (x *. 2.) else mix (245, 225, 90) (250, 80, 70) ((x -. 0.5) *. 2.)
 
 (* a layer's values: each definition in the call graph, its first line,
  * lines and value (0 the top, 1 the bottom), by file; each file's *)
@@ -2647,8 +2728,8 @@ let style : style = { sname = "v2"; paint; labels; pick; unit_at; units = true }
 let legend_row_at (t : t) (c : camera) (px : float) (py : float) : Code_anatomy.system option =
   if not t.xray then None
   else
-    let x0 = float_of_int c.a.pw -. 420. and y0 = 36. in
-    if px < x0 || px > x0 +. 410. then None
+    let x0, y0 = legend_origin c in
+    if px < x0 || px > x0 +. 410. || py < y0 || py > y0 +. 150. then None
     else
       let i = int_of_float (Float.floor ((py -. y0 -. 12.) /. 20.)) in
       if i < 0 then None else List.nth_opt Code_anatomy.all i

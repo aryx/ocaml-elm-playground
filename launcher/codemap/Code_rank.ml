@@ -201,6 +201,18 @@ let compute ?roots (files : (string * Code_file.t Lazy.t) list) : t =
        * a file counted once a definition *)
       let seen = Hashtbl.create 64 in
       let own_heads = heads_in path in
+      (* claude: and the calls within the file: a name bound to one of its
+       * top-level definitions (Code_file.names), an edge from the one it
+       * is in to that one -- without them the reach stopped at a file's
+       * first helper (tinybox's menu, run calling its own view calling
+       * Codemap.view: 9 files reached) *)
+      let is_head l = match head_of own_heads l with Some h -> h = l | None -> false in
+      Array.iter
+        (List.iter (fun (o : Highlight_code.occurrence) ->
+             let bl, _ = o.bound_at in
+             if o.bound_at <> (o.line, o.col) && is_head bl then
+               match head_of own_heads o.line with Some a when a <> bl -> edges := (node path a, node path bl) :: !edges | _ -> ()))
+        f.names;
       Array.iteri
         (fun line -> List.iter (fun (r : Highlight_code.reference) ->
              match Code_names.find_in ?roots ix ~from:path f r with

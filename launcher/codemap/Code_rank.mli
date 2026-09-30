@@ -53,6 +53,15 @@ val bucket : int -> float
 val weight : Highlight_code.category -> float
 val score : t -> string -> int -> string -> Highlight_code.category -> float
 
+(* claude: a graph's tools, any graph (the calls, a skeleton's joints):
+   [components succ] its strongly connected components, each node's and
+   how many, numbered callees first (an edge between two goes from a
+   higher number to a lower); [depth_height succ comps] each node's
+   longest chain of predecessors above it and of successors below, a
+   component one step *)
+val components : int list array -> int array * int
+val depth_height : int list array -> int array * int -> int array * int array
+
 (* claude: [reach t path line]: how many other files the definition
    whose head is at [line] (from 0) of [path] reaches through its calls,
    transitively (resolved as its uses are: sure answers only). An entry
