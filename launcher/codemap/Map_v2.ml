@@ -2314,9 +2314,19 @@ let layer_of (t : t) (layer : int) (top : string) (r : Code_rank.t) : layer_data
       layer_cache := Some (r, layer, top, d);
       d
 
+(* claude: the uses being counted, a key waiting for them (Code_map's
+ * update, the next frame): said in the middle of the map *)
+let counting (c : camera) : shape list =
+  let a = c.a in
+  let msg = "counting the uses of every definition... a few seconds" in
+  let w = text_width 18. msg +. 40. and h = 44. in
+  let cx = float_of_int a.pw /. 2. and cy = float_of_int a.ph /. 2. in
+  [ rectangle (rgb 16 14 34) w h |> move (sx a cx) (sy a cy) |> fade 0.95; label a yellow 18. cx cy msg ]
+
 let layer_shapes (t : t) (c : camera) : shape list =
   match (t.layer, t.rank) with
-  | 0, _ | _, None -> []
+  | 0, _ -> []
+  | _, None -> counting c
   | _, Some r ->
       let a = c.a in
       let data = layer_of t t.layer t.placed.(t.focus).path r in
@@ -2585,6 +2595,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   let kept = names t c in
   (* claude: the layer first, under the names *)
   layer_shapes t c
+  @ (if t.deferred <> None then counting c else [])
   @ (match at_ground t c with
   | Some e when t.street -> street_labels t c e @ line_lit t c e @ names_glow t c e
   | Some e -> notes t c e @ line_lit t c e @ names_glow t c e

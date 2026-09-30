@@ -135,7 +135,7 @@ codemap.html?focus=windows/rio/wind.c&street=3    a file at the street, in a mod
 codemap.html?data=<url>                           another bundle
 ```
 
-The map's version is at the bottom right ("code map 0.03"), raised at
+The map's version is at the bottom right ("code map 0.04"), raised at
 each publish of a change: a browser may keep the program it has for ten
 minutes, so a page not showing the latest one wants a reload that skips
 the cache (Cmd+Shift+R).

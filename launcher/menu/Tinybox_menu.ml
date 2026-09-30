@@ -797,9 +797,17 @@ let details (computer : computer) (host : host) (m : model) : shape list =
       @ (if ok then [] else [ text ~size:14. magenta left 45. "not in this tinybox" ])
       @ code_panel host computer p
 
+(* claude: tinybox's version, at the bottom right (the author: as the
+ * code map's, to see at once whether a page runs the latest, a browser
+ * keeping the program it has for a while): 0.01, 0.02, ..., raised by
+ * hand at each publish of a change to tinybox (make publish) *)
+let version = "0.01"
+
 let footer (host : host) (m : model) : shape list =
   let playing = match host.running () with Some name -> [ text ~size:18. yellow left_edge (-440.) ("> " ^ name ^ " is running") ] | None -> [] in
+  let v = "tinybox " ^ version in
   [ text ~size:13. dim left_edge (-475.) "arrows move   tab section   g/a games/apps   b group   p e m l filter   / search   s read its code   enter play it" ]
+  @ [ text ~size:13. dim (-.left_edge -. (em *. 13. *. float_of_int (String.length v))) (-475.) v ]
   @ playing
   @ if m.status = "" then [] else [ text ~size:16. magenta (-400.) (-440.) (cut ~size:16. ~width:340. m.status) ]
 

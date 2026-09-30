@@ -542,8 +542,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   if pressed "l" && t.search = None then begin
     t.layer <- (t.layer + 1) mod (Map_v2.layer_count + 1);
     (* the map painted again, its regions grey under a layer *)
-    t.painted <- None;
-    if t.layer > 0 then ignore (rank_of t)
+    t.painted <- None
   end;
   (* claude: h, every key explained, again to close *)
   if pressed "h" && t.search = None then t.help <- not t.help;
@@ -835,7 +834,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
  * the mouse too, but not the keys. *)
 let searching (t : t) : bool = t.search <> None || t.tour_on <> None
 
-let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
+let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   match t.search with
   | None when pressed "/" && t.style.units ->
       t.search <- Some { query = ""; sel = 0; here = false; hits = (("", false), []) };
@@ -1080,7 +1079,7 @@ let help_shapes (computer : computer) : shape list =
  * see at once whether a page runs the latest, a browser keeping the
  * program it has for a while): 0.01, 0.02, ..., raised by hand at each
  * publish of a change to the map (make publish, make codemap-web) *)
-let version = "0.03"
+let version = "0.04"
 
 (* claude: a line of keys and what they do, centred at [y], the keys in
  * yellow, the rest dim; the widths Code_map_base.text_width's *)
@@ -1387,3 +1386,24 @@ let glass ?(panel = false) (computer : computer) (t : t) : shape list =
   (* claude: none in v2, whose hover previews and peeks show the code *)
   if t.moving || t.style.units || readable_at t (to_u t.cam mpx) (to_v t.cam mpy) then []
   else match !(shape_of ~panel) with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []
+
+(* claude: a key needing the uses counted (l, the layers; g, the matrix
+ * and a unit's ties), pressed while they are not (natively, the menu's
+ * maps count them only when asked): kept, the frame drawn saying so
+ * (view), counted the next frame, then the key played -- seconds, but
+ * said, not a freeze (the author: "at least we should show a progress
+ * bar or something") *)
+let needs_uses = [ "l"; "g" ]
+
+let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
+  match t.deferred with
+  | Some k ->
+      t.deferred <- None;
+      ignore (rank_of t);
+      update_now computer ~pressed:(fun x -> x = k || pressed x) ~arrow t
+  | None -> (
+      match List.find_opt pressed needs_uses with
+      | Some k when t.rank = None && t.search = None && t.style.units ->
+          t.deferred <- Some k;
+          (t, Stay)
+      | _ -> update_now computer ~pressed ~arrow t)
