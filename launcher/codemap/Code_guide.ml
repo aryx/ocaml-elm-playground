@@ -283,6 +283,29 @@ let contains (s : string) (sub : string) : int option =
   let rec go i = if i > n - m then None else if String.sub s i m = sub then Some i else go (i + 1) in
   if m = 0 then None else go 0
 
+(* claude: a syncweb marker's chunk (principia's configs anchor 392
+ * capitals at comment:"function [[namec]]", the marker above it): the
+ * first line of code under it, the markers and blank lines skipped;
+ * another comment, itself *)
+let below_marker (f : Code_file.t) (l : int) : int =
+  let blank l = String.trim (line_text f l) = "" in
+  let rec go k = if k < Code_file.nlines f && (Code_file.syncweb_marker f k || blank k) then go (k + 1) else k in
+  if Code_file.syncweb_marker f l then (match go l with k when k < Code_file.nlines f -> k | _ -> l) else l
+
+(* claude: what an anchor names, to show: its words without the kind
+ * and the quotes, and a syncweb chunk's name without its kind and
+ * brackets, comment:"struct [[Window]]" as Window (the author: not
+ * "struct [[Window]]" on the map) *)
+let anchor_name (at : string) : string =
+  let what = snd (split at) in
+  let what = match String.index_opt what ':' with Some i when List.mem (String.sub what 0 i) kinds -> String.sub what (i + 1) (String.length what - i - 1) | _ -> what in
+  let n = String.length what in
+  let what = if n >= 2 && what.[0] = '"' && what.[n - 1] = '"' then String.sub what 1 (n - 2) else what in
+  let rec find_from s sub i = if i + String.length sub > String.length s then None else if String.sub s i (String.length sub) = sub then Some i else find_from s sub (i + 1) in
+  match find_from what "[[" 0 with
+  | Some a -> ( match find_from what "]]" (a + 2) with Some b -> String.sub what (a + 2) (b - a - 2) | None -> what)
+  | None -> what
+
 let find (f : Code_file.t) (anchor : string) : (int, string) result =
   let kind, what = match String.index_opt anchor ':' with Some i -> (String.sub anchor 0 i, String.sub anchor (i + 1) (String.length anchor - i - 1)) | None -> ("", anchor) in
   let unquote s = let n = String.length s in if n >= 2 && s.[0] = '"' && s.[n - 1] = '"' then String.sub s 1 (n - 2) else s in
@@ -312,7 +335,7 @@ let find (f : Code_file.t) (anchor : string) : (int, string) result =
         if l >= Code_file.nlines f then Error (Printf.sprintf "%s: no comment saying %S" f.path words)
         else
           match contains (line_text f l) words with
-          | Some c when (match Code_file.at f l c with Some (Comment | Comment_section) -> true | _ -> false) -> Ok l
+          | Some c when (match Code_file.at f l c with Some (Comment | Comment_section) -> true | _ -> false) -> Ok (below_marker f l)
           | _ -> go (l + 1)
       in
       go 0)

@@ -15,6 +15,27 @@ let show (r : Treemap.rect) : string = Printf.sprintf "%.2f,%.2f %.2fx%.2f" r.x 
 let tests =
   Testo.categorize "Codemap"
     [
+      (* claude: a literate program's markers (principia's C): the names
+       * shown without them, an anchor on one landing on its code, a peek
+       * without the /*s: ... */ above nor the /*e: ... */ below *)
+      Testo.create "syncweb markers: names, anchors, peeks" (fun () ->
+          let src =
+            String.concat "\n"
+              [
+                "/*s: struct [[Mouseinfo]] */"; "struct Mouseinfo"; "{"; "    int x;"; "};"; "/*e: struct [[Mouseinfo]] */"; "/*s: struct [[Window]] */"; "struct Window"; "{";
+                "    int id;"; "};"; "/*e: struct [[Window]] */"; ""; "/*s: function [[wmk]] */"; "// makes a window"; "Window*"; "wmk(int i)"; "{"; "    /*s: [[wmk()]] locals */";
+                "    Window *w;"; "    /*e: [[wmk()]] locals */"; "    return w;"; "}"; "/*e: function [[wmk]] */"; "";
+              ]
+          in
+          let f = Code_file.make "rio/dat.c" src in
+          Alcotest.(check (list string)) "names" [ "Window"; "_start"; "view"; "advance"; "one alien" ]
+            (List.map Code_guide.anchor_name [ {|dat.h:comment:"struct [[Window]]"|}; {|comment:"function [[_start]](arm)"|}; "def:view"; "Shots.ml:def:advance"; {|comment:"one alien"|} ]);
+          Alcotest.(check (list bool)) "markers" [ true; true; true; false; false ] (List.map (Code_file.syncweb_marker f) [ 6; 18; 23; 14; 7 ]);
+          Alcotest.(check (result int string)) "an anchor on a marker: the code under it" (Ok 7) (Code_guide.find f {|comment:"struct [[Window]]"|});
+          (* the struct without the markers around it; the function from
+           * its comment and return type, under its marker, to its brace;
+           * a line inside it, the same *)
+          Alcotest.(check (list (pair int int))) "peeks" [ (7, 10); (14, 22); (14, 22) ] (List.map (Code_map.peek_extent f "rio/dat.c") [ 7; 16; 19 ]));
       Testo.create "squarified: the paper's example" (fun () ->
           Alcotest.(check (list string))
             "6 6 4 3 2 2 1 in 6 by 4"

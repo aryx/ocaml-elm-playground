@@ -347,7 +347,8 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
               | Some line ->
                   let x, y = line_pos t.placed.(i).rect g line in
                   let px = to_px c x and py = to_py c (y +. (g.cell_h /. 2.)) in
-                  let label = snd (Code_guide.split it.at) |> fun s -> match String.index_opt s ':' with Some k -> String.sub s (k + 1) (String.length s - k - 1) | None -> s in
+                  (* claude: a syncweb chunk's name, not its marker's text *)
+                  let label = Code_guide.anchor_name it.at in
                   (* claude: a name too short to say anything from afar (t), its module's with it *)
                   let label = if String.length label <= 2 then String.capitalize_ascii (Filename.remove_extension (Filename.basename path)) ^ "." ^ label else label in
                   (* claude: as large as central: the core's the map's largest *)
@@ -1111,7 +1112,7 @@ let derived_file (t : t) (e : entry) : Code_guide.skeleton option =
     if l < 0 || l >= n then None
     else List.find_opt (fun (o : Highlight_code.occurrence) -> o.bound_at = (o.line, o.col) && o.len = String.length name) f.names.(l)
   in
-  let name_of at = match String.index_opt at ':' with Some i -> String.sub at (i + 1) (String.length at - i - 1) | None -> at in
+  let name_of at = Code_guide.anchor_name at in
   let from_config =
     match Code_guide.file_note t.guide e.path with
     | Some n ->
@@ -1465,7 +1466,7 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
       (fun ((bn : Code_guide.bone), l, py) ->
         (* a definition: its name and file; a whole unit: its path and
          * what it is for *)
-        let text = if bn.banchor = "" then Printf.sprintf "%s: %s" bn.bpath bn.role else Printf.sprintf "%s  %s" (snd (Code_guide.split bn.bat)) bn.bpath in
+        let text = if bn.banchor = "" then Printf.sprintf "%s: %s" bn.bpath bn.role else Printf.sprintf "%s  %s" (Code_guide.anchor_name bn.bat) bn.bpath in
         let tw = 0.5 *. 13. *. float_of_int (String.length text) in
         List.concat_map
           (fun (x, y, _) ->
@@ -2232,7 +2233,7 @@ let tour_banner (t : t) (c : camera) : shape list =
   | None -> []
   | Some (tr, k) ->
       let a = c.a in
-      let say = match List.nth_opt tr.stops k with Some (i : Code_guide.item) -> Option.value i.say ~default:i.at | None -> "" in
+      let say = match List.nth_opt tr.stops k with Some (i : Code_guide.item) -> Option.value i.say ~default:(Code_guide.anchor_name i.at) | None -> "" in
       let head = Printf.sprintf "%s   stop %d of %d   (n next, p back, Esc the end)" tr.name (k + 1) (List.length tr.stops) in
       let lines = wrap 90 say in
       let w = Float.min (float_of_int a.pw -. 40.) (40. +. List.fold_left (fun m l -> Float.max m (text_width 18. l)) (text_width 14. head) lines) in

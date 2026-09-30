@@ -178,3 +178,17 @@ let ref_at (f : t) (line : int) (col : int) : Highlight_code.reference option =
 
 let uses (f : t) (o : Highlight_code.occurrence) : Highlight_code.occurrence list =
   Option.value (Hashtbl.find_opt f.uses o.bound_at) ~default:[]
+
+(* claude: a syncweb marker, a line that is only a chunk's start, end or
+ * continuation in a literate program's source: /*s: struct [[Window]] */,
+ * /*e: ... */, /*x: ... */ in C, (*s: ... *) in OCaml (principia, the
+ * author's books) *)
+let syncweb_marker (f : t) (line : int) : bool =
+  line >= 0
+  && line < nlines f
+  &&
+  let s = String.trim (String.concat "" (List.map (fun (sp : Highlight_code.span) -> sp.text) f.lines.(line))) in
+  let n = String.length s in
+  let starts p = n >= String.length p && String.sub s 0 (String.length p) = p in
+  let ends p = n >= String.length p && String.sub s (n - String.length p) (String.length p) = p in
+  (List.exists starts [ "/*s:"; "/*e:"; "/*x:" ] && ends "*/") || (List.exists starts [ "(*s:"; "(*e:"; "(*x:" ] && ends "*)")

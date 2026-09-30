@@ -158,7 +158,12 @@ val skeletons_of : t -> string -> skeleton list
    path first, split off ("Shots.ml:def:advance": Some "Shots.ml") *)
 val split : string -> string option * string
 
-(* [find f anchor]: the line (from 0) the anchor points at in [f] *)
+(* claude: what an anchor names, to show: "Shots.ml:def:advance" as
+   advance, comment:"struct [[Window]]" (a syncweb marker) as Window *)
+val anchor_name : string -> string
+
+(* [find f anchor]: the line (from 0) the anchor points at in [f];
+   claude: a comment: on a syncweb marker, the code under it *)
 val find : Code_file.t -> string -> (int, string) result
 
 (* a text's digest, as a config writes it *)

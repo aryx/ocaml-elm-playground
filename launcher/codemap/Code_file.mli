@@ -55,3 +55,8 @@ val ref_at : t -> int -> int -> Highlight_code.reference option
 
 (* the modules [src] names: M in M.x, open M, include M *)
 val modules_used : string -> string list
+
+(* claude: the line is a syncweb marker, a literate program's chunk
+   start, end or continuation, /*s: function [[f]] */ or (*e: ... *):
+   boilerplate, not what the code says *)
+val syncweb_marker : t -> int -> bool

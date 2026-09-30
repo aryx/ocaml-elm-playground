@@ -156,6 +156,19 @@ let def_extent (f : Code_file.t) (line : int) : int * int =
   in
   let first = List.fold_left (fun acc l -> if l <= line then l else acc) (match heads with l :: _ when l <= line -> l | _ -> line) heads in
   let last = match List.find_opt (fun l -> l > first) heads with Some n -> n - 1 | None -> Code_file.nlines f - 1 in
+  (* claude: in a literate program's source (principia's), the chunk's
+   * markers at the left margin bound it: the body ends before the next
+   * one (not the next definition's name, its return type and marker
+   * with it), and starts just under its own /*s: ... */ when only its
+   * lines lie between (a comment, a Plan 9 return type on its own
+   * line); the markers inside a body are indented *)
+  let chunk l = Code_file.syncweb_marker f l && Code_file.at f l 0 <> None in
+  let last = let rec go l = if l > last then last else if chunk l then l - 1 else go (l + 1) in go (first + 1) in
+  let first =
+    let blank l = let rec any c = c < Code_file.cols && (Code_file.at f l c <> None || any (c + 1)) in not (any 0) in
+    let rec go l k = if l < 0 || k > 4 || blank l then first else if chunk l then l + 1 else go (l - 1) (k + 1) in
+    go (first - 1) 0
+  in
   (* not the next section's banner and comment: up to its last line of code *)
   let trailer l =
     let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at f l c with Some cat -> Some cat | None -> first_cat (c + 1) in
@@ -192,69 +205,78 @@ let peek_where (t : t) (f : Code_file.t) (path : string) (line : int) (col : int
       | None -> Some (path, line))
 
 (* the peeks: one on top of the others, four at most, each its scroll *)
+(* claude: the lines a peek at [l] of [p]'s file [g] shows: a top-level
+ * comment whole, else the definition with the comment just above it *)
+let peek_extent (g : Code_file.t) (p : string) (l : int) : int * int =
+  (* claude: a line's text, whole (its spans at their columns) *)
+  let text l =
+    let b = Buffer.create 80 in
+    List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) g.lines.(l);
+    Buffer.contents b
+  in
+  let count sub str =
+    let n = String.length str and m = String.length sub in
+    let k = ref 0 in
+    for i = 0 to n - m do if String.sub str i m = sub then incr k done;
+    !k
+  in
+  (* claude: each language its own markers: an OCaml file writing
+   * libc/*.s in a comment is no C comment opened (the author, at
+   * ~/ix's TinyAssembler.ml: every peek grew back to the header) *)
+  let ml = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
+  let opens l = let t = text l in if ml then count "(*" t else count "/*" t
+  and closes l = let t = text l in if ml then count "*)" t else count "*/" t in
+  (* the comments' depth at each line's start, the file read once *)
+  let n = Code_file.nlines g in
+  let depth = Array.make (n + 1) 0 in
+  for i = 0 to n - 1 do depth.(i + 1) <- max 0 (depth.(i) + opens i - closes i) done;
+  (* claude: a top-level comment clicked (a game's header): the whole
+   * comment, from where it opens to where it closes (the author: "not
+   * just what started at the line clicked"), scrolled if long *)
+  let rec opening_of i = if i > 0 && depth.(i) > 0 then opening_of (i - 1) else i in
+  let rec closing_of i = if i + 1 < n && depth.(i + 1) > 0 then closing_of (i + 1) else i in
+  let top_comment =
+    if l < n && (depth.(l) > 0 || opens l > 0) then
+      let o = opening_of l in
+      let starts_line = String.length (text o) >= 2 && (String.sub (text o) 0 2 = "(*" || String.sub (text o) 0 2 = "/*") in
+      if starts_line then Some (o, closing_of l) else None
+    else None
+  in
+  let first, last =
+    match top_comment with
+    | Some ext -> ext
+    | None ->
+        let first, last = def_extent g l in
+        (* claude: with the comment just above it, which likely says
+         * what it is (the author), all of it, its blank lines too;
+         * comments stacked right above one another with it; not a
+         * section's banner *)
+        (* claude: not a syncweb marker, /*s: function [[f]] */ above
+         * it, or the previous chunk's /*e: ... */ (the author:
+         * boilerplate, at principia) *)
+        let comment_end l =
+          let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
+          l >= 0 && (match first_cat 0 with Some Comment -> true | _ -> false) && not (Code_file.syncweb_marker g l)
+        in
+        (* a banner's rule, (*----*): where a section begins, not a comment *)
+        let rule l =
+          let t = String.trim (text l) in
+          String.length t >= 8 && String.for_all (fun c -> String.contains "(*)-=/ " c) t
+        in
+        let rec up l =
+          if comment_end (l - 1) then
+            let o = opening_of (l - 1) in
+            if List.exists rule (List.init (l - o) (fun k -> o + k)) then l else up o
+          else l
+        in
+        (up first, last)
+  in
+  (first, last)
+
 let open_peek (t : t) (file_of : string -> Code_file.t option) ((p, l) : string * int) : unit =
   match file_of p with
   | Some g ->
-      (* claude: a line's text, whole (its spans at their columns) *)
-      let text l =
-        let b = Buffer.create 80 in
-        List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) g.lines.(l);
-        Buffer.contents b
-      in
-      let count sub str =
-        let n = String.length str and m = String.length sub in
-        let k = ref 0 in
-        for i = 0 to n - m do if String.sub str i m = sub then incr k done;
-        !k
-      in
-      (* claude: each language its own markers: an OCaml file writing
-       * libc/*.s in a comment is no C comment opened (the author, at
-       * ~/ix's TinyAssembler.ml: every peek grew back to the header) *)
-      let ml = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
-      let opens l = let t = text l in if ml then count "(*" t else count "/*" t
-      and closes l = let t = text l in if ml then count "*)" t else count "*/" t in
-      (* the comments' depth at each line's start, the file read once *)
-      let n = Code_file.nlines g in
-      let depth = Array.make (n + 1) 0 in
-      for i = 0 to n - 1 do depth.(i + 1) <- max 0 (depth.(i) + opens i - closes i) done;
-      (* claude: a top-level comment clicked (a game's header): the whole
-       * comment, from where it opens to where it closes (the author: "not
-       * just what started at the line clicked"), scrolled if long *)
-      let rec opening_of i = if i > 0 && depth.(i) > 0 then opening_of (i - 1) else i in
-      let rec closing_of i = if i + 1 < n && depth.(i + 1) > 0 then closing_of (i + 1) else i in
-      let top_comment =
-        if l < n && (depth.(l) > 0 || opens l > 0) then
-          let o = opening_of l in
-          let starts_line = String.length (text o) >= 2 && (String.sub (text o) 0 2 = "(*" || String.sub (text o) 0 2 = "/*") in
-          if starts_line then Some (o, closing_of l) else None
-        else None
-      in
-      let first, last =
-        match top_comment with
-        | Some ext -> ext
-        | None ->
-            let first, last = def_extent g l in
-            (* claude: with the comment just above it, which likely says
-             * what it is (the author), all of it, its blank lines too;
-             * comments stacked right above one another with it; not a
-             * section's banner *)
-            let comment_end l =
-              let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
-              l >= 0 && (match first_cat 0 with Some Comment -> true | _ -> false)
-            in
-            (* a banner's rule, (*----*): where a section begins, not a comment *)
-            let rule l =
-              let t = String.trim (text l) in
-              String.length t >= 8 && String.for_all (fun c -> String.contains "(*)-=/ " c) t
-            in
-            let rec up l =
-              if comment_end (l - 1) then
-                let o = opening_of (l - 1) in
-                if List.exists rule (List.init (l - o) (fun k -> o + k)) then l else up o
-              else l
-            in
-            (up first, last)
-      in
+      let first, last = peek_extent g p l in
       (match t.peek with Some top -> t.peek_stack <- (top, t.peek_scroll) :: t.peek_stack | None -> ());
       t.peek <- Some (p, first, last);
       t.peek_scroll <- 0
@@ -445,7 +467,7 @@ let tour_go (t : t) (tr : Code_guide.tour) (k : int) : camera option =
       let hit : Code_search.hit =
         match Code_guide.split i.at with
         | Some path, anchor -> (
-            match Map_v2.anchor_line t path anchor with Some line -> { kind = Def; path; line; name = anchor } | None -> { kind = File; path; line = 0; name = path })
+            match Map_v2.anchor_line t path anchor with Some line -> { kind = Def; path; line; name = Code_guide.anchor_name anchor } | None -> { kind = File; path; line = 0; name = path })
         | None, path -> { kind = File; path; line = 0; name = path }
       in
       search_go t hit

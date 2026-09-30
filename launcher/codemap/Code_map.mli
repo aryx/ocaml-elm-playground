@@ -133,3 +133,9 @@ val style_name : unit -> string
 (* claude: the search box open, or a config's tour under way: the keys
    are theirs (Codemap's n, p, w too) *)
 val searching : t -> bool
+
+(* claude: the lines (from 0, first and last) a peek at line [l] of the
+   file [f] of path [p] shows: a top-level comment whole; else the
+   definition around [l], with the comment just above it, not a syncweb
+   marker (/*s: function [[f]] */) nor its trailing /*e: ... */ *)
+val peek_extent : Code_file.t -> string -> int -> int * int
