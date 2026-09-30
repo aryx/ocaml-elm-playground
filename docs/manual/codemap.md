@@ -135,7 +135,7 @@ codemap.html?focus=windows/rio/wind.c&street=3    a file at the street, in a mod
 codemap.html?data=<url>                           another bundle
 ```
 
-The map's version is at the bottom right ("code map 0.05"), raised at
+The map's version is at the bottom right ("code map 0.06"), raised at
 each publish of a change: a browser may keep the program it has for ten
 minutes, so a page not showing the latest one wants a reload that skips
 the cache (Cmd+Shift+R).
@@ -314,8 +314,8 @@ line and the code around it; a click goes there.
 when a line is big enough to see, each definition's lines in its own
 (the micro level), so that zooming in shows which definition makes a
 file red. Under a layer the regions lose their colours, the layer's the
-only ones. `l` cycles through the layers, then none; a key at the bottom
-right names the colours.
+only ones. `l` cycles through the layers, then none, shift+`l` back; a
+key at the bottom right names the colours.
 
 **Used vs using**, the first, orients: what is the bottom of the
 project, the middle, the top. The parts of the unit looked at (at the
@@ -333,6 +333,17 @@ of callers above it) over its depth and its height (the longest chain of
 callees below it), ranked among all; a file, its definitions' mean. The
 same graph gives a definition's *reach*, the files its calls reach,
 transitively: a capital reaching 30 or more is green.
+
+**Roles**, the third (after `~/codemap`'s architecture layer): each file
+by what it is there for -- tests, examples, generated code, third party,
+per CPU, per OS, parsing, network, graphics and UI, audio, storage,
+security, utilities, entry points, interfaces; the key lists those found
+under the unit looked at, how many files each. A path is read as words
+(`TinyVisiCalc.ml` is tiny, visi, calc), each matched whole, not as
+substrings; and the map's own knowledge counts: a file nothing uses but
+that uses others is an entry point, a `.ml` beside its `.mll` or `.mly`
+generated, assembly per CPU. A file gets the first role, in that order,
+it has evidence for.
 
 ## 9. Dependencies
 
@@ -422,7 +433,7 @@ The keys:
 | `a` | the street (cycles) |
 | `x` | the X-ray (cycles skeletons); `1`-`5` its plates |
 | `m` | the marks (cycles) |
-| `l` | the layers (cycles): the map coloured by a measure |
+| `l` | the layers (cycles; shift+`l` back): the map coloured by a measure |
 | `g` | the matrix |
 | `d` | in the tied view: its modes |
 | `n`, `p` | a tour's next and previous stop |

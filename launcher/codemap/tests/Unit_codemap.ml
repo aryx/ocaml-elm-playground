@@ -53,6 +53,15 @@ let tests =
             [ place "a/A.ml" 1; place "b/B.ml" 0; place "c/C.ml" 0 ];
           let r' = Code_rank.of_string (Code_rank.to_string r) in
           Alcotest.(check (list int)) "through the text" [ 2; 1 ] [ Code_rank.reach r' "a/A.ml" 1; Code_rank.reach r' "b/B.ml" 0 ]);
+      (* claude: the roles layer's worked examples (Code_roles.mli) *)
+      Testo.create "roles: words, names and structure" (fun () ->
+          Alcotest.(check (list string)) "words" [ "games"; "tinyvisicalc"; "tiny"; "visi"; "calc"; "ml" ] (Code_roles.words "games/TinyVisiCalc.ml");
+          let paths = [ "kernel/pc/l.s"; "lib/Parser.ml"; "lib/Parser.mly"; "tests/Unit_rank.ml"; "libs/networking/Http.ml"; "games/TinyMario.ml"; "playground/Playground.ml"; "sparse/Matrix.ml"; "lib/Parser.mli" ] in
+          let links = [ ("games/TinyMario.ml", "playground/Playground.ml", 3); ("playground/Playground.ml", "sparse/Matrix.ml", 1) ] in
+          let tbl = Code_roles.categories ~links paths in
+          Alcotest.(check (list string)) "roles"
+            [ "per CPU"; "generated"; "parsing"; "tests"; "network"; "entry points"; "the rest"; "the rest"; "generated" ]
+            (List.map (fun p -> Code_roles.name (Hashtbl.find tbl p)) paths));
       Testo.create "squarified: the paper's example" (fun () ->
           Alcotest.(check (list string))
             "6 6 4 3 2 2 1 in 6 by 4"

@@ -2320,7 +2320,7 @@ let marks_shapes (t : t) (c : camera) : shape list =
  * the files using it over those and the files its calls reach, ranked. The call depth: a definition by its depth over its depth and
  * height in the call graph, a file its definitions' mean. Green the top,
  * what uses; red the bottom, what is used: a road's two ends' colours *)
-let layer_names = [ "used vs using"; "the call depth" ]
+let layer_names = [ "used vs using"; "the call depth"; "roles" ]
 let layer_count = List.length layer_names
 
 
@@ -2404,10 +2404,67 @@ let counting (c : camera) : shape list =
   let cx = float_of_int a.pw /. 2. and cy = float_of_int a.ph /. 2. in
   [ rectangle (rgb 16 14 34) w h |> move (sx a cx) (sy a cy) |> fade 0.95; label a yellow 18. cx cy msg ]
 
-let layer_shapes (t : t) (c : camera) : shape list =
+(* claude: the roles layer (Code_roles, after codemap's Archi_code): each
+ * file by its role, tests, interfaces, per-CPU code, entry points...,
+ * in its role's colour at every level (a role is a file's, not its
+ * definitions'); its key the roles found under the unit looked at, how
+ * many files each *)
+let roles_cache : (Code_rank.t * entry list * (string, Code_roles.category) Hashtbl.t) option ref = ref None
+
+let roles_of (t : t) (r : Code_rank.t) : (string, Code_roles.category) Hashtbl.t =
+  match !roles_cache with
+  | Some (r', es, tbl) when r' == r && es == t.entries -> tbl
+  | _ ->
+      let tbl = Code_roles.categories ~links:(Code_rank.links r) (List.map (fun (e : entry) -> e.path) (t.entries @ t.beyond)) in
+      roles_cache := Some (r, t.entries, tbl);
+      tbl
+
+let roles_shapes (t : t) (c : camera) (r : Code_rank.t) : shape list * shape list =
+  let a = c.a in
+  let tbl = roles_of t r in
+  let tints =
+    if at_ground t c <> None then []
+    else
+      Array.to_list t.placed
+      |> List.filter_map (fun (p : entry Treemap.placed) ->
+             match (p.node, clip c p.rect) with
+             | File _, Some (x0, y0, x1, y1) when not (outside t p) -> (
+                 match Hashtbl.find_opt tbl p.path with
+                 | Some cat when cat <> Code_roles.Plain ->
+                     let r, g, b = Code_roles.colour cat in
+                     let w = float_of_int (x1 - x0) and h = float_of_int (y1 - y0) in
+                     Some (rectangle (rgb r g b) w h |> move (sx a (float_of_int x0 +. (w /. 2.))) (sy a (float_of_int y0 +. (h /. 2.))) |> fade 0.75)
+                 | _ -> None)
+             | _ -> None)
+  in
+  (* the key: the roles under the unit, how many files each *)
+  let top = t.placed.(t.focus).path in
+  let under p = top = "" || p = top || Code_search.starts p (top ^ "/") in
+  let counts = List.map (fun cat -> (cat, List.length (List.filter (fun (e : entry) -> under e.path && Hashtbl.find_opt tbl e.path = Some cat) t.entries))) Code_roles.all in
+  let rows = List.filter (fun (cat, n) -> n > 0 && cat <> Code_roles.Plain) counts in
+  let head = "layer: roles   (l: next, shift+l: back)" in
+  let row = 18. in
+  let w = 20. +. List.fold_left (fun m (cat, n) -> Float.max m (30. +. text_width 13. (Printf.sprintf "%s  %d" (Code_roles.name cat) n))) (text_width 14. head) rows in
+  let h = 30. +. (row *. float_of_int (List.length rows)) in
+  let x0 = float_of_int a.pw -. w -. 10. and y0 = float_of_int a.ph -. h -. 10. in
+  ( tints,
+  [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
+  @ [ label a yellow 14. (x0 +. 10. +. (text_width 14. head /. 2.)) (y0 +. 14.) head ]
+  @ List.concat
+      (List.mapi
+         (fun i (cat, n) ->
+           let r, g, b = Code_roles.colour cat in
+           let y = y0 +. 32. +. (float_of_int i *. row) in
+           let str = Printf.sprintf "%s  %d" (Code_roles.name cat) n in
+           [ circle (rgb r g b) 5. |> move (sx a (x0 +. 16.)) (sy a y); label a ink 13. (x0 +. 28. +. (text_width 13. str /. 2.)) y str ])
+         rows) )
+
+(* claude: a layer's tints, under the names, and its key, over them *)
+let layer_shapes (t : t) (c : camera) : shape list * shape list =
   match (t.layer, t.rank) with
-  | 0, _ -> []
-  | _, None -> counting c
+  | 0, _ -> ([], [])
+  | _, None -> ([], counting c)
+  | 3, Some r -> roles_shapes t c r
   | _, Some r ->
       let a = c.a in
       let data = layer_of t t.layer t.placed.(t.focus).path r in
@@ -2462,20 +2519,20 @@ let layer_shapes (t : t) (c : camera) : shape list =
       in
       (* the key, bottom right: the gradient, its two ends named *)
       let name = Option.value (List.nth_opt layer_names (t.layer - 1)) ~default:"" in
-      let head = Printf.sprintf "layer: %s   (l: next)" name in
+      let head = Printf.sprintf "layer: %s   (l: next, shift+l: back)" name in
       let w = 330. and h = 64. in
       let x0 = float_of_int a.pw -. w -. 10. and y0 = float_of_int a.ph -. h -. 10. in
       let steps = 32 in
       let bw = (w -. 24.) /. float_of_int steps in
-      tints
-      @ [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
+      ( tints,
+      [ rectangle (rgb 16 14 34) w h |> move (sx a (x0 +. (w /. 2.))) (sy a (y0 +. (h /. 2.))) |> fade 0.9 ]
       @ [ label a yellow 14. (x0 +. 12. +. (text_width 14. head /. 2.)) (y0 +. 14.) head ]
       @ List.init steps (fun k ->
             let r, g, b = heat (float_of_int k /. float_of_int (steps - 1)) in
             rectangle (rgb r g b) (bw +. 0.5) 10. |> move (sx a (x0 +. 12. +. (bw *. (float_of_int k +. 0.5)))) (sy a (y0 +. 34.)))
       @
       let lo, hi = if t.layer = 1 then ("using: the most", "used: the most") else ("the top of the call stack", "the bottom") in
-      [ label a ink 12. (x0 +. 12. +. (text_width 12. lo /. 2.)) (y0 +. 52.) lo; label a ink 12. (x0 +. w -. 12. -. (text_width 12. hi /. 2.)) (y0 +. 52.) hi ]
+      [ label a ink 12. (x0 +. 12. +. (text_width 12. lo /. 2.)) (y0 +. 52.) lo; label a ink 12. (x0 +. w -. 12. -. (text_width 12. hi /. 2.)) (y0 +. 52.) hi ] )
 
 (* claude: at the street, a panel's name under a pixel: a click there
  * goes to that file (the author) *)
@@ -2674,9 +2731,9 @@ let search_shapes (t : t) (c : camera) : shape list =
 
 let labels (t : t) (c : camera) (q : float) : shape list =
   let kept = names t c in
-  (* claude: the layer first, under the names *)
-  layer_shapes t c
-  @ (if t.deferred <> None then counting c else [])
+  (* claude: the layer first, under the names; its key last, over them *)
+  let layer_tints, layer_key = layer_shapes t c in
+  layer_tints
   @ (match at_ground t c with
   | Some e when t.street -> street_labels t c e @ line_lit t c e @ names_glow t c e
   | Some e -> notes t c e @ line_lit t c e @ names_glow t c e
@@ -2692,6 +2749,8 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ search_shapes t c
   @ match_preview t c
   @ bone_card t c
+  @ layer_key
+  @ (if t.deferred <> None then counting c else [])
   @ tour_banner t c
 
 (* claude: at the ground, the line under a pixel (Code_ground's layout,

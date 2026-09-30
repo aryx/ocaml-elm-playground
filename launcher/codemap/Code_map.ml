@@ -539,8 +539,11 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: m, the marks hidden, shown (Map_v2) *)
   (* claude: l, the layers, the map coloured by a measure, in turn, then
    * none (Map_v2.layer_shapes); the uses counted first (Code_rank) *)
-  if pressed "l" && t.search = None then begin
-    t.layer <- (t.layer + 1) mod (Map_v2.layer_count + 1);
+  if (pressed "l" || pressed "L") && t.search = None then begin
+    (* claude: shift+l, back (the author: "cycling can take time"); a
+     * browser names it L *)
+    let n = Map_v2.layer_count + 1 in
+    t.layer <- (if pressed "L" || Set_.mem "Shift" computer.keyboard.keys then t.layer + n - 1 else t.layer + 1) mod n;
     (* the map painted again, its regions grey under a layer *)
     t.painted <- None
   end;
@@ -1040,7 +1043,7 @@ let keys_help = [
   ("a", "at a file: its neighbours, what it uses, what uses it (a again: the next)");
   ("x", "the X-ray: the skeleton; x again, the next one; 1-5 the plates (hover the legend)");
   ("m", "the marks: patterns lit everywhere (the configs', and those kept)");
-  ("l", "the layers: the map coloured by a measure (used vs using, the call depth: green the top, red the bottom)");
+  ("l", "the layers, shift+l back: the map coloured by a measure (used vs using, the call depth, roles)");
   ("Searching", "");
   ("/", "search: a name, or file: dir: def: type: view: tour: bone: text: ref:");
   ("  in the search", "Tab complete, up/down choose, Enter go, shift+Enter all found together, ctrl+Enter a mark");
@@ -1079,7 +1082,7 @@ let help_shapes (computer : computer) : shape list =
  * see at once whether a page runs the latest, a browser keeping the
  * program it has for a while): 0.01, 0.02, ..., raised by hand at each
  * publish of a change to the map (make publish, make codemap-web) *)
-let version = "0.05"
+let version = "0.06"
 
 (* claude: a line of keys and what they do, centred at [y], the keys in
  * yellow, the rest dim; the widths Code_map_base.text_width's *)
@@ -1393,7 +1396,7 @@ let glass ?(panel = false) (computer : computer) (t : t) : shape list =
  * (view), counted the next frame, then the key played -- seconds, but
  * said, not a freeze (the author: "at least we should show a progress
  * bar or something") *)
-let needs_uses = [ "l"; "g" ]
+let needs_uses = [ "l"; "L"; "g" ]
 
 let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   match t.deferred with
