@@ -934,7 +934,7 @@ caml_call3(f,a0,a1,a2){return(f.l>=0?f.l:f.l=f.length)===3?f(a0,a1,a2):caml_call
 caml_call5(f,a0,a1,a2,a3,a4){return(f.l>=0?f.l:f.l=f.length)===5?f(a0,a1,a2,a3,a4):caml_call_gen(f,[a0,a1,a2,a3,a4])}function
 caml_call7(f,a0,a1,a2,a3,a4,a5,a6){return(f.l>=0?f.l:f.l=f.length)===7?f(a0,a1,a2,a3,a4,a5,a6):caml_call_gen(f,[a0,a1,a2,a3,a4,a5,a6])}var
 dummy=0;caml_fs_init();var
-Out_of_memory=[num_248,str_Out_of_memory,-1],Sys_error=[num_248,str_Sys_error,-2],Failure=[num_248,str_Failure,-3],Invalid_argument=[num_248,str_Invalid_argument,-4],Not_found=[num_248,str_Not_found,-7],Match_failure=[num_248,str_Match_failure,-8],Stack_overflow=[num_248,str_Stack_overflow,-9],Assert_failure=[num_248,str_Assert_failure,-11],Undefined_recursive_module=[num_248,str_Undefined_recurs_abr,-12],partial=[4,0,0,0,[12,45,[4,0,0,0,0]]],dt=[0,[11,'File "',[2,0,[11,'", line ',[4,0,0,0,[11,str_characters,[4,0,0,0,[12,45,[4,0,0,0,[11,str$5,[2,0,0]]]]]]]]]],'File "%s", line %d, characters %d-%d: %s'],ew=[0,str$6,0,str$6],gM=[0,"#000000"],gO=[0,"#edd400"],gP=[0,"#73d216"],gQ=[0,"#3465a4"],g6=[0,0,num_440,num_440,0.,num_0_1,num_0_1,0.,0.,0.,0.,0.,0.,0.707,0.,0.,0.,num_0_5],hP=str_to_js,hJ=[0,str_to_js],iV=[0,1,1],jc="polygon",jh=str_width,ji=str_height,jm="fill",jn="points",jo="transform",k8=[num_254,0.,0.,0.,0.,0.,0.,0.,0.,0.],lc=[0,1.,[0,0.,0.,0.]],lM=[0,0.,0],l0=[0,2,1,1],nL=[0,num_0_4,1.,num_0_2];caml_register_global(11,Undefined_recursive_module,str_Undefined_recurs_abr);caml_register_global(10,Assert_failure,str_Assert_failure);caml_register_global(9,[num_248,str_Sys_blocked_io,-10],str_Sys_blocked_io);caml_register_global(8,Stack_overflow,str_Stack_overflow);caml_register_global(7,Match_failure,str_Match_failure);caml_register_global(6,Not_found,str_Not_found);caml_register_global(5,[num_248,str_Division_by_zero,-6],str_Division_by_zero);caml_register_global(4,[num_248,str_End_of_file,-5],str_End_of_file);caml_register_global(3,Invalid_argument,str_Invalid_argument);caml_register_global(2,Failure,str_Failure);caml_register_global(1,Sys_error,str_Sys_error);caml_register_global(0,Out_of_memory,str_Out_of_memory);function
+Out_of_memory=[num_248,str_Out_of_memory,-1],Sys_error=[num_248,str_Sys_error,-2],Failure=[num_248,str_Failure,-3],Invalid_argument=[num_248,str_Invalid_argument,-4],Not_found=[num_248,str_Not_found,-7],Match_failure=[num_248,str_Match_failure,-8],Stack_overflow=[num_248,str_Stack_overflow,-9],Assert_failure=[num_248,str_Assert_failure,-11],Undefined_recursive_module=[num_248,str_Undefined_recurs_abr,-12],partial=[4,0,0,0,[12,45,[4,0,0,0,0]]],dt=[0,[11,'File "',[2,0,[11,'", line ',[4,0,0,0,[11,str_characters,[4,0,0,0,[12,45,[4,0,0,0,[11,str$5,[2,0,0]]]]]]]]]],'File "%s", line %d, characters %d-%d: %s'],ew=[0,str$6,0,str$6],gK=[0,"#000000"],gM=[0,"#edd400"],gN=[0,"#73d216"],gO=[0,"#3465a4"],g6=[0,0,num_440,num_440,0.,num_0_1,num_0_1,0.,0.,0.,0.,0.,0.,0.707,0.,0.,0.,num_0_5],hP=str_to_js,hJ=[0,str_to_js],iV=[0,1,1],jc="polygon",jh=str_width,ji=str_height,jm="fill",jn="points",jo="transform",k8=[num_254,0.,0.,0.,0.,0.,0.,0.,0.,0.],lc=[0,1.,[0,0.,0.,0.]],lM=[0,0.,0],l0=[0,2,1,1],nL=[0,num_0_4,1.,num_0_2];caml_register_global(11,Undefined_recursive_module,str_Undefined_recurs_abr);caml_register_global(10,Assert_failure,str_Assert_failure);caml_register_global(9,[num_248,str_Sys_blocked_io,-10],str_Sys_blocked_io);caml_register_global(8,Stack_overflow,str_Stack_overflow);caml_register_global(7,Match_failure,str_Match_failure);caml_register_global(6,Not_found,str_Not_found);caml_register_global(5,[num_248,str_Division_by_zero,-6],str_Division_by_zero);caml_register_global(4,[num_248,str_End_of_file,-5],str_End_of_file);caml_register_global(3,Invalid_argument,str_Invalid_argument);caml_register_global(2,Failure,str_Failure);caml_register_global(1,Sys_error,str_Sys_error);caml_register_global(0,Out_of_memory,str_Out_of_memory);function
 a(aja){if(typeof
 aja==="number")return 0;switch(aja[0]){case
 0:return[0,a(aja[1])];case
@@ -2035,7 +2035,7 @@ d6=[0,[0,987910699,495797812,364182224,414272206,318284740,990407751,383018966,2
 d7(Vu){var
 Vv=Vu.length-1<4?1:0,Vw=Vv||(Vu[4]<0?1:0);return Vw}function
 d8(Vt){Vt[4]=-Vt[4]|0}var
-u="output_substring",G="Char.chr",aH="String.contains_from / Bytes.contains_from",aA=str$6,az="String.concat",bc="Buffer.add_substring/add_subbytes",eh="Hashtbl: unsupported hash table format",d$=str$6,eR=[3,0,3],eS=str$0,eO=str$6,eM=str$6,eI="\n",eF=[0,str$6],ez=str$6,eA=str$6,eB=str$6,eC=str$6,en="Stdlib.Format.String_tag",fn=str_E2BIG,fp=str_EACCES,fq=str_EAGAIN,fr=str_EBADF,fs=str_EBUSY,ft=str_ECHILD,fu=str_EDEADLK,fv=str_EDOM,fw=str_EEXIST,fx=str_EFAULT,fy=str_EFBIG,fz=str_EINTR,fA=str_EINVAL,fB=str_EIO,fC=str_EISDIR,fD=str_EMFILE,fE=str_EMLINK,fF=str_ENAMETOOLONG,fG=str_ENFILE,fH=str_ENODEV,fI=str_ENOENT,fJ=str_ENOEXEC,fK=str_ENOLCK,fL=str_ENOMEM,fM=str_ENOSPC,fN=str_ENOSYS,fO=str_ENOTDIR,fP=str_ENOTEMPTY,fQ=str_ENOTTY,fR=str_ENXIO,fS=str_EPERM,fT=str_EPIPE,fU=str_ERANGE,fV=str_EROFS,fW=str_ESPIPE,fX=str_ESRCH,fY=str_EXDEV,fZ=str_EWOULDBLOCK,f0=str_EINPROGRESS,f1=str_EALREADY,f2=str_ENOTSOCK,f3=str_EDESTADDRREQ,f4=str_EMSGSIZE,f5=str_EPROTOTYPE,f6=str_ENOPROTOOPT,f7=str_EPROTONOSUPPORT,f8=str_ESOCKTNOSUPPORT,f9=str_EOPNOTSUPP,f_=str_EPFNOSUPPORT,f$=str_EAFNOSUPPORT,ga=str_EADDRINUSE,gb=str_EADDRNOTAVAIL,gc=str_ENETDOWN,gd=str_ENETUNREACH,ge=str_ENETRESET,gf=str_ECONNABORTED,gg=str_ECONNRESET,gh=str_ENOBUFS,gi=str_EISCONN,gj=str_ENOTCONN,gk=str_ESHUTDOWN,gl=str_ETOOMANYREFS,gm=str_ETIMEDOUT,gn=str_ECONNREFUSED,go=str_EHOSTDOWN,gp=str_EHOSTUNREACH,gq=str_ELOOP,gr=str_EOVERFLOW,gs=[0,[11,"EUNKNOWNERR ",[4,0,0,0,0]],"EUNKNOWNERR %d"],fo=[0,[11,"Unix.Unix_error(Unix.",[2,0,[11,str$9,[3,0,[11,str$9,[3,0,[12,41,0]]]]]]],"Unix.Unix_error(Unix.%s, %S, %S)"],fi=str_Unix_Unix_error,fk=str$6,fl=str$6,fm=str_Unix_Unix_error,gD="Set.remove_min_elt",gx=str_Set_bal,gy=str_Set_bal,gz=str_Set_bal,gA=str_Set_bal,gN=[0,"#cc0000"],g4=[0,2],hj=[0,1],hk=[0,1],hm="hard",hn="tanh",ho="cubic",hp="asymmetric",hl=[0,0,[0,1,[0,2,[0,3,0]]]],hr="compressor",hs="limiter",ht="gate",hq=[0,0,[0,1,[0,2,0]]],hC=[0,0.,0.,0.],hD="a polygon needs at least 3 points",hE=[0,1.,1.3,num_0_6],hG="Jsoo_runtime.Error.Exn",hI=str_jsError,hN=str$6,il=str_canvas,ii="img",ih=str_p,ij="Js_of_ocaml__Dom_html.Canvas_not_available",i0=[5,1],iZ=[5,0],iY=[6,1],iX=[6,0],iU=str$6,iM=str_Escape,iN="End",iO="Delete",iP=str_Backspace,iG=str_Tab,iI="PageUp",iJ="PageDown",iK="Insert",iL="Home",iH=str_Enter,iD=str_Shift,iE=str_Control,iF=str_Alt,iC=str$6,iu=str_sans_serif,iz=str$6,iT=[0,0.,0.,0,0,0,0.,0.,0.,0],k2=[0,[11,"requestAnimationFrame rate: ",[8,[0,0,0],0,[0,0],[11," Hz",0]]],"requestAnimationFrame rate: %.0f Hz"],k3=[0,[0,str_Control,"ctrlKey"],[0,[0,str_Alt,"altKey"],[0,[0,str_Shift,"shiftKey"],[0,[0,"Meta","metaKey"],0]]]],k4=[0,93,[0,90,[0,96,[0,76,[0,78,[0,174,[0,31,0]]]]]]],kY=[3,0],kZ=[0,num_1000,0.,0.],k0=[3,1],kX=[0,num_1000,0.,0.],k1=[0,str_pointerdown,[0,str_pointermove,[0,str_pointerup,0]]],kT=str_flex,kV=str_none,kU=str_display,kN=str_div,kO=[0,[0,str_position,str_fixed],[0,[0,str_left,str_0],[0,[0,str_right,str_0],[0,[0,str_bottom,str_0],[0,[0,"zIndex","10"],0]]]]],kP=str_div,kQ=caml_list_of_js_array([[0,str_position,str_fixed],[0,str_right,str_8px],[0,str_bottom,str_4px],[0,str_width,str_44px],[0,str_height,str_44px],[0,"lineHeight",str_44px],[0,"textAlign",str_center],[0,str_fontSize,"26px"],[0,str_borderRadius,str_8px],[0,str_background,"rgba(255,255,255,0.75)"],[0,str_color,str_222]]),kR=str_pointerdown,kS=str_mousedown,kW=str_click,kK=[0,[8,[0,0,0],0,[0,0],[11,str_px,0]],"%.0fpx"],kL=str_height,kM=str_resize,kx=str_div,ky=[0,[0,str_flex,"1"],[0,[0,str_display,str_flex],[0,[0,"alignItems",str_center],[0,[0,"justifyContent",str_center],[0,[0,str_fontSize,"18px"],[0,[0,str_borderRadius,"6px"],[0,[0,str_background,"rgba(255,255,255,0.8)"],[0,[0,str_color,str_222],[0,[0,"fontFamily",str_sans_serif],0]]]]]]]]],kz=str_pointerdown,kA=str_mousedown,kB=[0,str_pointerup,[0,str_pointercancel,[0,str_pointerleave,0]]],kq=str_div,kr=[0,[0,str_display,str_none],[0,[0,"gap",str_4px],[0,[0,str_padding,str_4px],[0,[0,"boxSizing","border-box"],[0,[0,str_background,"#333"],0]]]]],ks=str_height,kt=[0,str_right,"60px"],ku=[0,str_bottom,str_0],kv=[0,str_left,str_0],kw=[0,str_position,str_fixed],kC=str_ArrowLeft,kD=str_ArrowUp,kE=str_ArrowDown,kF=str_ArrowRight,kG=[0,str$10],kH=str_space,kI=str_Enter,kJ=str_Escape,kn=str_space,km=str_Backspace,ki=str_input,kj=[0,[0,"autocomplete",str_off],[0,[0,"autocorrect",str_off],[0,[0,"autocapitalize",str_off],[0,[0,"spellcheck",str_false],0]]]],kk=[0,[0,str_position,str_fixed],[0,[0,str_left,str_0],[0,[0,str_bottom,str_0],[0,[0,str_width,str_1px],[0,[0,str_height,str_1px],[0,[0,str_opacity,str_0],[0,[0,str_fontSize,"16px"],[0,[0,"border",str_0],[0,[0,str_padding,str_0],0]]]]]]]]],kl=str_keydown,ko=str_input,kc=[1,0],kb="GET",kd="POST",j_="outputLatency",j$="baseLatency",j0=[0,[4,0]],j1=[0,[4,1]],j2=[0,0],jY=[0,[11,"key = '",[2,0,[12,39,0]]],"key = '%s'"],jZ=str_space,jU="pixelated",jV="image-rendering",jS="crispEdges",jT="shape-rendering",jK=str_100,jL=str_100,jM=str_0,jN=str_left,jO=str_0,jP="top",jQ=str_fixed,jR=str_position,jD="central",jE="middle",jC=str$6,jy=str$6,jz=str$6,jf="g",je="text",jd="image",jb="rect",ja="ellipse",i$="circle",i_="svg",i6=str$6,i7=str$6,jg="viewBox",jj="r",jk="rx",jl="ry",jp=str_opacity,jq="href",jr="text-anchor",js="dominant-baseline",jt="font-size",ju="font-family",jv="textContent",ls=[0,num_1,[0,1.,0]],lr=[0,num_1,[0,1.,0]],lq=[0,num_1,[0,1.,0]],lm=[0,0.,0.,1.],ln=[0,0.,1.,0.],lo=[0,1.,0.,0.],lE=[0,0.,0.,1.],lF=[0,0.,1.,0.],lG=[0,1.,0.,0.],lC=[0,1.,0.,0.],lL=[0,0,0,0],lY=[0,0.,1.,0.],lO="polygon3d needs at least 3 points",l1=[num_254,0.,0.,1.,1.],l7=[0,0.,0.],l8=[0,0.,0.],l9=[0,0.,0.],l4=[0,0.,0.],l5=[0,0.,0.],l6=[0,0.,0.],mS=str$6,mT="keys",mY="fixed-time",mQ=[0,0,[0,1,[0,1,[0,2,[0,2,[0,0,0]]]]]],mH="uLightDir",mI="uAmbient",mJ="uTexture",mK=[0,[0,"aPos",3,0],[0,[0,"aNormal",3,3],[0,[0,"aColor",3,6],[0,[0,"aUv",2,9],0]]]],mL="uUseTexture",mM="uShading",mN="uMVP",mO=[1,"WebGL is not available in this browser"],mD=[0,[11,"playground3d webgl: can't use texture ",[2,0,[11," (",[2,0,[12,41,0]]]]],"playground3d webgl: can't use texture %s (%s)"],mE=[0,[11,"playground3d webgl: can't load texture ",[2,0,0]],"playground3d webgl: can't load texture %s"],mB="http://",mC="https://",mx=[0,[11,"WebGL program link error:\n",[2,0,0]],"WebGL program link error:\n%s"],mw=[0,[11,"WebGL shader compile error:\n",[2,0,0]],"WebGL shader compile error:\n%s"],mn=str_on,mo=str_off,mp="no lighting",mr="flat",ms="smooth",mq=[0,[11,"Playground3D (WebGL) -- m: ",[2,0,[11,", b: culling ",[2,0,[11,", i: smooth textures ",[2,0,[11,", f: wireframe ",[2,0,[11,", o: cache ",[2,0,0]]]]]]]]]],"Playground3D (WebGL) -- m: %s, b: culling %s, i: smooth textures %s, f: wireframe %s, o: cache %s"],md="normalize(cross(dFdx(vPos), dFdy(vPos)))",mg="normalize(vNormal)",me="#extension GL_OES_standard_derivatives : enable\n",mf=str$6,mc="attribute vec3 aPos;\nattribute vec3 aNormal;\nattribute vec3 aColor;\nattribute vec2 aUv;\nvarying vec3 vNormal;\nvarying vec3 vColor;\nvarying vec2 vUv;\nvarying vec3 vPos;\nuniform mat4 uMVP;\nvoid main() {\n  gl_Position = uMVP * vec4(aPos, 1.0);\n  vPos = aPos;\n  vNormal = aNormal;\n  vColor = aColor;\n  vUv = aUv;\n}\n",nq=[0,1.,0.,0.],nr=[0,0.,0.,1.],ns=[0,0.,0.,1.],nt=[0,0.,1.,0.],nu=[0,0.,1.,0.],nv=[0,1.,0.,0.],nw=[0,1.,0.,0.],nx=[0,0.,0.,1.],ny=[0,1.,0.,0.],nA=[0,0.,1.,0.],nz=[0,num_2,[0,num_1,[0,0.,[0,1.,[0,2.,0]]]]],nl=[0,0.,1.,0.],nm=[0,0.,1.,0.],nn=[0,1.,0.,0.],no=[0,0.,1.,0.],ni=[0,0.,0.,0.],m$=[0,0.,0.,0.],na=[0,0.,0.,0.],m7=[0,[0,0.,0.,0.],[0,0.,0.,0.]],nT=[0,[11,"Score: ",[4,0,0,0,0]],"Score: %d"],nU=[0,[11,"physics=engine   ",[8,[0,0,0],0,[0,1],[11," m/s   (d: what it sees)",0]]],"physics=engine   %.1f m/s   (d: what it sees)"],nD="seed",nF="physics",i=num_2147483647;function
+u="output_substring",G="Char.chr",aH="String.contains_from / Bytes.contains_from",aA=str$6,az="String.concat",bc="Buffer.add_substring/add_subbytes",eh="Hashtbl: unsupported hash table format",d$=str$6,eR=[3,0,3],eS=str$0,eO=str$6,eM=str$6,eI="\n",eF=[0,str$6],ez=str$6,eA=str$6,eB=str$6,eC=str$6,en="Stdlib.Format.String_tag",fn=str_E2BIG,fp=str_EACCES,fq=str_EAGAIN,fr=str_EBADF,fs=str_EBUSY,ft=str_ECHILD,fu=str_EDEADLK,fv=str_EDOM,fw=str_EEXIST,fx=str_EFAULT,fy=str_EFBIG,fz=str_EINTR,fA=str_EINVAL,fB=str_EIO,fC=str_EISDIR,fD=str_EMFILE,fE=str_EMLINK,fF=str_ENAMETOOLONG,fG=str_ENFILE,fH=str_ENODEV,fI=str_ENOENT,fJ=str_ENOEXEC,fK=str_ENOLCK,fL=str_ENOMEM,fM=str_ENOSPC,fN=str_ENOSYS,fO=str_ENOTDIR,fP=str_ENOTEMPTY,fQ=str_ENOTTY,fR=str_ENXIO,fS=str_EPERM,fT=str_EPIPE,fU=str_ERANGE,fV=str_EROFS,fW=str_ESPIPE,fX=str_ESRCH,fY=str_EXDEV,fZ=str_EWOULDBLOCK,f0=str_EINPROGRESS,f1=str_EALREADY,f2=str_ENOTSOCK,f3=str_EDESTADDRREQ,f4=str_EMSGSIZE,f5=str_EPROTOTYPE,f6=str_ENOPROTOOPT,f7=str_EPROTONOSUPPORT,f8=str_ESOCKTNOSUPPORT,f9=str_EOPNOTSUPP,f_=str_EPFNOSUPPORT,f$=str_EAFNOSUPPORT,ga=str_EADDRINUSE,gb=str_EADDRNOTAVAIL,gc=str_ENETDOWN,gd=str_ENETUNREACH,ge=str_ENETRESET,gf=str_ECONNABORTED,gg=str_ECONNRESET,gh=str_ENOBUFS,gi=str_EISCONN,gj=str_ENOTCONN,gk=str_ESHUTDOWN,gl=str_ETOOMANYREFS,gm=str_ETIMEDOUT,gn=str_ECONNREFUSED,go=str_EHOSTDOWN,gp=str_EHOSTUNREACH,gq=str_ELOOP,gr=str_EOVERFLOW,gs=[0,[11,"EUNKNOWNERR ",[4,0,0,0,0]],"EUNKNOWNERR %d"],fo=[0,[11,"Unix.Unix_error(Unix.",[2,0,[11,str$9,[3,0,[11,str$9,[3,0,[12,41,0]]]]]]],"Unix.Unix_error(Unix.%s, %S, %S)"],fi=str_Unix_Unix_error,fk=str$6,fl=str$6,fm=str_Unix_Unix_error,gD="Set.remove_min_elt",gx=str_Set_bal,gy=str_Set_bal,gz=str_Set_bal,gA=str_Set_bal,gL=[0,"#cc0000"],g4=[0,2],hj=[0,1],hk=[0,1],hm="hard",hn="tanh",ho="cubic",hp="asymmetric",hl=[0,0,[0,1,[0,2,[0,3,0]]]],hr="compressor",hs="limiter",ht="gate",hq=[0,0,[0,1,[0,2,0]]],hC=[0,0.,0.,0.],hD="a polygon needs at least 3 points",hE=[0,1.,1.3,num_0_6],hG="Jsoo_runtime.Error.Exn",hI=str_jsError,hN=str$6,il=str_canvas,ii="img",ih=str_p,ij="Js_of_ocaml__Dom_html.Canvas_not_available",i0=[5,1],iZ=[5,0],iY=[6,1],iX=[6,0],iU=str$6,iM=str_Escape,iN="End",iO="Delete",iP=str_Backspace,iG=str_Tab,iI="PageUp",iJ="PageDown",iK="Insert",iL="Home",iH=str_Enter,iD=str_Shift,iE=str_Control,iF=str_Alt,iC=str$6,iu=str_sans_serif,iz=str$6,iT=[0,0.,0.,0,0,0,0.,0.,0.,0],k2=[0,[11,"requestAnimationFrame rate: ",[8,[0,0,0],0,[0,0],[11," Hz",0]]],"requestAnimationFrame rate: %.0f Hz"],k3=[0,[0,str_Control,"ctrlKey"],[0,[0,str_Alt,"altKey"],[0,[0,str_Shift,"shiftKey"],[0,[0,"Meta","metaKey"],0]]]],k4=[0,93,[0,90,[0,96,[0,76,[0,78,[0,174,[0,31,0]]]]]]],kY=[3,0],kZ=[0,num_1000,0.,0.],k0=[3,1],kX=[0,num_1000,0.,0.],k1=[0,str_pointerdown,[0,str_pointermove,[0,str_pointerup,0]]],kT=str_flex,kV=str_none,kU=str_display,kN=str_div,kO=[0,[0,str_position,str_fixed],[0,[0,str_left,str_0],[0,[0,str_right,str_0],[0,[0,str_bottom,str_0],[0,[0,"zIndex","10"],0]]]]],kP=str_div,kQ=caml_list_of_js_array([[0,str_position,str_fixed],[0,str_right,str_8px],[0,str_bottom,str_4px],[0,str_width,str_44px],[0,str_height,str_44px],[0,"lineHeight",str_44px],[0,"textAlign",str_center],[0,str_fontSize,"26px"],[0,str_borderRadius,str_8px],[0,str_background,"rgba(255,255,255,0.75)"],[0,str_color,str_222]]),kR=str_pointerdown,kS=str_mousedown,kW=str_click,kK=[0,[8,[0,0,0],0,[0,0],[11,str_px,0]],"%.0fpx"],kL=str_height,kM=str_resize,kx=str_div,ky=[0,[0,str_flex,"1"],[0,[0,str_display,str_flex],[0,[0,"alignItems",str_center],[0,[0,"justifyContent",str_center],[0,[0,str_fontSize,"18px"],[0,[0,str_borderRadius,"6px"],[0,[0,str_background,"rgba(255,255,255,0.8)"],[0,[0,str_color,str_222],[0,[0,"fontFamily",str_sans_serif],0]]]]]]]]],kz=str_pointerdown,kA=str_mousedown,kB=[0,str_pointerup,[0,str_pointercancel,[0,str_pointerleave,0]]],kq=str_div,kr=[0,[0,str_display,str_none],[0,[0,"gap",str_4px],[0,[0,str_padding,str_4px],[0,[0,"boxSizing","border-box"],[0,[0,str_background,"#333"],0]]]]],ks=str_height,kt=[0,str_right,"60px"],ku=[0,str_bottom,str_0],kv=[0,str_left,str_0],kw=[0,str_position,str_fixed],kC=str_ArrowLeft,kD=str_ArrowUp,kE=str_ArrowDown,kF=str_ArrowRight,kG=[0,str$10],kH=str_space,kI=str_Enter,kJ=str_Escape,kn=str_space,km=str_Backspace,ki=str_input,kj=[0,[0,"autocomplete",str_off],[0,[0,"autocorrect",str_off],[0,[0,"autocapitalize",str_off],[0,[0,"spellcheck",str_false],0]]]],kk=[0,[0,str_position,str_fixed],[0,[0,str_left,str_0],[0,[0,str_bottom,str_0],[0,[0,str_width,str_1px],[0,[0,str_height,str_1px],[0,[0,str_opacity,str_0],[0,[0,str_fontSize,"16px"],[0,[0,"border",str_0],[0,[0,str_padding,str_0],0]]]]]]]]],kl=str_keydown,ko=str_input,kc=[1,0],kb="GET",kd="POST",j_="outputLatency",j$="baseLatency",j0=[0,[4,0]],j1=[0,[4,1]],j2=[0,0],jY=[0,[11,"key = '",[2,0,[12,39,0]]],"key = '%s'"],jZ=str_space,jU="pixelated",jV="image-rendering",jS="crispEdges",jT="shape-rendering",jK=str_100,jL=str_100,jM=str_0,jN=str_left,jO=str_0,jP="top",jQ=str_fixed,jR=str_position,jD="central",jE="middle",jC=str$6,jy=str$6,jz=str$6,jf="g",je="text",jd="image",jb="rect",ja="ellipse",i$="circle",i_="svg",i6=str$6,i7=str$6,jg="viewBox",jj="r",jk="rx",jl="ry",jp=str_opacity,jq="href",jr="text-anchor",js="dominant-baseline",jt="font-size",ju="font-family",jv="textContent",ls=[0,num_1,[0,1.,0]],lr=[0,num_1,[0,1.,0]],lq=[0,num_1,[0,1.,0]],lm=[0,0.,0.,1.],ln=[0,0.,1.,0.],lo=[0,1.,0.,0.],lE=[0,0.,0.,1.],lF=[0,0.,1.,0.],lG=[0,1.,0.,0.],lC=[0,1.,0.,0.],lL=[0,0,0,0],lY=[0,0.,1.,0.],lO="polygon3d needs at least 3 points",l1=[num_254,0.,0.,1.,1.],l7=[0,0.,0.],l8=[0,0.,0.],l9=[0,0.,0.],l4=[0,0.,0.],l5=[0,0.,0.],l6=[0,0.,0.],mS=str$6,mT="keys",mY="fixed-time",mQ=[0,0,[0,1,[0,1,[0,2,[0,2,[0,0,0]]]]]],mH="uLightDir",mI="uAmbient",mJ="uTexture",mK=[0,[0,"aPos",3,0],[0,[0,"aNormal",3,3],[0,[0,"aColor",3,6],[0,[0,"aUv",2,9],0]]]],mL="uUseTexture",mM="uShading",mN="uMVP",mO=[1,"WebGL is not available in this browser"],mD=[0,[11,"playground3d webgl: can't use texture ",[2,0,[11," (",[2,0,[12,41,0]]]]],"playground3d webgl: can't use texture %s (%s)"],mE=[0,[11,"playground3d webgl: can't load texture ",[2,0,0]],"playground3d webgl: can't load texture %s"],mB="http://",mC="https://",mx=[0,[11,"WebGL program link error:\n",[2,0,0]],"WebGL program link error:\n%s"],mw=[0,[11,"WebGL shader compile error:\n",[2,0,0]],"WebGL shader compile error:\n%s"],mn=str_on,mo=str_off,mp="no lighting",mr="flat",ms="smooth",mq=[0,[11,"Playground3D (WebGL) -- m: ",[2,0,[11,", b: culling ",[2,0,[11,", i: smooth textures ",[2,0,[11,", f: wireframe ",[2,0,[11,", o: cache ",[2,0,0]]]]]]]]]],"Playground3D (WebGL) -- m: %s, b: culling %s, i: smooth textures %s, f: wireframe %s, o: cache %s"],md="normalize(cross(dFdx(vPos), dFdy(vPos)))",mg="normalize(vNormal)",me="#extension GL_OES_standard_derivatives : enable\n",mf=str$6,mc="attribute vec3 aPos;\nattribute vec3 aNormal;\nattribute vec3 aColor;\nattribute vec2 aUv;\nvarying vec3 vNormal;\nvarying vec3 vColor;\nvarying vec2 vUv;\nvarying vec3 vPos;\nuniform mat4 uMVP;\nvoid main() {\n  gl_Position = uMVP * vec4(aPos, 1.0);\n  vPos = aPos;\n  vNormal = aNormal;\n  vColor = aColor;\n  vUv = aUv;\n}\n",nq=[0,1.,0.,0.],nr=[0,0.,0.,1.],ns=[0,0.,0.,1.],nt=[0,0.,1.,0.],nu=[0,0.,1.,0.],nv=[0,1.,0.,0.],nw=[0,1.,0.,0.],nx=[0,0.,0.,1.],ny=[0,1.,0.,0.],nA=[0,0.,1.,0.],nz=[0,num_2,[0,num_1,[0,0.,[0,1.,[0,2.,0]]]]],nl=[0,0.,1.,0.],nm=[0,0.,1.,0.],nn=[0,1.,0.,0.],no=[0,0.,1.,0.],ni=[0,0.,0.,0.],m$=[0,0.,0.,0.],na=[0,0.,0.,0.],m7=[0,[0,0.,0.,0.],[0,0.,0.,0.]],nT=[0,[11,"Score: ",[4,0,0,0,0]],"Score: %d"],nU=[0,[11,"physics=engine   ",[8,[0,0,0],0,[0,1],[11," m/s   (d: what it sees)",0]]],"physics=engine   %.1f m/s   (d: what it sees)"],nD="seed",nF="physics",i=num_2147483647;function
 N(Vs){return 25<Vs-65>>>0?Vs:Vs+32|0}var
 aT=num_3_141592653589793,a6=[num_248,"Stdlib.Queue.Empty",caml_fresh_oo_id(0)];try{var
 nW=caml_sys_getenv(str_OCAMLRUNPARAM),eb=nW}catch(Vq){var
@@ -2391,12 +2391,12 @@ gF(QJ,QI){if(!QI)return 0;var
 QK=QI[3],QL=QI[2],QM=QI[1],QN=caml_compare(QJ,QL);if(0!==QN)return 0<=QN?gw(QM,QL,gF(QJ,QK)):gw(gF(QJ,QM),QL,QK);if(!QM)return QK;if(!QK)return QM;var
 QF=QK,QH=gC(QK);for(;;){if(!QF)throw caml_maybe_attach_backtrace(Not_found,1);var
 QG=QF[1];if(!QG)return gw(QM,QF[2],QH);QF=QG}}function
-gG(QE){return QE*num_3_141592653589793/num_180}function
-gH(QD,QC,QB){return caml_lessthan(QB,QD)?QD:caml_greaterthan(QB,QC)?QC:QB}function
-gI(QA){return gH(0,num_255$0,QA)}var
-gR=0;function
-gS(Qz){return typeof
-Qz==="number"?0:3===Qz[0]?ai(gS,Qz[1]):[0,Qz,0]}function
+gG(QE){return 0<=QE?num_255$0<QE?num_255$0:QE:0}var
+gP=0;function
+gQ(QD){return typeof
+QD==="number"?0:3===QD[0]?ai(gQ,QD[1]):[0,QD,0]}function
+gR(QC){return QC*num_3_141592653589793/num_180}function
+gS(QB,QA,Qz){return caml_lessthan(Qz,QB)?QB:caml_greaterthan(Qz,QA)?QA:Qz}function
 gT(Qy){return aV(num_1,aU(1.,Qy))}var
 gU=caml_tanh_float;function
 gV(Qv,Qu){var
@@ -2797,12 +2797,12 @@ jx(LS,LR,LQ,LP){var
 LW=str$9+i4(-LR)+str$4,LV="translate("+i4(LS)+LW,LT=LQ===0.?jy:" rotate("+i4(-LQ)+str$4,LU=LP===1.?jz:" scale("+i4(LP)+str$4;return LV+LT+LU}function
 jA(LM,LL,LK,LJ,LI,LH){var
 LO=str$9+i4(-LL/2.)+str$4,LN=" translate("+i4(-LM/2.)+LO;return jx(LK,LJ,LI,LH)+LN}function
-jB(LG){return LG===1.?0:[0,[0,jp,i4(gH(0.,1.,LG))],0]}function
+jB(LG){return LG===1.?0:[0,[0,jp,i4(gS(0.,1.,LG))],0]}function
 jF(LF,LE){var
 LC=0,LB=LE;for(;;){if(!LB)return U(LC);var
 LD=LB[2];LC=[0,caml_call1(LF,LB[1]),LC];LB=LD}}function
 jG(Lw,Lv,Lu,Lt,Ls,Lr,Lq,Lp){var
-Lx=jB(Lp),Ly=[0,[0,jo,jA(Lw,Lv,Lt,Ls,Lr,Lq)],Lx],Lz=[0,[0,jm,jw(gO)],Ly],LA=[0,[0,ji,i4(Lv)],Lz];return[0,jd,[0,[0,jq,Lu],[0,[0,jh,i4(Lw)],LA]],0]}var
+Lx=jB(Lp),Ly=[0,[0,jo,jA(Lw,Lv,Lt,Ls,Lr,Lq)],Lx],Lz=[0,[0,jm,jw(gM)],Ly],LA=[0,[0,ji,i4(Lv)],Lz];return[0,jd,[0,[0,jq,Lu],[0,[0,jh,i4(Lw)],LA]],0]}var
 jH=[0,0],jI=[0,0],it=10.;function
 jJ(KU){var
 KV=KU[6],KW=KU[5],KX=KU[4],KY=KU[3],KZ=KU[2],K0=KU[1];switch(KV[0]){case
@@ -3024,9 +3024,9 @@ EF=[4,Z(function(EG){return lU(EA,EG)},EC[1])];return[0,EB[1],EB[2],EF];case
 5:EB=EC[1][2];break;default:return lT(EA,EB)}}}function
 lV(Ex,Ew,Ev,Eu){return lT(function(Ey){return hu(Ey,[0,Ex,Ew,Ev])},Eu)}function
 lW(Ee,Ed,Ec,Eb){return lU(function(Et){var
-Eq=Et[2],Er=Et[1],Ep=Et[3],Es=gG(Ec);return[0,Er*Math.cos(Es)-Eq*Math.sin(Es),Er*Math.sin(Es)+Eq*Math.cos(Es),Ep]},lU(function(Eo){var
-Ek=Eo[3],Em=Eo[1],El=Eo[2],En=gG(Ed);return[0,Em*Math.cos(En)+Ek*Math.sin(En),El,-Em*Math.sin(En)+Ek*Math.cos(En)]},lU(function(Ej){var
-Ef=Ej[3],Eg=Ej[2],Eh=Ej[1],Ei=gG(Ee);return[0,Eh,Eg*Math.cos(Ei)-Ef*Math.sin(Ei),Eg*Math.sin(Ei)+Ef*Math.cos(Ei)]},Eb)))}function
+Eq=Et[2],Er=Et[1],Ep=Et[3],Es=gR(Ec);return[0,Er*Math.cos(Es)-Eq*Math.sin(Es),Er*Math.sin(Es)+Eq*Math.cos(Es),Ep]},lU(function(Eo){var
+Ek=Eo[3],Em=Eo[1],El=Eo[2],En=gR(Ed);return[0,Em*Math.cos(En)+Ek*Math.sin(En),El,-Em*Math.sin(En)+Ek*Math.cos(En)]},lU(function(Ej){var
+Ef=Ej[3],Eg=Ej[2],Eh=Ej[1],Ei=gR(Ee);return[0,Eh,Eg*Math.cos(Ei)-Ef*Math.sin(Ei),Eg*Math.sin(Ei)+Ef*Math.cos(Ei)]},Eb)))}function
 lX(D_){var
 D$=D_[3];switch(D$[0]){case
 3:var
@@ -3037,7 +3037,7 @@ l2(D4){if(D4){var
 D5=D4[2];if(D5){var
 D6=D5[2];if(D6){var
 D7=D6[1],D9=D4[1],D8=D5[1];return[0,[0,D9,D8,D7],l2([0,D9,[0,D7,D6[2]]])]}}}return 0}var
-lZ=ee(0,4),gJ=gI(num_255$0),gK=gI(num_255$0),gL=[1,gI(num_255$0),gK,gJ];function
+lZ=ee(0,4),gH=gG(num_255$0),gI=gG(num_255$0),gJ=[1,gG(num_255$0),gI,gH];function
 l3(DH,DG){var
 DJ=DH,DI=DG;for(;;){var
 DK=DI[3];switch(DK[0]){case
@@ -3045,7 +3045,7 @@ DK=DI[3];switch(DK[0]){case
 DL=DK[2],DM=DK[1],DN=hB(DL);return[0,[0,0,ai(function(D3){return[0,[0,D3[1],DN,DM,l6],[0,[0,D3[2],DN,DM,l5],[0,[0,D3[3],DN,DM,l4],0]]]},l2(DL))],0];case
 1:var
 DO=DK[2],DP=DK[1],DQ=hB(Z(function(D2){return D2[1]},DO));return[0,[0,[0,DP],ai(function(DY){var
-DZ=DY[3],D0=DY[2],D1=DY[1];return[0,[0,D1[1],DQ,gL,D1[2]],[0,[0,D0[1],DQ,gL,D0[2]],[0,[0,DZ[1],DQ,gL,DZ[2]],0]]]},l2(DO))],0];case
+DZ=DY[3],D0=DY[2],D1=DY[1];return[0,[0,D1[1],DQ,gJ,D1[2]],[0,[0,D0[1],DQ,gJ,D0[2]],[0,[0,DZ[1],DQ,gJ,DZ[2]],0]]]},l2(DO))],0];case
 2:var
 DR=DK[1];return[0,[0,0,ai(function(DU){var
 DV=DU[3],DW=DU[2],DX=DU[1];return[0,[0,DX[1],DX[2],DR,l9],[0,[0,DW[1],DW[2],DR,l8],[0,[0,DV[1],DV[2],DR,l7],0]]]},l2(DK[2]))],0];case
@@ -3243,10 +3243,10 @@ nI(y9){var
 y8=d5(d6);return(y8/num_1073741824+d5(d6))/num_1073741824*num_12-6.}function
 nJ(y6){var
 y7=nI(0);return[num_254,nI(0),y7]}var
-nK=lR(gQ,num_0_8,num_0_8,num_0_8),nN=W(nC,function(y5){return nJ(0)}),nX=nc(0.,num_0_4,0.,m_(nK)),nd=nL[3],ne=nL[2],nf=nL[1],ng=caml_hypot_float(caml_hypot_float(nf,ne),nd),nM=0,nO=ng<num_1e_12?nX:[0,nX[1],nX[2],nX[3],nX[4],nX[5],nX[6],nX[7],nX[8],[0,nf/ng*num_240,ne/ng*num_240,nd/ng*num_240],nX[10],nX[11],nX[12],nX[13],nX[14],nX[15],nX[16],nX[17],nX[18]];mh[1]=l0[1];mi[1]=l0[2];mj[1]=l0[3];var
+nK=lR(gO,num_0_8,num_0_8,num_0_8),nN=W(nC,function(y5){return nJ(0)}),nX=nc(0.,num_0_4,0.,m_(nK)),nd=nL[3],ne=nL[2],nf=nL[1],ng=caml_hypot_float(caml_hypot_float(nf,ne),nd),nM=0,nO=ng<num_1e_12?nX:[0,nX[1],nX[2],nX[3],nX[4],nX[5],nX[6],nX[7],nX[8],[0,nf/ng*num_240,ne/ng*num_240,nd/ng*num_240],nX[10],nX[11],nX[12],nX[13],nX[14],nX[15],nX[16],nX[17],nX[18]];mh[1]=l0[1];mi[1]=l0[2];mj[1]=l0[3];var
 mR=j3(0),mU=ac(mT,mR),nP=[0,nO,nN,nM,nH];function
 nQ(y1,y0){var
-y2=iB(y1[2]),y3=y2[1],y4=gH(num_6,nB,y0[4]-y2[2]*num_0_08);return nc(gH(num_6,nB,y0[2]+y3*num_0_08),num_0_4,y4,y0)}function
+y2=iB(y1[2]),y3=y2[1],y4=gS(num_6,nB,y0[4]-y2[2]*num_0_08);return nc(gS(num_6,nB,y0[2]+y3*num_0_08),num_0_4,y4,y0)}function
 nR(yP,yO){var
 yQ=iB(yP[2]),yL=nh([0,yQ[1]*num_28_8/yO[10],0./yO[10],-yQ[2]*num_28_8/yO[10]],yO),yK=nh(hw(num_6,[0,yL[5],yL[6],yL[7]]),yL),yt=[0,yK[2],yK[3],yK[4]],yu=yK[14],yv=yK[9],yj=yv[2],yk=yv[1],yl=m5(yv[3]),ym=m5(yj),yn=[0,m5(yk),ym,yl],yx=[0,yK[5],yK[6],yK[7]],x0=yu[2]===0.?1:0,yw=yK[8];if(x0){var
 x1=yu[3]===0.?1:0;if(x1){var
@@ -3272,13 +3272,13 @@ yi=[0,,,lK(yh,yn,m4,ya),yn];else
 var
 yd=hw(m4,yN),ye=hu(la(lb(li(ya),x$),yn),yd),yf=yc[7],yg=lK(yh,yn,m4,ya),yi=[0,,,yg,la(lb(li(yg),yf),ye)];var
 yH=yi[4],yy=yb[3],yz=yb[1],yA=x9[3],yB=x9[1],yC=yK[14],yD=yK[13],yE=yK[12],yF=yK[11],yG=yK[10],yo=yH[2],yp=yH[1],yq=m6(yH[3]),yr=m6(yo),ys=[0,m6(yp),yr,yq];function
-yR(yX,yW){return 6.<Math.abs(yX)?[0,gH(num_6,nB,yX),0.]:[0,yX,yW]}var
+yR(yX,yW){return 6.<Math.abs(yX)?[0,gS(num_6,nB,yX),0.]:[0,yX,yW]}var
 yI=yi[3],yJ=yK[1],yS=yR(yz,yB),yT=yS[2],yU=yS[1],yV=yR(yy,yA);return[0,yJ,yU,num_0_4,yV[1],yT,0.,yV[2],yI,ys,yG,yF,yE,yD,yC,0.,0.,0.,ni]}function
 nS(xi,xh){var
-xB=6.,xA=6.,wJ=lN(gP,[0,[0,num_6,0.,num_6],[0,[0,num_6,0.,xA],[0,[0,xB,0.,xA],[0,[0,xB,0.,num_6],0]]]]),xj=xh[1][2],xk=xh[1][4];if(xh[4])var
+xB=6.,xA=6.,wJ=lN(gN,[0,[0,num_6,0.,num_6],[0,[0,num_6,0.,xA],[0,[0,xB,0.,xA],[0,[0,xB,0.,num_6],0]]]]),xj=xh[1][2],xk=xh[1][4];if(xh[4])var
 xl=xh[1],wL=lj(xl[8]),xy=lW(wL[1],wL[2],wL[3],xl[1]),xm=lV(xl[2],xl[3],xl[4],xy);else
 var
-xx=lR(gQ,num_0_8,num_0_8,num_0_8),xm=lV(xj,num_0_4,xk,lW(0.,360.*(caml_round_float(xi[4][1]*num_1000$0)%caml_round_float(num_4000)/num_4000),0.,xx));a:{b:{var
+xx=lR(gO,num_0_8,num_0_8,num_0_8),xm=lV(xj,num_0_4,xk,lW(0.,360.*(caml_round_float(xi[4][1]*num_1000$0)%caml_round_float(num_4000)/num_4000),0.,xx));a:{b:{var
 wD=xi[2][13];for(;;){if(!wD)break;var
 wE=wD[3],wF=wD[1],wG=caml_compare(str_d$0,wD[2]),wH=0===wG?1:0;if(wH)break b;var
 wI=0<=wG?wE:wF;wD=wI}var
@@ -3286,23 +3286,23 @@ xn=0;break a}var
 xn=wH}if(xn){var
 xp=xh[1],wM=nb(xp),wN=0.015*aV(num_0_05,hz(m8(xp[1]))),wO=function(xW){return lh(xp[8],xW)},wP=xp[13],xo=0;switch(wP[0]){case
 0:var
-wQ=wP[1],wR=wO(nq),wS=wO(nr),wT=np(gP,[0,xp[2],xp[3],xp[4]],wS,wR,wQ,wN),wU=wO(ns),wV=wO(nt),wW=q(np(gP,[0,xp[2],xp[3],xp[4]],wV,wU,wQ,wN),wT),wX=wO(nu),wY=wO(nv),wZ=q(np(gP,[0,xp[2],xp[3],xp[4]],wY,wX,wQ,wN),wW);break;case
+wQ=wP[1],wR=wO(nq),wS=wO(nr),wT=np(gN,[0,xp[2],xp[3],xp[4]],wS,wR,wQ,wN),wU=wO(ns),wV=wO(nt),wW=q(np(gN,[0,xp[2],xp[3],xp[4]],wV,wU,wQ,wN),wT),wX=wO(nu),wY=wO(nv),wZ=q(np(gN,[0,xp[2],xp[3],xp[4]],wY,wX,wQ,wN),wW);break;case
 1:var
 w1=lp(wM),w2=ai(function(xU){return W(8,function(xV){return[0,xU,xV]})},W(8,function(xT){return xT})),wZ=ah(function(xP){var
 xQ=xP[2],xR=xP[1],xS=xR^xQ;if(1!==xS&&2!==xS&&4!==xS)return 0;var
-xO=Q(w1,xQ);return[0,nk(gP,Q(w1,xR),xO,wN)]})(w2);break;case
+xO=Q(w1,xQ);return[0,nk(gN,Q(w1,xR),xO,wN)]})(w2);break;case
 2:var
-w3=wP[2],w4=lu(wM),w5=w4[2],w6=w4[1],w7=wO(nw),w8=wO(nx),w9=[0,nk(gP,w6,w5,wN),0],w_=[0,w8,[0,hw(num_1,w8),0]],w$=q(Z(function(xM){var
-xN=hu(w5,hw(w3,xM));return nk(gP,hu(w6,hw(w3,xM)),xN,wN)},[0,w7,[0,hw(num_1,w7),w_]]),w9),xa=q(np(gP,w5,w7,w8,w3,wN),w$),wZ=q(np(gP,w6,w7,w8,w3,wN),xa);break;default:var
+w3=wP[2],w4=lu(wM),w5=w4[2],w6=w4[1],w7=wO(nw),w8=wO(nx),w9=[0,nk(gN,w6,w5,wN),0],w_=[0,w8,[0,hw(num_1,w8),0]],w$=q(Z(function(xM){var
+xN=hu(w5,hw(w3,xM));return nk(gN,hu(w6,hw(w3,xM)),xN,wN)},[0,w7,[0,hw(num_1,w7),w_]]),w9),xa=q(np(gN,w5,w7,w8,w3,wN),w$),wZ=q(np(gN,w6,w7,w8,w3,wN),xa);break;default:var
 xb=wP[2],xc=hA(wP[1]),xd=0.9<Math.abs(xc[2])?hy(xc,ny):hy(xc,nA),xe=hA(xd),xf=hy(xc,xe),xg=function(xJ,xI){var
 xK=hw(2.*xI,xf),xL=hu(hw(2.*xJ,xe),xK);return hu(hw(xb,xc),xL)},wZ=ai(function(xE){var
-xF=xg(2.,xE),xG=[0,nk(gP,xg(num_2,xE),xF,wN),0],xH=xg(xE,2.);return[0,nk(gP,xg(xE,num_2),xH,wN),xG]},nz)}var
-w0=nj(xp)<num_1e_6?0:[0,nk(gN,[0,xp[2],xp[3],xp[4]],[0,xp[2]+xp[5],xp[3]+xp[6],xp[4]+xp[7]],wN),0],xq=[0,lP(q(wZ,w0)),xo]}else
+xF=xg(2.,xE),xG=[0,nk(gN,xg(num_2,xE),xF,wN),0],xH=xg(xE,2.);return[0,nk(gN,xg(xE,num_2),xH,wN),xG]},nz)}var
+w0=nj(xp)<num_1e_6?0:[0,nk(gL,[0,xp[2],xp[3],xp[4]],[0,xp[2]+xp[5],xp[3]+xp[6],xp[4]+xp[7]],wN),0],xq=[0,lP(q(wZ,w0)),xo]}else
 var
 xq=0;var
 xz=Z(function(xC){var
-xD=lS(gO,num_0_3);return lV(xC[1],num_0_3,xC[2],xD)},xh[2]),xr=xh[3],xs=is(gM,caml_call1(ds(nT),xr)),xt=lQ(iv(xi[3][4]+num_60,xi[3][3]-40.,xs)),wK=[0,[0,xj,8.,xk+8.],[0,xj,0.,xk],lY,num_60,0.,num_0_1,num_1000$0];if(xh[4])var
-xu=nj(xh[1]),xv=is(gM,caml_call1(ds(nU),xu)),xw=[0,lQ(iv(xi[3][4]+220.,xi[3][6]+num_30,xv)),0];else
+xD=lS(gM,num_0_3);return lV(xC[1],num_0_3,xC[2],xD)},xh[2]),xr=xh[3],xs=is(gK,caml_call1(ds(nT),xr)),xt=lQ(iv(xi[3][4]+num_60,xi[3][3]-40.,xs)),wK=[0,[0,xj,8.,xk+8.],[0,xj,0.,xk],lY,num_60,0.,num_0_1,num_1000$0];if(xh[4])var
+xu=nj(xh[1]),xv=is(gK,caml_call1(ds(nU),xu)),xw=[0,lQ(iv(xi[3][4]+220.,xi[3][6]+num_30,xv)),0];else
 var
 xw=0;return[0,wK,q([0,wJ,[0,xm,xz]],q(xq,q([0,xt,0],xw)))]}var
 mV=mU?mU[1]:mS;a:{b:{var
@@ -3342,7 +3342,7 @@ m3(uF,uE){var
 uG=m1(uF),uH=uE[1],uI=uE[4]?nR:nQ,uJ=uI(uG,uH),uK=uJ[2],uL=uJ[4],uz=0,uy=0,ux=uE[2];function
 uM(vC){if(!uE[4]){var
 vF=vC[1]-uK,vE=vC[2]-uL;return Math.sqrt(vF*vF+vE*vE)<num_0_8?1:0}var
-vB=m_(lS(gO,num_0_3)),vD=nc(vC[1],num_0_3,vC[2],vB),vw=m9(vD[1]),vx=vw[1],vy=[0,aU(vx,aU(vw[2],vw[3]))],vv=caml_equal(vD[14],lk)?vD[14]:lx(vD[10],vy),vz=nb([0,vD[1],vD[2],vD[3],vD[4],vD[5],vD[6],vD[7],vD[8],vD[9],vD[10],vD[11],vD[12],vy,vv,vD[15],vD[16],vD[17],vD[18]]),vA=nb(uJ);function
+vB=m_(lS(gM,num_0_3)),vD=nc(vC[1],num_0_3,vC[2],vB),vw=m9(vD[1]),vx=vw[1],vy=[0,aU(vx,aU(vw[2],vw[3]))],vv=caml_equal(vD[14],lk)?vD[14]:lx(vD[10],vy),vz=nb([0,vD[1],vD[2],vD[3],vD[4],vD[5],vD[6],vD[7],vD[8],vD[9],vD[10],vD[11],vD[12],vy,vv,vD[15],vD[16],vD[17],vD[18]]),vA=nb(uJ);function
 vo(vV){return vV?[0,k7(vV[1])]:0}var
 vp=vA[1],vq=vz[1];a:{switch(vp[0]){case
 0:var
@@ -3398,14 +3398,14 @@ vu=vo(lJ([0,vq[1],vq[2]],vA))}return 0!==vu?1:0}for(;;){if(!ux)break;var
 uA=ux[2],uB=ux[1];if(uM(uB)){uz=[0,uB,uz];ux=uA}else{uy=[0,uB,uy];ux=uA}}var
 uC=U(uy),uD=U(uz),uN=W(10-P(uC)|0,function(uR){return nJ(0)}),uO=uE[4],uP=P(uD),uQ=uE[3]+uP|0;return[0,uJ,q(uC,uN),uQ,uO]}h1.onload=caml_js_wrap_callback_strict(1,function(n5){var
 n_=iw(iq,ir),n$=[0,[0,nP,[0,iT,iA,iS,iR,k5]]],oa=[0,0];function
-ob(uw){n$[1]=iW(m3,uw,n$[1]);return oc(gR)}function
+ob(uw){n$[1]=iW(m3,uw,n$[1]);return oc(gP)}function
 oc(uq){return _(function(ur){if(typeof
 ur!=="number")switch(ur[0]){case
 0:oa[1]=q(oa[1],[0,ur[1],0]);return 0;case
 1:var
 us=ur[3];return ka(0,ur[2],function(uv){return ob(caml_call1(us,uv))});case
 2:var
-ut=ur[4];return ka([0,ur[3]],ur[2],function(uu){return ob(caml_call1(ut,uu))})}return 0},gS(uq))}oc(gR);function
+ut=ur[4];return ka([0,ur[3]],ur[2],function(uu){return ob(caml_call1(ut,uu))})}return 0},gQ(uq))}oc(gP);function
 od(tZ){var
 tL=Y([0,[0,[12,function(up,uo){return[1,up,uo]}],0],[0,[0,[0,function(un){return[0,un]}],0],[0,[0,[1,function(um){return[3,um]}],0],[0,[0,[2,function(ul){return[4,ul]}],0],[0,[0,[3,function(uk){return i0}],0],[0,[0,[4,function(uj){return iZ}],0],[0,[0,[5,function(ui){return iY}],0],[0,[0,[6,function(uh){return iX}],0],[0,[0,[7,function(ug){return[2,1,ug]}],0],[0,[0,[8,function(uf){return[2,0,uf]}],0],[0,[0,[9,function(ue){return[7,ue]}],0],[0,[0,[10,function(ud){return[8,ud]}],0],[0,[0,[11,function(uc){return 1}],0],0]]]]]]]]]]]]]);if(typeof
 tZ==="number")var
