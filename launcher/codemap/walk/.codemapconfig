@@ -4,11 +4,11 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "A directory's code read from the disk: tinybox codemap <dir>'s, and make_codemap_data's for a web page.",
   files: {
-    'Code_walk.mli': { digest: 'd705ee568104',
+    'Code_walk.mli': { digest: '07aca7bdbeb6',
       summary: 'Its sources, its configs and what they import, its projects\' tops; what is left out and why.',
       capitals: [{ at: 'type:t', say: 'a directory, as the map is given it' }],
     },
-    'Code_walk.ml': { digest: 'a728d76fc780',
+    'Code_walk.ml': { digest: '788da4d3238f',
       summary: 'Walked in name order, links not followed, directories starting with _ skipped.',
       important: [{ at: 'def:walk', weight: 3 }],
     },

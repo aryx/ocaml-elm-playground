@@ -4,7 +4,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "Build time: what tinybox's menu shows, the catalogue and the thumbnails, made OCaml; and a directory's code bundled for a code map's web page.",
   files: {
-    'make_codemap_data.ml': { digest: 'ec466ed75467',
+    'make_codemap_data.ml': { digest: '70447fa7e063',
       summary: 'A directory read as tinybox codemap reads it, written as one file for its web page (make codemap-web).',
     },
     'make_tinybox_data.ml': { digest: '4aba2dd185f7',

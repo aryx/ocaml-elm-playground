@@ -76,7 +76,11 @@ val use_rank : Code_rank.t -> unit
 (* ... and [waiting], what to say meanwhile and how far (the bytes
    fetched); once the map is up, every file lexed in the background, a
    slice a frame, a bar saying how far *)
-val run_loading : ?waiting:(unit -> string * float option) -> get:(unit -> (directory, string) result option) -> unit -> unit
+(* ... [moved] told where the map is each time it changes, as the flags
+   that would open it there (code=, focus=, line=): a web page keeps its
+   address so, a link to wherever one is *)
+val run_loading :
+  ?waiting:(unit -> string * float option) -> ?moved:((string * string) list -> unit) -> get:(unit -> (directory, string) result option) -> unit -> unit
 
 (* the map of the program's own code alone, for a glance (tinybox's
    panel: Code_map.view ~chrome:false) *)

@@ -366,6 +366,18 @@ let opened_at (c : t) (flags : (string * string) list) : t =
 
 type directory = { guide : Code_guide.t option; colours : (string * (int * int * int)) list option; roots : string list option; name : string; sources : (string * string) list }
 
+(* claude: where the map is, as the flags that open it there (opened_at):
+ * code= on a program's own code, focus= the unit looked at, and line=
+ * the definition peeked at -- a web page's address kept so, a link to
+ * wherever one is (the author: links to a part of the code) *)
+let place (c : t) : (string * string) list =
+  let m : Code_map.t = c.map in
+  let unit = if m.focus < Array.length m.placed then m.placed.(m.focus).path else "" in
+  let code = match c.scope with Own | Uses | Whole -> [ ("code", c.program) ] | _ -> [] in
+  match m.peek with
+  | Some (p, first, _) when c.file = None -> code @ [ ("focus", p); ("line", string_of_int (first + 1)) ]
+  | _ -> code @ if unit = "" || (code <> [] && unit = c.path) then [] else [ ("focus", unit) ]
+
 (* claude: a progress bar and what it counts, at the foot of the screen
  * (the author: the web page seemed to hang) *)
 let progress_bar (screen : Playground.screen) (text : string) (frac : float option) : Playground.shape list =
@@ -388,8 +400,9 @@ let progress_bar (screen : Playground.screen) (text : string) (frac : float opti
  * every file is lexed in the background, a slice a frame (a search, a
  * layer or a's street needs them all: lexing them at once froze a
  * browser for seconds), a bar saying how far *)
-let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code: on its way...", None)) ~(get : unit -> (directory, string) result option) () : unit =
-  let failed = ref None in
+let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code: on its way...", None)) ?(moved : (string * string) list -> unit = fun _ -> ())
+    ~(get : unit -> (directory, string) result option) () : unit =
+  let failed = ref None and last_place = ref [] in
   let pending = ref [] and total = ref 0 in
   let update (computer : Playground.computer) (m : alone) : alone =
     let made =
@@ -426,7 +439,14 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
           | Some (k, next) when Set_.mem k keys -> if now >= next then (Some k, Some (k, now +. 0.08)) else (None, m.repeat)
           | _ -> (None, None))
     in
-    { code = Some (Option.value (update computer ~pressed ~arrow code) ~default:code); before = keys; repeat }
+    let code = Option.value (update computer ~pressed ~arrow code) ~default:code in
+    (* the place told when it changes *)
+    let p = place code in
+    if p <> !last_place then begin
+      last_place := p;
+      moved p
+    end;
+    { code = Some code; before = keys; repeat }
   in
   let view (computer : Playground.computer) (m : alone) =
     match m.code with

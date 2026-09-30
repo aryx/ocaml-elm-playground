@@ -27,6 +27,8 @@
  *   codemap.html?code=TinyMario                     a program's own code
  *   codemap.html?data=other.txt                     another bundle
  *
+ * The page's address follows the map (moved): a link to wherever one is.
+ *
  * The page may name its bundle (data_url): ix's site keeps only its page,
  * the bundle and this program in the assets repository (make
  * codemap-web). *
@@ -90,4 +92,15 @@ let main =
         | None, (n, total) when total >= n -> (Printf.sprintf "its code: %.1f of %.1f MB" (mb n) (mb total), Some (float_of_int n /. float_of_int total))
         | None, (n, _) -> (Printf.sprintf "its code: %.1f MB" (mb n), None)
       in
-      Codemap.run_loading ~waiting ~get ())
+      (* claude: the address kept where the map is (replaced, not a new
+       * entry in the history), the page's own data= kept: the address
+       * bar a link to here (the author) *)
+      let data = match List.assoc_opt "data" (Playground_platform.flags ()) with Some d -> [ ("data", d) ] | None -> [] in
+      let moved place =
+        let query = String.concat "&" (List.map (fun (k, v) -> k ^ "=" ^ v) (place @ data)) in
+        let path = Ojs.string_of_js (Ojs.get_prop_ascii (Ojs.get_prop_ascii Ojs.global "location") "pathname") in
+        ignore
+          (Ojs.call (Ojs.get_prop_ascii Ojs.global "history") "replaceState"
+             [| Ojs.null; Ojs.string_to_js ""; Ojs.string_to_js (if query = "" then path else path ^ "?" ^ query) |])
+      in
+      Codemap.run_loading ~waiting ~moved ~get ())

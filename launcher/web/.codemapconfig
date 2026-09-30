@@ -11,7 +11,7 @@
       summary: 'An XMLHttpRequest for an array buffer, made a string 32 KB at a time by the browser.',
       important: [{ at: 'def:bytes_of_response', say: 'a byte at a time froze the page 1.4 s', weight: 2 }],
     },
-    'Tinybox_web.ml': { digest: '3f4191261675',
+    'Tinybox_web.ml': { digest: 'a36aa718bae0',
       summary: "The web host: a program's page loaded, thumbnails and sources fetched from the assets repository.",
       important: [
         { at: 'def:go', say: 'the child process is the page: Back returns', weight: 3 },

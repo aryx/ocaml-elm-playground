@@ -128,6 +128,10 @@ codemap.html?code=TinyMario                       a program's own code, as tinyb
 codemap.html?data=<url>                           another bundle
 ```
 
+The page's address follows the map as one moves (the unit looked at,
+the definition peeked at), so the address bar is always a link to
+where one is: copy it to point someone at a part of the code.
+
 The page must be served, not opened as a file, since it fetches its
 data. The page names its data by an absolute URL (`https://aryx.github.io/assets/...`), so before the assets are
 pushed, try it with a local server and `?data=` pointing at the local

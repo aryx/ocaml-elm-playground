@@ -26,14 +26,14 @@
     'Code_file.ml': { digest: 'd540682f9965',
       summary: "OCaml's or C's highlighter run (plain text if it fails), its spans laid into the grid a byte a cell, the tricks marked.",
     },
-    'Codemap.mli': { digest: 'e9a0462cabf8',
+    'Codemap.mli': { digest: '2c6bd3b8b4f6',
       summary: "The code map as a program: a program's own code, then what it uses, then the whole repository; the tour in reading order.",
       capitals: [
         { at: 'def:run_directory', say: 'tinybox codemap <dir>: a directory mapped' },
         { at: 'def:make_own', say: "a program's map: its code and its kits" },
       ],
     },
-    'Codemap.ml': { digest: '475ca7787951',
+    'Codemap.ml': { digest: '06356f709b29',
       summary: "Which files a map shows (Code_deps), each lexed lazily, the configs loaded, the map and the file view switched.",
       important: [
         { at: 'def:guide_of', say: 'every .codemapconfig read once', weight: 2 },

@@ -4,7 +4,7 @@
   generated: { by: 'claude-opus-5-5', on: '2026-09-29' },
   summary: "A directory's code map on a web page, for a project's site: its code fetched, the URL saying where to open.",
   files: {
-    'Codemap_web.ml': { digest: 'bf25e1045536',
+    'Codemap_web.ml': { digest: '58b8086ae108',
       summary: 'The page\'s program, the same for every project: codemap_data.txt fetched, read, the map run; focus=, line=, def= in the URL.',
       important: [{ at: 'def:get', say: 'the bundle read the first time the map asks', weight: 3 }],
     },
