@@ -2,7 +2,7 @@
 opam-version: "2.0"
 version: "0.3.0"
 synopsis:
-  "From-scratch libraries for teaching: graphics, audio, compression, crypto, networking, ..."
+  "From-scratch libraries for teaching: graphics, audio, compression, crypto, networking and more"
 description: """
 The libraries under the Playground, written from scratch for teaching,
   one idea per module, each interface with its diagram, worked example

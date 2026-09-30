@@ -55,7 +55,7 @@
 ;; draw with the Playground are in apps/, beside the apps they help).
 
 (package (name tiny_libs)
-  (synopsis "From-scratch libraries for teaching: graphics, audio, compression, crypto, networking, ...")
+  (synopsis "From-scratch libraries for teaching: graphics, audio, compression, crypto, networking and more")
   (description "\
   The libraries under the Playground, written from scratch for teaching,
   one idea per module, each interface with its diagram, worked example
@@ -76,7 +76,7 @@
   )
 )
 (package (name tiny_languages)
-  (synopsis "Small languages from scratch: Scheme, Lisp, Smalltalk-80, Pascal, BASIC, JavaScript, HTML, CSS, ...")
+  (synopsis "Small languages from scratch: Scheme, Lisp, Smalltalk-80, Pascal, BASIC, JavaScript, HTML, CSS and more")
   (description "\
   Languages as text, parsed and run, written from scratch for teaching:
   a spreadsheet's formulas, BASIC, s-expressions, Emacs Lisp, Scheme and
@@ -92,7 +92,7 @@
   )
 )
 (package (name tiny_appkits)
-  (synopsis "Application engines from scratch: a spreadsheet, rich text, paint, draw, CAD, editors, ...")
+  (synopsis "Application engines from scratch: a spreadsheet, rich text, paint, draw, CAD, editors and more")
   (description "\
   What applications share, written from scratch for teaching: a
   spreadsheet's engine and its view, rich text laid out on pages, line
