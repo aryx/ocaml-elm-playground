@@ -1,0 +1,30 @@
+# claude: what the release archives leave out.
+#
+# export-ignore tells `git archive` to leave a path out of the archives
+# it makes. GitHub makes its archive of a tag with `git archive`
+# (https://github.com/aryx/ocaml-elm-playground/archive/refs/tags/<tag>.tar.gz),
+# and that archive is what the opam packages' url points at (see
+# 0.2.1's opam files, made by `opam publish`): every package of the
+# release -- tiny_libs as well as tinybox -- downloads the same archive,
+# so whatever is in it, every user downloads.
+#
+# docs/ is the GitHub Pages site: the examples, games and apps built
+# for the web, the generated API docs (make website), the notes of
+# docs/claude_notes/, the two toy example projects of the README. No
+# package builds or tests anything from it (no dune rule reads docs/),
+# so it stays in the repository and on the website, and out of the
+# archives: 30 MB of 131 uncompressed, the archive going from 73 MB
+# to 64 MB compressed (September 2026).
+#
+# What must stay, although large: the golden frames (tests/2d/golden,
+# tests/3d/golden, 50 MB), which tinybox embeds as its menu's
+# thumbnails at build time.
+#
+# To see what an archive would hold, without making a release:
+#   git archive HEAD | tar -t | less
+# (with uncommitted changes to this file, add --worktree-attributes).
+#
+# Caveat: `dune-release distrib` makes its own archive from a clone of
+# the repository, and may not honour export-ignore; check its archive
+# before publishing one made that way.
+docs/ export-ignore
