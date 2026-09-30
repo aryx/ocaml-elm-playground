@@ -93,6 +93,16 @@ let resolve (file : file) :
     | _ -> ()
   in
   List.iter (fun d -> declare values d.mname 1) file.defines;
+  (* claude: the structs given a body here, by tag: C's habit of typedef
+   * struct Window Window; before struct Window { ... } -- the typedef
+   * only names the struct, what matters is its body (the author, at
+   * principia's rio: Window's 173 uses counted on its typedef's line) *)
+  let bodies = Hashtbl.create 16 in
+  List.iter
+    (function
+      | Ifunc (sp, _, _, _) | Idecl (sp, _) -> ( match sp.base with Tstruct (Some tag, Some _) -> Hashtbl.replace bodies tag.text tag | _ -> ())
+      | Imacro _ -> ())
+    file.items;
   List.iter
     (function
       | Ifunc (sp, d, _, _) -> declare_base sp.base; Option.iter (fun n -> declare values n 3) d.dname
@@ -100,7 +110,18 @@ let resolve (file : file) :
           declare_base sp.base;
           List.iter
             (fun d ->
-              Option.iter (fun n -> if sp.typedef then declare types n 3 else declare values n (match d.dty with Tfunc _ -> 2 | _ -> 3)) d.dname)
+              Option.iter
+                (fun (n : name) ->
+                  match (sp.typedef, sp.base) with
+                  (* claude: typedef struct X X; with struct X's body in the
+                   * file: the type X is the struct's, its uses the body's *)
+                  | true, Tstruct (Some tag, None) when tag.text = n.text && Hashtbl.mem bodies n.text ->
+                      let body = Hashtbl.find bodies n.text in
+                      declare types body 3;
+                      use n body.tok
+                  | true, _ -> declare types n 3
+                  | false, _ -> declare values n (match d.dty with Tfunc _ -> 2 | _ -> 3))
+                d.dname)
             ds
       | Imacro _ -> ())
     file.items;

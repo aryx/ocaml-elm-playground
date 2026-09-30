@@ -72,7 +72,12 @@ let tests =
       Testo.create "top-level bindings" (fun () ->
           check bindings "the definition, not the prototype"
             "static int g(int); int f(void) { return g(1); } static int g(int a) { return a; }" "23: 23, 59: 11 40 59, 65: 65 77";
-          check bindings "struct tags and typedefs, apart" "struct P { int x; }; typedef struct P P; P *new(struct P *p) { return p; }"
+          (* claude: typedef struct P P; with P's body in the file: the type
+           * is the struct's, its uses bound to the body (the author: the
+           * typedef is C's quirk, struct Window what matters) *)
+          check bindings "typedef struct P P: the struct's" "struct P { int x; }; typedef struct P P; P *new(struct P *p) { return p; }"
+            "7: 7 36 38 41 55, 44: 44, 58: 58 70";
+          check bindings "typedef struct P Q: apart" "struct P { int x; }; typedef struct P Q; Q *new(struct P *p) { return p; }"
             "7: 7 36 55, 38: 38 41, 44: 44, 58: 58 70");
       Testo.create "fields" (fun () ->
           check names "read, written, designated" "void f(S *s) { s->a.b = 1; S t = { .c = 2 }; }"

@@ -16,7 +16,7 @@
    others are found in the code, by the words below (outside comments
    and strings, a word not in the middle of a name) and by measures: no
    judgement needed to see that a line reads the keyboard. The words are
-   data, so that a config's layers can add their own later.
+   data, so that a config's marks can add their own later.
 
    Worked example (the tests'): in
 

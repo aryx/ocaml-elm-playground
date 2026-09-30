@@ -25,7 +25,7 @@ include Code_map_base
 
 type action = Stay | Open of Code_file.t * int | Close | Select of string * string list | Up | Tied of string * string list * string list | Graph of string * string list
 
-(* claude: the styles, m going from one to the next, one setting for
+(* claude: the styles, y going from one to the next, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
 let styles = [ Map_classic.style; Map_streets.style; Map_atlas.style; Map_v2.style ]
 (* claude: v2 the default, everywhere (plan_codemap_v2.md, step 11);
@@ -144,7 +144,7 @@ let up (t : t) : camera =
 let stops (e : entry) : (int * string) list =
   let f = Lazy.force e.file in
   let sections = List.filter_map (fun (l, name, cat) -> if cat = Highlight_code.Comment_section && l > 0 then Some (l, name) else None) f.defs in
-  let marks = List.filter_map (fun l -> if l > 0 then Some (l, Code_file.trick) else None) f.marks in
+  let marks = List.filter_map (fun l -> if l > 0 then Some (l, Code_file.trick) else None) f.tricks in
   (0, "its header") :: List.sort_uniq (fun (a, _) (b, _) -> compare a b) (sections @ marks)
 
 (* claude: the definition a line is in: its header, to the line before
@@ -536,24 +536,27 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   if pressed "x" then if t.xray then t.xray_n <- t.xray_n + 1 else begin t.xray <- true; t.xray_n <- 0 end;
   (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
   if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
-  (* claude: l, the layers hidden, shown (Map_v2) *)
+  (* claude: m, the marks hidden, shown (Map_v2) *)
   (* claude: h, every key explained, again to close *)
   if pressed "h" && t.search = None then t.help <- not t.help;
-  (* claude: l, the layers lit: those kept (ctrl+Enter), then each
-   * config's, then none, in turn (Map_v2.layer_groups) *)
-  if pressed "l" then begin
-    let groups = Map_v2.layer_groups t in
+  (* claude: m, the marks lit: those kept (ctrl+Enter), then each
+   * config's, then none, in turn (Map_v2.mark_groups); l is kept for
+   * the layers, a map coloured by a measure (the author) *)
+  if pressed "m" then begin
+    let groups = Map_v2.mark_groups t in
     let n = List.length groups in
     if n > 0 then begin
-      (* the next group with layers, or none past the last *)
+      (* the next group with marks, or none past the last *)
       let rec next k = if k >= n then -1 else if snd (List.nth groups k) <> [] then k else next (k + 1) in
-      t.layer_group <- next (t.layer_group + 1)
+      t.mark_group <- next (t.mark_group + 1)
     end
   end;
-  (* claude: the style, the next one, for this map and those to come *)
+  (* claude: the style, the next one, for this map and those to come
+   * (y: m went to the marks, the author: "cycling map styles is not so
+   * important") *)
   let before = t.placed in
   let t =
-    if pressed "m" then begin
+    if pressed "y" then begin
       cycle_style ();
       if t.style.sname = "atlas" || !chosen.sname = "atlas" then laid_out t !chosen t.algo else { t with style = !chosen; painted = None; lens = None }
     end
@@ -633,7 +636,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   in
   let with_ties = if to_graph <> None then None else with_ties in
   let clicked = if with_ties <> None then false else clicked in
-  (* claude: a click on a match (a search's, a layer's): its file, and
+  (* claude: a click on a match (a search's, a mark's): its file, and
    * its definition peeked at, as Enter in the search *)
   let jumped_to, clicked =
     if clicked && units then
@@ -850,15 +853,15 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
       let n = List.length hits in
       let t, action =
         if pressed "Escape" then (t.search <- None; (t, Stay))
-        (* claude: ctrl+Enter, the query kept as a layer, in the next
-         * colour; the same query again, the layer taken off *)
+        (* claude: ctrl+Enter, the query kept as a mark, in the next
+         * colour; the same query again, the mark taken off *)
         else if pressed "Enter" && Set_.mem "Control" computer.keyboard.keys then begin
-          (if List.exists (fun (l : layer) -> l.lquery = s.query) t.layers then t.layers <- List.filter (fun (l : layer) -> l.lquery <> s.query) t.layers
+          (if List.exists (fun (l : mark) -> l.mquery = s.query) t.marks then t.marks <- List.filter (fun (l : mark) -> l.mquery <> s.query) t.marks
            else if s.query <> "" then begin
-             let used = List.map (fun (l : layer) -> l.lcolour) t.layers in
-             let lcolour = match List.find_opt (fun c -> not (List.mem c used)) Map_v2.layer_colours with Some c -> c | None -> List.hd Map_v2.layer_colours in
-             t.layers <- t.layers @ [ { lquery = s.query; lcolour; lsay = None; lhits = None } ];
-             t.layer_group <- 0
+             let used = List.map (fun (l : mark) -> l.mcolour) t.marks in
+             let mcolour = match List.find_opt (fun c -> not (List.mem c used)) Map_v2.mark_colours with Some c -> c | None -> List.hd Map_v2.mark_colours in
+             t.marks <- t.marks @ [ { mquery = s.query; mcolour; msay = None; mhits = None } ];
+             t.mark_group <- 0
            end);
           t.search <- None;
           t.painted <- None;
@@ -1029,10 +1032,10 @@ let keys_help = [
   ("click a name in the code", "a peek at its definition; the wheel scrolls it; Escape closes");
   ("a", "at a file: its neighbours, what it uses, what uses it (a again: the next)");
   ("x", "the X-ray: the skeleton; x again, the next one; 1-5 the plates (hover the legend)");
-  ("l", "the layers: patterns lit everywhere (the configs', and those kept)");
+  ("m", "the marks: patterns lit everywhere (the configs', and those kept)");
   ("Searching", "");
   ("/", "search: a name, or file: dir: def: type: view: tour: bone: text: ref:");
-  ("  in the search", "Tab complete, up/down choose, Enter go, shift+Enter all found together, ctrl+Enter a layer");
+  ("  in the search", "Tab complete, up/down choose, Enter go, shift+Enter all found together, ctrl+Enter a mark");
   ("Dependencies", "");
   ("shift+click a name", "it and the units tied to it, together (d: users, uses, both, alone)");
   ("g, ctrl+click a name", "codegraph's matrix of it and its ties");
@@ -1042,7 +1045,7 @@ let keys_help = [
   ("w", "a program's map: its own code, with what it uses, the whole repository");
   ("Enter", "the file view, the file read whole");
   ("b", "back, after a jump to a definition");
-  ("m", "another style of map (v2, classic, atlas, streets)");
+  ("y", "another style of map (v2, classic, atlas, streets)");
   ("h", "this help; Escape, back");
 ]
 
@@ -1166,7 +1169,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
         words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
         words dim
           (if t.style.units then
-             "h every key   click in   right click out   / search   a a file's neighbours   x skeleton   l layers   g the matrix   esc back"
+             "h every key   click in   right click out   / search   a a file's neighbours   x skeleton   m marks   g the matrix   esc back"
            else
            Printf.sprintf "wheel zoom   drag pan   click fly in, a name to its definition (b back)   enter the file view   right click up   m style (%s)   t layout (%s)   n tour (p back)   o glass (%s)   0 all   esc back" t.style.sname algo (glass_name ()))
         |> scale (12. /. words_font_size)

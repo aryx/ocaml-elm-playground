@@ -425,7 +425,7 @@ let progress_bar (screen : Playground.screen) (text : string) (frac : float opti
  * page's, fetched; Error, why not, said on the screen); [waiting], what
  * to say meanwhile (the bytes come) and how far. Once the map is up,
  * every file is lexed in the background, a slice a frame (a search, a
- * layer or a's street needs them all: lexing them at once froze a
+ * mark or a's street needs them all: lexing them at once froze a
  * browser for seconds), a bar saying how far *)
 let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code: on its way...", None)) ?(moved : (string * string) list -> unit = fun _ -> ())
     ~(get : unit -> (directory, string) result option) () : unit =

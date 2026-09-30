@@ -89,7 +89,7 @@ each an answer the map can draw:
 
 | project | the reader asks | give |
 |---|---|---|
-| an operating system (Linux 0.01, xv6, ~/ix's kernels) | how does it boot? what happens on a system call, a page fault, a timer tick, a read from disk? | a chain skeleton per path, across C and assembly (the entry label to the C handler to what it does); the core structures as capitals (the process, the inode, the buffer); a layer for what only a kernel may do (interrupts on and off, I/O ports, task switches, user memory); views pairing a subsystem's files |
+| an operating system (Linux 0.01, xv6, ~/ix's kernels) | how does it boot? what happens on a system call, a page fault, a timer tick, a read from disk? | a chain skeleton per path, across C and assembly (the entry label to the C handler to what it does); the core structures as capitals (the process, the inode, the buffer); a mark for what only a kernel may do (interrupts on and off, I/O ports, task switches, user memory); views pairing a subsystem's files |
 | a compiler or interpreter | what are the passes? where is the AST? how is a name resolved, a type checked, code emitted? | the pipeline as a skeleton (lexer, parser, checker, code generator); the AST's types as capitals; a tour through one expression compiled |
 | a library | what do I call? what is inside only? | the `.mli`'s (or header's) main types and functions as capitals; the skin plate shows the rest; a view of the API with an example using it |
 | a program with a UI (a game, an app) | where is the state, the frame's step, the picture? what makes it this program? | Model-View-Update and the program's heart (`skeletons.game`); the heart's trick as a capital; a tour through one frame |
@@ -592,7 +592,7 @@ by itself -- do not write them:
   commands), lungs (capabilities, files, sockets, the console, the
   platform), skin (what a `.mli` exposes): found in the code. A
   codebase whose inputs or outputs have other names (a kernel's
-  syscalls) will one day give its words in a `layers` rule; until then,
+  syscalls) will one day give its words in a `marks` rule; until then,
   say it in the summaries.
 
 ## What the map does with it (for judging what to write)
@@ -685,10 +685,10 @@ lexer sees it. Never `line:` unless nothing else points there.
   sentence on what to notice there. A stop names its file.
 - `views`: a game and its kits; a library file and its users.
 
-## Layers
+## Marks
 
-A layer lights, at every level at once, the lines containing its rules'
-texts, each rule in its colour (the map's `l` cycles through them; the
+A mark lights, at every level at once, the lines containing its rules'
+texts, each rule in its colour (the map's `m` cycles through them; the
 search's `"text` is where one tries a rule first, ctrl+Enter keeping
 it). Write one when a question cuts across the directories: what may
 touch the world (the root's Capabilities: `Cap.network`, `Cap.exec`,
@@ -701,10 +701,12 @@ is spoken.
   Rules that mean the same kind of thing share a colour (exec and fork,
   both processes).
 - `say` is the legend's: what a line lit so means, in a few words.
+- The key is `marks:`; configs written before say `layers:`, still read
+  (the name went to the layers to come: the map coloured by a measure).
 - A text specific enough to match only what is meant: `Cap.fork`, not
   `fork`. Two characters at least; smart case (a capital: the case
   counts). Semgrep-like patterns will come later.
-- A layer belongs in the config of the directory whose question it is:
+- A mark belongs in the config of the directory whose question it is:
   the root's for the whole repository.
 
 ## Anatomy: nerves and lungs
@@ -712,7 +714,7 @@ is spoken.
 The X-ray's plates 3 and 4 show where a program senses its user (nerves:
 keyboard, mouse, events) and where it breathes with the world (lungs:
 files, network, processes, the console). Only the project knows how it
-does either, so its root config says it, as rules like a layer's
+does either, so its root config says it, as rules like a mark's
 (`text` or `ref`, a `say`, no colour); a directory's config may add its
 own, applying to the files under it:
 

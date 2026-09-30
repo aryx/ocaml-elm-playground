@@ -10,7 +10,7 @@ type t = {
   grid : Bytes.t; (* [cols] a line: 0 a space, else 1 + Highlight_code.index *)
   chars : Bytes.t; (* the same cells' characters, code page 437 (Vga_font) *)
   defs : (int * string * Highlight_code.category) list; (* line (from 0), name, category: the top-level ones *)
-  marks : int list; (* claude: the lines (from 0) saying [trick] *)
+  tricks : int list; (* claude: the lines (from 0) saying [trick] *)
   names : Highlight_code.occurrence list array; (* claude: a line's names bound in the file (parameters, locals, top-level definitions) *)
   uses : (int * int, Highlight_code.occurrence list) Hashtbl.t; (* ... by their binding's place *)
   (* claude: for the other files (plan_codemap_naming.md, level 3,

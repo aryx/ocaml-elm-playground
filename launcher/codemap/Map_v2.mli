@@ -62,11 +62,11 @@ val search_named : Code_map_base.t -> string list
    definitions' files), to see together (shift+Enter) *)
 val search_set : Code_map_base.t -> string list
 
-(* claude: the groups of layers l cycles through: those kept (ctrl+Enter
+(* claude: the groups of marks l cycles through: those kept (ctrl+Enter
    in the search), then each config's, their names *)
-val layer_groups : Code_map_base.t -> (string * Code_map_base.layer list) list
+val mark_groups : Code_map_base.t -> (string * Code_map_base.mark list) list
 
-(* claude: the match (a search's, a layer's) under the mouse, if any:
+(* claude: the match (a search's, a mark's) under the mouse, if any:
    its hit, colour and meaning; a click on it peeks at its definition *)
 val hovered_match : Code_map_base.t -> Code_map_base.camera -> (Code_search.hit * Playground.color * string option) option
 
@@ -93,7 +93,7 @@ val hovered_bone : Code_map_base.t -> Code_map_base.camera -> Code_guide.bone op
 (* claude: the line of an anchor ("def:march") in a file of the map *)
 val anchor_line : Code_map_base.t -> string -> string -> int option
 
-(* claude: the layers' colours, one each, in turn *)
-val layer_colours : (int * int * int) list
+(* claude: the marks' colours, one each, in turn *)
+val mark_colours : (int * int * int) list
 
 val style : Code_map_base.style

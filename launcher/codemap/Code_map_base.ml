@@ -95,9 +95,9 @@ type t = {
   mutable search : search option; (* claude: the search box (/, Map_v2), while open *)
   mutable search_all : Code_search.hit array option; (* claude: what a search looks among, gathered once *)
   mutable tour_on : (Code_guide.tour * int) option; (* claude: a config's tour under way, its stop (n, p) *)
-  mutable layers : layer list; (* claude: searches kept, each lit in its colour, all at once (ctrl+Enter in the search) *)
-  mutable layer_group : int; (* claude: the layers lit: -1 none, 0 those kept, k the configs' k-th (l cycling) *)
-  mutable guide_layers : (string * layer list) list option; (* claude: the configs' layers as the map's, their names, made once *)
+  mutable marks : mark list; (* claude: searches kept, each lit in its colour, all at once (ctrl+Enter in the search) *)
+  mutable mark_group : int; (* claude: the marks lit: -1 none, 0 those kept, k the configs' k-th (l cycling) *)
+  mutable guide_marks : (string * mark list) list option; (* claude: the configs' marks as the map's, their names, made once *)
   mutable flight : flight option; (* claude: a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* claude: the layout's point under the mouse, when on the map (view's) *)
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
@@ -127,8 +127,8 @@ type t = {
    kept for the query they are of *)
 and search = { mutable query : string; mutable sel : int; mutable here : bool; mutable hits : (string * bool) * Code_search.hit list }
 
-(* claude: a layer: a query kept, its colour, its hits found once *)
-and layer = { lquery : string; lcolour : int * int * int; lsay : string option; mutable lhits : Code_search.hit list option }
+(* claude: a mark: a query kept, its colour, its hits found once *)
+and mark = { mquery : string; mcolour : int * int * int; msay : string option; mutable mhits : Code_search.hit list option }
 
 and flight = { from : camera; dest : camera; mutable start : float; duration : float }
 
@@ -199,7 +199,7 @@ let make ?(fan_in = lazy (Hashtbl.create 1)) ?counted ?(top_kept = false) ?(numb
   if numbered then List.iteri (fun i (e : entry) -> Hashtbl.replace order e.path (i + 1)) entries;
   { title; marked; entries; algo = Ordered; placed; geometry; cam = home a; target = home a; drag = None; dragged = false;
     before_right = false; painted = None; last = None; moving = false; lens = None; order; colours; jumped = None;
-    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; tour_on = None; layers = []; layer_group = 0; guide_layers = None; flight = None; pointer = None;
+    back = []; choices = None; note = ""; found = None; roots; style; index = None; rank = None; search = None; search_all = None; tour_on = None; marks = []; mark_group = 0; guide_marks = None; flight = None; pointer = None;
     focus = 0; wheel_debt = 0.; wheel_at = 0.; guide; street = false; street_mode = 0; clock = 0.; xray = false; xray_n = 0; peek = None; peek_scroll = 0; peek_stack = []; beyond; top_kept; fan_in; counted; morph = None; help = false }
 
 (* claude: the map's files for Code_names and Code_rank *)

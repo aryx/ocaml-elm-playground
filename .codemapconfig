@@ -1,7 +1,7 @@
 // the repository: what the code map says of it (plan_codemap_v2.md,
 // docs/claude_notes/codemapconfig_guidelines.md)
 
-// the capabilities' colours, named, so that the layer's rules read
+// the capabilities' colours, named, so that the mark's rules read
 local network_color = '#50c8f0';
 local process_color = '#f05050';
 local files_in_color = '#78e66e';
@@ -76,9 +76,9 @@ local dirs_color = '#e173eb';
       { ref: 'Audio.play', say: 'a sound out' },
     ],
   },
-  // the layers (the map's l): what a program may do to the world, each
+  // the marks (the map's m): what a program may do to the world, each
   // capability (Cap.*: a function asks for it) lit where it is asked
-  layers: [
+  marks: [
     {
       name: 'Capabilities',
       rules: [

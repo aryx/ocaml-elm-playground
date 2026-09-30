@@ -245,7 +245,7 @@ let build (t : t) : Code_labels.label array =
             (fun line ->
               let x, y = line_pos r g line in
               add (Code_labels.label Landmark ("* " ^ Code_file.trick) ~x ~y:(y -. 19.) ~px:13. ~rank:5000. ~from_level:1.2 ~to_level:9. ~fw ~fh (230, 80, 200)))
-            f.marks;
+            f.tricks;
           List.iter
             (fun (line, name, cat) ->
               if line < Code_file.nlines f then begin

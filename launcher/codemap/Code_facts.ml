@@ -172,7 +172,7 @@ let brief ~(guide : Code_guide.t) ~(sources : (string * string) list) ~(dir : st
           f.defs
       in
       if sections <> [] then pr "Sections: %s.\n\n" (String.concat "; " sections);
-      if f.marks <> [] then pr "Marked \"%s\" at lines %s.\n\n" Code_file.trick (String.concat ", " (List.map (fun l -> string_of_int (l + 1)) f.marks));
+      if f.tricks <> [] then pr "Marked \"%s\" at lines %s.\n\n" Code_file.trick (String.concat ", " (List.map (fun l -> string_of_int (l + 1)) f.tricks));
       (* its definitions, with their uses, the most used marked *)
       let defs =
         List.filter_map

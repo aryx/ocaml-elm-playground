@@ -339,7 +339,7 @@ let tests =
           let load text = snd (Code_guide.load ~read:(fun p -> if p = "d/.codemapconfig" then Some text else None) [ "d/.codemapconfig" ]) in
           Alcotest.(check (list string)) "not a colour" [ {|d/.codemapconfig.colors.kernel: "orange" is no #rrggbb|} ] (load "{ colors: { kernel: 'orange' } }");
           Alcotest.(check (list string)) "a misspelt field"
-            [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, skeletons, views, layers, anatomy)" ]
+            [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, skeletons, views, marks, anatomy)" ]
             (load "{ summery: 'x' }");
           Alcotest.(check (list string)) "jsonnet's own" [ "d/.codemapconfig:1: expected ,, not b" ] (load "{ a: 1 b: 2 }"));
       (* claude: Code_layers' worked example *)
@@ -406,15 +406,16 @@ let tests =
           Alcotest.(check (list string)) "arm//: those named so, together" [ "games/arm"; "libs/arm" ] (Code_search.all_named all "arm//");
           Alcotest.(check string) "Tab: as far as the hits agree" "step" (Code_search.complete (Code_search.matches all "ste") "ste");
           Alcotest.(check string) "Tab: a directory's slash" "games/" (Code_search.complete (Code_search.matches all "gam") "gam"));
-      (* claude: a config's layer, its colours named by jsonnet locals *)
-      Testo.create "a config's layer" (fun () ->
+      (* claude: a config's mark, its colours named by jsonnet locals; the
+       * old name, layers:, still read *)
+      Testo.create "a config's mark" (fun () ->
           let config = "local fork_color = '#e05050';\n{ layers: [{ name: 'Capabilities', rules: [{ text: 'Cap.fork', color: fork_color, say: 'forks' }] }] }" in
           let g, errs = Code_guide.load ~read:(fun p -> if p = ".codemapconfig" then Some config else None) [ ".codemapconfig" ] in
           Alcotest.(check (list string)) "no mistake" [] errs;
-          match Code_guide.layers g with
-          | [ { lname = "Capabilities"; rules = [ { text = "Cap.fork"; is_ref = false; colour; rsay = Some "forks" } ]; _ } ] ->
+          match Code_guide.marks g with
+          | [ { mname = "Capabilities"; rules = [ { text = "Cap.fork"; is_ref = false; colour; rsay = Some "forks" } ]; _ } ] ->
               Alcotest.(check (triple int int int)) "its colour, named" (0xe0, 0x50, 0x50) colour
-          | _ -> Alcotest.fail "the layer");
+          | _ -> Alcotest.fail "the mark");
       (* claude: a config's views and tours, their paths from the root *)
       Testo.create "views and tours, from the root" (fun () ->
           let config =

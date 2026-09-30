@@ -19,12 +19,12 @@
        tours: [{ name, stops: [item] }],
        skeletons: [{ name, bones: [{ at: path:anchor, role }], joints: [{ from, to, say }] }],
        views: [{ name, files: [path] } or { name, of: path, with: 'users' }],
-       layers: [{ name, rules: [{ text or ref, color: '#rrggbb', say }] }],
+       marks: [{ name, rules: [{ text or ref, color: '#rrggbb', say }] }],
        anatomy: { nerves: [{ text or ref, say }], lungs: [...] } }
 
    an item being { at: anchor, say: words, weight: 1 to 3 }.
 
-   claude: a layer (the map's l): the lines containing a rule's text
+   claude: a mark (the map's m; the key was layers:, still read): the lines containing a rule's text
    (smart case, as the search's text search), each rule's in its colour, all
    lit at once at any level; the colours best named in jsonnet (the
    author), local fork_color = '#e05050', then { text: 'Cap.fork',
@@ -84,12 +84,12 @@ type joint = { jfrom : string; jto : string; jsay : string option }
 type skeleton = { sname : string; sdir : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
-(* claude: a layer's rule: the text of the lines it lights (or, [is_ref],
+(* claude: a mark's rule: the text of the lines it lights (or, [is_ref],
    the name their code refers to), their colour, what it means *)
 type rule = { text : string; is_ref : bool; colour : rgb; rsay : string option }
 
-(* a layer: its name, its config's directory, its rules *)
-type layer = { lname : string; ldir : string; rules : rule list }
+(* a mark: its name, its config's directory, its rules *)
+type mark = { mname : string; mdir : string; rules : rule list }
 
 type dir_note = {
   dir : string; (* the config's directory, relative to the root ("": the root) *)
@@ -101,7 +101,7 @@ type dir_note = {
   tours : tour list;
   skeletons : skeleton list;
   views : view list;
-  layers : layer list;
+  marks : mark list;
   nerves : rule list; (* claude: anatomy: nerves:, its inputs *)
   lungs : rule list; (* anatomy: lungs:, its I/O *)
 }
@@ -135,8 +135,8 @@ val colours : t -> (string * rgb) list
 (* claude: a line's text, whole *)
 val line_text : Code_file.t -> int -> string
 
-(* claude: every config's layers *)
-val layers : t -> layer list
+(* claude: every config's marks *)
+val marks : t -> mark list
 
 (* claude: the anatomy's rules for a file (its config's and its
    ancestors'): the nerves', the lungs' *)

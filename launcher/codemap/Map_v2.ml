@@ -351,33 +351,39 @@ let capitals_drawn (t : t) (c : camera) (where : (string, int * entry) Hashtbl.t
                   let label = Code_guide.anchor_name it.at in
                   (* claude: a name too short to say anything from afar (t), its module's with it *)
                   let label = if String.length label <= 2 then String.capitalize_ascii (Filename.remove_extension (Filename.basename path)) ^ "." ^ label else label in
-                  (* claude: as large as central: the core's the map's largest *)
-                  let size = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> 15. in
+                  (* claude: its own uses once counted (Code_rank, not counted
+                   * here: rank_if_counted), the .ml's for an .mli's *)
+                  let uses =
+                    match rank_if_counted t with
+                    | Some rank ->
+                        let name = match String.rindex_opt label '.' with Some k -> String.sub label (k + 1) (String.length label - k - 1) | None -> label in
+                        let impl = Filename.remove_extension path ^ ".ml" in
+                        let at_impl = if Filename.check_suffix path ".mli" then (match Hashtbl.find_opt where impl with Some (_, ei) -> Option.map (fun l -> (impl, l)) (capital_line ei it.at) | None -> None) else None in
+                        let q, l = match at_impl with Some x -> x | None -> (path, line) in
+                        Some (Code_rank.uses rank q l name)
+                    | None -> None
+                  in
+                  let many = match uses with Some u -> u.files >= 10 | None -> false in
+                  (* claude: as large as central: the core's the map's largest;
+                   * a definition used by many files as large as a central file's *)
+                  let size = match fan path with n when n >= 100 -> 24. | n when n >= 30 -> 19. | _ -> if many then 19. else 15. in
                   let tw = 0.5 *. size *. float_of_int (String.length label) in
                   let x0 = px -. 6. and x1 = px +. 10. +. tw +. 4. in
                   (* claude: a definition many use is red, the map's colour of
                    * a definition used (the street's marks: green where
-                   * used, red where defined); the others yellow *)
-                  let colour = if fan path >= 30 then rgb 250 80 70 else yellow in
+                   * used, red where defined); the others yellow. claude: many, its
+                   * file's module named by 30 files, or it used by 10 (the
+                   * author, at principia's rio: Window, its file named by
+                   * 23, used by 15, was yellow) *)
+                  let colour = if fan path >= 30 || many then rgb 250 80 70 else yellow in
                   let dot = circle colour (size /. 3.) |> move (sx a px) (sy a py) in
                   let ring = circle black ((size /. 3.) +. 2.) |> move (sx a px) (sy a py) in
                   let text = words colour label |> scale (size /. words_font_size) |> move (sx a (px +. 10. +. (tw /. 2.))) (sy a py) in
                   let shadow = words black label |> scale (size /. words_font_size) |> move (sx a (px +. 11.5 +. (tw /. 2.))) (sy a (py +. 1.5)) |> fade 0.8 in
                   (* claude: how central, in the card (the author: "give an idea
                    * of how often it is used"): its module named by N files;
-                   * its own uses once counted (Code_rank, by the search or
-                   * the street), the .ml's for an .mli's *)
-                  let used =
-                    match t.rank with
-                    | Some rank ->
-                        let name = match String.rindex_opt label '.' with Some k -> String.sub label (k + 1) (String.length label - k - 1) | None -> label in
-                        let impl = Filename.remove_extension path ^ ".ml" in
-                        let at_impl = if Filename.check_suffix path ".mli" then (match Hashtbl.find_opt where impl with Some (_, ei) -> Option.map (fun l -> (impl, l)) (capital_line ei it.at) | None -> None) else None in
-                        let q, l = match at_impl with Some x -> x | None -> (path, line) in
-                        let u = Code_rank.uses rank q l name in
-                        if u.others > 0 then [ Printf.sprintf "used %d times in %d other files" u.others u.files ] else []
-                    | None -> []
-                  in
+                   * its own uses *)
+                  let used = match uses with Some u when u.others > 0 -> [ Printf.sprintf "used %d times in %d other files" u.others u.files ] | _ -> [] in
                   let central = match fan path with 0 -> [] | n -> [ Printf.sprintf "its module named by %d files%s" n (if n >= 30 then ": the core" else "") ] in
                   let said = [ "* " ^ label ^ "   " ^ path ] @ (match it.say with Some s -> wrap 48 s | None -> []) @ central @ used @ [ "click: to its file" ] in
                   Some { node = i; nbox = (x0, py -. (size /. 2.) -. 2., x1, py +. (size /. 2.) +. 2.); nrank = 805. +. float_of_int (min 14 (fan path / 10)); draw = group [ ring; dot; shadow; text ]; said = Some said; sect = None; cap = Some (path, line, label) }
@@ -2067,39 +2073,39 @@ let search_box (t : t) (c : camera) (s : search) (hits : Code_search.hit list) :
         | _ when hits <> [] ->
             let n = List.length (search_set t) in
             if n = 0 then "Enter go   Tab complete   up/down choose   / first: here or all   Esc close" else
-            Printf.sprintf "Enter go   shift+Enter the %d %s together   ctrl+Enter a layer   Tab complete   \"text   / first: here or all" n
+            Printf.sprintf "Enter go   shift+Enter the %d %s together   ctrl+Enter a mark   Tab complete   \"text   / first: here or all" n
               (if List.exists (fun (h : Code_search.hit) -> h.kind = Dir || h.kind = File) hits then "found" else "files of these")
         | _ -> "a name, \"text, @reference, name// directories so named   Tab complete   up/down choose   / first: here or all   Esc close");
     ]
 
-(* claude: the layers (plan_codemap_v2.md): searches kept, ctrl+Enter,
+(* claude: the marks (plan_codemap_v2.md): searches kept, ctrl+Enter,
  * each lit in its colour at any level, all at once (the author:
- * "Cap.fork, Cap.exec ... a layer with different color scheme for each
+ * "Cap.fork, Cap.exec ... a mark with different color scheme for each
  * and get all the capabilities highlighted at the same time"); their
  * legend in the map's bottom left corner *)
-let layer_colours = [ (245, 85, 85); (80, 205, 245); (120, 230, 110); (250, 165, 50); (225, 115, 235); (245, 240, 95); (110, 130, 255) ]
+let mark_colours = [ (245, 85, 85); (80, 205, 245); (120, 230, 110); (250, 165, 50); (225, 115, 235); (245, 240, 95); (110, 130, 255) ]
 
-let layer_hits (t : t) (l : layer) : Code_search.hit list =
-  match l.lhits with
+let mark_hits (t : t) (l : mark) : Code_search.hit list =
+  match l.mhits with
   | Some h -> h
   | None ->
-      let h = query_hits t l.lquery in
-      l.lhits <- Some h;
+      let h = query_hits t l.mquery in
+      l.mhits <- Some h;
       h
 
-(* the groups of layers: those kept, then each config's, their names *)
-let layer_groups (t : t) : (string * layer list) list =
+(* the groups of marks: those kept, then each config's, their names *)
+let mark_groups (t : t) : (string * mark list) list =
   let guide =
-    match t.guide_layers with
+    match t.guide_marks with
     | Some g -> g
     | None ->
         let g =
           List.map
-            (fun (l : Code_guide.layer) ->
-              (l.lname, List.map (fun (r : Code_guide.rule) -> { lquery = (if r.is_ref then "@" else "\"") ^ r.text; lcolour = r.colour; lsay = r.rsay; lhits = None }) l.rules))
-            (Code_guide.layers t.guide)
+            (fun (l : Code_guide.mark) ->
+              (l.mname, List.map (fun (r : Code_guide.rule) -> { mquery = (if r.is_ref then "@" else "\"") ^ r.text; mcolour = r.colour; msay = r.rsay; mhits = None }) l.rules))
+            (Code_guide.marks t.guide)
         in
-        (* claude: the X-ray's nerves and lungs as layers too, derived
+        (* claude: the X-ray's nerves and lungs as marks too, derived
          * from the configs' anatomy rules (the words the X-ray guesses
          * from without them), a colour a rule (the author: "see all the
          * code doing io or using mouse or keyboard") *)
@@ -2110,8 +2116,8 @@ let layer_groups (t : t) : (string * layer list) list =
             else List.map (fun (r : Code_guide.rule) -> ((if r.is_ref then "@" else "\"") ^ r.text, r.rsay)) rules
           in
           let queries = List.fold_left (fun acc ((q, _) as x) -> if List.mem_assoc q acc then acc else acc @ [ x ]) [] queries in
-          let n = List.length layer_colours in
-          (name, List.mapi (fun i (q, say) -> { lquery = q; lcolour = List.nth layer_colours (i mod n); lsay = say; lhits = None }) queries)
+          let n = List.length mark_colours in
+          (name, List.mapi (fun i (q, say) -> { mquery = q; mcolour = List.nth mark_colours (i mod n); msay = say; mhits = None }) queries)
         in
         let g =
           g
@@ -2120,26 +2126,26 @@ let layer_groups (t : t) : (string * layer list) list =
               derived "lungs: the I/O (the X-ray's 4)" (fun d -> d.lungs) Code_anatomy.lung_words;
             ]
         in
-        t.guide_layers <- Some g;
+        t.guide_marks <- Some g;
         g
   in
-  ("kept", t.layers) :: guide
+  ("kept", t.marks) :: guide
 
-let layers_shapes (t : t) (c : camera) : shape list =
+let marks_shapes (t : t) (c : camera) : shape list =
   (* claude: -1, none (List.nth_opt raises on it) *)
-  match if t.layer_group < 0 then None else List.nth_opt (layer_groups t) t.layer_group with
+  match if t.mark_group < 0 then None else List.nth_opt (mark_groups t) t.mark_group with
   | None | Some (_, []) -> []
-  | Some (group, layers) ->
+  | Some (group, marks) ->
     let a = c.a in
-    let lit = List.concat_map (fun (l : layer) -> let r, g, b = l.lcolour in search_lit ~glow:(rgb r g b) ~dot:4.5 t c (layer_hits t l)) layers in
+    let lit = List.concat_map (fun (l : mark) -> let r, g, b = l.mcolour in search_lit ~glow:(rgb r g b) ~dot:4.5 t c (mark_hits t l)) marks in
     let row = 20. in
-    let line (l : layer) =
-      let q = if String.length l.lquery > 0 && (l.lquery.[0] = '"' || l.lquery.[0] = '@') then String.sub l.lquery 1 (String.length l.lquery - 1) else l.lquery in
-      Printf.sprintf "%s  %d%s" q (List.length (layer_hits t l)) (match l.lsay with Some s -> "   " ^ s | None -> "")
+    let line (l : mark) =
+      let q = if String.length l.mquery > 0 && (l.mquery.[0] = '"' || l.mquery.[0] = '@') then String.sub l.mquery 1 (String.length l.mquery - 1) else l.mquery in
+      Printf.sprintf "%s  %d%s" q (List.length (mark_hits t l)) (match l.msay with Some s -> "   " ^ s | None -> "")
     in
-    let head = Printf.sprintf "%s   (l: next)" (if group = "kept" then "layers kept" else group) in
-    let n = List.length layers in
-    let w = 30. +. List.fold_left (fun m l -> Float.max m (text_width 14. (line l))) (text_width 14. head) layers in
+    let head = Printf.sprintf "%s   (l: next)" (if group = "kept" then "marks kept" else group) in
+    let n = List.length marks in
+    let w = 30. +. List.fold_left (fun m l -> Float.max m (text_width 14. (line l))) (text_width 14. head) marks in
     let h = 12. +. (row *. float_of_int (n + 1)) in
     let x0 = 10. and y0 = float_of_int a.ph -. h -. 10. in
     lit
@@ -2147,12 +2153,12 @@ let layers_shapes (t : t) (c : camera) : shape list =
     @ [ label a yellow 14. (x0 +. 12. +. (text_width 14. head /. 2.)) (y0 +. 6. +. (row /. 2.)) head ]
     @ List.concat
         (List.mapi
-           (fun i (l : layer) ->
-             let r, g, b = l.lcolour in
+           (fun i (l : mark) ->
+             let r, g, b = l.mcolour in
              let y = y0 +. 6. +. (float_of_int (i + 1) *. row) +. (row /. 2.) in
              let str = line l in
              [ circle (rgb r g b) 5. |> move (sx a (x0 +. 12.)) (sy a y); label a ink 14. (x0 +. 22. +. (text_width 14. str /. 2.)) y str ])
-           layers)
+           marks)
 
 (* claude: at the street, a panel's name under a pixel: a click there
  * goes to that file (the author) *)
@@ -2168,7 +2174,7 @@ let street_title_at (t : t) (c : camera) (px : float) (py : float) : string opti
         (Code_street.panels s)
   | _ -> None
 
-(* claude: a match under the mouse (a search's, a layer's), its line and
+(* claude: a match under the mouse (a search's, a mark's), its line and
  * the code around it beside the mouse (the author: "when you hover a
  * match, we peek preview the content of the match and the code
  * around"); the lit hits' places found by an index of the layout, not
@@ -2181,10 +2187,10 @@ let hovered_match (t : t) (c : camera) : (Code_search.hit * color * string optio
       let mx = to_px c u and my = to_py c v in
       let lit =
         (match t.search with Some _ -> List.map (fun h -> (h, rgb 255 225 90, None)) (search_hits t) | None -> [])
-        @ (if t.layer_group < 0 then []
+        @ (if t.mark_group < 0 then []
            else
-             match List.nth_opt (layer_groups t) t.layer_group with
-             | Some (_, ls) -> List.concat_map (fun (l : layer) -> let r, g, b = l.lcolour in List.map (fun h -> (h, rgb r g b, l.lsay)) (layer_hits t l)) ls
+             match List.nth_opt (mark_groups t) t.mark_group with
+             | Some (_, ls) -> List.concat_map (fun (l : mark) -> let r, g, b = l.mcolour in List.map (fun h -> (h, rgb r g b, l.msay)) (mark_hits t l)) ls
              | None -> [])
       in
       let lines = List.filter (fun ((h : Code_search.hit), _, _) -> h.kind = Def || h.kind = Text) lit in
@@ -2362,7 +2368,7 @@ let labels (t : t) (c : camera) (q : float) : shape list =
   @ hover_card t c kept
   @ peek_shapes t c q
   @ peek_glow t c
-  @ layers_shapes t c
+  @ marks_shapes t c
   @ search_shapes t c
   @ match_preview t c
   @ bone_card t c

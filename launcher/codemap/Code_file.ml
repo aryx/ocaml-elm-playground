@@ -16,7 +16,7 @@ type t = {
   grid : Bytes.t;
   chars : Bytes.t;
   defs : (int * string * Highlight_code.category) list;
-  marks : int list;
+  tricks : int list;
   names : Highlight_code.occurrence list array;
   uses : (int * int, Highlight_code.occurrence list) Hashtbl.t;
   definitions : Highlight_code.definition list;
@@ -136,7 +136,7 @@ let make (path : string) (src : string) : t =
     in
     at 0
   in
-  let marks =
+  let tricks =
     List.filter_map
       (fun y ->
         if List.exists (fun (s : Highlight_code.span) -> (s.category = Comment || s.category = Comment_section) && says s.text) lines.(y)
@@ -156,7 +156,7 @@ let make (path : string) (src : string) : t =
   List.iter (fun (r : Highlight_code.reference) -> if r.rline >= 0 && r.rline < n then refs.(r.rline) <- r :: refs.(r.rline)) an.references;
   (* the generated entries as definitions too, for anchors (def:token) *)
   List.iter (fun (d : Highlight_code.definition) -> if not (List.exists (fun (l, n, _) -> l = d.dline && n = d.dname) !defs) then defs := (d.dline, d.dname, Highlight_code.Def_function) :: !defs) generated;
-  { path; lines; grid; chars; defs = List.rev !defs; marks; names; uses; definitions = an.definitions; refs; opens = an.opens; includes = an.includes }
+  { path; lines; grid; chars; defs = List.rev !defs; tricks; names; uses; definitions = an.definitions; refs; opens = an.opens; includes = an.includes }
 
 let nlines (f : t) : int = Array.length f.lines
 

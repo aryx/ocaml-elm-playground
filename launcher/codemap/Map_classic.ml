@@ -107,7 +107,7 @@ let labels_by ~(emphasis : string -> int -> string -> Highlight_code.category ->
                 let box, shape = tab a (if main then yellow else lighter (archi t.colours p.path)) s (float_of_int x0 +. 1.) (float_of_int y0 +. 1.) name in
                 files := { rank = (if main then 1000. else 100. +. s); box; shape } :: !files
               end;
-              (* claude: the tricks (Code_file.marks), marked where they are *)
+              (* claude: the tricks (Code_file.tricks), marked where they are *)
               if Lazy.is_val e.file && h >= 30. then
                 List.iter
                   (fun line ->
@@ -116,7 +116,7 @@ let labels_by ~(emphasis : string -> int -> string -> Highlight_code.category ->
                       let box, shape = tab a ~alpha:1. (rgb 230 80 200) 13. (to_px c x) (to_py c y -. 19.) ("* " ^ Code_file.trick) in
                       files := { rank = 800.; box; shape } :: !files
                     end)
-                  (Lazy.force e.file).marks;
+                  (Lazy.force e.file).tricks;
               (* the semantic zoom: definitions written over the code *)
               if (not (readable c g)) && Lazy.is_val e.file then
                 List.iter

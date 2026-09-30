@@ -28,9 +28,9 @@ type joint = { jfrom : string; jto : string; jsay : string option }
 type skeleton = { sname : string; sdir : string; bones : bone list; joints : joint list }
 type view = { vname : string; files : string list; of_ : string option; with_ : string option }
 
-(* claude: a layer: lines matching its rules, each lit in its colour *)
+(* claude: a mark: lines matching its rules, each lit in its colour *)
 type rule = { text : string; is_ref : bool; colour : rgb; rsay : string option }
-type layer = { lname : string; ldir : string; rules : rule list }
+type mark = { mname : string; mdir : string; rules : rule list }
 
 type dir_note = {
   dir : string;
@@ -42,7 +42,7 @@ type dir_note = {
   tours : tour list;
   skeletons : skeleton list;
   views : view list;
-  layers : layer list;
+  marks : mark list;
   nerves : rule list; (* claude: anatomy: nerves:, its inputs *)
   lungs : rule list; (* anatomy: lungs:, its I/O *)
 }
@@ -128,7 +128,11 @@ let sense (where : string) (fs : (string * Json.t) list) (key : string) : rule l
 let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
   let where = if dir = "" then ".codemapconfig" else dir ^ "/.codemapconfig" in
   match
-    let fs = fields where [ "title"; "summary"; "generated"; "colors"; "dirs"; "files"; "tours"; "skeletons"; "views"; "layers"; "anatomy" ] v in
+    (* claude: marks: were layers: (the author renamed them, the name kept
+     * for the layers to come, a map coloured by a measure): the old
+     * name still read, the configs of other projects written before *)
+    let v = match v with Json.Object kvs -> Json.Object (List.map (fun (k, x) -> ((if k = "layers" then "marks" else k), x)) kvs) | v -> v in
+    let fs = fields where [ "title"; "summary"; "generated"; "colors"; "dirs"; "files"; "tours"; "skeletons"; "views"; "marks"; "anatomy" ] v in
     let obj k f = match List.assoc_opt k fs with Some (Json.Object kvs) -> List.map (fun (name, v) -> f (where ^ "." ^ k ^ "." ^ name) name v) kvs | Some _ -> bad "%s.%s: an object expected" where k | None -> [] in
     (match List.assoc_opt "generated" fs with Some g -> ignore (fields (where ^ ".generated") [ "by"; "on" ] g) | None -> ());
     {
@@ -181,8 +185,8 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
               of_ = opt_str w fs "of";
               with_ = opt_str w fs "with";
             });
-      layers =
-        opt_list where fs "layers" (fun w v ->
+      marks =
+        opt_list where fs "marks" (fun w v ->
             let fs = fields w [ "name"; "rules" ] v in
             let rules =
               opt_list w fs "rules" (fun w v ->
@@ -199,7 +203,7 @@ let of_json ~(dir : string) (v : Json.t) : (dir_note, string) result =
                   let colour = match opt_str w fs "color" with Some c -> ( match Code_config.hex c with Some rgb -> rgb | None -> bad "%s: %S is no #rrggbb" w c) | None -> bad "%s: its color" w in
                   { text; is_ref; colour; rsay = opt_str w fs "say" })
             in
-            { lname = (match opt_str w fs "name" with Some n -> n | None -> bad "%s: its name" w); ldir = dir; rules });
+            { mname = (match opt_str w fs "name" with Some n -> n | None -> bad "%s: its name" w); mdir = dir; rules });
       (* claude: anatomy: { nerves: [rule], lungs: [rule] }, the rules
        * without a colour (the plate's) *)
       nerves = sense where fs "nerves";
@@ -239,7 +243,7 @@ let file_note (t : t) (path : string) : file_note option =
   Option.bind (List.find_opt (fun d -> d.dir = dir_of path) t) (fun d -> List.assoc_opt (Filename.basename path) d.notes)
 
 let colours (t : t) = List.concat_map (fun d -> d.colors) t
-let layers (t : t) : layer list = List.concat_map (fun d -> d.layers) t
+let marks (t : t) : mark list = List.concat_map (fun d -> d.marks) t
 
 (* claude: the anatomy rules applying to a file: its configs' and its
  * ancestors' *)
@@ -351,7 +355,7 @@ let find (f : Code_file.t) (anchor : string) : (int, string) result =
           | _ -> go (l + 1)
       in
       go 0)
-  | "pattern" -> Error "pattern: anchors are to come (plan_codemap_v2.md, Layers)"
+  | "pattern" -> Error "pattern: anchors are to come (plan_codemap_v2.md, Marks)"
   | k -> Error (Printf.sprintf "%S: an anchor is %s:..." anchor (String.concat ", " (List.filter (( <> ) k) kinds)))
 
 let digest (text : string) : string = String.sub (Digest.to_hex (Digest.string text)) 0 12

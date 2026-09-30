@@ -20,7 +20,7 @@ and how to describe a codebase for it: the `.codemapconfig` files.
 5. Reading: cards, peeks, capitals
 6. Searching
 7. The X-ray: skeletons and plates
-8. Layers
+8. Marks
 9. Dependencies: ties, the tied view, the matrix
 10. Tours and views
 11. Every key
@@ -46,7 +46,7 @@ is written down, once per directory, in a `.codemapconfig` file, by an
 LLM reading the code (helped by the map's own analysis, codellm) and
 corrected by the humans who know it. The map draws what those files
 say: a directory's description, its *capitals* (the definitions to see
-first), its *skeleton* (the parts the rest hangs on), its layers, its
+first), its *skeleton* (the parts the rest hangs on), its marks, its
 tours.
 
 **Centrality, not size.** A game is large and nobody uses it; the
@@ -62,11 +62,12 @@ match's context, a dependency explained) comes as a card or a peek over
 the map, gone when the mouse moves on.
 
 **One key per feature, cycling its modes.** `a` cycles the street's
-modes, `x` the skeletons, `l` the layers, `d` the tied view's modes.
+modes, `x` the skeletons, `m` the marks, `d` the tied view's modes.
 
 **The same colours mean the same thing everywhere.** Green is the user,
 red the used: a road from a use to a definition goes from green to red;
-a capital many files use is red; in the matrix, a row's dependencies
+a capital many files use is red (its file's module named by 30 files, or
+the definition itself used by 10); in the matrix, a row's dependencies
 turn red and its users green.
 
 ## 2. Starting it
@@ -190,7 +191,9 @@ A capital's card adds how central it is ("its module named by 408 files:
 the core") and how often it is used.
 
 **Peeks.** A click on a name in the code opens a *peek*: the definition
-of that name, readable, over the map, with the comment just above it. A
+of that name, readable, over the map, with the comment just above it
+(a literate program's markers, `/*s: function [[f]] */` and `/*e: ...
+*/` or OCaml's `(*s: ... *)`, left out: boilerplate). A
 click on a top-level comment (a file's header) peeks at the whole
 comment. The wheel scrolls a long peek; a click on a name inside a peek
 opens a peek of *that* definition on top (a few deep); a click outside,
@@ -224,7 +227,7 @@ file framed, a definition a dot (a bar on its line at the ground).
 In the box: up and down choose a match (it pulses on the map, a thread
 from its row to it), Tab completes, Enter goes there (a definition's
 file, its definition peeked), **shift+Enter** shows all the matches'
-files together, **ctrl+Enter** keeps the query as a layer (section 8).
+files together, **ctrl+Enter** keeps the query as a mark (section 8).
 A `/` typed first restricts the search to the files shown. Escape
 closes the box.
 
@@ -258,14 +261,14 @@ key) turns it on or off:
 | 4 | lungs | the I/O: files, network, console, processes (`anatomy: lungs:`) |
 | 5 | skin | what a module exports: the `.mli`'s definitions barred, the private ones shaded |
 
-## 8. Layers
+## 8. Marks
 
-A layer lights, everywhere at once and at any level, the lines matching
+A mark lights, everywhere at once and at any level, the lines matching
 its rules, each rule in its colour, with a legend at the bottom left.
-The configs define layers (this repository's root: Capabilities, each
-`Cap.*` in its colour); a search can be kept as a layer (ctrl+Enter in
-the search box). `l` cycles: the layers kept, each config's, then the
-nerves and the lungs (the X-ray's plates 3 and 4 as layers, a colour
+The configs define marks (this repository's root: Capabilities, each
+`Cap.*` in its colour); a search can be kept as a mark (ctrl+Enter in
+the search box). `m` cycles: the marks kept, each config's, then the
+nerves and the lungs (the X-ray's plates 3 and 4 as marks, a colour
 per anatomy rule, so that every line reading the keyboard, or writing
 to the disk, shows at once, with its count), none.
 
@@ -359,14 +362,14 @@ The keys:
 | `/` | search |
 | `a` | the street (cycles) |
 | `x` | the X-ray (cycles skeletons); `1`-`5` its plates |
-| `l` | the layers (cycles) |
+| `m` | the marks (cycles) |
 | `g` | the matrix |
 | `d` | in the tied view: its modes |
 | `n`, `p` | a tour's next and previous stop |
 | `w` | a program's map: its code, with what it uses, the whole repository |
 | `b` | back after a jump |
 | Enter | the file view |
-| `m` | another style of map |
+| `y` | another style of map |
 | `0`, Home | the whole map |
 | arrows | beside |
 | Backspace, `-` | out |
@@ -400,7 +403,7 @@ local enemy_color = '#e05050';
   skeletons: [skeletons.game('TinyInvaders.ml', 'def:march', 'the march')],
   tours: [{ name: 'How Space Invaders runs', stops: [{ at: 'TinyInvaders.ml:def:update', say: 'A frame.' }] }],
   views: [{ name: 'Space Invaders and its kit', files: ['TinyInvaders.ml', '../../gamekits/shmup/'] }],
-  layers: [{ name: 'Enemies', rules: [{ ref: 'Alien.spawn', color: enemy_color, say: 'an enemy made' }] }],
+  marks: [{ name: 'Enemies', rules: [{ ref: 'Alien.spawn', color: enemy_color, say: 'an enemy made' }] }],
 }
 ```
 
@@ -417,7 +420,7 @@ The fields (a misspelt one is a mistake, not ignored):
 | `skeletons` | `[{ name, bones: [{ at, role }], joints: [{ from, to, say }] }]` |
 | `tours` | `[{ name, stops: [{ at, say }] }]` |
 | `views` | `[{ name, files: [path] }]`, or `{ name, of: path, with: 'users' }` |
-| `layers` | `[{ name, rules: [{ text or ref, color, say }] }]` |
+| `marks` | `[{ name, rules: [{ text or ref, color, say }] }]` (the old name, `layers`, still read) |
 | `anatomy` | `{ nerves: [{ text or ref, say }], lungs: [...] }`: the X-ray's nerves and lungs |
 
 **Anchors** point at a place by what it is, not its line, so that
@@ -434,7 +437,10 @@ editing the code does not break them:
 | `line:42` | a line (discouraged: it moves) |
 
 A literate program's chunk markers make the surest anchors:
-`comment:"function [[mountio]]"`, `comment:"struct [[Node]]"`.
+`comment:"function [[mountio]]"`, `comment:"struct [[Node]]"`. Such an
+anchor lands on the code under the marker (the `struct Node` line), and
+the map names it by the chunk's name alone: `Node`, not `struct
+[[Node]]`.
 
 In a skeleton, a tour or a link, a path comes first:
 `'../../gamekits/shmup/Shots.ml:def:advance'`; a bone that is a whole
@@ -490,10 +496,10 @@ keeps them honest.
 |---|---|
 | a region's colour | its top folder's (configurable: `colors`) |
 | green, red | user, used: a road's two ends, a street's margin bars, the matrix's hover |
-| red capital | a definition many files use; yellow, the others |
+| red capital | a definition many files use (its module named by 30, or it used by 10); yellow, the others |
 | ivory | the skeleton's bones and joints |
 | yellow glow | the search's matches, the chosen one pulsing |
-| a layer rule's colour | its matches, glowing |
+| a mark rule's colour | its matches, glowing |
 | blue, magenta | in the matrix: a use down the layers, a use against them (a cycle) |
 | a definition's colour | its kind's, as the code highlighter colours it |
 

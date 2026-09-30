@@ -1,0 +1,12 @@
+// launcher/codemap/bench/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-09-30' },
+  summary: "The map's frames timed without a window: how its slow frames were found (notes_opti_ocaml.md, section 17).",
+  files: {
+    'codemap_bench.ml': {
+      summary: 'A directory read and mapped as tinybox codemap does, then update and view per frame, clicks and keys at given frames; IDLE=n the quiet frames averaged, OPTI=off the simple code.',
+      important: [{ at: 'comment:"IDLE=n: n more frames"', weight: 2 }],
+    },
+  },
+}
