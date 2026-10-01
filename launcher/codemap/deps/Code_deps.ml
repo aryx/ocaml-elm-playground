@@ -180,6 +180,13 @@ let skipped_dirs = [ "web"; "software"; "svg"; "tests" ]
 
 let read (path : string) : string = In_channel.with_open_bin path In_channel.input_all
 
+(* claude: a name just listed may be gone when it is looked at: in _build
+ * the generators walk these directories while ar writes its archives
+ * beside them, through a temporary file (stXXXXXX) there for an instant;
+ * Sys.is_directory then raises (opam's CI, 0.3.0: "./apps/music/stoyNOvf:
+ * No such file or directory", on some builds). Gone: not a directory *)
+let is_directory (path : string) : bool = try Sys.is_directory path with Sys_error _ -> false
+
 let generated (path : string) (text : string) : bool =
   let first = match String.index_opt text '\n' with Some i -> String.sub text 0 i | None -> text in
   starts "(* Auto-generated" first || starts "(* generated" first || starts "# " first
@@ -199,7 +206,7 @@ let repository_sources ~(root : string) : (string * string) list =
     Sys.readdir (Filename.concat root dir) |> Array.to_list |> List.sort compare
     |> List.concat_map (fun f ->
            let path = Filename.concat dir f in
-           if Sys.is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
+           if is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
            else if dir = "launcher/native" && not (launcher_own f) then []
            else if is_impl f || Filename.check_suffix f ".mli" then
              let text = read (Filename.concat root path) in
@@ -215,11 +222,11 @@ let repository_configs ~(root : string) : (string * string) list =
     here dir
     |> List.concat_map (fun f ->
            let path = Filename.concat dir f in
-           if Sys.is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
+           if is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
            else if is_config f then [ (path, read (Filename.concat root path)) ]
            else [])
   in
-  List.filter_map (fun f -> if is_config f && not (Sys.is_directory (Filename.concat root f)) then Some (f, read (Filename.concat root f)) else None) (here ".")
+  List.filter_map (fun f -> if is_config f && not (is_directory (Filename.concat root f)) then Some (f, read (Filename.concat root f)) else None) (here ".")
   @ List.concat_map walk (List.filter (fun d -> Sys.file_exists (Filename.concat root d)) source_roots)
 
 let budget = 5000

@@ -99,6 +99,10 @@
   Camera3d, Character3d, Ragdoll3d, Portal3d
 - Http.get (Elm's), resizable native windows (-size, -fullscreen),
   artwork=shapes/sprites for pixel-art games
+- run_app ~screen_follows_window (0.3.1): the program's screen is the
+  window, for an application rather than a game (a browser's page laid
+  out again at its new width, no scaling, no black bars); the native
+  Cairo and software platforms
 
 ** playground3d (new)
 - new elm_playground_3d library (Playground3d.mli), same Model-View-Update
@@ -523,6 +527,13 @@
   catalogue and packaging" above
 - website: publish the 3D examples (web and WebGL) under docs/, make
   serve-build
+- 0.3.1, what opam's CI found in 0.3.0: dune >= 3.17 for every package
+  (an older dune does not find the implementation of a virtual library
+  among installed packages), elm_playground_web depends on js_of_ocaml,
+  the platforms and tinybox not available on Windows, tiny_libs' tests
+  need conf-openssl and skip their socket tests where a socket may not
+  listen (opam's sandbox on macOS), tinybox's generator no longer fails
+  on a file gone while it walks the build tree (ar's temporary files)
 
 ** docs
 - README-3d.md, and many tutorials in docs/claude_notes/: notes_2d.md,
