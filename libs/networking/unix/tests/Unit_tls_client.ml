@@ -35,7 +35,7 @@ let certificate (kind : string) : string * string =
 let port = ref (21000 + (Unix.getpid () mod 9000))
 
 (* [with_server kind suite f]: f the port and the server's certificate *)
-let with_server ?(extra = [||]) (kind : string) (suite : string) (f : int -> X509.t -> unit) : unit =
+let with_server ?(extra = [||]) (caps : < Cap.network ; .. >) (kind : string) (suite : string) (f : int -> X509.t -> unit) : unit =
   let key, cert = certificate kind in
   incr port;
   let p = !port in
@@ -47,7 +47,7 @@ let with_server ?(extra = [||]) (kind : string) (suite : string) (f : int -> X50
       Unix.kill server Sys.sigterm;
       ignore (Unix.waitpid [] server))
     (fun () ->
-      Unix.sleepf 0.5;
+      Testutil_server.await_listening caps ~host:"localhost" ~port:p;
       let pem = In_channel.with_open_bin cert In_channel.input_all in
       f p (Result.get_ok (X509.parse (List.hd (Pem.certificates pem)))))
 
@@ -63,19 +63,19 @@ let tests (caps : < Cap.network ; Cap.open_in ; Cap.exec ; .. >) =
   Testo.categorize "Tls_client"
     [
       Testo.create "a page over ChaCha20-Poly1305, ECDSA" (fun () ->
-          with_server "ec" "TLS_CHACHA20_POLY1305_SHA256" (fun p cert ->
+          with_server caps "ec" "TLS_CHACHA20_POLY1305_SHA256" (fun p cert ->
               Alcotest.(check (result string string)) "200" (Ok "HTTP/1.0 200 ok") (page caps ~trust:[ cert ] ~host:"localhost" p)));
       Testo.create "a page over AES-128-GCM, RSA (PSS)" (fun () ->
-          with_server "rsa" "TLS_AES_128_GCM_SHA256" (fun p cert ->
+          with_server caps "rsa" "TLS_AES_128_GCM_SHA256" (fun p cert ->
               Alcotest.(check (result string string)) "200" (Ok "HTTP/1.0 200 ok") (page caps ~trust:[ cert ] ~host:"localhost" p)));
       (* claude: not on CI: macOS's openssl (LibreSSL) does not start its
        * s_server with -verify, so there is nothing to connect to *)
       Testo.create ?skipped:(if Sys.getenv_opt "CI" <> None then Some "macOS's openssl: no s_server -verify" else None)
         "a server asking for our certificate: an empty one (Gmail's SMTP)" (fun () ->
-          with_server ~extra:[| "-verify"; "1" |] "ec" "TLS_CHACHA20_POLY1305_SHA256" (fun p cert ->
+          with_server ~extra:[| "-verify"; "1" |] caps "ec" "TLS_CHACHA20_POLY1305_SHA256" (fun p cert ->
               Alcotest.(check (result string string)) "200" (Ok "HTTP/1.0 200 ok") (page caps ~trust:[ cert ] ~host:"localhost" p)));
       Testo.create "refused: a root not trusted, another name" (fun () ->
-          with_server "ec" "TLS_CHACHA20_POLY1305_SHA256" (fun p cert ->
+          with_server caps "ec" "TLS_CHACHA20_POLY1305_SHA256" (fun p cert ->
               Alcotest.(check bool) "no roots" true (Result.is_error (page caps ~trust:[] ~host:"localhost" p));
               Alcotest.(check bool) "127.0.0.1 is not localhost" true (Result.is_error (page caps ~trust:[ cert ] ~host:"127.0.0.1" p))));
     ]

@@ -30,14 +30,17 @@ let tests =
       Testo.create "four waits at the same time, not one after the other" (fun () ->
           let pool = Worker.create 4 in
           let t0 = Unix.gettimeofday () in
-          let jobs = List.init 4 (fun i -> Worker.submit pool (fun () -> Unix.sleepf 0.2; i)) in
+          let jobs = List.init 4 (fun i -> Worker.submit pool (fun () -> Unix.sleepf 0.5; i)) in
           let submitted = Unix.gettimeofday () -. t0 in
           let results, took = finish jobs in
+          (* claude: the bounds are far from both sides, for a slow or busy
+           * machine (opam's builders): a submit that waited for its job
+           * would take 0.5 s, not 0.1 *)
           Alcotest.(check bool) (Printf.sprintf "submitted in %.1f ms: nothing waited" (submitted *. 1000.)) true
-            (submitted < 0.01);
+            (submitted < 0.1);
           Alcotest.(check (list int)) "each its result" [ 0; 1; 2; 3 ] (List.map Result.get_ok results);
-          (* claude: 0.2 s together; one after the other would be 0.8 *)
-          Alcotest.(check bool) (Printf.sprintf "all done in %.2f s" took) true (took < 0.5));
+          (* claude: 0.5 s together; one after the other would be 2 *)
+          Alcotest.(check bool) (Printf.sprintf "all done in %.2f s" took) true (took < 1.5));
       Testo.create "more jobs than threads: queued" (fun () ->
           let pool = Worker.create 2 in
           let results, took = finish (List.init 4 (fun i -> Worker.submit pool (fun () -> Unix.sleepf 0.1; i))) in

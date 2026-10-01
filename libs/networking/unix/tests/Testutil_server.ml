@@ -69,3 +69,19 @@ let respond (answer : int -> string -> string) (port : int) (request_line : stri
   Tcp.send_all fd (answer port request_line)
 
 let url (port : int) (path : string) : string = Printf.sprintf "http://127.0.0.1:%d%s" port path
+
+(* claude: a connection tried every 50 ms until one is accepted, and
+ * closed at once (a handshake that fails, to an openssl s_server, which
+ * then waits for the next); given up after 20 seconds, the test's own
+ * connection then saying why *)
+let await_listening (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) : unit =
+  let rec go n =
+    match Tcp.connect ~timeout:1. caps ~host ~port () with
+    | fd -> Unix.close fd
+    | exception (Unix.Unix_error _ | Failure _) ->
+        if n > 0 then begin
+          Unix.sleepf 0.05;
+          go (n - 1)
+        end
+  in
+  go 400

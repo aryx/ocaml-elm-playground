@@ -26,7 +26,7 @@ let tests (caps : < Cap.network ; Cap.exec ; .. >) =
           Fun.protect
             ~finally:(fun () -> Unix.kill server Sys.sigterm; ignore (Unix.waitpid [] server); Unix.close null)
             (fun () ->
-              Unix.sleepf 0.5;
+              Testutil_server.await_listening caps ~host:"localhost" ~port;
               match Tls_tunnel.connect caps ~host:"localhost" ~port with
               | Error why -> Alcotest.fail why
               | Ok t ->

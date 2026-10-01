@@ -17,5 +17,11 @@ val site : int -> string -> string
 (* a handler answering [site]'s answer at once *)
 val respond : (int -> string -> string) -> int -> string -> Unix.file_descr -> unit
 
+(* wait until something accepts connections on [host]:[port]: a server
+ * started as another program (openssl s_server) is not listening yet
+ * when create_process returns, and how long it takes depends on the
+ * machine (more than half a second on opam's riscv64 builder, 0.3.2) *)
+val await_listening : < Cap.network ; .. > -> host:string -> port:int -> unit
+
 (* "http://127.0.0.1:port/path" *)
 val url : int -> string -> string
