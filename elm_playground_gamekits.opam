@@ -19,8 +19,8 @@ license: "LGPL-2.1-only"
 homepage: "https://github.com/aryx/ocaml-elm-playground"
 bug-reports: "https://github.com/aryx/ocaml-elm-playground/issues"
 depends: [
-  "dune" {>= "3.0"}
   "ocaml" {>= "4.14.0"}
+  "dune" {>= "3.0" & >= "3.17"}
   "tiny_libs" {= version}
   "elm_playground" {= version}
   "elm_playground_3d" {= version}

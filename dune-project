@@ -53,6 +53,13 @@
 ;; on both, tiny_appkits: the application kits of appkits/, the engines
 ;; the apps share, each public as tiny_appkits.<its name> (the kits that
 ;; draw with the Playground are in apps/, beside the apps they help).
+;;
+;; claude: every package asks for dune >= 3.17, though the dune language
+;; here is 3.0: an older dune (3.15.3 and before) builds
+;; elm_playground_3d_opengl alone, as opam does, against the installed
+;; elm_playground_software and says "No implementation found for virtual
+;; library elm_playground" (opam's CI found it, 0.3.0, its lower-bounds
+;; job). One bound for all, as they are released together.
 
 (package (name tiny_libs)
   (synopsis "From-scratch libraries for teaching: graphics, audio, compression, crypto, networking and more")
@@ -68,12 +75,16 @@
 ")
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     (caps (>= "0.1.0"))
     logs
     (testo :with-test)
     (alcotest :with-test)
     (cairo2 :with-test) ; to compare our pixels with Cairo's (graphics/tests)
     (js_of_ocaml-compiler :with-test) ; graphics/tests/js, where node is installed
+    ; claude: the openssl program, the server networking/unix/tests'
+    ; TLS tests talk to (opam's CI on Fedora has none)
+    (conf-openssl :with-test)
   )
 )
 (package (name tiny_languages)
@@ -89,6 +100,7 @@
 ")
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     (tiny_libs (= :version)) ; highlight_code, terminal, random
     (testo :with-test)
     (alcotest :with-test)
@@ -110,6 +122,7 @@
 ")
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     (tiny_libs (= :version))
     (tiny_languages (= :version))
     (testo :with-test)
@@ -130,6 +143,7 @@
     ; and Out_channel (4.14), String.starts_with, List.concat_map and
     ; their kin (4.13), in more than 300 files
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     ; claude: capabilities, for Playground_platform's store/fetch/export
     ; (docs/claude_notes/plans/plan_caps.md); links under js_of_ocaml too
     (caps (>= "0.1.0"))
@@ -153,6 +167,7 @@
     ; ctypes/ctypes-foreign, not tsdl itself): verified 2026-09-16 that
     ; OCaml 5.2.0 through 5.5.1 all build and pass the tests fine now.
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     logs
     (cairo2 (>= "0.6.4"))
     tsdl
@@ -179,6 +194,7 @@
   ; notes_2d.md
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     logs
     tsdl
     (caps (>= "0.1.0")) ; native_common's Commands: the Cap.network a Cmd.Http_get carries
@@ -197,6 +213,7 @@
 ")
   (depends
      (ocaml (>= "4.14.0"))
+     (dune (>= "3.17"))
      vdom
      ; claude: its own use (Typed_array, a bitmap's bytes put on a
      ; canvas), which vdom does not bring: without it the package built
@@ -220,6 +237,7 @@
   without a GPU.
 ")
   (depends
+    (dune (>= "3.17"))
     (elm_playground (= :version))
   )
 )
@@ -239,6 +257,7 @@
 ")
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     (tiny_libs (= :version)) ; ai, audio, graphics_2d_geometry
     (elm_playground (= :version))
     (elm_playground_3d (= :version)) ; the 3D kits: racing/3d, brawler/3d
@@ -261,6 +280,7 @@
   ; opens the window and shows the pixels. See notes_3d.md.
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     tsdl
     (elm_playground_3d (= :version))
     (elm_playground_software (= :version)) ; Shape_render_software, for the HUD pass; the SDL loop
@@ -278,6 +298,7 @@
 ")
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     (elm_playground_3d (= :version))
     (elm_playground_web (= :version))
   )
@@ -292,6 +313,7 @@
   ; claude: see plan_opengl.md and notes_opengl.md
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     tsdl
     tgls
     (elm_playground_3d (= :version))
@@ -308,6 +330,7 @@
   ; claude: see plan_webgl.md
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     ; claude: 6.0 for Js_of_ocaml.Console (Firebug is deprecated since)
     ; and for the types the backend assumes: a canvas' naturalWidth an
     ; int rather than an optdef, and Js.number_t/WebGL.clampf an
@@ -329,6 +352,7 @@
   ; claude: see launcher/native/dune and plan_launcher.md
   (depends
     (ocaml (>= "4.14.0"))
+    (dune (>= "3.17"))
     (caps (>= "0.1.0")) ; Cap.main, the programs' capabilities
     (elm_playground_native (= :version))
     (elm_playground_3d_opengl (= :version))
