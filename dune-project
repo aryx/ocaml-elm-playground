@@ -181,6 +181,7 @@
     (ocaml (>= "4.14.0"))
     logs
     tsdl
+    (caps (>= "0.1.0")) ; native_common's Commands: the Cap.network a Cmd.Http_get carries
     (elm_playground (= :version))
     (testo :with-test)
     (alcotest :with-test)
@@ -197,6 +198,11 @@
   (depends
      (ocaml (>= "4.14.0"))
      vdom
+     ; claude: its own use (Typed_array, a bitmap's bytes put on a
+     ; canvas), which vdom does not bring: without it the package built
+     ; only where something else had installed js_of_ocaml (opam's CI
+     ; found it, 0.3.0)
+     (js_of_ocaml (>= "6.0"))
      (elm_playground (= :version))
   )
 )
@@ -323,6 +329,7 @@
   ; claude: see launcher/native/dune and plan_launcher.md
   (depends
     (ocaml (>= "4.14.0"))
+    (caps (>= "0.1.0")) ; Cap.main, the programs' capabilities
     (elm_playground_native (= :version))
     (elm_playground_3d_opengl (= :version))
     (elm_playground_gamekits (= :version)) ; the games' kits
