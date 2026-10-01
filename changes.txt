@@ -103,7 +103,7 @@
   window, for an application rather than a game (a browser's page laid
   out again at its new width, no scaling, no black bars); the native
   Cairo and software platforms
-- the native platforms' keys are all Ctrl + a key (after 0.3.1), a
+- the native platforms' keys are all Ctrl + a key (0.3.2), a
   plain key always the program's: Ctrl+Q quits (it was Q, so that no
   program ever saw a "q": a text field's, TinyRogue's quaff, TinyFez's
   turn), and with -debug-keys Ctrl + a key is a debug key (a plain key
@@ -541,6 +541,14 @@
   need conf-openssl and skip their socket tests where a socket may not
   listen (opam's sandbox on macOS), tinybox's generator no longer fails
   on a file gone while it walks the build tree (ar's temporary files)
+- 0.3.2, what opam's CI found in 0.3.1: the socket tests (Relay,
+  Universe_server, Irc_server, Mail_server) wait for what they expect
+  instead of 50 ms, too short on a busy machine; the tests that time
+  something are skipped under opam (CI set in tiny_libs' build-env);
+  Polyphony's "their sum" checked to a millionth (1.5e-7 off on s390x,
+  not explained); TCP_NODELAY on the relay's sockets; tinybox's tests'
+  failure on Ubuntu 22.04 said to be known (its SDL is older than
+  tsdl 1.3.0's bindings)
 
 ** docs
 - README-3d.md, and many tutorials in docs/claude_notes/: notes_2d.md,
