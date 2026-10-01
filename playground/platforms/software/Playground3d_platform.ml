@@ -213,8 +213,8 @@ let help_lines () =
     ("x", "pixel magnifier, following the mouse: " ^ on_off !magnifier);
     ("y", "renderer: " ^ renderer_name ());
     ("v", "the rasterizer and the ray tracer side by side: " ^ on_off !split);
-    ("Ctrl", "+ a key: that key's debug action only, not the game's");
-    ("Q", "quit");
+    ("Ctrl", "+ each key above; a plain key is the game's");
+    ("Ctrl+Q", "quit");
   ]
 
 (*****************************************************************************)

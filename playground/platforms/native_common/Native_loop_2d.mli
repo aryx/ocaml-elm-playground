@@ -30,19 +30,19 @@ val parse_cli_and_setup_logging : unit -> unit
 val app_args : unit -> string list
 
 (* -debug-keys was given: [run] calls its [on_key_press] for the
- * backend's debug keys. Off by default, so that all keys go to the app
- * only (a game may use "f" or "h" itself); -keys still presses its keys
- * either way. With it, a key is both the app's and the debug key's,
- * and Ctrl + the key is the debug key alone (Ctrl-h: the help, even in
- * a game using "h"). *)
+ * backend's debug keys. Off by default; -keys still presses its keys
+ * either way. With it, Ctrl + a key is the debug key, and not the
+ * app's (Ctrl-h: the help); a plain key is the app's alone, always (a
+ * game may use "f" or "h" itself, a field takes any letter). False
+ * once [run] was told [~platform_keys:false]. *)
 val debug_keys_enabled : unit -> bool
 
 (* The local clocks' minutes ahead of UTC at [t], seconds since the
  * epoch (Playground_platform.utc_offset); 0 under -fixed-time. *)
 val utc_offset : float -> int
 
-(* Tsdl's key names to Playground's ("Left" -> "ArrowLeft", ...);
- * "Q" quits immediately. *)
+(* Tsdl's key names to Playground's ("Left" -> "ArrowLeft", ...), the
+ * others lowercased ("Q" -> "q": quitting is Ctrl+Q, [run]'s). *)
 val scancode_to_keystring : string -> string
 
 (* The window surface's pixels, (sy, sx)-shaped, one 0xAARRGGBB int32
@@ -169,7 +169,11 @@ val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> uni
  * again at its new size. The program is told the size before its first
  * frame and after each change (Sub.on_resize), and the mouse is not
  * scaled back; drawing at that size is the platform's. *)
+(* [platform_keys]: Ctrl+Q quits, and with -debug-keys Ctrl + a key is
+ * a debug key. False, every key is the app's, and -debug-keys and
+ * -keys do nothing (Playground_platform.run_app's ?platform_keys). *)
 val run :
+  platform_keys:bool ->
   follow_window:bool ->
   on_resize:(int -> int -> unit) option ->
   threads:bool ->

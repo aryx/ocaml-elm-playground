@@ -45,7 +45,8 @@ let scancode_to_keystring = function
  | "Up" -> "ArrowUp"
  | "Down" -> "ArrowDown"
 
- | "Q" -> exit 0
+ (* claude: "Q" used to exit here, so that no program ever saw a "q"
+  * (a text field's, a game's key): quitting is Ctrl+Q now, in [run] *)
  | s -> String.lowercase_ascii s
 
 (* claude: a mouse button press/release as a playground event: the right
@@ -370,7 +371,7 @@ let toggle_fullscreen (sdl_window : Sdl.window) : unit =
   let full = Sdl.Window.test (Sdl.get_window_flags sdl_window) Sdl.Window.fullscreen_desktop in
   ignore (Sdl.set_window_fullscreen sdl_window (if full then Sdl.Window.windowed else Sdl.Window.fullscreen_desktop))
 
-let run ~(follow_window : bool) ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
+let run ~(platform_keys : bool) ~(follow_window : bool) ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
@@ -387,6 +388,9 @@ let run ~(follow_window : bool) ~(on_resize : (int -> int -> unit) option) ~thre
    * each frame instead, kept for -dump-audio *)
   let audio_device = if !dump_frame_number <> None then None else open_audio () in
   let dumped_audio = ref [] in
+  (* claude: a program that wants every key (run_app ~platform_keys:false):
+   * no debug keys either, whatever the command line says *)
+  if not platform_keys then (debug_keys := false; startup_keys := "");
   (* claude: -keys, as if pressed before the first frame *)
   String.iter (fun c -> on_key_press (String.make 1 c)) !startup_keys;
   let frame_number = ref 0 in
@@ -444,7 +448,7 @@ let run ~(follow_window : bool) ~(on_resize : (int -> int -> unit) option) ~thre
    * when the screen is the window *)
   let screen_scale () = if follow_window then 1. else scale ~sx ~sy !window in
 
-  (* typing "Q" will cause an 'exit 0' that will exit the loop *)
+  (* Ctrl+Q will cause an 'exit 0' that will exit the loop *)
   while true do
     let frame_start = Unix.gettimeofday () in
 
@@ -539,20 +543,20 @@ let run ~(follow_window : bool) ~(on_resize : (int -> int -> unit) option) ~thre
            * the one passed on (F9's "f9", which Playground's
            * canonical_key makes "F9" again) *)
           if first then Logs.debug (fun m -> m "key down: SDL %S, passed on as %S" key str);
-          (* claude: Ctrl + a key is the debug key alone, not given to
-           * the app: the way to reach a debug key the game uses itself
-           * (AudioPiano's "h") *)
+          (* claude: the platform's keys are Ctrl + a key, so that a
+           * plain key is always the app's (a "q" typed in a field, a
+           * game's "h"): Ctrl+Q quits; with -debug-keys, Ctrl + a key
+           * is that debug key, not given to the app. Without
+           * [platform_keys], Ctrl + a key is the app's too *)
           let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
           (* claude: Alt+Enter, full screen or not, the platform's (a
            * resizable window's), not the app's *)
           let alt = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.alt <> 0 in
           if on_resize <> None && alt && Sdl.Event.(get sdl_event keyboard_keycode) = Sdl.K.return then (
             if first then toggle_fullscreen sdl_window)
+          else if platform_keys && ctrl && Sdl.Event.(get sdl_event keyboard_keycode) = Sdl.K.q then exit 0
           else if !debug_keys && ctrl then (if first then on_key_press str)
-          else begin
-            if !debug_keys && first then on_key_press str;
-            apply_playground_event (E.EKeyChanged (true, str))
-          end
+          else apply_playground_event (E.EKeyChanged (true, str))
 
         | x when x = Sdl.Event.key_up ->
           let key = Sdl.(get_key_name Event.(get sdl_event keyboard_keycode)) in

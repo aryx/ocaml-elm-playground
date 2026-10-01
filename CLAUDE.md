@@ -42,7 +42,10 @@ renderer.
 
 The native software backends' debug keys (rendering toggles, "h" for
 help) only work when run with `-debug-keys` (e.g.
-`dune exec examples/Cubes3d.exe -- -debug-keys`); other flags:
+`dune exec examples/Cubes3d.exe -- -debug-keys`), and with Ctrl held:
+the platform's keys are all Ctrl + a key (Ctrl+Q quits), a plain key
+is always the program's; `run_app ~platform_keys:false` gives the
+program every key. Other flags:
 `-uncapped`, `-fixed-time t`, `-keys k`, `-dump-frame n file`,
 `-script "right:1-60,space:30"` (game keys held over frames). The
 native Cairo and OpenGL windows can change size (dragged, `-size WxH`,

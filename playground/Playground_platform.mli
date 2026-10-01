@@ -8,7 +8,7 @@
  * Playground.flags *)
 val run_app:
   ?rendering:Playground.rendering -> ?flags:Playground.flags -> ?network:< Cap.network ; .. > ->
-  ?screen:int * int -> ?screen_follows_window:bool -> ('a, 'b) Playground.app -> unit
+  ?screen:int * int -> ?screen_follows_window:bool -> ?platform_keys:bool -> ('a, 'b) Playground.app -> unit
 (* claude: [screen] (default: Playground.default_width by
  * default_height, 1000 by 1000), the program's screen, for a program
  * made for another shape (tinybox's menu, 16:9): the window starts at
@@ -26,6 +26,15 @@ val run_app:
  * window starts at. The native platforms (Cairo's and the software
  * one, whose window otherwise never changes size); the web's ignores
  * it. *)
+(* claude: [platform_keys] (default: true): the keys the native
+ * platforms keep for themselves, all with Ctrl so that a plain key is
+ * always the program's (a "q" typed in a field) -- Ctrl+Q quits, and
+ * with -debug-keys Ctrl + a key is one of the software platform's debug
+ * keys. False, for an application that wants every key (its own
+ * Ctrl+Q): the platform keeps none, and -debug-keys and -keys do
+ * nothing. Alt+Enter (full screen) and the window's close box are the
+ * window's, either way. The web's ignores it: the page has no such
+ * keys. *)
 (* claude: [network], the program's capability to reach the network
  * (plan_caps.md), for what the platform does on its behalf: download
  * an image given by URL (Download.grant). A program granting it says

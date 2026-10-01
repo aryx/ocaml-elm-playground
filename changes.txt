@@ -103,6 +103,13 @@
   window, for an application rather than a game (a browser's page laid
   out again at its new width, no scaling, no black bars); the native
   Cairo and software platforms
+- the native platforms' keys are all Ctrl + a key (after 0.3.1), a
+  plain key always the program's: Ctrl+Q quits (it was Q, so that no
+  program ever saw a "q": a text field's, TinyRogue's quaff, TinyFez's
+  turn), and with -debug-keys Ctrl + a key is a debug key (a plain key
+  was both the debug key and the program's); 2D and 3D.
+  run_app ~platform_keys:false: the platform keeps none, for an
+  application that wants every key
 
 ** playground3d (new)
 - new elm_playground_3d library (Playground3d.mli), same Model-View-Update

@@ -99,9 +99,9 @@ val mouse_down : bool -> Playground.mouse -> Playground.mouse
 val update_keyboard : bool -> string -> Playground.keyboard -> Playground.keyboard
 
 (* Tsdl's key names for the arrow keys ("Left", "Right", ...) don't match
- * Playground.keyboard's ("ArrowLeft", "ArrowRight", ...); "Q" quits
- * immediately (matching playground/platforms/native's own convention); everything
- * else is passed through lowercased. *)
+ * Playground.keyboard's ("ArrowLeft", "ArrowRight", ...); everything
+ * else is passed through lowercased ("Q" -> "q": quitting is Ctrl+Q,
+ * [run]'s, as in Native_loop_2d). *)
 val scancode_to_keystring : string -> string
 
 (*****************************************************************************)

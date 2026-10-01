@@ -204,7 +204,8 @@ let scancode_to_keystring = function
   | "Right" -> "ArrowRight"
   | "Up" -> "ArrowUp"
   | "Down" -> "ArrowDown"
-  | "Q" -> exit 0
+  (* claude: "Q" used to exit here; quitting is Ctrl+Q now, in [run]
+   * (as Native_loop_2d) *)
   | s -> String.lowercase_ascii s
 
 let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : string)
@@ -345,17 +346,17 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
              * state below, which a game's update3d re-reads every Tick
              * regardless of any of this.) *)
             let first = Sdl.Event.(get sdl_event keyboard_repeat) = 0 in
-            (* claude: Ctrl + a key is the debug key alone, not given to
-             * the app: the way to reach a debug key the game uses
-             * itself *)
+            (* claude: the platform's keys are Ctrl + a key, a plain
+             * key always the game's: Ctrl+Q quits; with -debug-keys,
+             * Ctrl + a key is that debug key, not given to the game *)
             let ctrl = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.ctrl <> 0 in
             (* claude: Alt+Enter, the platform's (a resizable window's) *)
             let alt = Sdl.Event.(get sdl_event keyboard_keymod) land Sdl.Kmod.alt <> 0 in
             if on_resize <> None && alt && Sdl.Event.(get sdl_event keyboard_keycode) = Sdl.K.return then (
               if first then Native_loop_2d.toggle_fullscreen sdl_window)
+            else if ctrl && Sdl.Event.(get sdl_event keyboard_keycode) = Sdl.K.q then exit 0
             else if !debug_keys && ctrl then (if first then on_key_press str)
             else begin
-              if !debug_keys && first then on_key_press str;
               (* claude: capture_mouse: Escape gives the mouse back *)
               if capture_mouse && str = "escape" then set_captured false;
               computer := { !computer with keyboard = update_keyboard true str (!computer).keyboard }
