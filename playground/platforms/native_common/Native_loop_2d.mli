@@ -161,8 +161,16 @@ val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> uni
  * new [window_pixels] and draw the [sx] by [sy] picture scaled by
  * [scale], centred; mouse positions are mapped back through that scale.
  * Alt+Enter is then the platform's (full screen or not), not the app's.
- * None: the window stays [sx] by [sy]. *)
+ * None: the window stays [sx] by [sy].
+ *
+ * claude: [follow_window] (with [on_resize]): the program's screen is
+ * the window itself rather than a picture of [sx] by [sy] scaled into
+ * it -- an application's window, a browser's, whose content is laid out
+ * again at its new size. The program is told the size before its first
+ * frame and after each change (Sub.on_resize), and the mouse is not
+ * scaled back; drawing at that size is the platform's. *)
 val run :
+  follow_window:bool ->
   on_resize:(int -> int -> unit) option ->
   threads:bool ->
   sdl_window:Tsdl.Sdl.window ->

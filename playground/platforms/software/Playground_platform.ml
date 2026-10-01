@@ -169,7 +169,7 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
       Logs.warn (fun m -> m "can't get %s: %s" source (Printexc.to_string e));
       k None
 
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen:_ (app : _ Playground.app) =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen:_ ?screen_follows_window:_ (app : _ Playground.app) =
   Option.iter Download.grant network;
   Audio.set_fetcher fetch_file;
   (* claude: Multiplayer's net=host and net=join (UDP), net=relay
@@ -217,7 +217,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
   let threads = List.assoc_opt "threads" flags = Some "on" in
   (* claude: no ~on_resize: this platform's window stays sx by sy (the
    * golden frames' size) *)
-  Native_loop_2d.run ~on_resize:None ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
+  Native_loop_2d.run ~follow_window:false ~on_resize:None ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
     ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record (Signal.mono s); (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
     ~audio_latency:Audio.set_latency

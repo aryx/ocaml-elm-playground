@@ -370,7 +370,7 @@ let toggle_fullscreen (sdl_window : Sdl.window) : unit =
   let full = Sdl.Window.test (Sdl.get_window_flags sdl_window) Sdl.Window.fullscreen_desktop in
   ignore (Sdl.set_window_fullscreen sdl_window (if full then Sdl.Window.windowed else Sdl.Window.fullscreen_desktop))
 
-let run ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
+let run ~(follow_window : bool) ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
@@ -423,6 +423,9 @@ let run ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy 
    * monitor: the same points, half the pixels) *)
   let surface_size () = match Sdl.get_window_surface sdl_window with Ok s -> Sdl.get_surface_size s | Error _ -> (0, 0) in
   let pixels = ref (surface_size ()) in
+  (* claude: [follow_window]: the size the program has still to be told
+   * (Sub.on_resize), the first one included *)
+  let to_announce = ref None in
   let check_size () =
     match on_resize with
     | None -> ()
@@ -432,9 +435,14 @@ let run ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy 
         if size <> !window || px <> !pixels then (
           window := size;
           pixels := px;
-          resized (fst size) (snd size))
+          resized (fst size) (snd size);
+          if follow_window then to_announce := Some size)
   in
   check_size ();
+  if follow_window then to_announce := Some !window;
+  (* claude: the picture's scale in the window, undone for the mouse: 1
+   * when the screen is the window *)
+  let screen_scale () = if follow_window then 1. else scale ~sx ~sy !window in
 
   (* typing "Q" will cause an 'exit 0' that will exit the loop *)
   while true do
@@ -447,6 +455,14 @@ let run ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy 
       | None -> ()
       | Some msg -> apply_msg msg
     in
+
+    (* claude: [follow_window]: the window's size, the program's screen,
+     * said before the frame drawn at it *)
+    (match !to_announce with
+     | Some (w, h) ->
+         to_announce := None;
+         apply_playground_event (E.EResized (w, h))
+     | None -> ());
 
     (* claude: drain the *whole* pending SDL event queue every frame,
      * instead of at most one event, and always additionally deliver a
@@ -472,7 +488,7 @@ let run ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy 
            * to Elm's (origin at the center, y up), the window's scale
            * undone (1 for a window of sx by sy) *)
           let w, h = !window in
-          let k = scale ~sx ~sy !window in
+          let k = screen_scale () in
           let x = (float x -. (float w /. 2.)) /. k in
           let y = -.(float y -. (float h /. 2.)) /. k in
           apply_playground_event (E.EMouseMove (int_of_float x, int_of_float y));

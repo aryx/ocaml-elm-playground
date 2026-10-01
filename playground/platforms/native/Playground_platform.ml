@@ -76,7 +76,7 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
       Logs.warn (fun m -> m "can't get %s: %s" source (Printexc.to_string e));
       k None
 
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen app =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen ?(screen_follows_window = false) app =
   (* claude: tinybox taking the app for a preview (Playground.capture) *)
   match !Playground.capture with
   | Some give -> give (Playground.Any_app app)
@@ -90,11 +90,16 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
   Transport.set_tls (fun caps ~host ~port -> Tls_client.connect_lines caps ~host ~port);
   Native_loop_2d.parse_cli_and_setup_logging ();
   let sx, sy = match screen with Some wh -> wh | None -> (int_of_float Playground.default_width, int_of_float Playground.default_height) in
+  (* claude: [screen_follows_window]: the program's screen is the window
+   * (in points), whatever its size: the picture's size is then the
+   * window's last one, kept here for [draw] *)
+  let followed = ref (sx, sy) in
 
   (* claude: a window that can change size (-size, -fullscreen,
    * Alt+Enter, dragged), the program's sx by sy picture scaled to fit it,
    * centred, black bars round it (Native_loop_2d.scale); the program's
-   * screen stays sx by sy *)
+   * screen stays sx by sy -- or, with [screen_follows_window], is the
+   * window, drawn 1 to 1 *)
   let (sdl_window, pixels0) =
     Native_loop_2d.create_window ~resizable:true ~title:"Playground using SDL+Cairo" ~sx ~sy () in
 
@@ -132,6 +137,9 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
 
   let draw ~fps shapes =
     let (_, sdl_surface, cr, (w, h)) = !current in
+    (* claude: the window's own size as the picture's: the scale is then
+     * only the display's density (2 on a Retina), and no bar is left *)
+    let sx, sy = if screen_follows_window then !followed else (sx, sy) in
     let k = Native_loop_2d.scale ~sx ~sy (w, h) in
     ratio := k;
     Cairo.save cr;
@@ -171,8 +179,12 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
       "-debug-keys: no debug keys in the Cairo backend; they're in the software one, e.g. examples/software/AudioPiano.exe";
   (* claude: threads=on, the commands' blocking calls on threads *)
   let threads = List.assoc_opt "threads" flags = Some "on" in
-  Native_loop_2d.run ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
-    ~on_resize:(Some (fun _w _h -> current := make_surface (Native_loop_2d.window_pixels sdl_window)))
+  Native_loop_2d.run ~follow_window:screen_follows_window ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
+    ~on_resize:
+      (Some
+         (fun w h ->
+           followed := (w, h);
+           current := make_surface (Native_loop_2d.window_pixels sdl_window)))
     ~dump_frame:(fun file -> let (pixels, _, _, _) = !current in Native_loop_2d.dump_pixels pixels file)
     ~pull_audio:(fun n -> let s = Audio.pull n in (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
