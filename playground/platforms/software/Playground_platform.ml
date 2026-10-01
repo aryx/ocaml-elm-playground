@@ -169,7 +169,7 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
       Logs.warn (fun m -> m "can't get %s: %s" source (Printexc.to_string e));
       k None
 
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen:_ ?screen_follows_window:_ (app : _ Playground.app) =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen ?(screen_follows_window = false) (app : _ Playground.app) =
   Option.iter Download.grant network;
   Audio.set_fetcher fetch_file;
   (* claude: Multiplayer's net=host and net=join (UDP), net=relay
@@ -181,18 +181,34 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
   options :=
     { !options with antialiasing = rendering.antialiasing; bilinear = rendering.smooth_images };
   Native_loop_2d.parse_cli_and_setup_logging ();
-  let sx = int_of_float Playground.default_width in
-  let sy = int_of_float Playground.default_height in
+  (* claude: [screen_follows_window] (see Playground_platform.mli): the
+   * program's screen is the window, which can then change size, starting
+   * at [screen]'s; else the window stays the default screen's size, the
+   * golden frames', and [screen] is ignored *)
+  let sx, sy =
+    match screen with
+    | Some size when screen_follows_window -> size
+    | _ -> (int_of_float Playground.default_width, int_of_float Playground.default_height)
+  in
 
-  let (sdl_window, pixels) = Native_loop_2d.create_window ~title ~sx ~sy () in
-  let fb = Framebuffer.of_pixels pixels in
+  let (sdl_window, pixels0) = Native_loop_2d.create_window ~resizable:screen_follows_window ~title ~sx ~sy () in
+  (* claude: the window's pixels and the framebuffer over them, made
+   * again when the window changes size (SDL gives it a new surface), and
+   * the window's size in points *)
+  let current = ref (pixels0, Framebuffer.of_pixels pixels0) in
+  let window = ref (sx, sy) in
 
   (* show something right away while images download *)
-  overlay fb [ Playground.words Playground.black "Loading..." ];
+  overlay (snd !current) [ Playground.words Playground.black "Loading..." ];
   Native_loop_2d.present sdl_window;
   ignore (Image_decode.load_queued () : string list);
 
   let draw ~fps shapes =
+    let fb = snd !current in
+    (* claude: the window's pixels per point: 1, or 2 on a display of
+     * high density (a Retina's), which only a window that can change
+     * size asks for (Native_loop_2d.create_window) *)
+    let density = float fb.width /. float (max 1 (fst !window)) in
     (* at the resolution of "r", then blown up (Pixelate); what follows,
      * the debug views, at the window's. Big pixels without antialiasing:
      * the retro look, and without the seams where two shapes share an
@@ -201,23 +217,34 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
     let options = if !Pixelate.factor > 1 then { !options with antialiasing = false } else !options in
     Pixelate.draw fb (fun fb ~scale ->
         Framebuffer.clear fb ~rgb:0xFFFFFF;
-        Shape_render_software.render ~options ~scale fb shapes);
+        Shape_render_software.render ~options ~scale:(scale *. density) fb shapes);
     overlay fb [ fps_counter fb ~fps ];
     overlay fb (Audio_debug.shapes !audio_view (Playground.to_screen (float fb.width) (float fb.height)));
     if !help then Help_overlay.draw fb (help_lines ());
     if !magnifier then begin
       (* SDL keeps track of the mouse position, in window pixels *)
       let (_buttons, (mx, my)) = Tsdl.Sdl.get_mouse_state () in
-      Magnifier.draw fb ~cx:mx ~cy:my
+      Magnifier.draw fb ~cx:(int_of_float (float mx *. density)) ~cy:(int_of_float (float my *. density))
     end;
     (* the keys and their state *)
     Tsdl.Sdl.set_window_title sdl_window (window_title ~fps)
   in
   (* claude: threads=on, the commands' blocking calls on threads *)
   let threads = List.assoc_opt "threads" flags = Some "on" in
-  (* claude: no ~on_resize: this platform's window stays sx by sy (the
-   * golden frames' size) *)
-  Native_loop_2d.run ~follow_window:false ~on_resize:None ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press ~dump_frame:(Native_loop_2d.dump_pixels pixels)
+  (* claude: no ~on_resize for a game: this platform's window stays sx by
+   * sy (the golden frames' size), its picture never scaled. With
+   * [screen_follows_window], the new surface's pixels at each change *)
+  let on_resize =
+    if screen_follows_window then
+      Some
+        (fun w h ->
+          window := (w, h);
+          let pixels = Native_loop_2d.window_pixels sdl_window in
+          current := (pixels, Framebuffer.of_pixels pixels))
+    else None
+  in
+  Native_loop_2d.run ~follow_window:screen_follows_window ~on_resize ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press
+    ~dump_frame:(fun file -> Native_loop_2d.dump_pixels (fst !current) file)
     ~pull_audio:(fun n -> let s = Audio.pull n in Audio_debug.record (Signal.mono s); (s.left, s.right))
     ~dump_audio:(fun file (left, right) -> Wav.write_stereo file { left; right })
     ~audio_latency:Audio.set_latency

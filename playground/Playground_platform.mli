@@ -23,8 +23,9 @@ val run_app:
  * bars. The program is told its size before the first frame and each
  * time the window changes (Sub.on_resize), and lays itself out again
  * (a browser's page at its new width). [screen] is then the size the
- * window starts at. The native Cairo platform, for now; the others
- * ignore it. *)
+ * window starts at. The native platforms (Cairo's and the software
+ * one, whose window otherwise never changes size); the web's ignores
+ * it. *)
 (* claude: [network], the program's capability to reach the network
  * (plan_caps.md), for what the platform does on its behalf: download
  * an image given by URL (Download.grant). A program granting it says
