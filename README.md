@@ -72,12 +72,15 @@ lines, and nobody understands the whole of it. Here each subject is
 small enough for one person to read whole. That an AI wrote most of it
 is the paradox, the same as in [IX](https://aryx.github.io/IX/#goal):
 AI these days is mostly used to write more code, faster than anyone
-can read it, and here it is used to write **less**. Ultimately these
+can read it, and here it rewrites giant programs in far **less** code,
+so that humans can understand them again. Ultimately these
 libraries may become
 [literate programs](https://principia-softwarica.org/literate-programming.html),
 as in [Principia Softwarica](https://principia-softwarica.org/): books
 that tell the code as a story, in the order a reader needs, to teach
 even better.
+
+**AI makes the programs smaller. Humans understand more.**
 
 The library (`libs/` and `playground/`) is **about 73,000 lines of
 OCaml**, `.mli` files and their explanations included; with the kits
