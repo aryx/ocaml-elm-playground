@@ -135,7 +135,8 @@ val distance : track -> number -> number -> number
 (* [distance_from track i n x y]: the same, to the [n] segments from
  * waypoint [i] on (counted from the start, laps included, as [point]):
  * a car's walls measured only around where it is, for a track that
- * crosses itself (Super Sprint's bridges, TinySuperSprint.ml): at the
+ * crosses itself (Super Sprint's bridges, TinySuperSprint.ml, and
+ * TinySupercars.ml's, which climbs): at the
  * crossing, the other road is not its road, it goes straight on *)
 val distance_from : track -> int -> int -> number -> number -> number
 

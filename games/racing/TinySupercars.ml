@@ -39,8 +39,27 @@
  * speed, gone on a wall; a car hit spins for most of a second, out of
  * control, and takes damage.
  *
+ * The bridge is Supercars II's (1991; from memory too): the track
+ * crosses itself, as Super Sprint's does (TinySuperSprint.ml, where
+ * the bridge is a flat deck drawn over the road), but here the road
+ * climbs. A car has a height, read off where it is on the bridge, and
+ * the view from above, which has no way to show a height, hints at it
+ * four times:
+ *
+ *      ___________               - what is higher is bigger, nearer
+ *   __/     |     \__              the eye: the car grows up the ramp,
+ *   __  pale|dark  __              the bridge is wider at the deck;
+ *     \_____|_____/              - the ramp facing the light is paler,
+ *       \#########\  shadow        the other one darker;
+ *                                - the shadow on the ground, longer
+ *                                  where the bridge is higher;
+ *                                - the car under the deck is hidden,
+ *                                  and darkened going in and out.
+ *
+ * Two cars, or a missile and a car, only meet at the same height.
+ *
  * What it uses: the racing kit's Topdown -- the car ([drive]), the track
- * (laps, places, the computer's driving), the walls ([distance],
+ * (laps, places, the computer's driving), the walls ([distance_from],
  * [bounce]), the bumps ([push]), the road's drawing ([ribbon]);
  * Camera2d, following with a look ahead; Scene2d for the title, the
  * race, the shop and the end; Sprite for the cars; Audio for the
@@ -48,9 +67,12 @@
  *
  * What it doesn't: Supercars' shopkeepers, who haggled over the price
  * (answered in words); its nine tracks a season and its three seasons;
- * the computer cars firing back; buying a new car.
+ * the computer cars firing back; buying a new car; Supercars II's
+ * jumps, tunnels and level crossings.
  *
- * Exercises: a second track for every other race; the computer cars
+ * Exercises: a jump (a ramp and no deck: the car's height from its
+ * speed, and its shadow left on the ground); the bridge on the minimap;
+ * a second track for every other race; the computer cars
  * buying missiles too, and firing them when you're just ahead; rear
  * missiles, fired backwards; a nitro, bought by the shot, a second of
  * a higher top speed.
@@ -64,17 +86,47 @@ open Playground
 let road_width = 170.
 
 (* the start halfway along the bottom straight, the grid behind it on
- * the straight too *)
+ * the straight too; the segment from waypoint 5 to 6 goes over the one
+ * from 15 to 16 *)
 let track : Topdown.track =
   { points =
-      [| (-150., -650.); (500., -650.); (950., -500.); (1050., -150.); (800., 50.); (300., 50.); (150., 250.);
-         (350., 500.); (900., 550.); (1000., 750.); (700., 900.); (-300., 900.); (-700., 750.); (-700., 400.);
-         (-400., 250.); (-400., -50.); (-900., -150.); (-1000., -450.);
-         (-600., -650.) |];
+      [| (-150., -650.); (500., -650.); (950., -500.); (1050., -150.); (800., 50.); (0., 50.); (-800., 50.);
+         (-1050., 250.); (-1050., 650.); (-800., 900.); (700., 900.); (1000., 750.); (900., 550.); (350., 500.);
+         (-100., 450.); (-400., 250.); (-400., -200.); (-800., -250.); (-1000., -350.); (-950., -560.);
+         (-650., -650.) |];
     reach = 130.;
     corner = 300. }
 
-let in_wall (x : number) (y : number) : bool = Topdown.distance track x y > (road_width /. 2.) -. 16.
+(* The bridge, seen from the side: the road climbs a ramp to a deck over
+ * the crossing, and comes down another. It runs from east to west, so
+ * where a car is on it is only how far its x is from the crossing's:
+ *
+ *                ______deck______             1
+ *          ramp /       ()       \ ramp          the height
+ *    ..._______/   the road under \_______...  0
+ *            foot  flat   0   flat  foot       from the crossing
+ *)
+let bridge = 5
+let crossing_x, crossing_y = (-400., 50.)
+let foot = 250.
+let flat = 120.
+
+(* on the bridge's segment: from passing waypoint 5 to passing 6, both
+ * further from the crossing than the ramps' feet *)
+let on_bridge (c : Topdown.t) : bool = (c.next - 1) mod Array.length track.points = bridge
+
+(* how high the car is: 0 on the ground, 1 on the deck *)
+let height (c : Topdown.t) : number =
+  if on_bridge c then Float.max 0. (Float.min 1. ((foot -. Float.abs (c.x -. crossing_x)) /. (foot -. flat))) else 0.
+
+let off_road (x : number) (y : number) : bool = Topdown.distance track x y > (road_width /. 2.) -. 16.
+
+(* a car's walls: those of the road around it only (the segment it's on,
+ * the one before, the one after), so that at the crossing the other
+ * road isn't a way out: on the bridge its sides are rails, under it
+ * the road goes on *)
+let in_wall (c : Topdown.t) (x : number) (y : number) : bool =
+  Topdown.distance_from track (c.next - 2) 3 x y > (road_width /. 2.) -. 16.
 
 (*****************************************************************************)
 (* The model *)
@@ -88,7 +140,14 @@ type car = {
   spin : int; (* > 0: hit by a missile, spinning, for that many frames *)
 }
 
-type missile = { x : number; y : number; vx : number; vy : number; life : int (* frames left *) }
+type missile = {
+  x : number;
+  y : number;
+  z : number; (* the height it was fired at, and flies at *)
+  vx : number;
+  vy : number;
+  life : int; (* frames left *)
+}
 
 (* what the player keeps from race to race *)
 type garage = { money : int; engine : int; tires : int; missiles : int; hurt : number (* the damage, carried *) }
@@ -153,12 +212,12 @@ let drive (k : keyboard) (r : race) (c : car) : car =
   if c.spin > 0 then
     let b = c.body in
     let slid = { b with heading = b.heading +. 15.; x = b.x +. (b.vx /. 60.); y = b.y +. (b.vy /. 60.); vx = b.vx *. 0.95; vy = b.vy *. 0.95; speed = 0. } in
-    { c with spin = c.spin - 1; body = Topdown.bounce in_wall b slid }
+    { c with spin = c.spin - 1; body = Topdown.bounce (in_wall b) b slid }
   else
     let gas, steer = if c.human then (axis k.kup k.kdown, axis k.kleft k.kright) else Topdown.computer track c.body in
     let p, top = params r c in
     let after = Topdown.drive p top gas steer c.body in
-    let body = Topdown.bounce in_wall c.body after |> Topdown.follow track in
+    let body = Topdown.bounce (in_wall c.body) c.body after |> Topdown.follow track in
     (* a knock on the wall: damage, by how fast *)
     if body.speed <> after.speed && Float.abs after.speed > 200. then begin
       if c.human then Audio.play knock;
@@ -166,13 +225,19 @@ let drive (k : keyboard) (r : race) (c : car) : car =
     end
     else { c with body }
 
+(* two things at the same place only meet at the same height: not the
+ * car on the deck and the one under it *)
+let level (z1 : number) (z2 : number) : bool = Float.abs (z1 -. z2) < 0.5
+
 let bump (cars : car list) : car list =
   let a = Array.of_list cars in
   for i = 0 to Array.length a - 1 do
     for j = i + 1 to Array.length a - 1 do
-      let bi, bj = Topdown.push 20. a.(i).body a.(j).body in
-      a.(i) <- { (a.(i)) with body = bi };
-      a.(j) <- { (a.(j)) with body = bj }
+      if level (height a.(i).body) (height a.(j).body) then begin
+        let bi, bj = Topdown.push 20. a.(i).body a.(j).body in
+        a.(i) <- { (a.(i)) with body = bi };
+        a.(j) <- { (a.(j)) with body = bj }
+      end
     done
   done;
   Array.to_list a
@@ -184,14 +249,18 @@ let fire (r : race) : race =
   else begin
     Audio.play launch;
     let a = c.heading *. Float.pi /. 180. in
-    let m = { x = c.x +. (40. *. cos a); y = c.y +. (40. *. sin a); vx = 1200. *. cos a; vy = 1200. *. sin a; life = 90 } in
+    let m =
+      { x = c.x +. (40. *. cos a); y = c.y +. (40. *. sin a); z = height c; vx = 1200. *. cos a; vy = 1200. *. sin a; life = 90 }
+    in
     { r with shots = m :: r.shots; garage = { r.garage with missiles = r.garage.missiles - 1 } }
   end
 
 (* the missiles fly; one hitting a car or a wall is gone, the car hit
  * spinning *)
 let fly (r : race) : race =
-  let hits (m : missile) (c : car) = (not c.human) && Float.hypot (c.body.x -. m.x) (c.body.y -. m.y) < 35. in
+  let hits (m : missile) (c : car) =
+    (not c.human) && level m.z (height c.body) && Float.hypot (c.body.x -. m.x) (c.body.y -. m.y) < 35.
+  in
   let moved = List.map (fun m -> { m with x = m.x +. (m.vx /. 60.); y = m.y +. (m.vy /. 60.); life = m.life - 1 }) r.shots in
   let cars =
     List.map
@@ -203,7 +272,7 @@ let fly (r : race) : race =
         else c)
       r.cars
   in
-  let shots = List.filter (fun m -> m.life > 0 && (not (in_wall m.x m.y)) && not (List.exists (hits m) r.cars)) moved in
+  let shots = List.filter (fun m -> m.life > 0 && (not (off_road m.x m.y)) && not (List.exists (hits m) r.cars)) moved in
   { r with cars; shots }
 
 let update_race (k : keyboard) (firing : bool) (r : race) : race =
@@ -283,7 +352,15 @@ let car_shape (color : color) : shape =
     [ ".LBBBBL."; "KBBBBBBK"; "KBBBBBBK"; ".BBBBBB."; ".BWWWWB."; ".BBBBBB."; ".BBBBBB."; ".BWWWWB.";
       "KBBBBBBK"; "KBBBBBBK"; ".BBBBBB." ]
 
-let view_car (c : car) : shape = car_shape c.color |> rotate (c.body.heading -. 90.) |> move c.body.x c.body.y
+(* what is higher is nearer the eye above, so bigger: by [lift] on the
+ * deck *)
+let lift = 1.25
+
+let view_car (c : car) : shape =
+  car_shape c.color
+  |> scale (1. +. ((lift -. 1.) *. height c.body))
+  |> rotate (c.body.heading -. 90.)
+  |> move c.body.x c.body.y
 
 let view_missile (m : missile) : shape =
   group [ rectangle (rgb 250 150 40) 24. 6.; rectangle (rgb 250 240 120) 8. 6. |> move_x (-14.) ]
@@ -299,6 +376,31 @@ let ground : shape list =
     group (List.init 8 (fun i -> rectangle (if i mod 2 = 0 then white else black) 12. (road_width /. 8.) |> move_y ((float_of_int i -. 3.5) *. road_width /. 8.)))
     |> move x y ]
 
+(* the bridge from above, [half] its half width on the ground: the two
+ * ramps and the deck between them, wider as they're higher, like the
+ * cars on them *)
+let span (half : number) (west : color) (deck : color) (east : color) : shape =
+  let quad color x1 h1 x2 h2 = polygon color [ (x1, h1); (x2, h2); (x2, -.h2); (x1, -.h1) ] in
+  let top = half *. lift in
+  group [ quad west (-.foot) half (-.flat) top; quad deck (-.flat) top flat top; quad east flat top foot half ]
+
+(* drawn over the cars under it and under the cars on it: its shadow
+ * first, thrown to the south-east, longer where the bridge is higher
+ * (and so over the car about to go under); then the road again with
+ * its kerbs, the ramp facing the light paler, the other darker *)
+let bridge_shape : shape =
+  let half = road_width /. 2. and red = rgb 200 40 40 and white = rgb 240 240 240 in
+  let shade = 50. in
+  group
+    [ polygon black
+        [ (-.foot, half); (-.foot, -.half); (shade -. flat, -.(half *. lift) -. shade);
+          (shade +. flat, -.(half *. lift) -. shade); (foot, -.half); (foot, half) ]
+      |> fade 0.4;
+      span (half +. 10.) red red red;
+      span (half +. 3.) white white white;
+      span (half -. 3.) (rgb 112 112 120) (rgb 92 92 100) (rgb 62 62 70) ]
+  |> move crossing_x crossing_y
+
 let text color size str = words color str |> scale size
 
 (* the whole track, [size] across, the cars as dots *)
@@ -312,7 +414,12 @@ let minimap (size : number) (r : race) : shape =
 
 let view_race (screen : screen) (r : race) : shape list =
   let you = player r in
-  let world = ground @ List.map view_missile r.shots @ List.map view_car (List.rev r.cars) in
+  let under, over = List.partition (fun (c : car) -> not (on_bridge c.body)) (List.rev r.cars) in
+  let low, high = List.partition (fun (m : missile) -> level m.z 0.) r.shots in
+  let world =
+    ground @ List.map view_missile low @ List.map view_car under @ [ bridge_shape ] @ List.map view_missile high
+    @ List.map view_car over
+  in
   let hud y str = text white 2.5 str |> move (screen.left +. 130.) (screen.top -. y) in
   [ Camera2d.view r.cam world;
     minimap 200. r |> move (screen.right -. 120.) (screen.top -. 120.);
@@ -351,7 +458,7 @@ let view (computer : computer) (s : model) : shape list =
   @
   match s.scene with
   | Title ->
-      [ Camera2d.view { Camera2d.origin with zoom = 0.3 } ground;
+      [ Camera2d.view { Camera2d.origin with zoom = 0.3 } (ground @ [ bridge_shape ]);
         rectangle (rgb 25 25 40) 760. 330.;
         text (rgb 230 40 40) 7. "TINY SUPERCARS" |> move_y 100.;
         text white 2.5 "arrows: drive   space: fire a missile" |> move_y 20.;
