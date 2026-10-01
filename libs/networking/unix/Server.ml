@@ -65,6 +65,13 @@ let accept_all (t : t) : unit =
     match Unix.accept t.listener with
     | fd, _ ->
         Unix.set_nonblock fd;
+        (* claude: no Nagle: a small write after another (the welcome
+           after the handshake's answer, a tick's packet after the one
+           before) otherwise waits for the first one's ACK, which the
+           other side delays: 40 to 100 ms a packet, a game's lag.
+           Seen on FreeBSD (opam's CI, 0.3.1): the welcome not there
+           after 50 ms; Linux acks at once on a new connection *)
+        Unix.setsockopt fd Unix.TCP_NODELAY true;
         t.clients <- t.clients @ [ { id = t.next_id; fd; inbox = ""; outbox = ""; upgraded = false; closing = false } ];
         t.next_id <- t.next_id + 1;
         go ()

@@ -13,6 +13,8 @@
 let connect (caps : < Cap.network ; .. >) ~(host : string) ~(port : int) : Transport.t =
   let fd = Tcp.connect caps ~host ~port () in
   Unix.set_nonblock fd;
+  (* claude: as in Server's accept_all: a tick's packet leaves now *)
+  Unix.setsockopt fd Unix.TCP_NODELAY true;
   let seed = ref (Lehmer.scramble (int_of_float (Unix.gettimeofday () *. 1000.))) in
   let bytes n =
     String.init n (fun _ ->
