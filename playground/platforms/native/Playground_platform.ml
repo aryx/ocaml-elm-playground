@@ -76,7 +76,8 @@ let fetch_file (source : string) (k : string option -> unit) : unit =
       Logs.warn (fun m -> m "can't get %s: %s" source (Printexc.to_string e));
       k None
 
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?screen ?(screen_follows_window = false) ?(platform_keys = true) app =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?(window = Playground.default_window) app =
+  let { Playground.screen_size = screen; follows_window = screen_follows_window; platform_keys; skip_same_view } = window in
   (* claude: tinybox taking the app for a preview (Playground.capture) *)
   match !Playground.capture with
   | Some give -> give (Playground.Any_app app)
@@ -179,7 +180,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
       "-debug-keys: no debug keys in the Cairo backend; they're in the software one, e.g. examples/software/AudioPiano.exe";
   (* claude: threads=on, the commands' blocking calls on threads *)
   let threads = List.assoc_opt "threads" flags = Some "on" in
-  Native_loop_2d.run ~platform_keys ~follow_window:screen_follows_window ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
+  Native_loop_2d.run ~platform_keys ~follow_window:screen_follows_window ~skip_same_view ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press:(fun _key -> ())
     ~on_resize:
       (Some
          (fun w h ->

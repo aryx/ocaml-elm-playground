@@ -20,7 +20,7 @@ type 'msg onesub =
   | SubMouseDouble of (unit -> 'msg)
   (* claude: the program's screen, its width and height, when the platform
    * gives it one other than the default (Playground_platform.run_app's
-   * ?screen) *)
+   * Playground.window's screen_size) *)
   | SubResize of (int -> int -> 'msg)
 
 

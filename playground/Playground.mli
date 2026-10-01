@@ -1060,6 +1060,72 @@ type rendering = { antialiasing : bool; smooth_images : bool }
 (** Both on *)
 val default_rendering : rendering
 
+(** claude: How the program's window behaves, given to
+    [Playground_platform.run_app ~window]; a game's by default
+    ([default_window]), and what an application changes of it:
+
+    {[
+      (* a game: nothing to say *)
+      Playground_platform.run_app app
+
+      (* an application (a browser): its screen is the window, it is
+         drawn only when it changes *)
+      Playground_platform.run_app
+        ~window:{ Playground.default_window with follows_window = true; skip_same_view = true } app
+    ]}
+
+    - [screen_size] (None: [default_width] by [default_height], 1000 by
+      1000; not [screen], which is [computer]'s field, and a program
+      that opens Playground writes [computer.screen]): the program's
+      screen, for a program made for another shape
+      (tinybox's menu, 16:9). The window starts at that shape and the
+      program is told its size at once ([Sub.on_resize], which [game]
+      follows: [computer.screen]). The window still scales the picture
+      to fit it, whatever its size. The native Cairo platform and the
+      web's (the browser letterboxing it), for now; the others keep
+      1000 by 1000.
+    - [follows_window] (false), for an application rather than a game:
+      the program's screen is the window itself, as large as the user
+      makes it, drawn 1 to 1 -- no scaling, no black bars. The program
+      is told its size before the first frame and each time the window
+      changes ([Sub.on_resize]), and lays itself out again (a browser's
+      page at its new width). [screen_size] is then the size the window
+      starts at. The native platforms (Cairo's and the software one,
+      whose window otherwise never changes size); the web's ignores it.
+    - [platform_keys] (true): the keys the native platforms keep for
+      themselves, all with Ctrl so that a plain key is always the
+      program's (a "q" typed in a field) -- Ctrl+Q quits, and with
+      -debug-keys Ctrl + a key is one of the software platform's debug
+      keys. False, for an application that wants every key (its own
+      Ctrl+Q): the platform keeps none, and -debug-keys and -keys do
+      nothing. Alt+Enter (full screen) and the window's close box are
+      the window's, either way. The web's ignores it: the page has no
+      such keys.
+    - [skip_same_view] (false), for an application rather than a game:
+      a frame whose view is the very list of the frame before
+      (physically, [==]) is not drawn again, unless something happened
+      to the window since (a key, the mouse, its size, its being
+      uncovered). A game's view is a new list at each frame and is
+      always drawn; an application at rest (a page being read) then
+      costs no drawing at all, where it cost a whole frame's, sixty
+      times a second -- if its view takes the care to give back the
+      same list when what it reads of its model is the same. The
+      program promises with it that its picture depends on nothing
+      else: no animated picture (a GIF's frames are the platform's to
+      change), no picture still to come. -uncapped and -debug-keys
+      (which measure, and draw their own overlays) draw every frame
+      anyway. The native platforms; the web's ignores it (vdom already
+      changes only what differs).
+
+    A record rather than as many arguments of [run_app]: they are set
+    together, once, by the few programs that are not games, and there
+    will be others. *)
+type window = { screen_size : (int * int) option; follows_window : bool; platform_keys : bool; skip_same_view : bool }
+
+(** A game's: 1000 by 1000 scaled to the window, Ctrl+Q quits, every
+    frame drawn *)
+val default_window : window
+
 (*****************************************************************************)
 (** {1 Playgrounds} *)
 (*****************************************************************************)

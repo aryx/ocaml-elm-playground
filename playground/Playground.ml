@@ -530,6 +530,11 @@ type rendering = { antialiasing : bool; smooth_images : bool }
 
 let default_rendering = { antialiasing = true; smooth_images = true }
 
+(* claude: see Playground.mli *)
+type window = { screen_size : (int * int) option; follows_window : bool; platform_keys : bool; skip_same_view : bool }
+
+let default_window = { screen_size = None; follows_window = false; platform_keys = true; skip_same_view = false }
+
 type ('model, 'msg) app =
   {
     init: (flags -> ('model * 'msg Cmd.t));
@@ -693,7 +698,7 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
             keyboard = keyboard_typed_reset computer.keyboard })
     | Resized (w, h) ->
         (* claude: the screen the platform gives the program, when not
-         * the default (Playground_platform.run_app's ?screen) *)
+         * the default (Playground.window's screen_size) *)
         Game (memory, { computer with screen = to_screen (float w) (float h) })
     (* we assume the x, y is in playground coordinate system (0,0) at the
      * center of the screen.

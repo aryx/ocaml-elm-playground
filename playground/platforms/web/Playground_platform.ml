@@ -1173,7 +1173,9 @@ let listen_to_fingers ~(svg : unit -> Element.t option) ~(process : E.event -> u
 (* when using the simple DOM *)
 (* claude: [network] unused: the browser downloads the images, by its
  * own rules (the page's site, or CORS) *)
-let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ ?screen ?screen_follows_window:_ ?platform_keys:_ app =
+let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network:_ ?window:(w = Playground.default_window) app =
+  (* claude: the web's has only the screen's shape to follow *)
+  let screen = w.Playground.screen_size in
   Audio.set_fetcher fetch_web;
   Transport.set_connect Web_connect.connect;
   Window.set_onload window (fun () ->

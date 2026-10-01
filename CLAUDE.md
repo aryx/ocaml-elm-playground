@@ -44,14 +44,21 @@ The native software backends' debug keys (rendering toggles, "h" for
 help) only work when run with `-debug-keys` (e.g.
 `dune exec examples/Cubes3d.exe -- -debug-keys`), and with Ctrl held:
 the platform's keys are all Ctrl + a key (Ctrl+Q quits), a plain key
-is always the program's; `run_app ~platform_keys:false` gives the
-program every key. Other flags:
+is always the program's. What a program that is not a game changes of
+its window is one record, `run_app ~window:{ Playground.default_window
+with ... }` (`Playground.window`: a new such option is a field of it,
+not an argument of `run_app`): `platform_keys = false` gives the
+program every key; `skip_same_view = true` (an application's,
+mini-chrome's) does not draw a frame whose view is the list (`==`) of
+the frame before, unless an event came (`-uncapped` and `-debug-keys`
+draw every frame anyway); `screen_size` and `follows_window` are below.
+Other flags:
 `-uncapped`, `-fixed-time t`, `-keys k`, `-dump-frame n file`,
 `-script "right:1-60,space:30"` (game keys held over frames). The
 native Cairo and OpenGL windows can change size (dragged, `-size WxH`,
 `-fullscreen`, Alt+Enter toggling full screen): the program's screen
-stays 1000 by 1000 -- or the shape a program asks for, `run_app
-~screen:(w, h)`, told to it by a first `Resized` (`Sub.on_resize`,
+stays 1000 by 1000 -- or the shape a program asks for, the window's
+`screen_size = Some (w, h)`, told to it by a first `Resized` (`Sub.on_resize`,
 which `game` follows), native Cairo only (tinybox's menu: 1778 by
 1000, 16:9) -- drawn scaled to fit, centred, black bars round it
 (`Native_loop_2d.scale`); the software platforms' windows stay 1000 by

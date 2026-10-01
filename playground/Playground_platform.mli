@@ -8,33 +8,15 @@
  * Playground.flags *)
 val run_app:
   ?rendering:Playground.rendering -> ?flags:Playground.flags -> ?network:< Cap.network ; .. > ->
-  ?screen:int * int -> ?screen_follows_window:bool -> ?platform_keys:bool -> ('a, 'b) Playground.app -> unit
-(* claude: [screen] (default: Playground.default_width by
- * default_height, 1000 by 1000), the program's screen, for a program
- * made for another shape (tinybox's menu, 16:9): the window starts at
- * that shape and the program is told its size at once (Sub.on_resize,
- * which Playground.game follows: computer.screen). The window still
- * scales the picture to fit it, whatever its size. The native Cairo
- * platform and the web's (the browser letterboxing it), for now; the
- * others keep 1000 by 1000. *)
-(* claude: [screen_follows_window] (default: false), for an application
- * rather than a game: the program's screen is the window itself, as
- * large as the user makes it, drawn 1 to 1 -- no scaling, no black
- * bars. The program is told its size before the first frame and each
- * time the window changes (Sub.on_resize), and lays itself out again
- * (a browser's page at its new width). [screen] is then the size the
- * window starts at. The native platforms (Cairo's and the software
- * one, whose window otherwise never changes size); the web's ignores
- * it. *)
-(* claude: [platform_keys] (default: true): the keys the native
- * platforms keep for themselves, all with Ctrl so that a plain key is
- * always the program's (a "q" typed in a field) -- Ctrl+Q quits, and
- * with -debug-keys Ctrl + a key is one of the software platform's debug
- * keys. False, for an application that wants every key (its own
- * Ctrl+Q): the platform keeps none, and -debug-keys and -keys do
- * nothing. Alt+Enter (full screen) and the window's close box are the
- * window's, either way. The web's ignores it: the page has no such
- * keys. *)
+  ?window:Playground.window -> ('a, 'b) Playground.app -> unit
+(* claude: [window] (default: Playground.default_window, a game's): how
+ * the window behaves -- the program's screen and whether it is the
+ * window itself, the keys the platform keeps, whether a frame that did
+ * not change is drawn again; see Playground.window, which an
+ * application changes:
+ *   run_app ~window:{ Playground.default_window with follows_window = true } app
+ * (They were arguments of their own until 0.3.3: ?screen,
+ * ?screen_follows_window, ?platform_keys.) *)
 (* claude: [network], the program's capability to reach the network
  * (plan_caps.md), for what the platform does on its behalf: download
  * an image given by URL (Download.grant). A program granting it says

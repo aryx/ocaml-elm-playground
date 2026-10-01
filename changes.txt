@@ -110,6 +110,18 @@
   was both the debug key and the program's); 2D and 3D.
   run_app ~platform_keys:false: the platform keeps none, for an
   application that wants every key
+- run_app ~window (Playground.window, default_window): what a program
+  that is not a game changes of its window, one record instead of an
+  argument each -- screen_size (was ~screen), follows_window (was
+  ~screen_follows_window) and platform_keys, which were run_app's ?screen,
+  ?screen_follows_window and ?platform_keys until 0.3.3 (a program
+  using them says ~window:{ Playground.default_window with ... }), and
+  a new one:
+- skip_same_view, for an application rather than a game: a frame whose
+  view is the very list of the frame before (==) is not drawn nor
+  presented again, unless an event came to the window since; the
+  native platforms (Native_loop_2d). mini-chrome's page at rest: 12 to
+  72 ms of CPU a frame to 0.3
 
 ** playground3d (new)
 - new elm_playground_3d library (Playground3d.mli), same Model-View-Update

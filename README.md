@@ -462,7 +462,7 @@ Natively, the platform's keys are all Ctrl and a key, so that a plain
 key is always the program's (a game's `h`, a `q` typed in a field):
 Ctrl+Q quits, and the debug keys below are Ctrl and their letter. An
 application that wants every key, Ctrl's included, says
-`run_app ~platform_keys:false`.
+`run_app ~window:{ Playground.default_window with platform_keys = false }`.
 
 A program run with `-debug-keys` (e.g. `dune exec examples/Cubes3d.exe
 -- -debug-keys`) turns a dozen keys, with Ctrl, into live toggles of how

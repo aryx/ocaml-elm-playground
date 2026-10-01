@@ -171,10 +171,16 @@ val queue_samples : Tsdl.Sdl.audio_device_id -> float array * float array -> uni
  * scaled back; drawing at that size is the platform's. *)
 (* [platform_keys]: Ctrl+Q quits, and with -debug-keys Ctrl + a key is
  * a debug key. False, every key is the app's, and -debug-keys and
- * -keys do nothing (Playground_platform.run_app's ?platform_keys). *)
+ * -keys do nothing (Playground.window's platform_keys). *)
+(* claude: [skip_same_view]: a frame whose view is physically
+ * the one drawn last is not drawn nor presented again, unless an SDL
+ * event came since or the window changed size
+ * (Playground.window's skip_same_view); -uncapped and
+ * -debug-keys draw every frame. *)
 val run :
   platform_keys:bool ->
   follow_window:bool ->
+  skip_same_view:bool ->
   on_resize:(int -> int -> unit) option ->
   threads:bool ->
   sdl_window:Tsdl.Sdl.window ->

@@ -532,7 +532,7 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
   (* claude: style=streets, the map's style (Code_map); a directory's
    * map is drawn by default in the new one, Map_v2 *)
   Code_map.choose_style (Option.value (List.assoc_opt "style" flags) ~default:"v2");
-  Playground_platform.run_app ~screen:(1778, 1000) ~flags
+  Playground_platform.run_app ~window:{ Playground.default_window with screen_size = Some (1778, 1000) } ~flags
     (Playground.game view update { code = None; before = Set_.empty; repeat = None })
 
 let run_directory ?guide ?colours ?roots ~(name : string) ~(sources : (string * string) list) () : unit =

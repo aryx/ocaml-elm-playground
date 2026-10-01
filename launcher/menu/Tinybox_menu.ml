@@ -860,4 +860,4 @@ let view (host : host) (computer : computer) (m : model) : shape list =
 let run ?(network : < Cap.network ; .. > option) (host : host) : unit =
   let network = (network :> < Cap.network > option) in
   let flags = Playground_platform.flags () in
-  Playground_platform.run_app ~screen:(screen_w, screen_h) ~flags ?network (game (view host) (update host) (initial flags))
+  Playground_platform.run_app ~window:{ Playground.default_window with screen_size = Some (screen_w, screen_h) } ~flags ?network (game (view host) (update host) (initial flags))

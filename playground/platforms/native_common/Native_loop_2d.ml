@@ -371,7 +371,7 @@ let toggle_fullscreen (sdl_window : Sdl.window) : unit =
   let full = Sdl.Window.test (Sdl.get_window_flags sdl_window) Sdl.Window.fullscreen_desktop in
   ignore (Sdl.set_window_fullscreen sdl_window (if full then Sdl.Window.windowed else Sdl.Window.fullscreen_desktop))
 
-let run ~(platform_keys : bool) ~(follow_window : bool) ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
+let run ~(platform_keys : bool) ~(follow_window : bool) ~(skip_same_view : bool) ~(on_resize : (int -> int -> unit) option) ~threads ~sdl_window ~sx ~sy ~(init : unit -> 'model * 'msg Cmd.t)
     ~(update : 'msg -> 'model -> 'model * 'msg Cmd.t)
     ~(subscriptions : 'model -> 'msg Sub.t) ~(view : 'model -> 'view)
     ~(draw : fps:float -> 'view -> unit) ~(on_key_press : string -> unit)
@@ -388,7 +388,7 @@ let run ~(platform_keys : bool) ~(follow_window : bool) ~(on_resize : (int -> in
    * each frame instead, kept for -dump-audio *)
   let audio_device = if !dump_frame_number <> None then None else open_audio () in
   let dumped_audio = ref [] in
-  (* claude: a program that wants every key (run_app ~platform_keys:false):
+  (* claude: a program that wants every key (Playground.window's platform_keys false):
    * no debug keys either, whatever the command line says *)
   if not platform_keys then (debug_keys := false; startup_keys := "");
   (* claude: -keys, as if pressed before the first frame *)
@@ -416,6 +416,13 @@ let run ~(platform_keys : bool) ~(follow_window : bool) ~(on_resize : (int -> in
    * animation_frame, which re-schedules itself via
    * Window.request_animation_frame); an uncapped native loop breaks that
    * assumption and makes games run several times too fast. *)
+  (* claude: [skip_same_view]: the view drawn last, and whether the
+   * window must be drawn again whatever the view (an event came: a key
+   * of the platform's may have changed how it draws, the window may
+   * have been uncovered or resized, its surface new) *)
+  let drawn_view = ref None in
+  let redraw = ref true in
+
   let target_fps = 60. in
   let target_frame_time = 1. /. target_fps in
 
@@ -439,6 +446,7 @@ let run ~(platform_keys : bool) ~(follow_window : bool) ~(on_resize : (int -> in
         if size <> !window || px <> !pixels then (
           window := size;
           pixels := px;
+          redraw := true;
           resized (fst size) (snd size);
           if follow_window then to_announce := Some size)
   in
@@ -478,6 +486,7 @@ let run ~(platform_keys : bool) ~(follow_window : bool) ~(on_resize : (int -> in
      * showed up as the game visibly slowing down while a key was held. *)
     let rec drain_sdl_events () =
       if Sdl.poll_event (Some sdl_event) then begin
+        redraw := true;
         let event_type = Sdl.Event.get sdl_event Sdl.Event.typ in
         (match event_type with
         (* claude: with -dump-frame, no mouse or keyboard at all: wherever
@@ -621,8 +630,17 @@ let run ~(platform_keys : bool) ~(follow_window : bool) ~(on_resize : (int -> in
      * backends draw in the frame, which would otherwise differ from
      * run to run *)
     let fps = if !dump_frame_number <> None then 0. else !Fps.fps in
-    draw ~fps shapes;
-    present sdl_window;
+    (* claude: [skip_same_view]: the frame before's very list, and
+     * nothing happened to the window: it shows that picture already.
+     * Before: drawn and presented at each frame, 12 to 72 ms of a
+     * browser's page at rest (mini-chrome's plan_performance.md) *)
+    let same = match !drawn_view with Some v -> v == shapes | None -> false in
+    if not (skip_same_view && same) || !redraw || !uncapped || !debug_keys then begin
+      draw ~fps shapes;
+      present sdl_window;
+      drawn_view := Some shapes;
+      redraw := false
+    end;
 
     (* claude: -dump-frame *)
     incr frame_number;
