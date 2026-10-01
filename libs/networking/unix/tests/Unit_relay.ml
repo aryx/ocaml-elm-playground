@@ -10,15 +10,27 @@
 
 (* See Unit_relay.mli *)
 
-(* the relay's event loop and the clients' frames, a few milliseconds *)
-let pump (relay : Relay.t) (clients : Transport.t list) (n : int) : string list list =
+(* the relay's event loop and the clients' frames, a few milliseconds:
+ * n rounds at least, then until what is awaited is there (5 seconds at
+ * most).
+ * claude: awaited, since 50 ms is not enough on every machine (three
+ * tests failed on opam's FreeBSD builder, 0.3.1); the n rounds are kept
+ * for what must not arrive, which cannot be awaited *)
+let pump ?(until : string list list -> bool = fun _ -> true) (relay : Relay.t) (clients : Transport.t list) (n : int) : string list list =
   let got = Array.make (List.length clients) [] in
-  for _ = 1 to n do
-    Relay.step relay;
-    List.iteri (fun i (c : Transport.t) -> got.(i) <- got.(i) @ c.receive ()) clients;
-    Unix.sleepf 0.001
-  done;
+  let rec go i =
+    if i < n || (i < 5000 && not (until (Array.to_list got))) then begin
+      Relay.step relay;
+      List.iteri (fun i (c : Transport.t) -> got.(i) <- got.(i) @ c.receive ()) clients;
+      Unix.sleepf 0.001;
+      go (i + 1)
+    end
+  in
+  go 0;
   Array.to_list got
+
+(* each told its number by the relay *)
+let seated (clients : Transport.t list) (_ : string list list) : bool = List.for_all (fun (c : Transport.t) -> c.player () <> None) clients
 
 (* Unit_lockstep's tiny game *)
 type model = { positions : int array; mix : int }
@@ -37,7 +49,7 @@ let tests (caps : < Cap.network ; .. >) =
           let relay, port = Relay.listen caps ~bind:"127.0.0.1" ~port:0 ~players:2 in
           let a = Relay_client.connect caps ~host:"127.0.0.1" ~port in
           let b = Relay_client.connect caps ~host:"127.0.0.1" ~port in
-          ignore (pump relay [ a; b ] 50);
+          ignore (pump ~until:(seated [ a; b ]) relay [ a; b ] 50);
           let c = Relay_client.connect caps ~host:"127.0.0.1" ~port in
           ignore (pump relay [ a; b; c ] 50);
           Alcotest.(check (list (option int))) "numbers" [ Some 0; Some 1; None ] (List.map (fun (t : Transport.t) -> t.player ()) [ a; b; c ]);
@@ -46,14 +58,15 @@ let tests (caps : < Cap.network ; .. >) =
       Testo.create "a packet copied to the others only" (fun () ->
           let relay, port = Relay.listen caps ~bind:"127.0.0.1" ~port:0 ~players:3 in
           let clients = List.init 3 (fun _ -> Relay_client.connect caps ~host:"127.0.0.1" ~port) in
-          ignore (pump relay clients 50);
+          ignore (pump ~until:(seated clients) relay clients 50);
           (List.hd clients).send "from 0";
-          Alcotest.(check (list (list string))) "the others" [ []; [ "from 0" ]; [ "from 0" ] ] (pump relay clients 50));
+          let others = [ []; [ "from 0" ]; [ "from 0" ] ] in
+          Alcotest.(check (list (list string))) "the others" others (pump ~until:(( = ) others) relay clients 50));
       Testo.create "Lockstep through the relay: 300 ticks, one game" (fun () ->
           let ticks = 300 and delay = 3 in
           let relay, port = Relay.listen caps ~bind:"127.0.0.1" ~port:0 ~players:2 in
           let transports = Array.init 2 (fun _ -> Relay_client.connect caps ~host:"127.0.0.1" ~port) in
-          ignore (pump relay (Array.to_list transports) 50);
+          ignore (pump ~until:(seated (Array.to_list transports)) relay (Array.to_list transports) 50);
           (* each its number from the relay *)
           let me i = Option.get ((transports.(i) : Transport.t).player ()) in
           let peers = Array.init 2 (fun i -> Lockstep.create ~me:(me i) ~players:2 ~delay) in

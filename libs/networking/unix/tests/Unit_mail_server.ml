@@ -87,20 +87,32 @@ let tests (caps : < Cap.network ; .. >) =
           let server, ({ smtp; pop; _ } : Mail_server.ports) = Mail_server.create caps ~ports:free () in
           ignore (send caps server smtp [ Smtp.envelope ~sender:"alice@tiny" letter ]);
           (* a WebSocket by hand, to close it: the handshake, masked frames *)
-          let session lines =
+          (* claude: until, what the lines should have done by then:
+           * awaited (5 seconds at most), 20 ms not being enough on every
+           * machine *)
+          let session ?(until = fun () -> true) lines =
             let fd = Tcp.connect caps ~host:"127.0.0.1" ~port:pop () in
-            let pump () = for _ = 1 to 20 do Mail_server.step server ~now; Unix.sleepf 0.001 done in
+            let pump ?(until = fun () -> true) () =
+              let rec go i =
+                if i < 20 || (i < 5000 && not (until ())) then begin
+                  Mail_server.step server ~now;
+                  Unix.sleepf 0.001;
+                  go (i + 1)
+                end
+              in
+              go 0
+            in
             Tcp.send_all fd (Websocket.request ~host:"127.0.0.1" ~path:"/" ~key:"dGhlIHNhbXBsZSBub25jZQ==");
             pump ();
             List.iter (fun l -> Tcp.send_all fd (Websocket.encode ~mask:"abcd" { fin = true; opcode = Websocket.Binary; payload = l })) lines;
-            pump ();
+            pump ~until ();
             Unix.close fd;
             pump ()
           in
           session [ "USER bob"; "PASS x"; "DELE 1" ];
           Alcotest.(check int) "still there" 1 (List.length (Mail_server.maildrop server "bob"));
           (* the same, with QUIT: deleted -- so the session above did reach it *)
-          session [ "USER bob"; "PASS x"; "DELE 1"; "QUIT" ];
+          session ~until:(fun () -> Mail_server.maildrop server "bob" = []) [ "USER bob"; "PASS x"; "DELE 1"; "QUIT" ];
           Alcotest.(check int) "gone after QUIT" 0 (List.length (Mail_server.maildrop server "bob")));
       Testo.create "telnet: SMTP and POP3 typed by hand, over plain TCP" (fun () ->
           let server, ({ smtp_plain; pop_plain; _ } : Mail_server.ports) = Mail_server.create caps ~ports:free () in
