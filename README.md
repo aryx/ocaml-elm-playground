@@ -71,9 +71,10 @@ stack, a game engine, a codec library or a web browser is millions of
 lines, and nobody understands the whole of it. Here each subject is
 small enough for one person to read whole. That an AI wrote most of it
 is the paradox, the same as in [IX](https://aryx.github.io/IX/#goal):
-AI these days is mostly used to write more code, faster than anyone
-can read it, and here it rewrites giant programs in far **less** code,
-so that humans can understand them again. Ultimately these
+the trend these days is to use AI to write more and more code, until
+only the AI can change the program, and here it rewrites giant
+programs in far **less** code, so that humans can understand them
+again, and extend them. Ultimately these
 libraries may become
 [literate programs](https://principia-softwarica.org/literate-programming.html),
 as in [Principia Softwarica](https://principia-softwarica.org/): books
