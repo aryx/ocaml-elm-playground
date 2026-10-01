@@ -9,7 +9,7 @@
  *)
 
 (* The worked examples of Crc32.mli,
- * Adler32.mli, Huffman.mli, Inflate.mli and Zlib.mli (and of
+ * Adler32.mli, Huffman.mli, Inflate.mli, Zlib.mli and Gzip.mli (and of
  * notes_images.md, sections 3 and 6) *)
 
 let t = Testo.create
@@ -83,6 +83,35 @@ let test_zlib () =
   fails "NLEN not LEN's complement" (fun () -> Zlib.decompress (Bytes.to_string bad_nlen));
   fails "header not a multiple of 31" (fun () -> Zlib.decompress ("\x78\x02" ^ String.sub hi 2 11))
 
+let gzip_hi =
+  bytes [ 0x1F; 0x8B; 0x08; 0x00; 0x00; 0x00; 0x00; 0x00; 0x00; 0xFF; 0x01; 0x02; 0x00; 0xFD; 0xFF; 0x68; 0x69; 0xAC; 0x2A; 0x93; 0xD8; 0x02; 0x00; 0x00; 0x00 ]
+
+(* `gzip -9 -c hello.txt`: a name (FNAME), a date, fixed Huffman codes
+ * with a copy *)
+let hello_gz =
+  bytes
+    [ 0x1F; 0x8B; 0x08; 0x08; 0x0E; 0xB6; 0xBE; 0x6A; 0x02; 0x03; 0x68; 0x65; 0x6C; 0x6C; 0x6F; 0x2E; 0x74; 0x78; 0x74; 0x00;
+      0xCB; 0x48; 0xCD; 0xC9; 0xC9; 0x57; 0xC8; 0x40; 0x27; 0xB9; 0x00; 0x00; 0x88; 0x59; 0x0B; 0x18; 0x00; 0x00; 0x00 ]
+
+let test_gzip () =
+  Alcotest.(check string) "hi, stored" "hi" (Gzip.decompress gzip_hi);
+  Alcotest.(check string) "gzip's own file, its name skipped" "hello hello hello hello\n" (Gzip.decompress hello_gz);
+  Alcotest.(check string) "two members, cat a.gz b.gz" "hihello hello hello hello\n" (Gzip.decompress (gzip_hi ^ hello_gz));
+  (* every field at once: FEXTRA (3 bytes), FNAME, FCOMMENT, FHCRC
+   * (not checked) *)
+  let fields = "\x1F\x8B\x08\x1E\x00\x00\x00\x00\x00\x03" ^ "\x03\x00abc" ^ "name\x00" ^ "a comment\x00" ^ "\x00\x00" in
+  Alcotest.(check string) "extra, name, comment, CRC-16" "hi" (Gzip.decompress (fields ^ String.sub gzip_hi 10 15));
+  let set i c = let b = Bytes.of_string gzip_hi in Bytes.set b i c; Bytes.to_string b in
+  fails "ho, with hi's CRC-32" (fun () -> Gzip.decompress (set 16 'o'));
+  fails "a wrong length" (fun () -> Gzip.decompress (set 21 '\x03'));
+  fails "a zlib stream is not a gzip one" (fun () -> Gzip.decompress hi);
+  fails "cut before its trailer" (fun () -> Gzip.decompress (String.sub gzip_hi 0 20));
+  fails "cut in its name" (fun () -> Gzip.decompress (String.sub hello_gz 0 14));
+  fails "rubbish after the member" (fun () -> Gzip.decompress (gzip_hi ^ "\x00\x00"));
+  List.iter
+    (fun (what, s) -> Alcotest.(check string) (what ^ ": compressed and back") s (Gzip.decompress (Gzip.compress s)))
+    [ ("nothing", ""); ("a run longer than 258", String.make 100_000 'x'); ("text", String.concat " " (List.init 2000 (fun i -> string_of_int (i * i)))) ]
+
 let test_deflate () =
   (* Deflate.mli's worked example: Inflate.mli's 6 bytes *)
   Alcotest.(check string) "abcabcabcabc" (bytes [ 0x4B; 0x4C; 0x4A; 0x86; 0x23; 0x00 ]) (Deflate.deflate abc12);
@@ -107,4 +136,5 @@ let tests =
       t "Huffman: decoding AAAABBCD" test_huffman_decode;
       t "Inflate: abcabcabcabc, and the overlapping copy" test_inflate;
       t "Zlib: hi, and corruptions caught" test_zlib;
+      t "Gzip: hi, gzip's own file, members, fields, corruptions caught" test_gzip;
     ]

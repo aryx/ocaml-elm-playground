@@ -42,7 +42,7 @@ in a browser.
 
 [tiny_libs.compression]: what the image, video and audio formats share.
 
-{!modules: Huffman Inflate Deflate Zlib Crc32 Adler32 Lzw Packbits Bits Vlc}
+{!modules: Huffman Inflate Deflate Zlib Gzip Crc32 Adler32 Lzw Packbits Bits Vlc}
 
 {2:graphics Graphics}
 
