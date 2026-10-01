@@ -44,11 +44,12 @@ browser in its [code map](https://aryx.github.io/ocaml-elm-playground/codemap.ht
 the links saying how many lines a program is open it on that
 program's own code (`w` widens it to what it uses, then to everything).
 
-Almost all of this code, the library as much as the programs, was
-written by an AI, Claude Code, under the author's direction (see the
-[AI disclaimer](#ai-disclaimer)). It was written to be read, though,
-and checked by tests, so it still makes good material for learning:
-judge each module by what it explains, as you would a textbook's.
+The main goal of all this is to teach people. Almost all of the code,
+the library as much as the programs, was written by an AI, Claude
+Code, under the author's direction (see the
+[AI disclaimer](#ai-disclaimer)), but it was written for people to
+read, and checked by tests: judge each module by what it explains, as
+you would a textbook's.
 
 A place to learn, by reading
 ----------------------------
@@ -64,6 +65,19 @@ example checked by a test. So when you wonder how a triangle becomes
 pixels, how a PNG is decompressed, how a Moog filter gets its sound, or
 how a chess program picks its move, the answer is a few hundred lines
 you can open and read.
+
+The software that usually does this work is not like that. A graphics
+stack, a game engine, a codec library or a web browser is millions of
+lines, and nobody understands the whole of it. Here each subject is
+small enough for one person to read whole. That an AI wrote most of it
+is the paradox, the same as in [IX](https://aryx.github.io/IX/#goal):
+AI these days is mostly used to write more code, faster than anyone
+can read it, and here it is used to write **less**. Ultimately these
+libraries may become
+[literate programs](https://principia-softwarica.org/literate-programming.html),
+as in [Principia Softwarica](https://principia-softwarica.org/): books
+that tell the code as a story, in the order a reader needs, to teach
+even better.
 
 The library (`libs/` and `playground/`) is **about 73,000 lines of
 OCaml**, `.mli` files and their explanations included; with the kits
