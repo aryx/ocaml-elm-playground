@@ -483,11 +483,52 @@ let render_image w h src x y angle s alpha =
 
 (* claude: a bitmap as an image's URL, its pixels in it: a PNG as a
  * data: URL -- SVG has nothing else for pixels in memory (and the vdom
- * no canvas). The last ones kept: a picture shown in many frames is
- * encoded once; a video, a PNG per new frame, slow. The last 32, not
- * the last one: a web page (TinyMosaic) shows several pictures in every
- * frame, which a single one kept would encode again each time *)
-let last_bitmaps : (Rgba_image.t * string) list ref = ref []
+ * no canvas). The ones made are kept, in a table, by the image itself,
+ * up to 16 million pixels in all (past that, all dropped, and made
+ * again as they come), as Cairo's platform keeps its surfaces
+ * (Image_native.surface_of_bitmap): a picture shown in many frames is
+ * encoded once; a video, a PNG per new frame, slow.
+ *
+ * Before: the last 32, in a list. Enough for a page's pictures
+ * (TinyMosaic), not for a game whose soldiers are a picture a limb and
+ * whose map is tiles (mini-soldat): 64 pictures in a frame. And a list
+ * of 32 kept by age does not keep 32 of the 64: it keeps none from a
+ * frame to the next. The 33rd picture pushes the 1st out; the 1st,
+ * wanted again, is made again and pushes the 2nd out; and so on round.
+ * With 33 pictures in a frame, 33 PNG a frame; with mini-soldat's 64,
+ * 9 frames a second where the table gives 60.
+ *
+ *   let last_bitmaps : (Rgba_image.t * string) list ref = ref []
+ *   let bitmap_url img =
+ *     match List.find_opt (fun (i, _) -> i == img) !last_bitmaps with
+ *     | Some (_, url) -> url
+ *     | None ->
+ *         let url = png_data_url img in
+ *         last_bitmaps := List.filteri (fun k _ -> k < 32) ((img, url) :: !last_bitmaps);
+ *         url
+ *)
+module Bitmaps = Hashtbl.Make (struct
+  type t = Rgba_image.t
+
+  let equal = ( == )
+
+  (* its size, and 16 bytes spread over its pixels: as Image_native's *)
+  let hash (img : Rgba_image.t) : int =
+    let n = Bigarray.Array1.dim img.rgba in
+    let h = ref ((img.width *.. 31) +.. img.height) in
+    if n > 0 then
+      for i = 0 to 15 do
+        h := (!h *.. 31) +.. Bigarray.Array1.unsafe_get img.rgba (i *.. (n -.. 1) /.. 15)
+      done;
+    !h land max_int
+end)
+
+let bitmaps : string Bitmaps.t = Bitmaps.create 512
+let bitmaps_pixels = ref 0
+
+(* as many pixels as Cairo's platform keeps: a PNG's text is smaller
+ * than the surface it would be there *)
+let bitmaps_budget = 16_000_000
 
 (* claude: the PNG encoded by the browser, in native code: the pixels
  * put on a canvas (putImageData, the Rgba_image's own bytes, no copy:
@@ -528,11 +569,17 @@ let png_data_url (img : Rgba_image.t) : string =
   Ojs.string_of_js (Ojs.call c "toDataURL" [| Ojs.string_to_js "image/png" |])
 
 let bitmap_url (img : Rgba_image.t) : string =
-  match List.find_opt (fun (i, _) -> i == img) !last_bitmaps with
-  | Some (_, url) -> url
+  match Bitmaps.find_opt bitmaps img with
+  | Some url -> url
   | None ->
+      let pixels = img.width *.. img.height in
+      if !bitmaps_pixels +.. pixels > bitmaps_budget then begin
+        Bitmaps.reset bitmaps;
+        bitmaps_pixels := 0
+      end;
       let url = png_data_url img in
-      last_bitmaps := List.filteri (fun k _ -> k < 32) ((img, url) :: !last_bitmaps);
+      Bitmaps.replace bitmaps img url;
+      bitmaps_pixels := !bitmaps_pixels +.. pixels;
       url
 
 let rec (render_shape: shape -> 'msg Svg.t) =

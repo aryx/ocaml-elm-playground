@@ -124,6 +124,12 @@
   text drawn a picture a letter (mini-chrome) has hundreds in a frame,
   and most were converted again at each -- 340 ms a frame of a
   Wikipedia article scrolled, now 23 (Image_native.surface_of_bitmap)
+- the web platform does the same with the PNG it encodes of each
+  bitmap: a table, up to 16 million pixels, not the last 32 in a list.
+  A list of 32 kept by age keeps none of 33: each picture pushes out
+  the next one wanted, and all are encoded again at each frame
+  (mini-soldat's soldiers, a picture a limb, and its map's tiles: 64
+  pictures in a frame) (Playground_platform.bitmap_url)
 - skip_same_view, for an application rather than a game: a frame whose
   view is the very list of the frame before (==) is not drawn nor
   presented again, unless an event came to the window since; the
