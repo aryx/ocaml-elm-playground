@@ -8,4 +8,4 @@
  * 2 of the License, or (at your option) any later version.
  *)
 
-let () = Testo.interpret_argv ~project_name:"compression" (fun _env -> Unit_deflate.tests @ Unit_lzw.tests @ Unit_zstd.tests)
+let () = Testo.interpret_argv ~project_name:"compression" (fun _env -> Unit_deflate.tests @ Unit_lzw.tests @ Unit_zstd.tests @ Unit_brotli.tests)

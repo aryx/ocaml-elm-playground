@@ -1,0 +1,27 @@
+; claude: Brotli's static dictionary, the 122,784 bytes that RFC 7932's
+; Appendix A gives (dictionary.bin, from github.com/google/brotli,
+; c/common/dictionary.bin; Google's, under the MIT license; its CRC-32
+; is 5136CB04, checked by compression's tests), as a string. A library
+; of its own, apart from compression: a program that decodes Brotli
+; pays for these 120 KB only if it names this library and gives
+; Brotli.decompress its ~dictionary (Brotli_words.mli).
+; In the package tiny_libs, as tiny_libs.compression_brotli_words.
+(library
+ (name compression_brotli_words)
+ (public_name tiny_libs.compression_brotli_words)
+ (wrapped false)
+)
+
+; the file embedded as a string, so the library needs no file at
+; runtime (a quoted string: the bytes as they are)
+(rule
+ (targets Brotli_words.ml)
+ (deps dictionary.bin)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "(* generated from dictionary.bin by brotli_words/dune *)\n")
+    (echo "let bytes = {brotli|")
+    (cat %{deps})
+    (echo "|brotli}\n")))))
