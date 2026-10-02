@@ -163,7 +163,7 @@ let paths (t : t) : (edge * (float * float) list) list =
             (* the hub: the middle of the panel's tied lines *)
             let ties = List.filter_map (fun (x : edge) -> if x.target = p.path then at gt x.target_line 0 else if x.src = p.path then at gs x.from_line 0 else None) (t.uses @ t.users) in
             let hy = match ties with [] -> by | _ -> List.fold_left (fun acc (_, y) -> acc +. y) 0. ties /. float_of_int (List.length ties) in
-            Some (e, Map_atlas.bspline [| (ax, ay); ((ax +. hub_x) /. 2., (ay +. hy) /. 2.); (hub_x, hy); (bx, by) |])
+            Some (e, Code_road.bspline [| (ax, ay); ((ax +. hub_x) /. 2., (ay +. hy) /. 2.); (hub_x, hy); (bx, by) |])
         | _ -> None)
     | _ -> None
   in
@@ -202,7 +202,7 @@ let roads ?hover (a : Code_map_base.area) (t : t) : Playground.shape list =
    * street's thousands of faint roads' shapes overflowed a browser's
    * stack, every frame (the author: a on TinyInvaders.ml froze the web
    * page) *)
-  List.rev_append (List.rev (List.concat_map (fun (_, pts) -> Map_atlas.road a pts 2. 0.2) faint)) (List.concat_map (fun (_, pts) -> Map_atlas.road a pts 5. 0.95) lit)
+  List.rev_append (List.rev (List.concat_map (fun (_, pts) -> Code_road.road a pts 2. 0.2) faint)) (List.concat_map (fun (_, pts) -> Code_road.road a pts 5. 0.95) lit)
 
 let ends ?hover (a : Code_map_base.area) (t : t) : Playground.shape list =
   memo ends_cache hover a t @@ fun () ->

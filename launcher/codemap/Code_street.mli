@@ -16,7 +16,7 @@
 
    The ties: a mark in the margin, green at the user's line, red at the
    used definition (codemap's colours); and a road from the name where
-   it is used to the name where it is defined (Map_atlas.road, green to
+   it is used to the name where it is defined (Code_road.road, green to
    red, the direction without an arrow), bundled near the panel so that
    the roads to one file read as one; faint, but the roads of the line
    under the mouse, lit.

@@ -118,7 +118,6 @@
     'Map_atlas.ml': { digest: '5cc45d8c119b',
       summary: "Holten's hierarchical edge bundles drawn as tapered B-splines, green user to red used, over a heat map.",
       important: [
-        { at: 'def:road', say: 'a bundled road, tapered from user to used', weight: 3 },
         { at: 'def:control_points', say: 'up the tree and down again', weight: 2 },
         { at: 'def:heat_colour', say: 'dark, yellow, red: the foundations', weight: 1 },
       ],
@@ -263,6 +262,18 @@
       summary: "Panels chosen (own code first, thrice the room), each a ground with the tied lines tall, roads bundled.",
       important: [
         { at: 'def:roads', say: 'green at the use, red at the definition', weight: 2 },
+      ],
+    },
+    'Code_road.mli': { digest: 'a0d554cb6743',
+      summary: 'A use drawn as a road: a B-spline, green and wide at the user, red and thin at the used, no arrowhead.',
+      capitals: [
+        { at: 'def:road', say: 'a road, tapered from user to used' },
+      ],
+    },
+    'Code_road.ml': { digest: '2979550e0af1',
+      summary: 'The clamped cubic B-spline, cut into pieces of one length, a quad a piece in the gradient.',
+      important: [
+        { at: 'def:resample', say: 'pieces of the same length: a smooth gradient', weight: 1 },
       ],
     },
     'Code_view.mli': { digest: 'c6f487d5f91f',

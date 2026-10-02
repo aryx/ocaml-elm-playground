@@ -375,10 +375,11 @@ let tests =
             Code_layers.compute [ ("games/A.ml", "playground/P.ml", 3); ("games/A.ml", "libs/L.ml", 1); ("playground/P.ml", "libs/L.ml", 2) ] tree
           in
           Alcotest.(check (list int)) "games/, playground/, libs/" [ 0; 1; 2 ] (List.map band [ "games"; "playground"; "libs" ]));
-      (* claude: a road's spline starts and ends at its parts, and passes
-       * near, not through, the directories between (Holten's bundles) *)
+      (* claude: Code_road.mli's worked example: a road's spline starts
+       * and ends at its ends, and passes near, not through, the point
+       * between *)
       Testo.create "a road's B-spline" (fun () ->
-          let pts = Map_atlas.bspline ~per:4 [| (0., 0.); (10., 10.); (20., 0.) |] in
+          let pts = Code_road.bspline ~per:4 [| (0., 0.); (10., 10.); (20., 0.) |] in
           let first = List.hd pts and last = List.hd (List.rev pts) in
           Alcotest.(check (list (float 1e-9))) "its ends" [ 0.; 0.; 20.; 0. ] [ fst first; snd first; fst last; snd last ];
           let top = List.fold_left (fun m (_, y) -> Float.max m y) 0. pts in

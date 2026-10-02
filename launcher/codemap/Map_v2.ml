@@ -748,10 +748,10 @@ let unit_ties (t : t) (c : camera) (kept : name list) : shape list =
               let dx = bx -. ax and dy = by -. ay in
               let len = Float.max 1. (Float.hypot dx dy) in
               let bend = Float.min 80. (0.15 *. len) in
-              let pts = Map_atlas.bspline [| (ax, ay); (((ax +. bx) /. 2.) -. (dy /. len *. bend), ((ay +. by) /. 2.) +. (dx /. len *. bend)); (bx, by) |] in
+              let pts = Code_road.bspline [| (ax, ay); (((ax +. bx) /. 2.) -. (dy /. len *. bend), ((ay +. by) /. 2.) +. (dx /. len *. bend)); (bx, by) |] in
               (* claude: as wide as its uses (the author), by area: the
                * square root of its share of the largest *)
-              Map_atlas.road a pts (1.5 +. (12. *. Float.sqrt (float_of_int n /. float_of_int biggest))) 0.8
+              Code_road.road a pts (1.5 +. (12. *. Float.sqrt (float_of_int n /. float_of_int biggest))) 0.8
             in
             let label (x, y) k n col =
               let str = Printf.sprintf "%s %d" (Filename.basename k) n in
@@ -1512,10 +1512,10 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
                  * bend to opposite sides by themselves, a loop drawn as two *)
                 let bend = Float.min 70. (Float.max 30. (0.12 *. len)) in
                 let mx = ((ax +. bx) /. 2.) +. (-.dy /. len *. bend) and my = ((ay +. by) /. 2.) +. (dx /. len *. bend) in
-                let pts = Map_atlas.bspline [| (ax, ay); (mx, my); (bx, by) |] in
+                let pts = Code_road.bspline [| (ax, ay); (mx, my); (bx, by) |] in
                 (* claude: from its start's colour to its end's (ivory
                  * without an order) *)
-                (if skeleton_on then Map_atlas.road ~colours:(colour_of j.jfrom, colour_of j.jto) a pts 6. 0.85 else [])
+                (if skeleton_on then Code_road.road ~colours:(colour_of j.jfrom, colour_of j.jto) a pts 6. 0.85 else [])
                 @ (match j.jsay with Some w when skeleton_on -> [ words ink_i w |> scale (13. /. words_font_size) |> move (sx a mx) (sy a my) ] | _ -> [])
             | Some (_, Some (_, _, (ax0, ay, _))), Some (bn, None) | Some (bn, None), Some (_, Some (_, _, (ax0, ay, _))) ->
                 (* an end off the map: a stub to its port on the edge (below) *)
@@ -1605,8 +1605,8 @@ let skeleton_shapes (t : t) (c : camera) : shape list =
         let tw = 0.5 *. 13. *. float_of_int (String.length text) in
         List.concat_map
           (fun (x, y, _) ->
-            let pts = Map_atlas.bspline [| (x, y); ((x +. ex) /. 2., ((y +. py) /. 2.) -. 30.); (ex, py) |] in
-            (if skeleton_on then Map_atlas.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else []))
+            let pts = Code_road.bspline [| (x, y); ((x +. ex) /. 2., ((y +. py) /. 2.) -. 30.); (ex, py) |] in
+            (if skeleton_on then Code_road.road ~colours:(ivory, (200, 170, 110)) a pts 4. 0.6 else []))
           l
         @
         if skeleton_on then
@@ -2761,8 +2761,8 @@ let chosen_glow (t : t) (c : camera) (s : search) (h : Code_search.hit) : shape 
       let rx = if x < x0 then x0 else if x > x0 +. w then x0 +. w else x in
       let from = (rx, if y < ry then ry -. (row /. 2.) else ry +. (row /. 2.)) in
       let from = if y > y0 +. 200. then (rx, y0 +. 200.) else from in
-      let pts = Map_atlas.bspline [| from; ((fst from +. x) /. 2., (snd from +. y) /. 2.); (x, y) |] in
-      Map_atlas.road ~colours:((255, 235, 120), (255, 235, 120)) a pts 2. 0.6
+      let pts = Code_road.bspline [| from; ((fst from +. x) /. 2., (snd from +. y) /. 2.); (x, y) |] in
+      Code_road.road ~colours:((255, 235, 120), (255, 235, 120)) a pts 2. 0.6
       @ [
           circle glow (14. +. (8. *. pulse)) |> move (sx a x) (sy a y) |> fade (0.25 +. (0.2 *. pulse));
           circle glow 7. |> move (sx a x) (sy a y) |> fade 0.9;

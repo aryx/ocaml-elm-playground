@@ -22,16 +22,8 @@
    map's. *)
 
 (* the part a file is in at a zoom's depth (1 the countries, 2 the
-   regions, max_int the files), a road's control points and the
-   B-spline through them, exposed for the tests *)
+   regions, max_int the files), exposed for the tests *)
 val depth_at : float -> int
-val bspline : ?per:int -> (float * float) array -> (float * float) list
-
-(* claude: a road on the screen through [pts] (the map's pixels), [w]
-   pixels wide at the user's end, a third of it at the used's, green to
-   red: its direction without an arrow (also the street level's edges,
-   Code_street) *)
-val road : ?colours:(int * int * int) * (int * int * int) -> Code_map_base.area -> (float * float) list -> float -> float -> Playground.shape list
 
 val paint : aa:bool -> Code_map_base.t -> Code_map_base.camera -> Rgba_image.t
 val labels : Code_map_base.t -> Code_map_base.camera -> float -> Playground.shape list
