@@ -7,10 +7,9 @@
 ; and the Amiga's ILBM's as ByteRun1); and the pieces of MPEG's bitstreams, a reader of bits most
 ; significant first (Bits) and fixed code tables (Vlc); and DEFLATE's
 ; successor, Zstandard (RFC 8878), decoded: Zstd, over Fse (its entropy
-; coder, tANS) and Xxhash (its checksum, XXH64), and the Web's, Brotli
-; (RFC 7932): Brotli, over Brotli_dictionary (the words' layout and the
-; 121 transforms; the words themselves, 120 KB, are the library
-; brotli_words/, linked only by who asks). Independent of
+; coder, tANS) and Xxhash (its checksum, XXH64). The Web's, Brotli
+; (RFC 7932), is a library of its own, brotli/ (and its words,
+; brotli_words/). Independent of
 ; any format, so that audio's may use them as images' and videos' do.
 ; In the package tiny_libs, as tiny_libs.compression, pure OCaml.
 (library

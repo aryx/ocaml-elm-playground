@@ -9,6 +9,7 @@
    alcotest
    testo
    compression
+   compression_brotli ; Brotli, a library of its own
    compression_brotli_words ; Brotli's dictionary, not in compression
  )
  (deps (glob_files zstd/*) (glob_files brotli/*))
