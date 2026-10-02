@@ -13,15 +13,17 @@
 )
 
 ; the file embedded as a string, so the library needs no file at
-; runtime (a quoted string: the bytes as they are)
+; runtime.
+; claude: as an escaped literal (files_to_string_ml.ml), not the bytes
+; as they are in a quoted string: the dictionary has 110 CR LF pairs,
+; and from OCaml 5.2 the lexer reads a CR LF in a string literal as an
+; LF, which left 122,674 bytes (opam's CI found it, 0.3.4)
 (rule
  (targets Brotli_words.ml)
- (deps dictionary.bin)
+ (deps dictionary.bin %{project_root}/scripts/build/files_to_string_ml.ml)
  (action
   (with-stdout-to
    %{targets}
    (progn
-    (echo "(* generated from dictionary.bin by brotli_words/dune *)\n")
-    (echo "let bytes = {brotli|")
-    (cat %{deps})
-    (echo "|brotli}\n")))))
+    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml dictionary.bin)
+    (echo "let bytes = dictionary_bin\n")))))

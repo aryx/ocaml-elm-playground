@@ -577,6 +577,11 @@
   offset in caml_call_gc, a float's low 32 bits lost over a minor
   collection -- Spectrum's "the FFT = the DFT" off by 1e-6, and what
   Polyphony's "their sum" was off by in 0.3.1 (back to 1e-12)
+- 0.3.5, what opam's CI found in 0.3.4: Brotli's dictionary embedded
+  as an escaped string (files_to_string_ml.ml), not as its bytes in a
+  quoted one -- from OCaml 5.2 a CR LF in a string literal is read as
+  an LF, and the dictionary has 110 of them (122,674 bytes left of
+  122,784: wrong words on OCaml 5.2 and later)
 
 ** docs
 - README-3d.md, and many tutorials in docs/claude_notes/: notes_2d.md,
