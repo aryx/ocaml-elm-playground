@@ -1,0 +1,10 @@
+; claude: Ogg Vorbis, decoded (Vorbis.mli): codebooks, floors and
+; residues, the MDCT by a Fourier transform, windows overlapped; and
+; Ogg's pages as far as their packets (Ogg.mli). The free codec made
+; when MP3's licence was asked for; a WebM file's first sound. In the
+; package tiny_libs, as tiny_libs.audio_vorbis.
+(library
+ (name audio_vorbis)
+ (public_name tiny_libs.audio_vorbis)
+ (wrapped false)
+)

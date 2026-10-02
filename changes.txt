@@ -73,8 +73,9 @@
 - images, our own readers and writers: PNG, GIF, JPEG (baseline, and a
   writer), XPM, IFF ILBM, SVG; imaging (TinyPhotoshop's filters)
 - videos: MPEG-1 (decoded I/P/B, and encoded), MPEG system streams, AVI
-  (Motion JPEG), FLI/FLC, Y4M; audio formats: MP2, MP3, MOD, WAV, MIDI,
-  ABC
+  (Motion JPEG), FLI/FLC, Y4M; audio formats: MP2, MP3, Ogg Vorbis
+  (decoded: tiny_libs.audio_vorbis; mini-chrome has a copy, a WebM's sound), MOD,
+  WAV, MIDI, ABC
 - compression (Huffman, Inflate/Deflate, zlib, gzip, Zstandard and Brotli decoded, LZW, PackBits;
   Brotli a library of its own, tiny_libs.compression_brotli, so that a
   program with its own Brotli, as mini-chrome, links the rest), crypto

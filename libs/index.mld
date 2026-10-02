@@ -133,11 +133,12 @@ The engine ([tiny_libs.audio]):
 
 The formats, a library each ([tiny_libs.audio_wav],
 [tiny_libs.audio_midi], [tiny_libs.audio_abc], [tiny_libs.audio_mod],
-[tiny_libs.audio_mpeg]):
+[tiny_libs.audio_mpeg], [tiny_libs.audio_vorbis]):
 
 {!modules:
     Wav Midi Abc Doremi Mod Mod_player Paula
     Mpeg_audio Mpeg_audio_header Layer2 Layer3 Layer3_tables Imdct Polyphase
+    Vorbis Ogg
 }
 
 A synthesizer's live blocks ([tiny_libs.audio_instruments]) and effects
