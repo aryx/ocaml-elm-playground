@@ -16,7 +16,7 @@ place a game meets them.
 | `core/` | Elm's core, the small part the Playground's programs need (`Basics`, `Color`, `Set`, `Cmd`, `Sub`, ...), and `Base64` | |
 | `random/` | `Lehmer`, the seeded generator under `Playground.random` | |
 | `crypto/` | `Sha1` (the WebSocket handshake), and what TLS 1.3 needs: `Sha256`, `Sha512`, `Hmac`, `Hkdf`, `Chacha20`, `Poly1305`, `Chacha20_poly1305`, `Aes`, `Gcm`, `Bignum`, `X25519`, `Ecdsa`, `Rsa` (plan_tls.md) | |
-| `compression/` | `Huffman`, `Inflate`/`Deflate`/`Zlib`/`Gzip` and their checksums, `Lzw`, and MPEG's `Bits` and `Vlc`: what the image, video and audio formats share | `notes_images.md` |
+| `compression/` | `Huffman`, `Inflate`/`Deflate`/`Zlib`/`Gzip` and their checksums, `Zstd` (decoded, over `Fse` and `Xxhash`), `Lzw`, and MPEG's `Bits` and `Vlc`: what the image, video and audio formats share | `notes_images.md` |
 | `graphics/` | the 2D and 3D software rasterizers, fonts, the image and video formats | `notes_2d.md`, `notes_images.md`, ... |
 | `physics/` | 2D and 3D physics engines, collision, gravity | `notes_2d_physics.md`, `notes_3d_physics.md` |
 | `audio/` | a software synthesizer, the audio formats, instruments and effects ([`audio/README.md`](audio/README.md)) | `notes_audio.md`, `notes_synth.md` |

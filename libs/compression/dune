@@ -5,7 +5,9 @@
 ; Huffman codes share (see notes_images.md, sections 2, 3 and 6); LZW,
 ; GIF's; PackBits, the Macintosh's run lengths (MacPaint's pictures,
 ; and the Amiga's ILBM's as ByteRun1); and the pieces of MPEG's bitstreams, a reader of bits most
-; significant first (Bits) and fixed code tables (Vlc). Independent of
+; significant first (Bits) and fixed code tables (Vlc); and DEFLATE's
+; successor, Zstandard (RFC 8878), decoded: Zstd, over Fse (its entropy
+; coder, tANS) and Xxhash (its checksum, XXH64). Independent of
 ; any format, so that audio's may use them as images' and videos' do.
 ; In the package tiny_libs, as tiny_libs.compression, pure OCaml.
 (library
