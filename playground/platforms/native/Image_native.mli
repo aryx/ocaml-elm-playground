@@ -14,9 +14,10 @@ val surface_of_url : string -> Cairo.Surface.t option
  * animation loops forever, like in browsers. *)
 val surface_of_url_at : time:float -> string -> Cairo.Surface.t option
 
-(* claude: [Playground.bitmap]'s pixels as a surface; the last image
- * converted is kept, so a picture shown over several frames is
- * converted once *)
+(* claude: [Playground.bitmap]'s pixels as a surface; kept by the image
+ * (==), up to 16 million pixels in all, so a picture shown over several
+ * frames is converted once -- a video's frame, or each of the hundreds
+ * of letters of a page drawn a picture a letter *)
 val surface_of_bitmap : Rgba_image.t -> Cairo.Surface.t
 
 (* Queue an image url to be loaded ahead of time (so a later

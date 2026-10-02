@@ -337,8 +337,9 @@ val image : number -> number -> string -> shape
 ]}
     Where {!image} fetches a file once, this is drawn from its pixels as
     they are when shown: give a new image for a new picture (a backend
-    keeps the last few it converted, 32, and redoes the work for
-    another). A small image enlarged is smoothed, like {!image}'s, unless
+    keeps the ones it converted, by the image itself, up to some
+    millions of pixels in all, and redoes the work for another: hundreds
+    of small pictures in a frame are fine, a page's letters). A small image enlarged is smoothed, like {!image}'s, unless
     the program's [rendering] says [smooth_images = false]. On the web,
     each new image is encoded as a PNG, fine for a picture, slow for a
     video. *)

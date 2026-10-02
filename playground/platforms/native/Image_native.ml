@@ -79,20 +79,70 @@ let surface_of_url_at ~(time : float) (src : string) : Cairo.Surface.t option =
   | None -> surface_of_url src
   | Some anim -> Some (Image_decode.frame_at ~time anim)
 
-(* claude: a bitmap's surface, the last ones kept: a video's frame stays
- * on the screen for 2 or 3 of the app's frames, and a picture for all
- * of them; a new image (not the same one, ==) is converted again. The
- * last 32, not the last one: a web page (TinyMosaic) shows several
- * pictures in every frame, which a single one kept would convert again
- * each time, one after the other *)
-let last_bitmaps : (Rgba_image.t * Cairo.Surface.t) list ref = ref []
+(* claude: a bitmap's surface, kept while the image is shown: a video's
+ * frame stays on the screen for 2 or 3 of the app's frames, and a
+ * picture for all of them; a new image (not the same one, ==) is
+ * converted, and kept in its turn.
+ *
+ * Kept by the image itself (==), found through a table: the hash is of
+ * its size and a few of its bytes (an address cannot be one, the
+ * collector moves it), then the images of that hash are looked at one
+ * by one. And kept up to so many pixels in all rather than so many
+ * images: a page of text drawn a picture a letter (mini-chrome) shows
+ * hundreds of small ones in every frame, a video one large new one
+ * every few frames; past the budget, everything is dropped and what is
+ * still shown converted again, once.
+ *
+ * Before: the last 32, in a list. Enough for a page's pictures
+ * (TinyMosaic), not for its letters: a window of Wikipedia has more
+ * than 32 different ones (sizes, colours, weights), so most were
+ * converted again at each frame, a Bigarray and a Cairo surface each:
+ * 340 ms a frame, where the same letters as 60,000 rectangles took 145.
+ *
+ *   let last_bitmaps : (Rgba_image.t * Cairo.Surface.t) list ref = ref []
+ *   let surface_of_bitmap img =
+ *     match List.find_opt (fun (i, _) -> i == img) !last_bitmaps with
+ *     | Some (_, surface) -> surface
+ *     | None ->
+ *         let surface = cairo_surface_of_image img in
+ *         last_bitmaps := List.filteri (fun k _ -> k < 32) ((img, surface) :: !last_bitmaps);
+ *         surface
+ *)
+module Bitmaps = Hashtbl.Make (struct
+  type t = Rgba_image.t
+
+  let equal = ( == )
+
+  (* its size, and 16 bytes spread over its pixels *)
+  let hash (img : Rgba_image.t) : int =
+    let n = Bigarray.Array1.dim img.rgba in
+    let h = ref ((img.width * 31) + img.height) in
+    if n > 0 then
+      for i = 0 to 15 do
+        h := (!h * 31) + Bigarray.Array1.unsafe_get img.rgba (i * (n - 1) / 15)
+      done;
+    !h land max_int
+end)
+
+let bitmaps : Cairo.Surface.t Bitmaps.t = Bitmaps.create 512
+let bitmaps_pixels = ref 0
+
+(* 64 MB of surfaces: 50 frames of a 640 by 480 video, or every letter
+ * of every size a page has *)
+let bitmaps_budget = 16_000_000
 
 let surface_of_bitmap (img : Rgba_image.t) : Cairo.Surface.t =
-  match List.find_opt (fun (i, _) -> i == img) !last_bitmaps with
-  | Some (_, surface) -> surface
+  match Bitmaps.find_opt bitmaps img with
+  | Some surface -> surface
   | None ->
+      let pixels = img.width * img.height in
+      if !bitmaps_pixels + pixels > bitmaps_budget then begin
+        Bitmaps.reset bitmaps;
+        bitmaps_pixels := 0
+      end;
       let surface = cairo_surface_of_image img in
-      last_bitmaps := List.filteri (fun k _ -> k < 32) ((img, surface) :: !last_bitmaps);
+      Bitmaps.replace bitmaps img surface;
+      bitmaps_pixels := !bitmaps_pixels + pixels;
       surface
 
 (*****************************************************************************)
