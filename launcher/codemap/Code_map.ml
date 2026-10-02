@@ -19,17 +19,16 @@
 
 open Playground
 
-(* claude: the map's types and tools, Code_map's own as before the styles
- * were apart (plan_codemap_google_maps.md, step 0) *)
+(* claude: the map's types and tools *)
 include Code_map_base
 
 type action = Stay | Open of Code_file.t * int | Close | Select of string * string list | Up | Tied of string * string list * string list | Graph of string * string list
 
-(* claude: the styles, y going from one to the next, one setting for
+(* claude: the styles, y going from one to the other, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
-let styles = [ Map_classic.style; Map_streets.style; Map_atlas.style; Map_v2.style ]
+let styles = [ Map_classic.style; Map_v2.style ]
 (* claude: v2 the default, everywhere (plan_codemap_v2.md, step 11);
- * the others behind m, zooming freely *)
+ * the classic behind y, zooming freely, the code painted from afar *)
 let chosen = ref Map_v2.style
 let choose_style (name : string) = match List.find_opt (fun s -> s.sname = name) styles with Some s -> chosen := s | None -> ()
 let style_name () = !chosen.sname
@@ -38,17 +37,14 @@ let cycle_style () =
   let rec next = function s :: (n :: _ as rest) -> if s == !chosen then n else next rest | _ -> List.hd styles in
   chosen := next styles
 
-(* claude: the layout a style wants: the atlas's layered by who uses
- * whom (Code_layers), the others' by name *)
-let laid_out (t : t) (style : style) (algo : Treemap.algo) : t =
-  let links = if style.sname = "atlas" then Some (Code_rank.links (rank_of t)) else None in
-  let placed, geometry = relayout ?links ~top_kept:t.top_kept t.cam.a algo t.entries in
-  { t with style; algo; placed; geometry; painted = None; lens = None; focus = 0 }
+(* claude: the map laid out again, by another algorithm (t) *)
+let laid_out (t : t) (algo : Treemap.algo) : t =
+  let placed, geometry = relayout ~top_kept:t.top_kept t.cam.a algo t.entries in
+  { t with algo; placed; geometry; painted = None; lens = None; focus = 0 }
 
 (* a map in the chosen style *)
 let make ?fan_in ?counted ?top_kept ?numbered ?colours ?roots ?guide ?beyond ?style ~area ~title ~marked entries : t =
-  let t = Code_map_base.make ?fan_in ?counted ?top_kept ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries in
-  if !chosen.sname = "atlas" then laid_out t !chosen t.algo else t
+  Code_map_base.make ?fan_in ?counted ?top_kept ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries
 
 (* claude: the map framing a unit by its path (a directory's or a
  * file's), at once *)
@@ -561,21 +557,21 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
       t.mark_group <- next (t.mark_group + 1)
     end
   end;
-  (* claude: the style, the next one, for this map and those to come
+  (* claude: the style, the other one, for this map and those to come
    * (y: m went to the marks, the author: "cycling map styles is not so
    * important") *)
   let before = t.placed in
   let t =
     if pressed "y" then begin
       cycle_style ();
-      if t.style.sname = "atlas" || !chosen.sname = "atlas" then laid_out t !chosen t.algo else { t with style = !chosen; painted = None; lens = None }
+      { t with style = !chosen; painted = None; lens = None }
     end
     else t
   in
   let t =
     if pressed "t" then
       let algo : Treemap.algo = match t.algo with Ordered -> Squarified | Squarified -> Slice_and_dice | Slice_and_dice -> Ordered in
-      laid_out t t.style algo
+      laid_out t algo
     else t
   in
   (* a new layout: back to the whole map *)
@@ -1056,7 +1052,7 @@ let keys_help = [
   ("w", "a program's map: its own code, with what it uses, the whole repository");
   ("Enter", "the file view, the file read whole");
   ("b", "back, after a jump to a definition");
-  ("y", "another style of map (v2, classic, atlas, streets)");
+  ("y", "the other style of map (v2, classic: the code painted from afar, the wheel zooming freely)");
   ("h", "this help; Escape, back");
 ]
 

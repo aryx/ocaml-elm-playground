@@ -255,7 +255,7 @@ let find_program (name : string) : Catalogue.program option =
  * so a link, tinybox.html?code=TinyTurboPascal, is a program's code to
  * read (the website's cards link there) *)
 let initial (flags : flags) : model =
-  (* claude: and style=streets, the code maps' style (Code_map) *)
+  (* claude: and style=classic, the code maps' style (Code_map) *)
   Option.iter Code_map.choose_style (List.assoc_opt "style" flags);
   let named key = Option.bind (List.assoc_opt key flags) find_program in
   match (named "code", named "chosen") with

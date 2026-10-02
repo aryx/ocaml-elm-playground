@@ -1,10 +1,10 @@
 (* Code_map_base: the code map's types, and the tools every style of map
-   draws with (plan_codemap_google_maps.md, step 0): the layout, the
+   draws with: the layout, the
    camera and its two spaces, the parts' colours, the pixels painted, a
    file's code painted as SeeSoft's picture or as letters, and the labels
    placed. Code_map includes it, and adds what every style shares (the
-   moves, the names lit and clicked, the glass); a style (Map_classic)
-   draws the picture and its names.
+   moves, the names lit and clicked, the glass); a style (Map_v2,
+   Map_classic) draws the picture and its names.
 
    Two spaces: the layout's, where the treemap is laid out once in a
    rectangle the map's size (units, y downwards), and the screen's, the
@@ -140,11 +140,9 @@ val root_rect : area -> Treemap.rect
 
 (* a file's columns: characters about twice as high as wide *)
 val geometry_of : Treemap.rect -> int -> geometry
-(* with [links] (Code_rank.links), layered: the users above the used
-   (Code_layers) *)
 (* claude: [top_kept]: a lone top directory drawn, named, not merged into
    the root *)
-val relayout : ?links:(string * string * int) list -> ?top_kept:bool -> area -> Treemap.algo -> entry list -> entry Treemap.placed array * geometry option array
+val relayout : ?top_kept:bool -> area -> Treemap.algo -> entry list -> entry Treemap.placed array * geometry option array
 
 (* the camera fitting a rectangle; the whole map's *)
 val fit : area -> Treemap.rect -> camera

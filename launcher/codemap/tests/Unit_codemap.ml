@@ -171,17 +171,6 @@ let tests =
           Alcotest.(check string) "straight" "others 1 in 1 files, own 1" (show (Code_rank.uses r "games/Road.ml" 0 "straight"));
           Alcotest.(check bool) "curve scores above straight" true
             (Code_rank.score r "games/Road.ml" 1 "curve" Def_function > Code_rank.score r "games/Road.ml" 0 "straight" Def_function));
-      (* claude: Code_labels.mli's worked example *)
-      Testo.create "labels placed once, zoom by zoom" (fun () ->
-          let mk text x rank = Code_labels.label Def text ~x ~y:10. ~px:12. ~rank ~from_level:0. ~to_level:9. ~fw:1000. ~fh:1000. (255, 255, 255) in
-          let a = mk "important" 10. 10. and b = mk "shadowed" 10. 5. and c = mk "far" 900. 1. in
-          Code_labels.place ~level:(fun _ -> 2.) ~dir_level:(fun _ -> 2.) ~zmin:0.5 ~zmax:400. [| a; b; c |];
-          Alcotest.(check (float 1e-9)) "the more important from the start" 0.5 a.minz;
-          Alcotest.(check bool) "the other at the same point never" true (b.minz = Float.infinity);
-          Alcotest.(check (float 1e-9)) "one far away from the start too" 0.5 c.minz;
-          Alcotest.(check (float 1e-6)) "placed, it stays placed to the closest zoom" 400. a.maxz;
-          Alcotest.(check (float 1e-9)) "shown inside its zooms" 1. (Code_labels.alpha a 10.);
-          Alcotest.(check (float 1e-9)) "and not the one never placed" 0. (Code_labels.alpha b 10.));
       Testo.create "a file's grid and definitions" (fun () ->
           let f = Code_file.make "x.ml" "(*****)\n(* Model *)\n(*****)\nlet move p = p\ntype t = int\n" in
           Alcotest.(check (list (pair int string))) "the section, the function, the type"
@@ -368,13 +357,6 @@ let tests =
             [ "d/.codemapconfig: an unknown field summery (known: title, summary, generated, colors, dirs, files, tours, skeletons, views, marks, anatomy)" ]
             (load "{ summery: 'x' }");
           Alcotest.(check (list string)) "jsonnet's own" [ "d/.codemapconfig:1: expected ,, not b" ] (load "{ a: 1 b: 2 }"));
-      (* claude: Code_layers' worked example *)
-      Testo.create "layers: the users above the used" (fun () ->
-          let tree = Treemap.of_paths [ ("games/A.ml", 10., ()); ("playground/P.ml", 10., ()); ("libs/L.ml", 10., ()) ] in
-          let band =
-            Code_layers.compute [ ("games/A.ml", "playground/P.ml", 3); ("games/A.ml", "libs/L.ml", 1); ("playground/P.ml", "libs/L.ml", 2) ] tree
-          in
-          Alcotest.(check (list int)) "games/, playground/, libs/" [ 0; 1; 2 ] (List.map band [ "games"; "playground"; "libs" ]));
       (* claude: Code_road.mli's worked example: a road's spline starts
        * and ends at its ends, and passes near, not through, the point
        * between *)
@@ -383,8 +365,7 @@ let tests =
           let first = List.hd pts and last = List.hd (List.rev pts) in
           Alcotest.(check (list (float 1e-9))) "its ends" [ 0.; 0.; 20.; 0. ] [ fst first; snd first; fst last; snd last ];
           let top = List.fold_left (fun m (_, y) -> Float.max m y) 0. pts in
-          Alcotest.(check bool) "the middle pulled towards (10, 10), short of it" true (top > 4. && top < 10.);
-          Alcotest.(check (list int)) "the zooms' depths" [ 1; 2; max_int ] [ Map_atlas.depth_at 1.; Map_atlas.depth_at 4.; Map_atlas.depth_at 20. ]);
+          Alcotest.(check bool) "the middle pulled towards (10, 10), short of it" true (top > 4. && top < 10.));
       (* claude: Code_units' worked example *)
       Testo.create "units: in, out, beside" (fun () ->
           let placed =

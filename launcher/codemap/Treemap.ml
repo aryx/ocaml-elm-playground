@@ -185,22 +185,7 @@ let gap (r : rect) : rect =
 
 let child_path (path : string) (node : 'a tree) : string = if path = "" then name_of node else if name_of node = "" then path else path ^ "/" ^ name_of node
 
-(* claude: [kids] cut into bands by [band] (of their paths), the lowest
- * band on top, each band as high as its share and laid out by [lay] *)
-let banded (band : string -> int) (lay : 'a tree list -> rect -> rect list) (path : string) (kids : 'a tree list) (r : rect) : 'a tree list * rect list =
-  let bs = List.sort_uniq compare (List.map (fun k -> band (child_path path k)) kids) in
-  let total = List.fold_left (fun acc k -> acc +. size k) 0. kids in
-  let y = ref r.y in
-  List.fold_left
-    (fun (ks, rs) b ->
-      let these = List.filter (fun k -> band (child_path path k) = b) kids in
-      let h = r.h *. List.fold_left (fun acc k -> acc +. size k) 0. these /. total in
-      let rect = { r with y = !y; h } in
-      y := !y +. h;
-      (ks @ these, rs @ lay these rect))
-    ([], []) bs
-
-let layout ?(bands : (string -> int) option) (algo : algo) (r : rect) (tree : 'a tree) : 'a placed list =
+let layout (algo : algo) (r : rect) (tree : 'a tree) : 'a placed list =
   let rec go depth path rect node acc =
     let path = child_path path node in
     let rect = match node with File _ when depth > 0 -> gap rect | _ -> rect in
@@ -217,24 +202,12 @@ let layout ?(bands : (string -> int) option) (algo : algo) (r : rect) (tree : 'a
           | Squarified | Slice_and_dice -> kids
         in
         let inner = if depth = 0 then rect else inset depth rect in
-        let lay kids inner =
-          let sizes = List.map size kids in
+        let sizes = List.map size kids in
+        let rects =
           match algo with
           | Ordered -> ordered_layout sizes inner
           | Squarified -> squarify sizes inner
           | Slice_and_dice -> slice ~horizontal:(depth mod 2 = 0) sizes inner
-        in
-        (* claude: bands at the top, the map's layers, and below only in
-         * a rectangle high enough (else they nest into slivers); elsewhere the children in the order of
-         * their bands, which the ordered layout reads left to right and
-         * top to bottom *)
-        let kids, rects =
-          match bands with
-          | Some band when depth = 0 || inner.h >= 0.5 *. inner.w -> banded band lay path kids inner
-          | Some band ->
-              let kids = List.stable_sort (fun a b -> compare (band (child_path path a)) (band (child_path path b))) kids in
-              (kids, lay kids inner)
-          | None -> (kids, lay kids inner)
         in
         List.fold_left2 (fun acc k rc -> go (depth + 1) path rc k acc) acc kids rects
   in

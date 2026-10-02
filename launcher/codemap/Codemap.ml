@@ -529,8 +529,8 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
   (* claude: opti=off, the simple code instead of the optimized (Opti.mli:
    * the code map's list there), to see what each buys *)
   if List.assoc_opt "opti" flags = Some "off" then Opti.enabled := false;
-  (* claude: style=streets, the map's style (Code_map); a directory's
-   * map is drawn by default in the new one, Map_v2 *)
+  (* claude: style=classic, the map's style (Code_map); a directory's
+   * map is drawn by default in Map_v2 *)
   Code_map.choose_style (Option.value (List.assoc_opt "style" flags) ~default:"v2");
   Playground_platform.run_app ~window:{ Playground.default_window with screen_size = Some (1778, 1000) } ~flags
     (Playground.game view update { code = None; before = Set_.empty; repeat = None })

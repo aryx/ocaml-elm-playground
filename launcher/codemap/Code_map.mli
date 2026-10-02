@@ -119,13 +119,11 @@ val cycle_glass : ?panel:bool -> unit -> unit
 (* the glass now, for a hint: "round", "wide" or "none" *)
 val glass_name : ?panel:bool -> unit -> string
 
-(* claude: the map's style (Code_map_base.style: Map_classic, today's;
-   Map_streets, plan_codemap_google_maps.md's; Map_atlas, the street
-   map with the files' heat and the parts' roads), one setting for every
-   map as the glass's: m (in update, or cycle_style) goes to the next;
-   choose_style by its name (the flag style=, "classic", "streets" or
-   "atlas");
-   a map is made in the style chosen *)
+(* claude: the map's style (Code_map_base.style: Map_v2, the default;
+   Map_classic, the first one, the code painted at every zoom), one
+   setting for every map as the glass's: y (in update, or cycle_style)
+   goes to the other; choose_style by its name (the flag style=, "v2"
+   or "classic"); a map is made in the style chosen *)
 val cycle_style : unit -> unit
 val choose_style : string -> unit
 val style_name : unit -> string

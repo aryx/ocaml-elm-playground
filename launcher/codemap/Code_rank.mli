@@ -45,7 +45,7 @@ val uses : t -> string -> int -> string -> use
 val users : t -> string -> int -> string -> (string * int) list
 
 (* claude: the files' links: [(a, b, n)], file [a] using [b]'s
-   definitions [n] times (b not a), the roads of Map_atlas *)
+   definitions [n] times (b not a): the ties between units, the layers *)
 val links : t -> (string * string * int) list
 
 (* codemap's buckets and weights, and their product *)

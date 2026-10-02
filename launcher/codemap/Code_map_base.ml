@@ -172,7 +172,7 @@ let geometry_of (r : Treemap.rect) (nlines : int) : geometry =
   let rec best k acc = if k > min n 64 then acc else best (k + 1) (let g = make k in if score g < score acc then g else acc) in
   best 2 (make 1)
 
-let relayout ?links ?(top_kept = false) (a : area) (algo : Treemap.algo) (entries : entry list) : entry Treemap.placed array * geometry option array =
+let relayout ?(top_kept = false) (a : area) (algo : Treemap.algo) (entries : entry list) : entry Treemap.placed array * geometry option array =
   let tree = Treemap.of_paths (List.map (fun e -> (e.path, float_of_int (max 1 e.nlines), e)) entries) in
   (* claude: [top_kept]: a lone top directory drawn, not merged into the
    * root (whose name is never drawn): a selection's files in their
@@ -183,9 +183,7 @@ let relayout ?links ?(top_kept = false) (a : area) (algo : Treemap.algo) (entrie
     | Dir ("", [ Dir (sub, kids) ]) when top_kept -> Treemap.Dir ("", [ Treemap.fold_singletons (Dir (sub, kids)) ])
     | tree -> Treemap.fold_singletons tree
   in
-  (* claude: layered by who uses whom, given the files' links *)
-  let bands = Option.map (fun l -> Code_layers.compute l tree) links in
-  let placed = Array.of_list (Treemap.layout ?bands algo (root_rect a) tree) in
+  let placed = Array.of_list (Treemap.layout algo (root_rect a) tree) in
   (placed, Array.map (fun (p : entry Treemap.placed) -> match p.node with File (_, _, e) -> Some (geometry_of p.rect e.nlines) | Dir _ -> None) placed)
 
 let fit (a : area) (r : Treemap.rect) : camera =

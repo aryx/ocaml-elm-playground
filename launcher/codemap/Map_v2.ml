@@ -2365,8 +2365,8 @@ let layer_of (t : t) (layer : int) (top : string) (r : Code_rank.t) : layer_data
         if layer = 1 then begin
           (* the parts of the unit looked at, each by the uses coming into
            * it from the others over those and the uses going out to them,
-           * counted in uses (a stray link a few, libc's thousands: the
-           * longest paths of Code_layers put the programs with lib_core
+           * counted in uses (a stray link a few, libc's thousands:
+           * layering by the longest paths put the programs with lib_core
            * over one), its files its colour *)
           let parts = List.map (fun i -> t.placed.(i).path) (Code_units.children t.placed t.focus) in
           let part_of p = List.find_opt (fun q -> p = q || Code_search.starts p (q ^ "/")) parts in

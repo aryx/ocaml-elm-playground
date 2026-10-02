@@ -6,8 +6,9 @@ street. It runs on any directory (`tinybox codemap <dir>`), on a program
 from tinybox's menu (`s`, or a click on the code under a game's
 preview), and on this repository itself.
 
-This manual describes the map's current style, v2 (`m` switches to the
-older ones: classic, atlas, streets). It says what the map shows, how to
+This manual describes the map's current style, v2 (`y` switches to the
+older one, classic: every file's code painted from afar, the wheel
+zooming freely). It says what the map shows, how to
 move and search in it, how to see the dependencies between its parts,
 and how to describe a codebase for it: the `.codemapconfig` files.
 
@@ -448,7 +449,7 @@ The keys:
 | `w` | a program's map: its code, with what it uses, the whole repository |
 | `b` | back after a jump |
 | Enter | the file view |
-| `y` | another style of map |
+| `y` | the other style of map (classic) |
 | `0`, Home | the whole map |
 | arrows | beside |
 | Backspace, `-` | out |

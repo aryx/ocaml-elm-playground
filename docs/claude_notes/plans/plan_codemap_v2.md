@@ -85,7 +85,9 @@ placement without overlap (`Code_map_base.place`), the file view
 (`Code_view`), the parts' colours (the current `.codemapconfig`'s
 `colors`, which stays valid), the edge bundles (`Map_atlas`).
 `Map_classic`, `Map_streets`, `Map_atlas` stay, as alternative views
-behind `m`: v2 the default, they the free zooming.
+behind `m`: v2 the default, they the free zooming. (2026-10-02: only
+`Map_classic` stays, behind `y`; the streets and the atlas, subsumed by
+v2, were deleted, their roads kept as `Code_road`.)
 
 ## The `.codemapconfig`, version 2
 

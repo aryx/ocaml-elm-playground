@@ -1,5 +1,14 @@
 # Plan: the code map as a Google Map for code
 
+> Superseded by `plan_codemap_v2.md`. The two styles this plan made, the
+> street map (`Map_streets`, `Code_labels`) and the atlas (`Map_atlas`,
+> `Code_layers`), were deleted on 2026-10-02: v2 has their column hints,
+> roles, capitals, heat (the `l` layers) and roads (`Code_road`, a unit's
+> ties); what it has not -- the continuous zoom with labels placed once,
+> every road at once, the layered treemap -- was judged not worth
+> keeping. `Map_classic` stays beside v2 (`y`). The commit's message has
+> the comparison; the code is in git's history.
+
 ## Context
 
 The author (2026-09-28): "What I want is a 'Google map' for code. I tried
