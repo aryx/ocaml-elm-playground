@@ -41,11 +41,7 @@ let test_chord () =
     blocks q 2
   in
   let sum = Array.mapi (fun i x -> x +. (alone e).(i) +. (alone g).(i)) (alone c) in
-  (* claude: to a millionth, not 1e-12: the same additions in the same
-   * order, so 0 exactly on x86-64, arm64 and an emulated s390x; but
-   * 1.5e-7 off on opam's s390x machine (0.3.1), which is not explained.
-   * A voice left out would be off by 0.3 *)
-  Alcotest.(check (float 1e-6)) "their sum" 0. (Array.fold_left Float.max 0. (Array.mapi (fun i x -> Float.abs (x -. sum.(i))) chord))
+  Alcotest.(check (float 1e-12)) "their sum" 0. (Array.fold_left Float.max 0. (Array.mapi (fun i x -> Float.abs (x -. sum.(i))) chord))
 
 (* the blocks after a key is let go until its voice is freed *)
 let test_release () =

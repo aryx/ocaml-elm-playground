@@ -570,6 +570,11 @@
   openssl s_server listens (Testutil_server.await_listening) instead of
   half a second, too short on riscv64; Worker's timing test given wider
   bounds
+- 0.3.4, what opam's CI found in 0.3.3: on s390x, OCaml 5.1 at least
+  (tiny_libs' depends): 4.14's runtime there saves %f13 at the wrong
+  offset in caml_call_gc, a float's low 32 bits lost over a minor
+  collection -- Spectrum's "the FFT = the DFT" off by 1e-6, and what
+  Polyphony's "their sum" was off by in 0.3.1 (back to 1e-12)
 
 ** docs
 - README-3d.md, and many tutorials in docs/claude_notes/: notes_2d.md,

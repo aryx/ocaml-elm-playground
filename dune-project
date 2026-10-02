@@ -14,7 +14,7 @@
    "Yoann Padioleau <yoann.padioleau@gmail.com"
 )
 
-(version "0.3.3")
+(version "0.3.4")
 
 (source (github aryx/ocaml-elm-playground))
 (homepage "https://github.com/aryx/ocaml-elm-playground")
@@ -74,7 +74,14 @@
   is a library of its own, tiny_libs.<name>.
 ")
   (depends
-    (ocaml (>= "4.14.0"))
+    ;; claude: OCaml 5.1 at least on s390x: 4.14's runtime there saves
+    ;; %f13 at 108(%r15) instead of 104 in caml_call_gc (s390x.S), so
+    ;; %f14's save overwrites its low 32 bits, and a float in %f13 over a
+    ;; minor collection comes back wrong in its low half (1e-6 off: the
+    ;; audio tests found it on opam's s390x builder, 0.3.1 and 0.3.3;
+    ;; under qemu, OCAMLRUNPARAM=s=7000 shows it). OCaml 5's runtime does
+    ;; not have it. Every other package depends on this one
+    (ocaml (and (>= "4.14.0") (or (<> :arch s390x) (>= "5.1.0"))))
     (dune (>= "3.17"))
     (caps (>= "0.1.0"))
     logs
