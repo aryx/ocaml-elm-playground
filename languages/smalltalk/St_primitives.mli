@@ -60,6 +60,7 @@
      153      shallowCopy
      154      SmallInteger asLargeInteger, 155 LargeInteger normalize
      156      CompiledMethod selector, 157 methodClass
-     158      inspect, an Inspector opened by the host *)
+     158      inspect, an Inspector opened by the host
+     159      CompiledMethod getSource, its text *)
 
 val install : St_interp.vm -> unit

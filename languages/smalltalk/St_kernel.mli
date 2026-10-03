@@ -7,7 +7,8 @@ val files : (string * string) list
 (* Squeak's: the Blue Book's, then the files of kernel/squeak/, which
  * add to its classes and change some: closures (St_compile.mli),
  * Forms with a depth and Color (St_colorblt.mli), StrikeFont and
- * text, Morphic (Morphic.st, the machinery; Morphs.st, the morphs) *)
+ * text, Morphic (Morphic.st, the machinery; Morphs.st, the morphs) and the
+ * tools as morphs (Tools.st) *)
 val squeak : (string * string) list
 
 (* MiniMorphic: Squeak's without its Morphic, then

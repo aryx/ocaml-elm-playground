@@ -16,8 +16,9 @@ program. Here is what makes it an environment:
   does, the morph is picked up: anything on the screen can be dragged.
   The keys go to the morph that has the keyboard focus;
 - the halo: the blue button on a morph puts handles around it -- to
-  delete it, pick it up, duplicate it, resize it. They work on any
-  morph, since they only send it delete, duplicate and extent:. The
+  delete it, pick it up, duplicate it, resize it, inspect it. They
+  work on any morph, since they only send it delete, duplicate,
+  extent: and inspect. The
   halo is a morph too, and follows its target by its step.
 
 The morphs themselves are in Morphs.st. The interpreter knows none of
@@ -49,7 +50,7 @@ Morph subclass: #HandMorph
 
 Morph subclass: #PasteUpMorph
 	instanceVariableNames: 'hand canvas damage'
-	classVariableNames: ''
+	classVariableNames: 'Current'
 	poolDictionaries: ''
 	category: 'Morphic-Kernel'!
 
@@ -476,17 +477,21 @@ fullDrawOn: aCanvas
 
 !HandMorph methodsFor: 'events'!
 processEvents
-	"The mouse and the keys read once a cycle, and made messages."
-	| p buttons event key |
+	"The mouse and the keys read once a cycle, and made messages.
+	What the buttons were is remembered before a message is sent: if
+	it ends in an error, which stops the cycle there, the next cycle
+	does not send it again."
+	| p buttons before event key |
 	p := Sensor mousePoint.
 	buttons := Sensor buttons.
+	before := lastButtons.
+	lastButtons := buttons.
 	event := MorphicEvent position: p buttons: buttons key: nil.
 	p = bounds origin ifFalse: [
 		self position: p.
 		mouseFocus == nil ifFalse: [mouseFocus mouseMove: event]].
-	(buttons ~= 0 and: [lastButtons = 0]) ifTrue: [self mouseDown: event].
-	(buttons = 0 and: [lastButtons ~= 0]) ifTrue: [self mouseUp: event].
-	lastButtons := buttons.
+	(buttons ~= 0 and: [before = 0]) ifTrue: [self mouseDown: event].
+	(buttons = 0 and: [before ~= 0]) ifTrue: [self mouseUp: event].
 	[(key := Sensor keyboard) == nil] whileFalse: [
 		keyboardFocus == nil ifFalse: [
 			keyboardFocus keyStroke: (MorphicEvent position: p buttons: buttons key: (Character value: key))]]!
@@ -494,13 +499,14 @@ processEvents
 mouseDown: anEvent
 	"What it carries is put down. Else, the frontmost morph under it:
 	none, the world's menu; with the blue button, its halo; else the
-	first of it and its owners that wants the mouse gets it, and if
-	none does the whole is picked up."
+	first of it and its owners that wants the mouse gets it (the
+	yellow button too: a text's menu), and if none does the whole is
+	picked up."
 	| m handler |
 	submorphs isEmpty ifFalse: [^self dropAll].
 	m := owner morphAt: anEvent position.
 	owner closeMenusBut: m.
-	anEvent redButtonPressed ifFalse: [^owner haloOn: m].
+	anEvent blueButtonPressed ifTrue: [^owner haloOn: m].
 	m == nil ifTrue: [^owner openMenuAt: anEvent position].
 	handler := m.
 	[handler isWorldOrHand or: [handler handlesMouseDown: anEvent]] whileFalse: [handler := handler owner].
@@ -510,10 +516,12 @@ mouseDown: anEvent
 	handler mouseDown: anEvent!
 
 mouseUp: anEvent
-	mouseFocus == nil ifFalse: [
-		mouseFocus mouseUp: anEvent.
-		mouseFocus := nil].
-	dragging ifTrue: [self dropAll]!
+	"The focus forgotten before it is told, for the same reason."
+	| focus |
+	focus := mouseFocus.
+	mouseFocus := nil.
+	dragging ifTrue: [self dropAll].
+	focus == nil ifFalse: [focus mouseUp: anEvent]!
 
 grab: aMorph
 	"Picked up, to be put down when the button goes up. It keeps its
@@ -534,8 +542,12 @@ dropAll
 
 !PasteUpMorph class methodsFor: 'instance creation'!
 on: aForm
-	"A world drawn on that Form, of 8 or 32 bits."
-	^self new setForm: aForm! !
+	"A world drawn on that Form, of 8 or 32 bits. The last one made
+	is where the tools open."
+	^Current := self new setForm: aForm!
+
+current
+	^Current! !
 
 !PasteUpMorph methodsFor: 'initialize'!
 setForm: aForm
@@ -621,11 +633,16 @@ setTarget: aMorph
 	"Its handles, in the order step places them."
 	target := aMorph.
 	color := Color blue.
-	#(#delete #grab #duplicate #resize)
-		with: (Array with: (Color r: 1 g: 2/5 b: 2/5) with: Color black with: Color green with: Color yellow)
-		do: [:action :c | self addMorphBack: (HaloHandleMorph new setAction: action color: c)].
+	self addHandle: #delete color: (Color r: 1 g: 2/5 b: 2/5).
+	self addHandle: #grab color: Color black.
+	self addHandle: #duplicate color: Color green.
+	self addHandle: #resize color: Color yellow.
+	self addHandle: #inspect color: (Color r: 3/5 g: 4/5 b: 1).
 	bounds := 0 @ 0 corner: 0 @ 0.
-	self step! !
+	self step!
+
+addHandle: aSymbol color: aColor
+	self addMorphBack: (HaloHandleMorph new setAction: aSymbol color: aColor)! !
 
 !HaloMorph methodsFor: 'accessing'!
 isHalo
@@ -641,8 +658,8 @@ containsPoint: aPoint
 !HaloMorph methodsFor: 'stepping'!
 step
 	"Follow the target: around it, a handle at the top left (delete),
-	the top's middle (pick up), the top right (duplicate) and the
-	bottom right (resize). Gone with it."
+	the top's middle (pick up), the top right (duplicate), the bottom
+	right (resize) and the bottom left (inspect). Gone with it."
 	| box |
 	target owner == nil ifTrue: [^self delete].
 	box := target bounds expandBy: 14.
@@ -653,6 +670,7 @@ step
 	(submorphs at: 2) position: (box left + box right - 14 // 2) @ box top.
 	(submorphs at: 3) position: (box right - 14) @ box top.
 	(submorphs at: 4) position: box corner - 14.
+	(submorphs at: 5) position: box left @ (box bottom - 14).
 	self changed! !
 
 !HaloMorph methodsFor: 'drawing'!
@@ -666,6 +684,7 @@ handle: action down: anEvent
 	action == #delete ifTrue: [
 		target delete.
 		^self delete].
+	action == #inspect ifTrue: [^target inspect].
 	action == #grab ifTrue: [^hand grab: target].
 	action == #duplicate ifTrue: [
 		target := target duplicate.

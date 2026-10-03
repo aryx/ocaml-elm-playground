@@ -6,7 +6,10 @@ and what it does with the mouse and the keys, if it wants them.
 - BorderedMorph, RectangleMorph, EllipseMorph: a shape and its border;
 - AtomMorph: an ellipse that bounces in its owner, the morph that
   steps;
-- StringMorph: a line of text; TextMorph: text one types in;
+- StringMorph: a line of text; TextMorph: text one types in, selects
+  with the mouse, and evaluates (the yellow button's menu: do it,
+  print it, inspect it, accept); ListMorph: a column of items, one
+  picked;
 - SimpleButtonMorph: a click sends a message;
 - MenuMorph: a column of items, gone at the next click; the world's
   menu makes new morphs and gives them to the hand;
@@ -49,10 +52,16 @@ Morph subclass: #StringMorph
 	category: 'Morphic-Basic'!
 
 Morph subclass: #TextMorph
-	instanceVariableNames: 'text cursor font ink'
+	instanceVariableNames: 'text cursor anchor firstLine font ink highlight receiver acceptTarget acceptSelector'
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Basic'!
+
+Morph subclass: #ListMorph
+	instanceVariableNames: 'items selection firstItem font ink edge target selector'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Morphic-Widgets'!
 
 RectangleMorph subclass: #SimpleButtonMorph
 	instanceVariableNames: 'target selector'
@@ -187,9 +196,12 @@ initialize
 	bounds := 0 @ 0 corner: 200 @ 80.
 	color := Color white.
 	ink := Color black.
+	highlight := Color r: 7/10 g: 4/5 b: 1.
 	font := StrikeFont default.
 	text := ''.
-	cursor := 0! !
+	cursor := 0.
+	anchor := 0.
+	firstLine := 0! !
 
 !TextMorph methodsFor: 'accessing'!
 contents
@@ -198,12 +210,36 @@ contents
 contents: aString
 	"The lines end with a return, Character value: 13."
 	text := aString.
-	cursor := aString size.
+	cursor := 0.
+	anchor := 0.
+	firstLine := 0.
 	self changed!
 
 cursor
 	"How many characters are before the caret."
 	^cursor!
+
+selection
+	"From the anchor, where the button went down, to the cursor."
+	^text copyFrom: (cursor min: anchor) + 1 to: (cursor max: anchor)!
+
+selectFrom: start to: stop
+	"The characters after the first start, up to the stop-th."
+	anchor := start.
+	cursor := stop.
+	self scrollToCursor.
+	self changed!
+
+receiver: anObject
+	"Who self is in what is evaluated here: nil in a Workspace, the
+	object in its Inspector."
+	receiver := anObject!
+
+acceptTarget: anObject selector: aSymbol
+	"Who is given the text when it is accepted: a Browser, to
+	compile it."
+	acceptTarget := anObject.
+	acceptSelector := aSymbol!
 
 hasFocus
 	| w |
@@ -221,11 +257,28 @@ linesDo: aBlock
 			start := i]].
 	aBlock value: (text copyFrom: start + 1 to: text size) value: start!
 
+visibleLines
+	^bounds height - 4 // font height!
+
+cursorRow
+	"The line the cursor is on, the first one 0."
+	| row |
+	row := 0.
+	1 to: cursor do: [:i | (text at: i) value = 13 ifTrue: [row := row + 1]].
+	^row!
+
+scrollToCursor
+	"The first line shown changed so that the cursor's is."
+	| row |
+	row := self cursorRow.
+	row < firstLine ifTrue: [firstLine := row].
+	row >= (firstLine + self visibleLines) ifTrue: [firstLine := row - self visibleLines + 1 max: 0]!
+
 cursorPoint
 	"The top of the caret: on the line that has the cursor, after the
 	width of what is before it."
 	| y |
-	y := bounds top + 2.
+	y := bounds top + 2 - (firstLine * font height).
 	self linesDo: [:line :start |
 		cursor <= (start + line size) ifTrue: [
 			^(bounds left + 3 + (font widthOfString: (line copyFrom: 1 to: cursor - start))) @ y].
@@ -236,7 +289,7 @@ indexAt: aPoint
 	"The cursor for a click there: its line, then the characters
 	whose middle is left of it."
 	| row n |
-	row := (aPoint y - bounds top - 2) // font height max: 0.
+	row := (aPoint y - bounds top - 2) // font height + firstLine max: 0.
 	n := 0.
 	self linesDo: [:line :start | | x i |
 		n = row ifTrue: [
@@ -250,47 +303,247 @@ indexAt: aPoint
 	^text size! !
 
 !TextMorph methodsFor: 'editing'!
-insert: aString
-	text := (text copyFrom: 1 to: cursor), aString, (text copyFrom: cursor + 1 to: text size).
-	cursor := cursor + aString size!
+replaceSelectionWith: aString
+	"What is typed takes the place of what is selected."
+	| lo hi |
+	lo := cursor min: anchor.
+	hi := cursor max: anchor.
+	text := (text copyFrom: 1 to: lo), aString, (text copyFrom: hi + 1 to: text size).
+	cursor := lo + aString size.
+	anchor := cursor!
 
 backspace
-	cursor = 0 ifTrue: [^self].
-	text := (text copyFrom: 1 to: cursor - 1), (text copyFrom: cursor + 1 to: text size).
-	cursor := cursor - 1! !
+	cursor = anchor ifTrue: [
+		cursor = 0 ifTrue: [^self].
+		anchor := cursor - 1].
+	self replaceSelectionWith: ''!
+
+insertAfterSelection: aString
+	"After what is selected, and selected itself: an answer printed,
+	the compiler's complaint -- a backspace takes it away."
+	| end |
+	end := cursor max: anchor.
+	cursor := end.
+	anchor := end.
+	self replaceSelectionWith: aString.
+	anchor := end.
+	self scrollToCursor.
+	self changed! !
+
+!TextMorph methodsFor: 'evaluating'!
+selectLine
+	"Nothing selected: the cursor's line is."
+	cursor = anchor ifFalse: [^self].
+	self linesDo: [:line :start |
+		cursor <= (start + line size) ifTrue: [
+			anchor := start.
+			cursor := start + line size.
+			^self]]!
+
+evaluateThen: aBlock
+	"The selection compiled as a method of the receiver's class, DoIt,
+	whose answer is the last statement's, and sent: the compiler and
+	the interpreter are the ones that run everything else. The
+	compiler's complaint, if any, goes after the selection."
+	| return compiled |
+	self selectLine.
+	return := String with: (Character value: 13).
+	compiled := receiver class compile: 'DoIt', return, '^[', self selection, return, '] value' classified: 'do its'.
+	compiled isSymbol ifFalse: [^self insertAfterSelection: ' ', compiled].
+	aBlock value: (receiver perform: #DoIt)!
+
+doIt
+	self evaluateThen: [:value | self changed]!
+
+printIt
+	self evaluateThen: [:value | self insertAfterSelection: ' ', value printString]!
+
+inspectIt
+	self evaluateThen: [:value | value inspect]!
+
+accept
+	acceptTarget == nil ifFalse: [acceptTarget perform: acceptSelector with: text]! !
 
 !TextMorph methodsFor: 'events'!
 handlesMouseDown: anEvent
 	^true!
 
 mouseDown: anEvent
-	"The keys are now for this text, the caret where the click was."
+	"The keys are now for this text. The red button: the caret where
+	the click is, and the selection starts there. The yellow one: its
+	menu."
 	self world hand keyboardFocus: self.
+	anEvent redButtonPressed ifFalse: [^self openMenuAt: anEvent position].
 	cursor := self indexAt: anEvent position.
+	anchor := cursor.
 	self changed!
 
+mouseMove: anEvent
+	"The selection follows the hand; past the top or the bottom, the
+	text scrolls."
+	anEvent redButtonPressed ifFalse: [^self].
+	anEvent position y < bounds top ifTrue: [firstLine := firstLine - 1 max: 0].
+	anEvent position y > bounds bottom ifTrue: [firstLine := firstLine + 1].
+	cursor := self indexAt: anEvent position.
+	self scrollToCursor.
+	self changed!
+
+openMenuAt: aPoint
+	| menu |
+	menu := MenuMorph new.
+	menu add: 'do it' target: self selector: #doIt.
+	menu add: 'print it' target: self selector: #printIt.
+	menu add: 'inspect it' target: self selector: #inspectIt.
+	acceptTarget == nil ifFalse: [menu add: 'accept' target: self selector: #accept].
+	menu popUpAt: aPoint in: self world!
+
 keyStroke: anEvent
-	"A character typed, a return, a backspace (8), the arrows left
-	(28) and right (29)."
-	| c |
+	"A character typed, a return, a tab, a backspace (8), the arrows
+	(28 left, 29 right, 30 up, 31 down). A character typed in a line
+	damages that line only."
+	| c first plain |
 	c := anEvent keyCharacter value.
+	first := firstLine.
+	plain := c >= 32 and: [c < 127 and: [cursor = anchor]].
 	c = 8 ifTrue: [self backspace].
-	c = 28 ifTrue: [cursor := cursor - 1 max: 0].
-	c = 29 ifTrue: [cursor := cursor + 1 min: text size].
-	(c = 13 or: [c >= 32 and: [c < 127]]) ifTrue: [self insert: (String with: anEvent keyCharacter)].
-	self changed! !
+	c = 28 ifTrue: [cursor := cursor - 1 max: 0. anchor := cursor].
+	c = 29 ifTrue: [cursor := cursor + 1 min: text size. anchor := cursor].
+	c = 30 ifTrue: [cursor := self indexAt: self cursorPoint - (0 @ font height). anchor := cursor].
+	c = 31 ifTrue: [cursor := self indexAt: self cursorPoint + (0 @ font height). anchor := cursor].
+	(c = 13 or: [c = 9 or: [c >= 32 and: [c < 127]]]) ifTrue: [
+		self replaceSelectionWith: (String with: anEvent keyCharacter)].
+	self scrollToCursor.
+	(plain and: [first = firstLine])
+		ifTrue: [self invalidRect: (bounds left @ self cursorPoint y corner: bounds right @ (self cursorPoint y + font height))]
+		ifFalse: [self changed]! !
 
 !TextMorph methodsFor: 'drawing'!
 drawOn: aCanvas
-	"The paper, then the lines, kept inside it; the caret if the keys
-	come here."
+	"The paper, then the lines that are in what is redrawn, each over
+	its part of the selection, kept inside the paper; the caret if
+	the keys come here and nothing is selected."
+	| lo hi row |
 	aCanvas fillRectangle: bounds color: color.
-	aCanvas clipBy: bounds during: [ | y |
-		y := bounds top + 2.
-		self linesDo: [:line :start |
-			aCanvas drawString: line at: (bounds left + 3) @ y font: font color: ink.
-			y := y + font height].
-		self hasFocus ifTrue: [aCanvas fillRectangle: (self cursorPoint extent: 1 @ font height) color: ink]]! !
+	lo := cursor min: anchor.
+	hi := cursor max: anchor.
+	row := 0.
+	aCanvas clipBy: bounds during: [
+		self linesDo: [:line :start | | y |
+			y := bounds top + 2 + (row - firstLine * font height).
+			(row >= firstLine and: [y < aCanvas clip bottom and: [y + font height > aCanvas clip top]]) ifTrue: [
+				(lo < hi and: [lo <= (start + line size) and: [hi > start]]) ifTrue: [
+					aCanvas
+						fillRectangle: ((self xIn: line at: lo - start) @ y
+							corner: ((self xIn: line at: hi - start) + (hi > (start + line size) ifTrue: [4] ifFalse: [0])) @ (y + font height))
+						color: highlight].
+				aCanvas drawString: line at: (bounds left + 3) @ y font: font color: ink].
+			row := row + 1].
+		(lo = hi and: [self hasFocus]) ifTrue: [
+			aCanvas fillRectangle: (self cursorPoint extent: 1 @ font height) color: ink]]!
+
+xIn: aLine at: n
+	"Where the n-th character of a line ends on the screen; before
+	the line's start, its start; past its end, its end."
+	^bounds left + 3 + (font widthOfString: (aLine copyFrom: 1 to: ((n max: 0) min: aLine size)))! !
+
+!ListMorph methodsFor: 'initialize'!
+initialize
+	super initialize.
+	bounds := 0 @ 0 corner: 100 @ 100.
+	color := Color white.
+	font := StrikeFont default.
+	ink := Color black.
+	edge := Color gray.
+	items := #().
+	selection := 0.
+	firstItem := 0! !
+
+!ListMorph methodsFor: 'accessing'!
+items
+	^items!
+
+items: aCollection
+	"What it lists: Strings or Symbols. Nothing selected."
+	items := aCollection asArray.
+	selection := 0.
+	firstItem := 0.
+	self changed!
+
+selection
+	"The selected item's place, 0 for none."
+	^selection!
+
+selectedItem
+	^selection = 0 ifTrue: [nil] ifFalse: [items at: selection]!
+
+target: anObject selector: aSymbol
+	"Who is told when an item is picked, with its place."
+	target := anObject.
+	selector := aSymbol!
+
+visibleRows
+	^bounds height - 4 // font height! !
+
+!ListMorph methodsFor: 'selecting'!
+highlight: anInteger
+	"Shown as selected, scrolled to, nobody told yet."
+	selection := (anInteger max: 0) min: items size.
+	selection > 0 ifTrue: [
+		selection <= firstItem ifTrue: [firstItem := selection - 1].
+		selection > (firstItem + self visibleRows) ifTrue: [firstItem := selection - self visibleRows max: 0]].
+	self changed!
+
+select: anInteger
+	"An item picked: the target told."
+	self highlight: anInteger.
+	(target == nil or: [selection = 0]) ifFalse: [target perform: selector with: selection]!
+
+selectItem: anObject
+	"Picked by what it is, as a click on it would."
+	self select: (items indexOf: anObject)! !
+
+!ListMorph methodsFor: 'events'!
+handlesMouseDown: anEvent
+	^true!
+
+mouseDown: anEvent
+	self world hand keyboardFocus: self.
+	self mouseMove: anEvent!
+
+mouseMove: anEvent
+	"The item under the hand shown selected; past the top or the
+	bottom, the list scrolls."
+	| y |
+	y := anEvent position y.
+	y < bounds top ifTrue: [^self highlight: firstItem].
+	y >= bounds bottom ifTrue: [^self highlight: firstItem + self visibleRows + 1].
+	self highlight: (y - bounds top - 2 // font height + firstItem + 1 max: 1)!
+
+mouseUp: anEvent
+	"Picked when the button goes up."
+	self select: selection!
+
+keyStroke: anEvent
+	"The arrows up (30) and down (31)."
+	| c |
+	c := anEvent keyCharacter value.
+	c = 30 ifTrue: [self select: (selection - 1 max: 1)].
+	c = 31 ifTrue: [self select: selection + 1]! !
+
+!ListMorph methodsFor: 'drawing'!
+drawOn: aCanvas
+	"The rows that fit, from the first one shown; the selected one
+	white on black."
+	aCanvas fillRectangle: bounds color: color.
+	aCanvas clipBy: bounds during: [
+		firstItem + 1 to: (firstItem + self visibleRows + 1 min: items size) do: [:i | | y |
+			y := bounds top + 2 + (i - 1 - firstItem * font height).
+			i = selection
+				ifTrue: [
+					aCanvas fillRectangle: (bounds left @ y corner: bounds right @ (y + font height)) color: ink.
+					aCanvas drawString: (items at: i) at: (bounds left + 3) @ y font: font color: color]
+				ifFalse: [aCanvas drawString: (items at: i) at: (bounds left + 3) @ y font: font color: ink]]].
+	aCanvas frameRectangle: bounds width: 1 color: edge! !
 
 !SimpleButtonMorph methodsFor: 'initialize'!
 initialize
@@ -403,6 +656,9 @@ openMenuAt: aPoint
 	menu add: 'new text' target: self selector: #newMorph: argument: TextMorph.
 	menu add: 'new window' target: self selector: #newMorph: argument: SystemWindow.
 	menu add: 'new atom' target: self selector: #newMorph: argument: AtomMorph.
+	menu add: 'workspace' target: Workspace selector: #open.
+	menu add: 'browser' target: Browser selector: #open.
+	menu add: 'transcript' target: Transcript selector: #open.
 	menu add: 'restore display' target: self selector: #restoreDisplay.
 	menu popUpAt: aPoint in: self!
 
@@ -438,6 +694,15 @@ titleHeight
 paneArea
 	"Under the title, inside the border."
 	^(bounds left + 1) @ (bounds top + self titleHeight) corner: bounds corner - 1! !
+
+!SystemWindow methodsFor: 'opening'!
+openInWorld
+	"In the world the tools open in, each a little further than the
+	last."
+	| world |
+	world := PasteUpMorph current.
+	self position: world submorphs size * 24 + 30 @ (world submorphs size * 24 + 30).
+	world addMorph: self! !
 
 !SystemWindow methodsFor: 'panes'!
 addMorph: aMorph frame: aRectangle

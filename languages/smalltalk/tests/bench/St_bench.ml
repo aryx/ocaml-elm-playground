@@ -125,6 +125,34 @@ let morphs (atoms : int) =
     timed "nothing changed" 200 "W doOneCycle"
   end
 
+(* Squeak's tools (kernel/squeak/Tools.st): what the Browser's
+ * gestures cost, each followed by the cycle that redraws what it
+ * damaged *)
+let tools () =
+  let keys = Queue.create () in
+  let host = { St_boot.quiet_host with keyboard = (fun () -> Queue.take_opt keys) } in
+  let vm = St_boot.boot ~host ~kernel:St_kernel.squeak () in
+  let run text = match I.evaluate vm ~budget:2_000_000_000 text with Ok _ -> () | Error e -> print_endline ("error: " ^ e) in
+  let timed name text =
+    let before = I.bytecodes_run vm and t0 = Sys.time () in
+    run (text ^ ". W doOneCycle");
+    Printf.printf "tools     %-26s %10d bytecodes %7.2f ms\n%!" name (I.bytecodes_run vm - before) ((Sys.time () -. t0) *. 1000.)
+  in
+  run "Smalltalk at: #W put: (PasteUpMorph on: (Form extent: 800 @ 600 depth: 32)). StrikeFont default. W doOneCycle";
+  timed "the Browser opened" "Smalltalk at: #B put: Browser open";
+  timed "a category picked" "B categoryList selectItem: 'Morphic-Kernel'";
+  timed "a class picked" "B classList selectItem: #Morph";
+  timed "a protocol picked" "B protocolList selectItem: 'changing'";
+  timed "a selector picked" "B selectorList selectItem: #position:";
+  timed "the method accepted" "B codePane accept";
+  run "W hand keyboardFocus: B codePane. W doOneCycle";
+  Queue.add (Char.code 'x') keys;
+  timed "a character typed" "3";
+  Queue.add 13 keys;
+  timed "a return typed" "3";
+  timed "the world redrawn" "W restoreDisplay";
+  timed "print it" "B codePane contents: '100 factorial printString size'. B codePane printIt"
+
 let () =
   let only = if Array.length Sys.argv > 1 then Sys.argv.(1) else "" in
   let has (name : string) =
@@ -137,6 +165,7 @@ let () =
   if has "text" then text ();
   if has "morphic" then List.iter morphic [ 10; 50; 200 ];
   if has "morphs" then List.iter morphs [ 10; 50; 200 ];
+  if has "tools" then tools ();
   List.iter
     (fun (kernel, files) ->
       let vm = St_boot.boot ~kernel:files () in

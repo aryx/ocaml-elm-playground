@@ -74,4 +74,9 @@ let () =
   check
     "| f w r | f := Form extent: 100 @ 80 depth: 32. w := PasteUpMorph on: f. r := EllipseMorph new. w hand attachMorph: r. w doOneCycle. Array with: (f colorAt: 25 @ 20) with: (f colorAt: 52 @ 42)"
     "#(Color(255 255 0) Color(142 142 142))";
+  (* the tools: evaluation by a DoIt method, the Browser's source *)
+  check
+    "| w t | w := PasteUpMorph on: (Form extent: 300 @ 200 depth: 32). t := Workspace open submorphs first. t contents: '(1 bitShift: 40) + 1'. t printIt. t contents"
+    "'(1 bitShift: 40) + 1 1099511627777'";
+  check "(Morph sourceCodeAt: #drawOn:) copyFrom: 1 to: 15" "'drawOn: aCanvas'";
   if !failures > 0 then exit 1

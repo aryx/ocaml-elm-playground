@@ -10,45 +10,9 @@
 
 (* See Unit_morphic.mli *)
 
-module I = St_interp
-
 let check = Alcotest.(check string)
 
-(* a system of its own, whose mouse the test moves (x, y, buttons: 4
- * red, 1 blue) and whose keys it types; a world W of 400 by 300 *)
-type world = { vm : I.vm; mouse : (int * int * int) ref; keys : int Queue.t }
-
-let print (w : world) (text : string) : string =
-  match I.evaluate w.vm ~budget:50_000_000 text with
-  | Ok v ->
-      let s = I.print_string w.vm v in
-      let n = String.length s in
-      if n >= 2 && s.[0] = '\'' && s.[n - 1] = '\'' then String.sub s 1 (n - 2) else s
-  | Error e -> "error: " ^ e
-
-let boot () : world =
-  let mouse = ref (0, 0, 0) and keys = Queue.create () in
-  let host = { St_boot.quiet_host with mouse = (fun () -> !mouse); keyboard = (fun () -> Queue.take_opt keys) } in
-  let w = { vm = St_boot.boot ~host ~kernel:St_kernel.squeak (); mouse; keys } in
-  check "a world" "a PasteUpMorph"
-    (print w "Smalltalk at: #F put: (Form extent: 400 @ 300 depth: 32). Smalltalk at: #W put: (PasteUpMorph on: F). W doOneCycle. W");
-  w
-
-(* the mouse there, a cycle *)
-let move (w : world) (x : int) (y : int) (buttons : int) : unit =
-  w.mouse := (x, y, buttons);
-  ignore (print w "W doOneCycle")
-
-(* a click: down then up, a cycle each *)
-let click ?(button = 4) (w : world) (x : int) (y : int) : unit =
-  move w x y button;
-  move w x y 0
-
-let typed (w : world) (s : string) : unit =
-  String.iter (fun c -> Queue.add (Char.code c) w.keys) s;
-  ignore (print w "W doOneCycle")
-
-let colour (w : world) (x : int) (y : int) : string = print w (Printf.sprintf "F colorAt: %d @ %d" x y)
+open Testutil_morphic
 
 let tests =
   Testo.categorize "Squeak Morphic"

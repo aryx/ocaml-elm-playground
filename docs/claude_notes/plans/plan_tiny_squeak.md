@@ -148,7 +148,19 @@ in `dev/notes_opti_ocaml.md`.
   resize, duplicate, delete, inspect), `changed` and the world's damage
   list, redrawn once a cycle; `RectangleMorph`, `EllipseMorph`,
   `StringMorph`, `TextMorph` (editing), `SystemWindow`, menus.
-- **Q5, the tools as morphs**: a Workspace, the System Browser, an
+- **Q5, the tools as morphs** (done, 2026-10-03:
+  `kernel/squeak/Tools.st` -- Workspace, Transcript's window,
+  Inspector, Browser -- over `TextMorph` (selection, scrolling, the
+  yellow button's do it, print it, inspect it, accept) and `ListMorph`;
+  evaluation by compiling a `DoIt` method, no evaluator; primitive
+  159, a method's source; the halo's inspect handle; `Unit_tools.ml`,
+  St_bench's "tools", `notes_squeak.md` section 5. The Browser opened
+  142,000 bytecodes, a selector picked 117,000 (51 ms under node), a
+  character typed 43,000. Left: no scroll bars (a list scrolls by
+  dragging past its edge, a text follows its cursor); no debugger as
+  a morph, an error stops the cycle and the host goes on with the
+  next, Q6's host to show why; senders, implementors, removing a
+  method): a Workspace, the System Browser, an
   Inspector, the Transcript -- the same Browser that shows `Morph`'s
   methods, `Morph>>drawOn:` changed and accepted, every morph redrawn
   its new way.

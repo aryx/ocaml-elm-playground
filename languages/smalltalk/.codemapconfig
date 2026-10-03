@@ -176,13 +176,13 @@
         { from: 'def:execute', to: 'def:activate_method' },
       ],
     },
-    'St_primitives.mli': { digest: '34aa391df9b8',
+    'St_primitives.mli': { digest: '1e915e43aef9',
       summary: "What the VM does itself, numbered as in chapter 29: the primitive first, the Smalltalk code when it fails.",
       important: [
         { at: 'comment:"the primitive runs first"', say: 'a failure falls back on Smalltalk', weight: 3 },
       ],
     },
-    'St_primitives.ml': { digest: '41a4d86a1192',
+    'St_primitives.ml': { digest: '1a1e3d6a7502',
       summary: 'Numbers, indexing, objects and classes, blocks and perform:, strings, the system, and the table.',
       important: [
         { at: 'def:small_ints', say: 'SmallInteger arithmetic, failing on overflow', weight: 2 },
@@ -240,7 +240,7 @@
         { at: 'def:read', weight: 2 },
       ],
     },
-    'St_kernel.mli': { digest: 'b3bbd81c056f',
+    'St_kernel.mli': { digest: 'e8facb22f065',
       summary: "The kernel's chunk files, kernel/*.st, embedded by dune in the order St_boot reads them; and Squeak's kernel, the same then kernel/squeak/'s, and MiniMorphic's.",
     },
     'St_boot.mli': { digest: '52eae0a194e3',
@@ -322,7 +322,7 @@
   dirs: {
     kernel: { summary: "The kernel's classes written in Smalltalk, in chunk format: what St_boot compiles into the world." },
     'kernel/morphic': { summary: "MiniMorphic: Morphic in one file of Smalltalk -- a world, a hand, morphs that step, damage rectangles -- kept as a step to read before Squeak's." },
-    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures; Color and Forms with a depth; StrikeFont, text drawn a glyph a BitBlt; Morphic, its machinery (Morphic.st) and its morphs (Morphs.st)." },
+    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures; Color and Forms with a depth; StrikeFont, text drawn a glyph a BitBlt; Morphic, its machinery (Morphic.st) and its morphs (Morphs.st); the tools as morphs (Tools.st)." },
     tests: { summary: 'Expressions printed, the class hierarchy, the debugger, the image saved and loaded.' },
   },
 }

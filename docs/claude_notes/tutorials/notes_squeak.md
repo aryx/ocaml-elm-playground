@@ -7,7 +7,7 @@ colour, and an environment, Morphic, written in Smalltalk itself. This
 tutorial follows the plan's phases, a section each as it is written,
 each ending with the worked example its tests check
 (`Unit_squeak.ml`, `Unit_minimorphic.ml`, `Unit_colour.ml`,
-`Unit_morphic.ml`).
+`Unit_morphic.ml`, `Unit_tools.ml`).
 
 The thread through it: **the host shrinks**. Every step moves
 something from OCaml into Smalltalk, where the Browser can show it and
@@ -428,8 +428,8 @@ bytecodes: a square root, a BitBlt). What was measured and changed:
   3's next step): a line of 40 characters from 0.7 to 0.4 ms
   natively, 3.5 to 2.2 under node.
 
-What is left: a `TextMorph` redraws all its lines at each key (50 ms
-under node for 20 lines); only the changed line should be damaged.
+What was left, a `TextMorph` redrawing all its lines at each key, is
+section 5's: a character typed damages its line only.
 
 **Worked examples** (`Unit_morphic.ml`): an ellipse's corner is the
 world's gray and a click there is not on it; a rectangle picked up at
@@ -440,6 +440,103 @@ button goes up elsewhere; the halo's resize handle dragged to
 the hand; `Helo`, an arrow back, `l`, typed in a text; a window's left
 pane 129 wide, then 149 when the window is 300; the world's menu, its
 second item, an ellipse in the hand.
+
+## 5. The tools, as morphs
+
+Files: `kernel/squeak/Tools.st`, and `TextMorph` and `ListMorph` in
+`Morphs.st`. Tests: `Unit_tools.ml`.
+
+TinySmalltalk80's Browser, Workspace and Inspector are OCaml: the host
+draws them and asks the object memory. Here they are Smalltalk: a
+`SystemWindow` whose panes are `ListMorph`s and `TextMorph`s, and an
+object behind (`Browser`, `Inspector`) that fills them. This is the
+section where the host shrinks most: it lost its tools.
+
+### Two widgets
+
+A `ListMorph` shows a column of items and tells its target which one
+was picked, when the button goes up. A `TextMorph` is text typed in,
+with a selection (from the anchor, where the button went down, to the
+cursor), scrolled so that the cursor shows; the yellow button opens
+its menu: do it, print it, inspect it, accept. Neither has a scroll
+bar: a list scrolls when the hand, button down, goes past its top or
+its bottom, a text follows its cursor.
+
+### There is no evaluator
+
+`print it` on `3 + 4`:
+
+    nil class compile: 'DoIt
+    ^[3 + 4
+    ] value' classified: 'do its'       a method, in UndefinedObject
+    nil perform: #DoIt                  7
+
+The text is wrapped in a block, whose value is its last statement's,
+compiled as a method named `DoIt` of the receiver's class, and sent.
+The compiler and the interpreter are the ones that run everything
+else. In an Inspector the receiver is the object inspected, so `DoIt`
+is compiled in its class, and its instance variables are just there:
+`x * y` in the Inspector of `3 @ 4` prints 12.
+
+What does not compile answers the compiler's complaint, a String
+instead of the selector, which is put after the selection, selected:
+a backspace takes it away.
+
+### The Browser asks the system
+
+Nothing is kept beside the classes: `Smalltalk classesDo:` for the
+classes and their categories, a class's `organization` for its
+protocols and their selectors, a method's `getSource` for its text
+(the one primitive the tools needed, 159: the source is kept with the
+method, `St_bytecode.mli`). A class picked shows its `definition`, the
+message that made it, which accepted makes it again -- with another
+instance variable, and its methods compiled again.
+
+Accept on a method is `compile:classified:`, and what it compiles is
+in use at once. The worked example: `Morph>>drawOn:` changed to fill
+with `Color red`, accepted; at the next redraw every plain morph on
+the screen is red. The Browser's own panes are morphs: change
+`ListMorph>>drawOn:` and the Browser you changed it in is drawn the
+new way.
+
+### Nobody tells the Transcript's window
+
+`Transcript show:` keeps its text (the last 2,000 characters). Its
+window is a `TextMorph` whose `step` looks, each cycle, whether the
+text is a new one. Smalltalk-80 would have the Transcript tell its
+dependents (`changed:`, `update:`); a morph that steps can just look.
+
+### An error
+
+There is no debugger here yet. An error (`nil foo`) stops the process
+that ran it -- the world's cycle, in the middle of a mouse click. The
+host says why and starts the next cycle; for that to work, the hand
+remembers the buttons and forgets its mouse focus *before* it sends
+the message that may never return.
+
+### What it costs
+
+The Browser's gestures, each with the cycle that redraws what it
+damaged:
+
+| | bytecodes | native | under node |
+|---|---|---|---|
+| the Browser opened | 142,000 | 12 ms | 179 ms |
+| a category picked | 53,000 | 6 ms | 64 ms |
+| a selector picked | 117,000 | 9 ms | 51 ms |
+| a method accepted | 37,000 | 3 ms | 19 ms |
+| a character typed | 43,000 | 2 ms | 11 ms |
+| a return typed | 93,000 | 6 ms | 27 ms |
+
+A character typed damages its line only; a return, the whole text.
+
+**Worked examples** (`Unit_tools.ml`): a word dragged over and typed
+over; `3 + 4 * 2` printed as 14, then taken away by a backspace; `3 +`
+answered by the compiler; print it from the yellow button's menu;
+`nil foo` stopping a cycle, and the next one going on; the Transcript's
+window after a cycle; the Inspector of `3 @ 4`; the Browser's four
+lists down to `Morph>>drawOn:`, its class side, a new method `twice`,
+a compile error left in the text, `AtomMorph` given a `mass`.
 
 ## Exercises
 
@@ -454,6 +551,11 @@ second item, an ellipse in the hand.
 - Colour: a Form of 32 bits drawn on one of 8 (Squeak's way: the
   pixel reduced to 5 bits of each colour, a map of 32,768 entries);
   Squeak's own palette of 8 bits; a `Pen` with a colour.
+- The tools: a scroll bar (a morph beside a list, its thumb dragged);
+  the Browser's "senders" and "implementors", by going through every
+  method's literals; a method removed; the Debugger as a morph, over
+  `thisContext` and the process stopped (`St_debug.mli`); Squeak's
+  `changed:` and `update:` instead of the Transcript's polling.
 - Morphic: a halo on a part of a morph (Squeak's: each blue click
   goes one morph inward); a morph dropped into the morph under it
   (`wantsDroppedMorph:`); `stepTime`, a morph stepped every so many

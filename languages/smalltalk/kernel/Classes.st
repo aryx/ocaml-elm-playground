@@ -35,12 +35,6 @@ instSize
 isVariable
 	^(format bitAnd: 7) between: 1 and: 2!
 
-instanceVariableNames
-	| names |
-	names := superclass == nil ifTrue: [OrderedCollection new] ifFalse: [superclass instanceVariableNames].
-	instanceVariables == nil ifFalse: [instanceVariables do: [:each | names add: each]].
-	^names!
-
 selectors
 	<primitive: 149>
 	self primitiveFailed!
@@ -93,6 +87,13 @@ compile: code
 !Behavior methodsFor: 'printing'!
 printOn: aStream
 	aStream nextPutAll: self name! !
+
+!ClassDescription methodsFor: 'accessing'!
+instanceVariableNames
+	| names |
+	names := superclass == nil ifTrue: [OrderedCollection new] ifFalse: [superclass instanceVariableNames].
+	instanceVariables == nil ifFalse: [instanceVariables do: [:each | names add: each]].
+	^names! !
 
 !Class methodsFor: 'accessing'!
 name

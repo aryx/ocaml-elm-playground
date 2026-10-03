@@ -153,7 +153,9 @@ leftOf: aCharacter
 	^xTable at: (self indexOf: aCharacter)!
 
 widthOf: aCharacter
+	"A tab is four spaces wide, and nothing drawn."
 	| i |
+	aCharacter value = 9 ifTrue: [^(xTable at: 2) * 4].
 	i := self indexOf: aCharacter.
 	^(xTable at: i + 1) - (xTable at: i)!
 
@@ -179,7 +181,8 @@ drawString: aString at: aPoint font: aFont color: aColor clipRect: aRectangle
 	x := aPoint x.
 	aString do: [:c | | w |
 		w := aFont widthOf: c.
-		blt sourceX: (aFont leftOf: c); destX: x destY: aPoint y; width: w height: aFont height; copyBits.
+		c value = 9 ifFalse: [
+			blt sourceX: (aFont leftOf: c); destX: x destY: aPoint y; width: w height: aFont height; copyBits].
 		x := x + w].
 	^x!
 
