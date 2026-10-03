@@ -192,7 +192,8 @@ in `dev/notes_opti_ocaml.md`.
   `kernel=mini` shows MiniMorphic, what Q2b had left to Q6): a morph's viewer (its properties and commands as
   tiles), scripts made by dragging tiles, run by `step` -- the car
   driven by `forward: 5. turn: 5`, the classic first Etoy.
-- **Q8, the VM in Smalltalk**: the Blue Book's interpreter written in
+- **Q8, the VM in Smalltalk** (not planned any more, decided
+  2026-10-04: the plan ends with Q7): the Blue Book's interpreter written in
   Smalltalk, run as a simulator on ours (slowly: an interpreter in an
   interpreter), running a small image; translating that Slang to OCaml
   an exercise.
