@@ -47,6 +47,7 @@
    %{project_root}/apps/devtools/software/TinyEmacs.exe
    %{project_root}/apps/devtools/software/TinyTurboPascal.exe
    %{project_root}/apps/devtools/software/TinySmalltalk80.exe
+   %{project_root}/apps/devtools/software/TinySqueak.exe
    %{project_root}/apps/devtools/software/TinyScratch.exe
    %{project_root}/apps/devtools/software/TinySnap.exe
    %{project_root}/apps/devtools/software/TinyDrScheme.exe

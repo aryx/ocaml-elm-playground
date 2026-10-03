@@ -30,7 +30,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:app', say: "Tui_turbo's program: editor, P-code compiler, debugger", weight: 2 },
       ],
     },
-    'TinySmalltalk80.ml': { digest: 'b9c60d096687',
+    'TinySmalltalk80.ml': { digest: '7409280a06cf',
       summary: 'Smalltalk-80 (Kay, Ingalls, Goldberg, Xerox PARC, 1980): the Browser, Workspace, Inspector, Debugger, live.',
       capitals: [
         { at: 'def:evaluate', say: 'do it: the selection compiled, a process spawned' },
@@ -54,6 +54,20 @@ local skeletons = import '../../skeletons.libsonnet';
         { from: 'def:stopped', to: 'def:answered' },
       ],
       related: ['web/TinySmalltalk80.html', '../../tests/2d/golden/TinySmalltalk80.png'],
+    },
+    'TinySqueak.ml': { digest: 'af852d587409',
+      summary: 'Squeak (Ingalls, Kaehler, Maloney, Kay, 1996): the host of a Smalltalk whose whole environment, Morphic, is Smalltalk.',
+      capitals: [
+        { at: 'def:run_cycle', say: "the world's doOneCycle, once a frame" },
+      ],
+      important: [
+        { at: 'comment:"The trick of this app is how little of it there is"', say: 'the whole host: mouse, keys, a cycle, the Display', weight: 3 },
+        { at: 'def:startup', say: 'what Smalltalk is told first: a Display, a world, the windows', weight: 2 },
+        { at: 'def:run_cycle', weight: 3 },
+        { at: 'def:mouse', say: 'the buttons by their Smalltalk-80 colours', weight: 2 },
+        { at: 'def:take_picture', say: "the Display's pixels, when BitBlt drew", weight: 2 },
+      ],
+      related: ['web/TinySqueak.html', '../../tests/2d/golden/TinySqueak.png'],
     },
     'TinyDrScheme.ml': { digest: 'eb0500a7b588',
       summary: "DrScheme 209 (PLT, Rice, 2004): Definitions above, Interactions below, HtDP's images and the stepper.",
@@ -165,6 +179,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
     },
     skeletons.game('TinySmalltalk80.ml', 'def:evaluate', 'do it: the selection compiled, a process spawned', say='do it', init='def:initial'),
+    skeletons.game('TinySqueak.ml', 'def:run_cycle', "the world's doOneCycle, once a frame", say='each frame', init='def:initial'),
     skeletons.game('TinyDrScheme.ml', 'def:work', 'the machine run a budget of steps a frame', say='each frame'),
     {
       name: 'Vi: a Tui program, run by the Textmode way',

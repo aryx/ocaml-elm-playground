@@ -348,6 +348,10 @@ let scenes : Golden_scene.scene list =
      * Book's Rectangle>>center, a Workspace of things to try, the
      * Transcript *)
     ("apps/devtools/software/TinySmalltalk80", "", 3);
+    (* claude: Squeak's screen, all of it morphs drawn by Smalltalk: the
+     * Browser on EllipseMorph>>drawOn:, a Workspace, the Transcript,
+     * the bouncing atoms and the parts bin *)
+    ("apps/devtools/software/TinySqueak", "", 3);
     (* claude: Scratch 2's screen: the stage, the cat and the pencil,
      * the Motion palette, the cat's three scripts and, under the
      * sprites, the same scripts as scratchblocks text *)
@@ -1944,6 +1948,21 @@ let scripted_flagged : Golden_scene.scripted_flagged list =
       "at(-425;-332):1-6,click:2,Control:4-5,d:5,at(-12;75):6-8,click:7,at(-125;161):9-12,click:10",
       [] );
     ("apps/devtools/software/TinySmalltalk80", "interrupt", 14, "at(-425;-348):1-6,click:2,Control:4-5,d:5,Control:9-10,c:10", []);
+    (* claude: TinySqueak (the Display is 800 by 600 at a scale of 1.25,
+     * as TinySmalltalk80's). Print it from the yellow button's menu on
+     * 100 factorial printString size, 158 after it, selected; the
+     * Browser's EllipseMorph>>drawOn: typed into and accepted from the
+     * menu, the atoms bouncing beside it each in a red frame; the blue
+     * button's halo around the box of atoms; a copy of the parts
+     * bin's ellipse dragged out, carried over its shadow *)
+    ("apps/devtools/software/TinySqueak", "printit", 12, "at(-375;-139):1-5,click:2,rclick:4,at(-362;-172):6-12,click:8", []);
+    ( "apps/devtools/software/TinySqueak",
+      "accept",
+      16,
+      "at(212;70):1-6,click:2,type(. aCanvas frameRectangle: bounds width: 1 color: Color red):4,rclick:6,at(225;-6):8-16,click:10",
+      [] );
+    ("apps/devtools/software/TinySqueak", "halo", 6, "at(375;187):1-6,mclick:2", []);
+    ("apps/devtools/software/TinySqueak", "drag", 10, "at(356;58):1-3,at(100;-100):4-12,click:2-12", []);
     (* claude: its classic session: 10 fib not understood, its notifier's
      * define, the method typed into the debugger and accepted (the DoIt
      * restarted), proceed -- and 55 printed in the Workspace *)

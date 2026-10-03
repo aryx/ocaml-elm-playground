@@ -132,6 +132,26 @@ let tests =
           click w 20 20;
           click w 380 280;
           check "a menu goes at a click elsewhere, where another opens" "1" (print w "(W submorphs select: [:m | m isMenu]) size"));
+      Testo.create "the demos: a box of atoms that stay in it, a parts bin whose copies are dragged out" (fun () ->
+          let w = boot () in
+          ignore (print w "Smalltalk at: #B put: BouncingAtomsMorph new. W addMorph: B. B position: 100 @ 60");
+          check "twelve atoms, inside after fifty cycles" "12 true"
+            (print w "50 timesRepeat: [W doOneCycle]. B submorphs size printString, ' ', (B submorphs allSatisfy: [:a | (a bounds intersect: B bounds) = a bounds]) printString");
+          move w 105 65 4;
+          move w 125 85 4;
+          move w 125 85 0;
+          check "dragged: the atoms with their box" "120@80 true" (print w "B position printString, ' ', (B submorphs allSatisfy: [:a | B bounds intersects: a bounds]) printString");
+          ignore (print w "W submorphs copy do: [:m | m delete]. Smalltalk at: #P put: PartsBinMorph new. W addMorph: P. P position: 20 @ 200. W doOneCycle");
+          check "its parts" "4" (print w "P submorphs size");
+          (* the ellipse, the second part: 8, a rectangle of 50, 8 *)
+          move w 110 230 4;
+          check "a copy in the hand, the part still in the bin" "#EllipseMorph 4" (print w "W hand submorphs first class name printString, ' ', P submorphs size printString");
+          move w 300 100 4;
+          move w 300 100 0;
+          check "put down in the world" "#(#EllipseMorph #PartsBinMorph)" (print w "(W submorphs collect: [:m | m class name]) asArray");
+          move w 22 202 4;
+          check "its edge: the bin itself is picked up" "a HandMorph" (print w "P owner");
+          move w 22 202 0);
       Testo.create "step and damage: an atom bounces in the world, only where it was and is are redrawn" (fun () ->
           let w = boot () in
           ignore (print w "Smalltalk at: #A put: AtomMorph new. W addMorph: A. A position: 380 @ 100. A velocity: 5 @ 2. W doOneCycle");

@@ -231,15 +231,29 @@ let copy_bits (m : M.t) (bb : oop) : bool =
 let palette (p : int) : int * int * int * int =
   if p = 0 || p > 216 then (0, 0, 0, 0) else ((p - 1) / 36 * 51, (p - 1) / 6 mod 6 * 51, (p - 1) mod 6 * 51, 255)
 
-let form (m : M.t) (o : oop) : (int * int * (int -> int -> int * int * int * int)) option =
+let rgba (m : M.t) (o : oop) : (int * int * Bytes.t) option =
   match get_form m o with
   | None -> None
   | Some f ->
-      let rgba x y =
-        let p = get f x y in
-        match f.depth with
-        | 1 -> if p = 1 then (0, 0, 0, 255) else (255, 255, 255, 255)
-        | 8 -> palette p
-        | _ -> ((p lsr 16) land 255, (p lsr 8) land 255, p land 255, (p lsr 24) land 255)
+      let out = Bytes.create (4 * f.w * f.h) in
+      let set i r g b a =
+        Bytes.unsafe_set out i (Char.unsafe_chr r);
+        Bytes.unsafe_set out (i + 1) (Char.unsafe_chr g);
+        Bytes.unsafe_set out (i + 2) (Char.unsafe_chr b);
+        Bytes.unsafe_set out (i + 3) (Char.unsafe_chr a)
       in
-      Some (f.w, f.h, rgba)
+      for y = 0 to f.h - 1 do
+        for x = 0 to f.w - 1 do
+          let i = 4 * ((y * f.w) + x) in
+          match f.depth with
+          | 32 ->
+              (* alpha, red, green, blue: the alpha goes last *)
+              let j = (y * f.stride) + (4 * x) in
+              set i (byte f (j + 1)) (byte f (j + 2)) (byte f (j + 3)) (byte f j)
+          | 8 ->
+              let r, g, b, a = palette (get f x y) in
+              set i r g b a
+          | _ -> if get f x y = 1 then set i 0 0 0 255 else set i 255 255 255 255
+        done
+      done;
+      Some (f.w, f.h, out)

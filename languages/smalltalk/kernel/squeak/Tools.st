@@ -16,7 +16,8 @@ next redraw -- the Browser too, it is morphs.
 
 An error in what is evaluated stops the process that ran it, the
 world's cycle (Object>>error:): the host starts the next cycle and
-says why (St_interp.mli). A debugger as a morph is to come."!
+says why in the Transcript (showError:). A debugger as a morph is to
+come."!
 
 Object subclass: #TextCollector
 	instanceVariableNames: 'contents'
@@ -108,6 +109,12 @@ primShow: aString
 
 contents
 	^contents == nil ifTrue: [''] ifFalse: [contents]!
+
+showError: aString
+	"What stopped the world's cycle, said by the host: shown, in a
+	window opened if there is none."
+	self show: aString; cr.
+	(TranscriptMorph allInstances anySatisfy: [:each | each world notNil]) ifFalse: [self open]!
 
 open
 	"Its window: a text that shows what was shown."

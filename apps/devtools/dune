@@ -6,7 +6,9 @@
 ; languages/lisp); TinyTurboPascal, Turbo Pascal 7's IDE in text
 ; mode, over the same appkit and languages/pascal's P-code;
 ; TinySmalltalk80, Smalltalk-80's environment (the Browser, Workspace,
-; Inspector, Debugger), over languages/smalltalk; TinyScratch,
+; Inspector, Debugger), over languages/smalltalk, and TinySqueak, the
+; same Smalltalk booted from Squeak's kernel, its environment Morphic
+; and all of it Smalltalk, the program only its host; TinyScratch,
 ; Scratch 2's blocks, stage and sprites, over languages/scratch and
 ; appkits/blocks, and TinySnap, Snap!'s blocks of one's own, rings and
 ; lists, over the same -- one environment for both, Scratch_ide and
@@ -22,8 +24,8 @@
 ;    what they print, pictures included.
 ; Built on gui/ and the appkits (richtext, document).
 (executables
-  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap TinyDrScheme)
-  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinyScratch TinySnap TinyDrScheme Scratch_look Scratch_ide)
+  (names TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinySqueak TinyScratch TinySnap TinyDrScheme)
+  (modules TinyBasic TinyVi TinyEmacs TinyTurboPascal TinySmalltalk80 TinySqueak TinyScratch TinySnap TinyDrScheme Scratch_look Scratch_ide)
   (libraries
     basic ; Basic_parse, Basic_run, Basic_session
     scheme ; TinyDrScheme's language: the machine, the stepper, Scheme_*

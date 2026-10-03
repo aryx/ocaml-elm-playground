@@ -99,7 +99,7 @@ val blit :
  * depths do not go together. *)
 val copy_bits : St_memory.t -> oop -> bool
 
-(* a Form's width, height and pixels, for the host: red, green, blue
- * and alpha, each 0 to 255, at any depth -- a bit black or white, a
- * number of the palette looked up *)
-val form : St_memory.t -> oop -> (int * int * (int -> int -> int * int * int * int)) option
+(* a Form's width, height and pixels, for the host: four bytes a pixel,
+ * red, green, blue and alpha, row after row, at any depth -- a bit
+ * black or white, a number of the palette looked up *)
+val rgba : St_memory.t -> oop -> (int * int * Bytes.t) option

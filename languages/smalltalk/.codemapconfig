@@ -210,7 +210,7 @@
         { at: 'def:pixel', weight: 1 },
       ],
     },
-    'St_colorblt.mli': { digest: '64b0949ce0e9',
+    'St_colorblt.mli': { digest: '5dd61b0d4f00',
       summary: "BitBlt in colour, Squeak's: Forms of 8 and 32 bits, alpha blending, the colour map that gives text its ink.",
       important: [
         { at: 'comment:"rule 24  alpha blend"', say: 'rules that are arithmetic: blend and paint', weight: 3 },
@@ -219,7 +219,7 @@
         { at: 'def:copy_bits', weight: 2 },
       ],
     },
-    'St_colorblt.ml': { digest: '9104317068e5',
+    'St_colorblt.ml': { digest: '05bc64e46d5d',
       summary: 'A pixel read and written at each depth, the rules, the definition a pixel at a time; a fill and a store a row at a time.',
       important: [
         { at: 'def:combine', weight: 3 },

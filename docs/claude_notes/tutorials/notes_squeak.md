@@ -3,7 +3,8 @@
 TinySqueak (`plan_tiny_squeak.md`) is what Squeak (1996) made of the
 Blue Book's Smalltalk-80: the same language and virtual machine
 (`notes_smalltalk.md`, read first), with blocks that are real closures,
-colour, and an environment, Morphic, written in Smalltalk itself. This
+colour, and an environment, Morphic, written in Smalltalk itself
+(`apps/devtools/TinySqueak.ml` is its host, section 6). This
 tutorial follows the plan's phases, a section each as it is written,
 each ending with the worked example its tests check
 (`Unit_squeak.ml`, `Unit_minimorphic.ml`, `Unit_colour.ml`,
@@ -538,6 +539,58 @@ window after a cycle; the Inspector of `3 @ 4`; the Browser's four
 lists down to `Morph>>drawOn:`, its class side, a new method `twice`,
 a compile error left in the text, `AtomMorph` given a `mass`.
 
+## 6. TinySqueak: the host
+
+File: `apps/devtools/TinySqueak.ml`. Golden frames:
+`tests/2d/golden/TinySqueak*.png`.
+
+TinySmalltalk80 is 1,300 lines of OCaml, most of them its windows.
+TinySqueak is 250, a quarter of them its header: everything on its
+screen is Smalltalk. What is left to the host is the list of what a
+Smalltalk cannot do for itself:
+
+| the host | Smalltalk |
+|---|---|
+| the mouse's place and buttons, when asked | `Sensor mousePoint`, `buttons` (primitives 90, 91) |
+| the characters typed, one at a time | `Sensor keyboard` (92) |
+| `World doOneCycle`, once a frame | events, steps, the damage redrawn |
+| the Display's bytes shown, when BitBlt drew | everything drawn on it |
+| why a cycle stopped, said to the Transcript | `Transcript showError:` |
+
+and at the start, a few lines of Smalltalk it evaluates: a Display of
+32 bits, a world on it, the windows open on the first screen.
+
+**The cycle is a process.** Each frame the host runs it for a budget
+of bytecodes (2 million). A cycle is a few tens of thousands, so it
+ends within its frame and the next frame starts another. A `print it`
+on something long does not end: the same process runs on over the
+next frames, the screen still shown, and Control-C interrupts it. An
+error suspends the process: the host ends it, tells the Transcript
+why, and the next frame's cycle goes on (section 5).
+
+**The buttons.** Smalltalk-80 named them by colour: red selects,
+yellow is the menu of what is under it, blue is for the window --
+here, the halo. A mouse has a left one (red), a right one (yellow),
+and the middle one or Control with the left for blue.
+
+**The Display** is copied to a picture only when BitBlt drew since the
+last frame (`St_bitblt.changes`): a still screen costs nothing.
+
+The first screen is the lesson: the Browser on `EllipseMorph>>drawOn:`,
+and beside it a box of atoms bouncing, ellipses. Add a line to the
+method, accept from the yellow button's menu, and the atoms are drawn
+the new way while they bounce (`TinySqueak_accept.png`).
+
+Booting takes 0.6 s natively and about 2.5 s in a browser (the kernel
+compiled from its text, the font drawn, the first screen): an image
+saved and loaded would skip it (`St_image.mli`), an exercise.
+
+**Worked examples** (the golden frames): the first screen; print it
+from the menu, 158 after `100 factorial printString size`; a method
+typed into and accepted, the atoms in red frames; the halo around the
+box of atoms; a copy of the parts bin's ellipse carried over its
+shadow.
+
 ## Exercises
 
 - Miranda's finer rule: a temporary assigned only before any block
@@ -551,7 +604,11 @@ a compile error left in the text, `AtomMorph` given a `mass`.
 - Colour: a Form of 32 bits drawn on one of 8 (Squeak's way: the
   pixel reduced to 5 bits of each colour, a map of 32,768 entries);
   Squeak's own palette of 8 bits; a `Pen` with a colour.
-- The tools: a scroll bar (a morph beside a list, its thumb dragged);
+- The host: the image saved and loaded, booting from it; the mouse
+  wheel; copy and paste with the desktop's clipboard; the Display
+  sent in tiles, only those that changed.
+- The tools: a text that wraps its lines (a method's long line is cut
+  at the pane's edge); a scroll bar (a morph beside a list, its thumb dragged);
   the Browser's "senders" and "implementors", by going through every
   method's literals; a method removed; the Debugger as a morph, over
   `thisContext` and the process stopped (`St_debug.mli`); Squeak's

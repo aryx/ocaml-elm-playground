@@ -164,7 +164,16 @@ in `dev/notes_opti_ocaml.md`.
   Inspector, the Transcript -- the same Browser that shows `Morph`'s
   methods, `Morph>>drawOn:` changed and accepted, every morph redrawn
   its new way.
-- **Q6, TinySqueak**: `apps/devtools/TinySqueak.ml`, the smallest host
+- **Q6, TinySqueak** (done, 2026-10-04: `apps/devtools/TinySqueak.ml`,
+  the whole host in 250 lines -- the mouse, the keys, the
+  world's cycle a process run a budget a frame, the Display's pixels
+  when BitBlt drew, an error said by `Transcript showError:`; its
+  first screen the Browser on `EllipseMorph>>drawOn:` beside
+  `BouncingAtomsMorph`, and a `PartsBinMorph`; five golden frames,
+  the CATALOG row, the web page, `over_budget`; `notes_squeak.md`
+  section 6. Left: the painted car, with Q7's Etoys; the image saved
+  and loaded, booting from it (2.5 s in a browser without); a text
+  does not wrap, a long line is cut at the pane's edge): `apps/devtools/TinySqueak.ml`, the smallest host
   possible (the Display shown, the Sensor and the keyboard fed, the
   world's process run a budget a frame); Squeak 1.x's look; the
   classic demos: bouncing atoms (an ideal gas as morphs), a flap of

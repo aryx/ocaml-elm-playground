@@ -152,10 +152,11 @@ map shows it, and `make test` checks it (`tests/catalog/`, counted by
 the pixels, sounds, physics and codecs any program could use, while an
 appkit, a gamekit or a language is made for a few particular programs,
 a spreadsheet's recalculation, a genre's rules, Emacs's Lisp, so it is
-theirs and counts. Six programs are over it, each for a whole language
+theirs and counts. Seven programs are over it, each for a whole language
 it carries, and listed as exceptions in the test (which says when one
 comes back under): [TinySmalltalk80](apps/devtools/TinySmalltalk80.ml)
-(Smalltalk-80), [TinyChrome](apps/internet/TinyChrome.ml),
+(Smalltalk-80), [TinySqueak](apps/devtools/TinySqueak.ml) (the same,
+and its environment written in it), [TinyChrome](apps/internet/TinyChrome.ml),
 [TinyFirefox](apps/internet/TinyFirefox.ml) and
 [TinyNetscape](apps/internet/TinyNetscape.ml) (JavaScript and the
 browser's engine), [TinyMosaic](apps/internet/TinyMosaic.ml) (the

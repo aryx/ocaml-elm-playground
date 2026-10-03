@@ -77,6 +77,28 @@ let tests =
           ignore (print w "Transcript show: 'Hello'; cr; show: 3 + 4");
           check "not before the cycle" "" (print w "T contents");
           check "its step" "Hello|7" (bars (print w "W doOneCycle. T contents")));
+      Testo.create "what the host needs: an error said in the Transcript, the Display's pixels" (fun () ->
+          let w = boot () in
+          check "no window yet" "0" (print w "(W submorphs select: [:m | m isKindOf: SystemWindow]) size");
+          ignore (print w "Transcript showError: 'Message not understood: foo'. W doOneCycle");
+          check "said, in a window opened for it" "Message not understood: foo|"
+            (bars (print w "(W submorphs detect: [:m | m isKindOf: SystemWindow]) submorphs first contents"));
+          check "a second one: the same window" "1"
+            (print w "Transcript showError: 'Halt'. (W submorphs select: [:m | m isKindOf: SystemWindow]) size");
+          (* red, green, blue, alpha, a row after the other *)
+          let pixels text =
+            let vm = St_boot.boot ~kernel:St_kernel.squeak () in
+            match St_interp.evaluate vm text with
+            | Ok f -> (
+                match St_colorblt.rgba (St_interp.memory vm) f with
+                | Some (w, h, b) -> Printf.sprintf "%dx%d %s" w h (String.concat " " (List.init (Bytes.length b) (fun i -> string_of_int (Char.code (Bytes.get b i)))))
+                | None -> "not a Form")
+            | Error e -> e
+          in
+          check "32 bits: the alpha last" "2x1 255 128 0 255 0 0 0 0"
+            (pixels "| f | f := Form extent: 2 @ 1 depth: 32. f fill: (0 @ 0 corner: 1 @ 1) color: (Color r: 1 g: 1/2 b: 0). f");
+          check "8 bits: by the palette" "1x1 0 0 255 255" (pixels "| f | f := Form extent: 1 @ 1 depth: 8. f fillColor: Color blue. f");
+          check "1 bit: black and white" "2x1 0 0 0 255 255 255 255 255" (pixels "| f | f := Form extent: 2 @ 1. f fill: (0 @ 0 corner: 1 @ 1) rule: 15. f"));
       Testo.create "the Inspector: an object's fields, and a text where self is the object" (fun () ->
           let w = boot () in
           ignore (print w "Smalltalk at: #I put: (Inspector openOn: 3 @ 4)");

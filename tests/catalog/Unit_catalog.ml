@@ -133,6 +133,7 @@ let over_budget =
     ("apps/internet/TinyNetscape.ml", "JavaScript, through appkit_browser, which it shares with TinyFirefox");
     ("apps/office/TinyOffice.ml", "the spreadsheet's formulas and HyperTalk, every office part in one");
     ("apps/devtools/TinySmalltalk80.ml", "Smalltalk-80, a whole system");
+    ("apps/devtools/TinySqueak.ml", "the same Smalltalk, a whole system (plan_tiny_squeak.md)");
   ]
 
 let budget_test =

@@ -5,7 +5,9 @@ and what it does with the mouse and the keys, if it wants them.
 
 - BorderedMorph, RectangleMorph, EllipseMorph: a shape and its border;
 - AtomMorph: an ellipse that bounces in its owner, the morph that
-  steps;
+  steps; BouncingAtomsMorph, a box of them, Squeak's first demo (an
+  ideal gas: John Maloney's); PartsBinMorph, a strip of morphs whose
+  copies are dragged out of it;
 - StringMorph: a line of text; TextMorph: text one types in, selects
   with the mouse, and evaluates (the yellow button's menu: do it,
   print it, inspect it, accept); ListMorph: a column of items, one
@@ -41,6 +43,18 @@ BorderedMorph subclass: #EllipseMorph
 
 EllipseMorph subclass: #AtomMorph
 	instanceVariableNames: 'velocity'
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Morphic-Demo'!
+
+RectangleMorph subclass: #BouncingAtomsMorph
+	instanceVariableNames: ''
+	classVariableNames: ''
+	poolDictionaries: ''
+	category: 'Morphic-Demo'!
+
+RectangleMorph subclass: #PartsBinMorph
+	instanceVariableNames: ''
 	classVariableNames: ''
 	poolDictionaries: ''
 	category: 'Morphic-Demo'!
@@ -163,6 +177,55 @@ step
 	(p y < box top or: [p y + bounds height > box bottom]) ifTrue: [vy := vy negated].
 	velocity := vx @ vy.
 	self position: bounds origin + velocity! !
+
+!BouncingAtomsMorph methodsFor: 'initialize'!
+initialize
+	"A box and twelve atoms in it, each with its place, its speed and
+	its colour. Nothing else: an atom bounces in its owner, the box
+	steps what it holds, and moves with it when dragged."
+	| colors |
+	super initialize.
+	bounds := 0 @ 0 corner: 190 @ 160.
+	borderWidth := 1.
+	color := Color r: 1 g: 1 b: 4/5.
+	colors := Array with: Color red with: Color blue with: Color green.
+	1 to: 12 do: [:i | | atom |
+		atom := AtomMorph new.
+		atom extent: 10 @ 10.
+		atom color: (colors at: i \\ 3 + 1).
+		atom velocity: (i \\ 5 - 2 * 2 + 1) @ (i \\ 3 - 1 * 2 + 1).
+		self addMorph: atom.
+		atom position: (i * 53 \\ 170 + 5) @ (i * i * 29 \\ 140 + 5)]! !
+
+!PartsBinMorph methodsFor: 'initialize'!
+initialize
+	"A rectangle, an ellipse, a string and a box of atoms, side by
+	side."
+	| x |
+	super initialize.
+	borderWidth := 1.
+	color := Color r: 9/10 g: 9/10 b: 1.
+	x := 8.
+	(Array with: RectangleMorph new with: EllipseMorph new with: (StringMorph contents: 'Text') with: AtomMorph new) do: [:part |
+		part position: x @ 8.
+		self addMorphBack: part.
+		x := part bounds right + 8].
+	bounds := 0 @ 0 corner: x @ 56! !
+
+!PartsBinMorph methodsFor: 'events'!
+handlesMouseDown: anEvent
+	^true!
+
+mouseDown: anEvent
+	"On a part: a copy of it in the hand, the part stays. Elsewhere:
+	the bin itself is picked up."
+	| part |
+	part := submorphs detect: [:m | m containsPoint: anEvent position] ifNone: [nil].
+	self world hand grab: (part == nil ifTrue: [self] ifFalse: [part duplicate])! !
+
+!PartsBinMorph methodsFor: 'stepping'!
+fullStep
+	"Its parts are for show: an atom in the bin does not bounce."! !
 
 !StringMorph class methodsFor: 'instance creation'!
 contents: aString
@@ -655,7 +718,8 @@ openMenuAt: aPoint
 	menu add: 'new string' target: self selector: #newMorph: argument: StringMorph.
 	menu add: 'new text' target: self selector: #newMorph: argument: TextMorph.
 	menu add: 'new window' target: self selector: #newMorph: argument: SystemWindow.
-	menu add: 'new atom' target: self selector: #newMorph: argument: AtomMorph.
+	menu add: 'bouncing atoms' target: self selector: #newMorph: argument: BouncingAtomsMorph.
+	menu add: 'parts bin' target: self selector: #newMorph: argument: PartsBinMorph.
 	menu add: 'workspace' target: Workspace selector: #open.
 	menu add: 'browser' target: Browser selector: #open.
 	menu add: 'transcript' target: Transcript selector: #open.
