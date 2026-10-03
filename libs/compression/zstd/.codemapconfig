@@ -1,0 +1,6 @@
+// libs/compression/zstd/: what the code map says of it (plan_codemap_v2.md,
+// docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-10-03' },
+  summary: "Zstandard decoded (RFC 8878), DEFLATE's successor, with its entropy coder (FSE, tANS) and its checksum (XXH64).",
+}

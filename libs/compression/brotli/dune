@@ -6,6 +6,8 @@
 ; (mini-chrome's, where the format is told with the browser it was
 ; made for) links compression without a second module of that name.
 ; In the package tiny_libs, as tiny_libs.compression_brotli.
+(include_subdirs no)
+
 (library
  (name compression_brotli)
  (public_name tiny_libs.compression_brotli)

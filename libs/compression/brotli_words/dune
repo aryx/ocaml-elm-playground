@@ -6,6 +6,8 @@
 ; pays for these 120 KB only if it names this library and gives
 ; Brotli.decompress its ~dictionary (Brotli_words.mli).
 ; In the package tiny_libs, as tiny_libs.compression_brotli_words.
+(include_subdirs no)
+
 (library
  (name compression_brotli_words)
  (public_name tiny_libs.compression_brotli_words)

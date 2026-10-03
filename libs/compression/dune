@@ -12,6 +12,16 @@
 ; brotli_words/). Independent of
 ; any format, so that audio's may use them as images' and videos' do.
 ; In the package tiny_libs, as tiny_libs.compression, pure OCaml.
+;
+; The folders are folders only, the library the same whichever one a
+; module sits in: deflate/ (Inflate, Deflate, their wrappers Zlib and
+; Gzip, and Adler32, zlib's checksum) and zstd/ (Zstd, with Fse and
+; Xxhash, which nothing else uses); here, what several formats share
+; (Huffman, Crc32, Bits, Vlc) and the formats of one module (Lzw,
+; Packbits). brotli/, brotli_words/ and tests/ have stanzas of their
+; own, so each says (include_subdirs no).
+(include_subdirs unqualified)
+
 (library
  (name compression)
  (public_name tiny_libs.compression)

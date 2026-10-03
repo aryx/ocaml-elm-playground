@@ -2,6 +2,8 @@
 ; the worked examples of its .mli comments (zstd/ holds a file made by
 ; zstd itself, see make_zstd.sh there; brotli/ files made by Google's
 ; encoder, see make_brotli.py)
+(include_subdirs no)
+
 (test
  (name Test)
  (package tiny_libs)
