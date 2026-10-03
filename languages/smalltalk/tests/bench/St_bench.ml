@@ -45,6 +45,22 @@ let blit () =
         (float_of_int (times * 640 * 400) /. 1e6 /. dt))
     [ ("a pixel", true, 20); ("a byte", false, 400) ]
 
+(* MiniMorphic's cycle (kernel/morphic/MiniMorphic.st): n atoms
+ * bouncing, the bytecodes and the time of a cycle -- what a frame
+ * costs when Smalltalk draws the screen *)
+let morphic (atoms : int) =
+  let vm = St_boot.boot ~kernel:St_kernel.mini_morphic () in
+  let run text = match I.evaluate vm ~budget:2_000_000_000 text with Ok _ -> () | Error e -> print_endline ("error: " ^ e) in
+  run (Printf.sprintf "Smalltalk at: #W put: (WorldMorph bouncingAtoms: %d). W doOneCycle" atoms);
+  let cycles = 200 in
+  let before = I.bytecodes_run vm and blits = St_bitblt.changes () and t0 = Sys.time () in
+  run (Printf.sprintf "%d timesRepeat: [W doOneCycle]" cycles);
+  let dt = Sys.time () -. t0 and n = I.bytecodes_run vm - before in
+  Printf.printf "morphic   %3d atoms   %10d bytecodes a cycle %6.2f ms a cycle %5d blits %6.1f M/s\n%!" atoms (n / cycles)
+    (dt *. 1000. /. float_of_int cycles)
+    ((St_bitblt.changes () - blits) / cycles)
+    (float_of_int n /. 1e6 /. dt)
+
 let () =
   let only = if Array.length Sys.argv > 1 then Sys.argv.(1) else "" in
   let has (name : string) =
@@ -53,6 +69,7 @@ let () =
     n = 0 || at 0
   in
   if has "blit" then blit ();
+  if has "morphic" then List.iter morphic [ 10; 50; 200 ];
   List.iter
     (fun (kernel, files) ->
       let vm = St_boot.boot ~kernel:files () in

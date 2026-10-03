@@ -19,12 +19,13 @@
 
 ; claude: the kernel's source, the chunk files of kernel/, embedded as
 ; strings (St_kernel.mli), in the order they are bootstrapped; and
-; Squeak's kernel, the same files then those of kernel/squeak/
+; Squeak's kernel, the same files then those of kernel/squeak/; and
+; MiniMorphic, Squeak's then kernel/morphic/MiniMorphic.st
 (rule
  (targets St_kernel.ml)
  (deps kernel/Definitions.st kernel/Objects.st kernel/Classes.st kernel/Numbers.st
        kernel/Collections.st kernel/Streams.st kernel/Graphics.st kernel/System.st
-       kernel/squeak/Closures.st)
+       kernel/squeak/Closures.st kernel/morphic/MiniMorphic.st)
  (action
   (with-stdout-to
    %{targets}
@@ -59,5 +60,10 @@
     (echo "let squeak = files @ [\n")
     (echo "(\"squeak/Closures.st\", {st|")
     (cat kernel/squeak/Closures.st)
+    (echo "|st});\n")
+    (echo "]\n")
+    (echo "let mini_morphic = squeak @ [\n")
+    (echo "(\"morphic/MiniMorphic.st\", {st|")
+    (cat kernel/morphic/MiniMorphic.st)
     (echo "|st});\n")
     (echo "]\n")))))

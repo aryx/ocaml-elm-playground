@@ -646,6 +646,15 @@ up with the destination's bytes, a mask at each end of a row. A 640 by
 400 rectangle xor-ed, millions of pixels a second: 39 a pixel at a
 time, 288 a byte at a time natively; 11 and 68 under node. The pixel
 version stays, as the definition the other is tested against.
+A fill (no source, no halftone, rule 0 or 15) writes the middle of a
+row with one `Bytes.fill`: MiniMorphic's cycle with 10 atoms, mostly
+its white background over the whole screen, went from 7.5 to 5.1 ms
+under node.
+
+And the interpreted program itself, which no interpreter's speedup
+replaces: MiniMorphic's cycle went from 206,000 to 61,000 bytecodes by
+remembering damaged rectangles without comparing them
+(`notes_squeak.md`, section 2).
 
 ## Not done, deliberately
 

@@ -147,12 +147,92 @@ speed.
 by one block count apart; the two listings above; and the Blue Book
 kernel's own tests give the same answers compiled with closures.
 
+## 2. MiniMorphic: Morphic in one file
+
+Before Squeak's Morphic, a small one to read whole:
+`kernel/morphic/MiniMorphic.st`, 400 lines of Smalltalk, booted by
+`St_boot.boot ~kernel:St_kernel.mini_morphic ()` (Squeak's kernel, then
+this file). It is kept as a step of its own, as the Blue Book's kernel
+is kept beside Squeak's. No colour and no text yet: the Display has
+one bit a pixel, and a morph is black, white, or one of two grays.
+
+### Four ideas
+
+Morphic (John Maloney and Randall Smith, for Self, 1995) is these:
+
+1. **Everything on the screen is a morph**: a rectangle of it
+   (`bounds`), a colour, an owner and submorphs. The screen is one, the
+   `WorldMorph`; the mouse is one, the `HandMorph`, and what it
+   carries are its submorphs -- so dragging needs no code of its own:
+   moving a morph moves what it holds.
+2. **A morph is alive**: every cycle the world sends `step` to every
+   morph. `AtomMorph>>step` adds its velocity to its position and
+   turns back at its owner's walls; that is the whole animation.
+3. **Nobody redraws**: a morph that changed says where
+   (`changed`, which goes up the owners as `invalidRect:` to the
+   world), and at the end of the cycle the world redraws those
+   rectangles: the background, then every morph back to front, the
+   canvas clipped to the rectangle.
+4. **The cycle is the program**:
+
+   ```
+   doOneCycle
+       hand processEvents.                      the mouse read
+       submorphs copy do: [:m | m fullStep].    every morph steps
+       self displayWorld                        the damage redrawn
+   ```
+
+A new kind of morph writes one method, `drawOn:`, and maybe `step`.
+
+### Damage, and what the spike measured
+
+The first version merged a new damaged rectangle with any it touched,
+as Squeak's DamageRecorder does. With fifty atoms that was 206,000
+bytecodes a cycle, 158,000 of them in the morphs' steps, where each
+move went through the list of rectangles, and 36,000 drawing:
+remembering the damage cost more than redrawing it. What is kept is
+simpler:
+
+- `invalidRect:` only adds the rectangle to a list;
+- at the end of the cycle, a few rectangles (one morph dragged: the
+  place left, the place taken) are each redrawn, and what did not
+  change is not touched; many (everything moving) become the one
+  rectangle that holds them all, drawn once.
+
+With that, `Rectangle>>intersects:` written as four comparisons of
+numbers (the kernel's makes two Points), and a morph drawn as two fills
+(black, then its colour one pixel inside) instead of five:
+
+| atoms | bytecodes a cycle | native | under node |
+|---|---|---|---|
+| 10 | 12,800 | 1.3 ms | 5.1 ms |
+| 50 | 60,800 | 5.7 ms | 18.8 ms |
+| 200 | 241,800 | 21.9 ms | 71.6 ms |
+
+About 1,200 bytecodes a morph that moves: its step, its two damaged
+rectangles, its drawing. So in a browser fifty morphs moving at once
+run at 50 frames a second, two hundred at 14. That is the answer the
+spike was for: Squeak's Morphic, where most morphs stand still most of
+the time, is within reach; a screen where everything moves is not,
+until the interpreter under node (3 to 5 million bytecodes a second)
+is faster.
+
+**Worked examples** (`Unit_minimorphic.ml`): a morph drawn, its frame
+and its gray; a pixel scribbled outside the damage survives a cycle and
+not a redraw of the world; an atom at 780 bounces off the wall at 800;
+the hand picks a morph up, carries it, and puts it down in front of
+another; fifty atoms after a hundred cycles are all in the box.
+
 ## Exercises
 
 - Miranda's finer rule: a temporary assigned only before any block
   that uses it is made, even in a loop that ended, can be copied.
 - A fresh temporary for each turn of an inlined loop whose body
   declares one that a block holds.
+- MiniMorphic: a morph that follows the hand's speed when dropped (it
+  is thrown); a `drawOn:` that is not a rectangle (a Pen's dragon in a
+  morph); Squeak's DamageRecorder, merging the rectangles that touch,
+  and when it wins.
 - The debugger's variables for a closure's activation: its arguments,
   its copied values and its temp vectors by name (today only a
   method's).

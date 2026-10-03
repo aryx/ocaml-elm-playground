@@ -97,9 +97,17 @@ let blit_bytes ~(dest : form) ~(source : form option) ~(halftone : form option) 
   (* the rule's four cases, each all ones or none *)
   let on bit = if rule land bit <> 0 then 255 else 0 in
   let r00 = on 8 and r01 = on 4 and r10 = on 2 and r11 = on 1 in
+  (* a fill -- no source, no halftone, a rule that does not look at the
+   * destination (0 white, 15 black) -- writes the same byte everywhere
+   * but at a row's two ends: the middle of a row at once *)
+  let fill = (match (source, halftone) with None, None -> true | _ -> false) && r10 = r11 in
   if x1 > x0 then
     for y = y0 to y1 - 1 do
-      for i = x0 lsr 3 to (x1 - 1) lsr 3 do
+      let first = x0 lsr 3 and last = (x1 - 1) lsr 3 in
+      let middle = fill && last - first >= 2 in
+      if middle then Bytes.fill dest.bits ((y * dest.stride) + first + 1) (last - first - 1) (Char.chr r11);
+      for i = first to last do
+       if not (middle && i > first && i < last) then begin
         let left = i * 8 in
         let mask =
           (if left < x0 then 255 lsr (x0 - left) else 255)
@@ -112,6 +120,7 @@ let blit_bytes ~(dest : form) ~(source : form option) ~(halftone : form option) 
         let ns = lnot s and nd = lnot d in
         let r = (r00 land ns land nd) lor (r01 land ns land d) lor (r10 land s land nd) lor (r11 land s land d) in
         Bytes.set dest.bits at (Char.chr ((d land lnot mask) lor (r land mask) land 255))
+       end
       done
     done
 

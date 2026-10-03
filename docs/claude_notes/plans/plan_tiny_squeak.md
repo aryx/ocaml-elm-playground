@@ -103,7 +103,13 @@ in `dev/notes_opti_ocaml.md`.
   time, 7 times faster; the receiver's fields in a register tried and
   not kept; numbers in `notes_opti_ocaml.md` section 19): the items
   above, measured.
-- **Q2b, the spike, kept** (asked 2026-10-03): before Morphic proper,
+- **Q2b, the spike, kept** (done, 2026-10-03:
+  `kernel/morphic/MiniMorphic.st`, `St_kernel.mini_morphic`,
+  `Unit_minimorphic.ml`, `notes_squeak.md` section 2. Its answer: 50
+  morphs moving at once cost 61,000 bytecodes a cycle, 19 ms under
+  node; 200, 72 ms. Morphic, where most morphs stand still, is within
+  reach in a browser; a screen where everything moves is not. Not yet
+  on a screen: no program shows it, Q6's host will). Asked 2026-10-03: before Morphic proper,
   a minimal one -- a world, a hand, `RectangleMorph`s bouncing, damage
   rectangles -- timed under node to say whether Q4 is feasible. Not
   thrown away after: saved on its own (a small file of Smalltalk
