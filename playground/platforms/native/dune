@@ -55,7 +55,9 @@
 (library
  (public_name elm_playground_3d_opengl)
  (implements elm_playground_3d)
- (modules Playground3d_platform Hud_render)
+ ; claude: Gl_shaders and Gl_textures, what run_app3d stands on: the GLSL
+ ; programs compiled, the decoded textures uploaded
+ (modules Playground3d_platform Gl_shaders Gl_textures Hud_render)
  (libraries
    tsdl
    tgls.tgl3

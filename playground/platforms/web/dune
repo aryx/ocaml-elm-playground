@@ -26,7 +26,10 @@
 (library
  (public_name elm_playground_3d_webgl)
  (implements elm_playground_3d)
- (modules Playground3d_platform)
+ ; claude: Playground3d_platform is run_app3d and the drawing; the
+ ; Webgl_* are what it stands on (the two shaders, the canvas, the
+ ; textures the browser loads)
+ (modules Playground3d_platform Webgl_shaders Webgl_canvas Webgl_textures)
  (libraries
    js_of_ocaml ; WebGL, Dom_html, Typed_array
    elm_playground

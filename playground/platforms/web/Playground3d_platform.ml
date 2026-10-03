@@ -41,76 +41,8 @@ open Js_of_ocaml
  * the same Gpu_scene vertex data (one draw call per material), the
  * same Mat4 camera matrices, the same lighting formula in the fragment
  * shader, the same rendering hints and debug keys. Textures are loaded
- * by the browser (see the Textures section). The native backends'
+ * by the browser (see Webgl_textures). The native backends'
  * command-line flags are URL parameters here (see Page parameters). *)
-
-(*****************************************************************************)
-(* Shaders *)
-(*****************************************************************************)
-(* GLSL ES 1.00, WebGL 1's, rather than OpenGL's GLSL 3.30: attribute/
- * varying instead of in/out, gl_FragColor instead of an out variable,
- * texture2D instead of texture, and a float precision the fragment
- * shader must choose itself (the vertex shader has highp by default).
- * Otherwise the same two programs as the OpenGL backend's; see its
- * comments for the lighting and the flat-shading trick. *)
-
-let vertex_shader_source =
-  "attribute vec3 aPos;\n\
-   attribute vec3 aNormal;\n\
-   attribute vec3 aColor;\n\
-   attribute vec2 aUv;\n\
-   varying vec3 vNormal;\n\
-   varying vec3 vColor;\n\
-   varying vec2 vUv;\n\
-   varying vec3 vPos;\n\
-   uniform mat4 uMVP;\n\
-   void main() {\n\
-  \  gl_Position = uMVP * vec4(aPos, 1.0);\n\
-  \  vPos = aPos;\n\
-  \  vNormal = aNormal;\n\
-  \  vColor = aColor;\n\
-  \  vUv = aUv;\n\
-   }\n"
-
-(* [derivatives]: whether the OES_standard_derivatives extension is
- * there. Flat shading needs its dFdx/dFdy (core in OpenGL's GLSL 3.30,
- * an extension in WebGL 1); without it, Flat falls back to the vertex
- * normals, i.e. to Smooth, which only differs on curved shapes.
- *
- * highp when the GPU has it (nearly all do): mediump is only required
- * to have 10 bits of mantissa, too coarse for dFdx of positions.
- *
- * uAmbient is a uniform rather than a literal, so Lighting.ambient is
- * the only place the value is written. *)
-let fragment_shader_source ~(derivatives : bool) : string =
-  let flat_normal = if derivatives then "normalize(cross(dFdx(vPos), dFdy(vPos)))" else "normalize(vNormal)" in
-  (if derivatives then "#extension GL_OES_standard_derivatives : enable\n" else "")
-  ^ "#ifdef GL_FRAGMENT_PRECISION_HIGH\n\
-     precision highp float;\n\
-     #else\n\
-     precision mediump float;\n\
-     #endif\n\
-     varying vec3 vNormal;\n\
-     varying vec3 vColor;\n\
-     varying vec2 vUv;\n\
-     varying vec3 vPos;\n\
-     uniform vec3 uLightDir;\n\
-     uniform float uAmbient;\n\
-     uniform bool uUseTexture;\n\
-     uniform sampler2D uTexture;\n\
-     uniform int uShading;\n\
-     void main() {\n\
-    \  vec3 n = uShading == 1 ? "
-  ^ flat_normal
-  ^ " : normalize(vNormal);\n\
-    \  float lit = max(dot(n, uLightDir), 0.0);\n\
-    \  float brightness = uShading == 0 ? 1.0 : uAmbient + (1.0 - uAmbient) * lit;\n\
-    \  vec3 baseColor = uUseTexture ? texture2D(uTexture, vUv).rgb : vColor;\n\
-    \  gl_FragColor = vec4(baseColor * brightness, 1.0);\n\
-     }\n"
-
-(* the fragment shader's uShading *)
-let shading_code (s : Playground3d.shading) : int = match s with No_lighting -> 0 | Flat -> 1 | Smooth -> 2
 
 (*****************************************************************************)
 (* Page parameters *)
@@ -182,207 +114,6 @@ let listen_to_debug_keys () : unit =
     Js._false
   |> ignore
 
-(* Like OpenGL, WebGL reports a shader compile or link error only through
- * a status to check and a log to fetch: without these checks, a GLSL
- * typo is a silently blank canvas. *)
-let compile_shader (gl : WebGL.renderingContext Js.t) (kind : WebGL.shaderType) (source : string) :
-    WebGL.shader Js.t =
-  let shader = gl##createShader kind in
-  gl##shaderSource shader (Js.string source);
-  gl##compileShader shader;
-  if not (Js.to_bool (gl##getShaderParameter shader gl##._COMPILE_STATUS_)) then
-    failwith (Printf.sprintf "WebGL shader compile error:\n%s" (Js.to_string (gl##getShaderInfoLog shader)));
-  shader
-
-let link_program (gl : WebGL.renderingContext Js.t) ~(vertex_source : string) ~(fragment_source : string) :
-    WebGL.program Js.t =
-  let vs = compile_shader gl gl##._VERTEX_SHADER_ vertex_source in
-  let fs = compile_shader gl gl##._FRAGMENT_SHADER_ fragment_source in
-  let program = gl##createProgram in
-  gl##attachShader program vs;
-  gl##attachShader program fs;
-  gl##linkProgram program;
-  if not (Js.to_bool (gl##getProgramParameter program gl##._LINK_STATUS_)) then
-    failwith (Printf.sprintf "WebGL program link error:\n%s" (Js.to_string (gl##getProgramInfoLog program)));
-  gl##deleteShader vs;
-  gl##deleteShader fs;
-  program
-
-(*****************************************************************************)
-(* The canvas *)
-(*****************************************************************************)
-
-let create_canvas () : Dom_html.canvasElement Js.t =
-  let canvas = Dom_html.createCanvas Dom_html.document in
-  let style = canvas##.style in
-  style##.position := Js.string "fixed";
-  style##.top := Js.string "0";
-  style##.left := Js.string "0";
-  style##.width := Js.string "100%";
-  style##.height := Js.string "100%";
-  (* under run_app's <svg>, whatever their order in the page: a
-   * positioned element with a negative z-index is painted before
-   * (under) the ones with z-index auto, like the <svg> *)
-  style##.zIndex := Js.string "-1";
-  canvas
-
-(* run_app empties <body> before inserting its <svg> on the first
- * frame, i.e. just after our first draw: put the canvas (or the
- * no-WebGL message) back when it has been removed (a no-op on every
- * other frame) *)
-let ensure_in_page (elt : #Dom.node Js.t) : unit =
-  if not (Js.Opt.test elt##.parentNode) then Dom.appendChild Dom_html.document##.body elt
-
-(* instead of a blank page when the browser has no WebGL (too old, or
- * turned off) *)
-let no_webgl_message : Dom_html.paragraphElement Js.t Lazy.t =
-  lazy
-    (let p = Dom_html.createP Dom_html.document in
-     p##.textContent :=
-       Js.some
-         (Js.string
-            "This page needs WebGL, which this browser doesn't provide (or has turned off). The examples also \
-             have an SVG version, which doesn't need it.");
-     let style = p##.style in
-     style##.position := Js.string "fixed";
-     style##.top := Js.string "40%";
-     style##.width := Js.string "100%";
-     style##.textAlign := Js.string "center";
-     style##.fontFamily := Js.string "sans-serif";
-     p)
-
-(* The canvas has two sizes: its size on the page (clientWidth/Height,
- * 100% of the window, in CSS pixels, see create_canvas) and the size
- * of its drawing buffer (canvas##.width/height, in real pixels), which
- * we keep equal to the former times devicePixelRatio, for a sharp
- * picture on a HiDPI screen; if they differed, the browser would
- * stretch the picture to the page size, distorting it. Checked every
- * frame, to follow the window's resizes. *)
-let resize_to_window (canvas : Dom_html.canvasElement Js.t) : int * int =
-  (* claude: Js.to_float, not the number as is: js_of_ocaml's
-   * Js.number_t is an abstract Javascript number (js_of_ocaml >= 6),
-   * not an OCaml float. *)
-  let dpr = Js.to_float Dom_html.window##.devicePixelRatio in
-  let w = int_of_float (float_of_int canvas##.clientWidth *. dpr) in
-  let h = int_of_float (float_of_int canvas##.clientHeight *. dpr) in
-  if canvas##.width <> w then canvas##.width := w;
-  if canvas##.height <> h then canvas##.height := h;
-  (w, h)
-
-(* The part of the canvas where the scene goes: the same centered,
- * aspect-preserving rectangle as the one where run_app's <svg> shows
- * its viewBox (the default preserveAspectRatio, "xMidYMid meet"), so
- * the scene and the HUD line up.
- *
- *    canvas_w
- *   +---------+-------------------+---------+
- *   |         |                   |         |
- *   | x       |  screen.width *   |         | canvas_h
- *   |<------->|  scale            |         |
- *   |         |                   |         |
- *   +---------+-------------------+---------+
- *
- * scale is the largest one where the screen fits, so the margins are
- * either left and right (as drawn) or at the top and bottom. *)
-let letterbox ~(canvas_w : int) ~(canvas_h : int) (screen : Playground.screen) : int * int * int * int =
-  let scale = Float.min (float_of_int canvas_w /. screen.width) (float_of_int canvas_h /. screen.height) in
-  let w = int_of_float (screen.width *. scale) in
-  let h = int_of_float (screen.height *. scale) in
-  ((canvas_w - w) / 2, (canvas_h - h) / 2, w, h)
-
-(*****************************************************************************)
-(* Textures *)
-(*****************************************************************************)
-(* The other backends decode their textures themselves
- * (graphics/images/Texture_decode, blocking); here the
- * browser does it, from an <img>, which also means **asynchronously**:
- * setting img.src starts the download and returns at once. So a
- * texture goes through two steps, in two caches:
- *
- *  - [images]: src -> its <img>, created on first request (by
- *    preload_texture, or the first frame that draws the texture),
- *    before any GL context exists, so a preload can start early;
- *  - [gl_state.textures]: src -> its GL texture, created on first draw
- *    with the other backends' 1x1 magenta "missing texture" pixel, and
- *    replaced by the image, once, on the first frame after the image
- *    is complete. Until then (or forever, if the image can't be
- *    loaded) the faces are magenta.
- *
- * Checking [complete] every frame, rather than uploading from the
- * image's onload handler, keeps all GL calls inside [draw]: no GL
- * context yet when a preload's image arrives is then not a case to
- * handle. *)
-
-let images : (string, Dom_html.imageElement Js.t) Hashtbl.t = Hashtbl.create 8
-
-let is_http_url (src : string) : bool =
-  String.starts_with ~prefix:"http://" src || String.starts_with ~prefix:"https://" src
-
-(* the <img> of [src], its download started if this is the first request *)
-let image_of (src : string) : Dom_html.imageElement Js.t =
-  match Hashtbl.find_opt images src with
-  | Some img -> img
-  | None ->
-      let img = Dom_html.createImg Dom_html.document in
-      (* WebGL refuses to read the pixels of an image from another site
-       * unless that site allows it (CORS), and the request must ask for
-       * it; not for a relative path, where the attribute would instead
-       * break loading from a file:// page. (Not in js_of_ocaml's
-       * imageElement, hence Js.Unsafe.) *)
-      if is_http_url src then Js.Unsafe.set img "crossOrigin" (Js.string "anonymous");
-      (* claude: a texture the program carries with it
-       * (Playground3d.embedded_texture) is already base64: a "data:"
-       * URL is exactly that, and the browser decodes it itself, with no
-       * file to find and no request to make *)
-      let url = match Playground3d.embedded src with Some base64 -> "data:image/png;base64," ^ base64 | None -> src in
-      img##.src := Js.string url;
-      Hashtbl.replace images src img;
-      img
-
-type texture = { tex : WebGL.texture Js.t; mutable uploaded : bool }
-
-let magenta_pixel () = new%js Typed_array.uint8Array_fromArray (Js.array [| 255; 0; 255; 255 |])
-
-let create_texture (gl : WebGL.renderingContext Js.t) : WebGL.texture Js.t =
-  let tex = gl##createTexture in
-  gl##bindTexture gl##._TEXTURE_2D_ tex;
-  gl##texImage2D_fromView gl##._TEXTURE_2D_ 0 gl##._RGBA 1 1 0 gl##._RGBA gl##._UNSIGNED_BYTE_ (magenta_pixel ());
-  (* WebGL 1 can only sample a texture whose size isn't a power of 2
-   * (e.g. a 100x60 image) with this wrap mode and no mipmaps (the
-   * filters set in draw_group don't use any) *)
-  gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_WRAP_S_ gl##._CLAMP_TO_EDGE_;
-  gl##texParameteri gl##._TEXTURE_2D_ gl##._TEXTURE_WRAP_T_ gl##._CLAMP_TO_EDGE_;
-  tex
-
-(* No v-flip: from an <img>, texImage2D puts the image's top row at
- * v = 0 (UNPACK_FLIP_Y_WEBGL is false by default), the convention of
- * the playground's UVs (see Playground3d.textured_quad), like the
- * OpenGL backend's upload of Texture_decode's rows.
- *
- * A complete image with no width failed to load (e.g. a 404): it stays
- * magenta. texImage2D itself can fail too, with a SecurityError, on an
- * image the browser considers from another origin, which includes any
- * image of a page opened as file:// in Chrome: then too, magenta, and
- * a message in the console (serve the page over http instead, e.g.
- * with 'make serve-build'). Either way the texture is marked uploaded, so each
- * problem is reported once, not every frame. *)
-let try_upload (gl : WebGL.renderingContext Js.t) (src : string) (t : texture) : unit =
-  let img = image_of src in
-  (* claude: a plain int, not an optdef, since js_of_ocaml 6 *)
-  let loaded = img##.naturalWidth > 0 in
-  if Js.to_bool img##.complete then begin
-    t.uploaded <- true;
-    if loaded then begin
-      gl##bindTexture gl##._TEXTURE_2D_ t.tex;
-      try gl##texImage2D_fromImage gl##._TEXTURE_2D_ 0 gl##._RGBA gl##._RGBA gl##._UNSIGNED_BYTE_ img
-      with exn ->
-        Console.console##warn
-          (Js.string
-             (Printf.sprintf "playground3d webgl: can't use texture %s (%s)" src (Printexc.to_string exn)))
-    end
-    else Console.console##warn (Js.string (Printf.sprintf "playground3d webgl: can't load texture %s" src))
-  end
-
 (*****************************************************************************)
 (* GL state *)
 (*****************************************************************************)
@@ -403,7 +134,7 @@ type gl_state = {
   mvp_location : [ `mat4 ] WebGL.uniformLocation Js.t;
   shading_location : int WebGL.uniformLocation Js.t;
   use_texture_location : int WebGL.uniformLocation Js.t;
-  textures : (string, texture) Hashtbl.t;
+  textures : (string, Webgl_textures.texture) Hashtbl.t;
 }
 
 (* the GL texture of [src], magenta until its image is there *)
@@ -412,11 +143,11 @@ let gl_texture (st : gl_state) (src : string) : WebGL.texture Js.t =
     match Hashtbl.find_opt st.textures src with
     | Some t -> t
     | None ->
-        let t = { tex = create_texture st.gl; uploaded = false } in
+        let t : Webgl_textures.texture = { tex = Webgl_textures.create_texture st.gl; uploaded = false } in
         Hashtbl.replace st.textures src t;
         t
   in
-  if not t.uploaded then try_upload st.gl src t;
+  if not t.uploaded then Webgl_textures.try_upload st.gl src t;
   t.tex
 
 let float32_array (data : float array) : Typed_array.float32Array Js.t =
@@ -437,7 +168,7 @@ let set_attribute_pointers (gl : WebGL.renderingContext Js.t) (attributes : (int
 (* Error when the browser has no WebGL; a shader that doesn't compile is
  * our bug, not the browser's, and still a failwith *)
 let init_gl () : (gl_state, string) result =
-  let canvas = create_canvas () in
+  let canvas = Webgl_canvas.create_canvas () in
   let attrs = WebGL.defaultContextAttributes in
   (* the default, but the z-buffer is the point of this backend *)
   attrs##.depth := Js._true;
@@ -448,7 +179,7 @@ let init_gl () : (gl_state, string) result =
    * it on *)
   let derivatives = Js.Opt.test (gl##getExtension (Js.string "OES_standard_derivatives")) in
   let program =
-    link_program gl ~vertex_source:vertex_shader_source ~fragment_source:(fragment_shader_source ~derivatives)
+    Webgl_shaders.link_program gl ~vertex_source:Webgl_shaders.vertex_shader_source ~fragment_source:(Webgl_shaders.fragment_shader_source ~derivatives)
   in
   gl##useProgram program;
   let uniform name = gl##getUniformLocation program (Js.string name) in
@@ -595,7 +326,7 @@ let draw_view (st : gl_state) (rendering : Playground3d.rendering) ((x, y, w, h)
    * [transpose] argument must be false) *)
   let mvp = Mat4.transpose (Mat4.mul projection view) in
   gl##uniformMatrix4fv_typed st.mvp_location Js._false (float32_array mvp);
-  gl##uniform1i st.shading_location (shading_code rendering.shading);
+  gl##uniform1i st.shading_location (Webgl_shaders.shading_code rendering.shading);
   if rendering.backface_culling then gl##enable gl##._CULL_FACE_ else gl##disable gl##._CULL_FACE_;
   (* the cached3d shapes set aside, the rest drawn from the scene's
    * buffer, then the cached ones from their meshes; unless the cache is
@@ -614,9 +345,9 @@ let draw_view (st : gl_state) (rendering : Playground3d.rendering) ((x, y, w, h)
 let draw (st : gl_state) (rendering : Playground3d.rendering) (computer : Playground.computer)
     (views : Playground3d.view list) : unit =
   let gl = st.gl in
-  ensure_in_page st.canvas;
-  let (canvas_w, canvas_h) = resize_to_window st.canvas in
-  let (x, y, w, h) = letterbox ~canvas_w ~canvas_h computer.screen in
+  Webgl_canvas.ensure_in_page st.canvas;
+  let (canvas_w, canvas_h) = Webgl_canvas.resize_to_window st.canvas in
+  let (x, y, w, h) = Webgl_canvas.letterbox ~canvas_w ~canvas_h computer.screen in
   gl##viewport x y w h;
   gl##clearColor (Js.float 1.) (Js.float 1.) (Js.float 1.) (Js.float 1.);
   gl##clear (gl##._COLOR_BUFFER_BIT_ lor gl##._DEPTH_BUFFER_BIT_);
@@ -688,7 +419,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = fa
     let views = Playground3d.views3d app3d computer model in
     (match Lazy.force gl_state with
     | Ok st -> draw st (current_rendering ()) computer views
-    | Error _ -> ensure_in_page (Lazy.force no_webgl_message));
+    | Error _ -> Webgl_canvas.ensure_in_page (Lazy.force Webgl_canvas.no_webgl_message));
     Playground3d.views_hud computer.screen views
   in
   let update2d (computer : Playground.computer) (model : 'model) : 'model =
@@ -699,4 +430,4 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?(capture_mouse = fa
 
 (* starts the download (see Textures), so the texture can be there
  * when first drawn; doesn't wait for it (a page can't block) *)
-let preload_texture (src : string) : unit = ignore (image_of src)
+let preload_texture (src : string) : unit = ignore (Webgl_textures.image_of src)

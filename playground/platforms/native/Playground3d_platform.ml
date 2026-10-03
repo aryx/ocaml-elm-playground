@@ -51,105 +51,6 @@ let ( let* ) o f =
  * OpenGL itself. *)
 
 (*****************************************************************************)
-(* Shaders *)
-(*****************************************************************************)
-(* The fragment shader's lighting formula is deliberately byte-for-byte
- * the same as Lighting.brightness_of_normal in
- * graphics/3d/Lighting.ml (same directional
- * "sun" light, same ambient floor) -- the point of this backend is a
- * fair comparison, not a different look. The one real difference:
- * this runs once per PIXEL, on every one of the GPU's cores in
- * parallel, given a per-pixel *interpolated* normal that the hardware
- * rasterizer produces for free -- i.e. this is genuine Phong shading,
- * not native's Gouraud/Phong approximation built by hand on top of a
- * software triangle-fill loop (see notes_3d_shading.md). *)
-
-let vertex_shader_source =
-  "#version 330 core\n\
-   layout (location = 0) in vec3 aPos;\n\
-   layout (location = 1) in vec3 aNormal;\n\
-   layout (location = 2) in vec3 aColor;\n\
-   layout (location = 3) in vec2 aUv;\n\
-   out vec3 vNormal;\n\
-   out vec3 vColor;\n\
-   out vec2 vUv;\n\
-   out vec3 vPos;\n\
-   uniform mat4 uMVP;\n\
-   void main() {\n\
-  \  gl_Position = uMVP * vec4(aPos, 1.0);\n\
-  \  vPos = aPos;\n\
-  \  vNormal = aNormal;\n\
-  \  vColor = aColor;\n\
-  \  vUv = aUv;\n\
-   }\n"
-
-(* claude: no v-flip here, on purpose. glTexImage2D's row 0 (below,
- * always Texture_decode's own unmodified top-to-bottom buffer) becomes
- * texture coordinate v=0 -- mechanically the same "v=0 is the image's
- * first/top row" rule this project's own UV convention already uses
- * (see textured_quad's doc comment and native's sample_texture, which
- * reads the decoded row 0 directly at v=0 too). Verified empirically
- * against TexturedCube3d.exe's checker pattern (see plan_opengl.md's
- * verification notes) rather than assumed -- OpenGL's "textures are
- * upside down" folklore is real for some pipelines, but only when a
- * flip gets introduced elsewhere (e.g. a bottom-up image loader); it
- * doesn't apply here. *)
-(* claude: uShading is Playground3d.rendering's shading (0 = no lighting,
- * 1 = flat, 2 = smooth, see shading_code), switchable at runtime with
- * "m". Flat shading needs one normal per *face*, but the vertices only
- * carry per-vertex normals (a sphere's are smooth); instead of new
- * vertex data, the classic trick: dFdx/dFdy are how much vPos changes
- * from this pixel to the next one right/up, i.e. two vectors lying in
- * the face's plane, so their cross product is the face's normal --
- * pointing towards the camera, as a visible face's outward normal
- * does. *)
-let fragment_shader_source =
-  "#version 330 core\n\
-   in vec3 vNormal;\n\
-   in vec3 vColor;\n\
-   in vec2 vUv;\n\
-   in vec3 vPos;\n\
-   out vec4 FragColor;\n\
-   uniform vec3 uLightDir;\n\
-   uniform bool uUseTexture;\n\
-   uniform sampler2D uTexture;\n\
-   uniform int uShading;\n\
-   const float ambient = 0.25;\n\
-   void main() {\n\
-  \  vec3 n = uShading == 1 ? normalize(cross(dFdx(vPos), dFdy(vPos))) : normalize(vNormal);\n\
-  \  float lit = max(dot(n, uLightDir), 0.0);\n\
-  \  float brightness = uShading == 0 ? 1.0 : ambient + (1.0 - ambient) * lit;\n\
-  \  vec3 baseColor = uUseTexture ? texture(uTexture, vUv).rgb : vColor;\n\
-  \  FragColor = vec4(baseColor * brightness, 1.0);\n\
-   }\n"
-
-(* claude: the HUD's two shaders (see the HUD section in run_app3d): a
- * rectangle covering the whole window, textured with the HUD's image.
- * No matrix: the vertices are given directly in normalized device
- * coordinates, -1..1, the window's left..right and bottom..top. *)
-let hud_vertex_shader_source =
-  "#version 330 core\n\
-   layout (location = 0) in vec2 aPos;\n\
-   layout (location = 1) in vec2 aUv;\n\
-   out vec2 vUv;\n\
-   void main() {\n\
-  \  gl_Position = vec4(aPos, 0.0, 1.0);\n\
-  \  vUv = aUv;\n\
-   }\n"
-
-let hud_fragment_shader_source =
-  "#version 330 core\n\
-   in vec2 vUv;\n\
-   out vec4 FragColor;\n\
-   uniform sampler2D uHud;\n\
-   void main() {\n\
-  \  FragColor = texture(uHud, vUv);\n\
-   }\n"
-
-let int32_bigarray1 (n : int) : (int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t =
-  Bigarray.Array1.create Bigarray.int32 Bigarray.c_layout n
-
-(*****************************************************************************)
 (* Wireframe (pluggable: "f" to toggle at runtime, see on_key_press
  * below -- same key as native's own wireframe toggle) *)
 (*****************************************************************************)
@@ -193,112 +94,6 @@ let use_cache = ref true
  * whether a slow frame is the scene's fault or the HUD's (drawn on the
  * CPU, see draw_hud). *)
 let show_hud = ref true
-
-(*****************************************************************************)
-(* Textures *)
-(*****************************************************************************)
-(* Loading (a local file path or an http(s) URL, with caching and a
- * preload queue) is entirely reused from graphics/images/Texture_decode,
- * shared with the software rasterizer (see plan_opengl.md's Scope).
- * The only new piece is uploading the
- * decoded pixel buffer to the GPU (once per distinct src, cached
- * below by this module) and sampling it in the fragment shader
- * instead of sample_texture's hand-written nearest-neighbor lookup --
- * nearest-neighbor here too (Gl.nearest), for a fair comparison
- * rather than free bilinear filtering that would look different;
- * switching to Gl.linear is a one-line, GPU-only upgrade if ever
- * wanted, unlike native's own "well-known easy upgrade" bilinear note
- * in notes_3d.md section 9. *)
-
-let upload_texture ~(width : int) ~(height : int) ~(format : Gl.enum)
-    (data : (int, Bigarray.int8_unsigned_elt, Bigarray.c_layout) Bigarray.Array1.t) : int =
-  let id = int32_bigarray1 1 in
-  Gl.gen_textures 1 id;
-  let tex = Int32.to_int id.{0} in
-  Gl.bind_texture Gl.texture_2d tex;
-  (* claude: glTexImage2D otherwise assumes rows are padded to a
-   * multiple of 4 bytes -- true for most image dimensions but not
-   * guaranteed (e.g. a 1-pixel-wide, 3-channel-per-pixel texture is 3
-   * bytes/row); this disables that assumption so any width works. *)
-  Gl.pixel_storei Gl.unpack_alignment 1;
-  Gl.tex_image2d Gl.texture_2d 0 format width height 0 format Gl.unsigned_byte (`Data data);
-  Gl.tex_parameteri Gl.texture_2d Gl.texture_min_filter Gl.nearest;
-  Gl.tex_parameteri Gl.texture_2d Gl.texture_mag_filter Gl.nearest;
-  Gl.tex_parameteri Gl.texture_2d Gl.texture_wrap_s Gl.clamp_to_edge;
-  Gl.tex_parameteri Gl.texture_2d Gl.texture_wrap_t Gl.clamp_to_edge;
-  tex
-
-(* same magenta convention as native's missing_texture_color *)
-let missing_texture_gl_id : int Lazy.t =
-  lazy
-    (let pixel = Bigarray.Array1.of_array Bigarray.int8_unsigned Bigarray.c_layout [| 255; 0; 255 |] in
-     upload_texture ~width:1 ~height:1 ~format:Gl.rgb pixel)
-
-let gl_texture_cache : (string, int) Hashtbl.t = Hashtbl.create 8
-
-let get_or_create_gl_texture (src : string) : int =
-  match Hashtbl.find_opt gl_texture_cache src with
-  | Some id -> id
-  | None ->
-      let id =
-        match
-          match Playground3d.embedded src with
-          | Some base64 -> Texture_decode.load_base64 ~key:src ~base64
-          | None -> Texture_decode.load src
-        with
-        | None -> Lazy.force missing_texture_gl_id
-        | Some (img : Rgba_image.t) ->
-            (* claude: Texture_decode's textures are always RGBA *)
-            upload_texture ~width:img.width ~height:img.height ~format:Gl.rgba img.rgba
-      in
-      Hashtbl.add gl_texture_cache src id;
-      id
-
-(*****************************************************************************)
-(* Shader compilation *)
-(*****************************************************************************)
-
-(* claude: OpenGL reports shader/program errors via a status flag you
- * have to check explicitly (get_*iv) plus a separate call
- * (get_*_info_log) to fetch the actual human-readable message -- a
- * compile/link failure never raises or crashes on its own, it just
- * silently produces a shader/program that does nothing. Skipping this
- * check would turn every GLSL typo into a confusing blank window
- * instead of a compiler error message. *)
-let compile_shader (kind : Gl.enum) (source : string) : int =
-  let shader = Gl.create_shader kind in
-  Gl.shader_source shader source;
-  Gl.compile_shader shader;
-  let status = int32_bigarray1 1 in
-  Gl.get_shaderiv shader Gl.compile_status status;
-  if Int32.to_int status.{0} = 0 then begin
-    let log = Bigarray.Array1.create Bigarray.char Bigarray.c_layout 4096 in
-    Gl.get_shader_info_log shader 4096 None log;
-    failwith (Printf.sprintf "OpenGL shader compile error:\n%s" (Gl.string_of_bigarray log))
-  end;
-  shader
-
-let link_program ~(vertex_source : string) ~(fragment_source : string) : int =
-  let vs = compile_shader Gl.vertex_shader vertex_source in
-  let fs = compile_shader Gl.fragment_shader fragment_source in
-  let program = Gl.create_program () in
-  Gl.attach_shader program vs;
-  Gl.attach_shader program fs;
-  Gl.link_program program;
-  let status = int32_bigarray1 1 in
-  Gl.get_programiv program Gl.link_status status;
-  if Int32.to_int status.{0} = 0 then begin
-    let log = Bigarray.Array1.create Bigarray.char Bigarray.c_layout 4096 in
-    Gl.get_program_info_log program 4096 None log;
-    failwith (Printf.sprintf "OpenGL program link error:\n%s" (Gl.string_of_bigarray log))
-  end;
-  (* claude: a linked program keeps its own copy of the compiled
-   * shaders' code -- the standalone shader objects aren't needed once
-   * linked, so they can be deleted right away (a GL idiom, not
-   * specific to this project). *)
-  Gl.delete_shader vs;
-  Gl.delete_shader fs;
-  program
 
 (*****************************************************************************)
 (* Run app *)
@@ -376,10 +171,10 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * superstitious "just add a sleep". Root-causing/fixing tgls itself
    * is out of scope here. *)
   Gc.full_major ();
-  let program = link_program ~vertex_source:vertex_shader_source ~fragment_source:fragment_shader_source in
+  let program = Gl_shaders.link_program ~vertex_source:Gl_shaders.vertex_shader_source ~fragment_source:Gl_shaders.fragment_shader_source in
   (* claude: the same precaution before the HUD's shaders *)
   Gc.full_major ();
-  let hud_program = link_program ~vertex_source:hud_vertex_shader_source ~fragment_source:hud_fragment_shader_source in
+  let hud_program = Gl_shaders.link_program ~vertex_source:Gl_shaders.hud_vertex_shader_source ~fragment_source:Gl_shaders.hud_fragment_shader_source in
   Gl.use_program hud_program;
   (* texture unit 0, like the scene's uTexture *)
   Gl.uniform1i (Gl.get_uniform_location hud_program "uHud") 0;
@@ -417,11 +212,11 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    * every frame, plus one per material of each cached3d (see Meshes
    * below), uploaded once. *)
   let create_vao_vbo () =
-    let vao = int32_bigarray1 1 in
+    let vao = Gl_shaders.int32_bigarray1 1 in
     Gl.gen_vertex_arrays 1 vao;
     Gl.bind_vertex_array (Int32.to_int vao.{0});
 
-    let vbo = int32_bigarray1 1 in
+    let vbo = Gl_shaders.int32_bigarray1 1 in
     Gl.gen_buffers 1 vbo;
     Gl.bind_buffer Gl.array_buffer (Int32.to_int vbo.{0});
 
@@ -456,10 +251,10 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
    *
    * Only when the shapes change: the image stays in the texture, and on
    * other frames drawing the HUD is a single draw call. *)
-  let hud_vao = int32_bigarray1 1 in
+  let hud_vao = Gl_shaders.int32_bigarray1 1 in
   Gl.gen_vertex_arrays 1 hud_vao;
   Gl.bind_vertex_array (Int32.to_int hud_vao.{0});
-  let hud_vbo = int32_bigarray1 1 in
+  let hud_vbo = Gl_shaders.int32_bigarray1 1 in
   Gl.gen_buffers 1 hud_vbo;
   Gl.bind_buffer Gl.array_buffer (Int32.to_int hud_vbo.{0});
   (* two triangles covering the window, each vertex its (x, y), in
@@ -475,7 +270,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
   Gl.vertex_attrib_pointer 1 2 Gl.float false 16 (`Offset 8);
   Gl.enable_vertex_attrib_array 1;
   let hud_texture =
-    let id = int32_bigarray1 1 in
+    let id = Gl_shaders.int32_bigarray1 1 in
     Gl.gen_textures 1 id;
     let tex = Int32.to_int id.{0} in
     Gl.bind_texture Gl.texture_2d tex;
@@ -591,7 +386,7 @@ let run_app3d ?(rendering = Playground3d.default_rendering) ?capture_mouse ?flag
     | Flat -> Gl.uniform1i use_texture_location 0
     | Textured src ->
         Gl.uniform1i use_texture_location 1;
-        Gl.bind_texture Gl.texture_2d (get_or_create_gl_texture src);
+        Gl.bind_texture Gl.texture_2d (Gl_textures.get_or_create_gl_texture src);
         (* claude: smooth_textures: the GPU's bilinear filtering, or
          * nearest texel *)
         let filter = if !smooth_textures then Gl.linear else Gl.nearest in
