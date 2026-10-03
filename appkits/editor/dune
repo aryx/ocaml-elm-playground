@@ -17,5 +17,6 @@
  (name appkit_editor)
  (public_name tiny_appkits.appkit_editor)
  (wrapped false)
+ (modules_without_implementation turbo_model) ; claude: types alone
  (libraries terminal lisp pascal random)
 )

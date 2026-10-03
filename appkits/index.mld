@@ -79,6 +79,7 @@ Pascal's IDE ([tiny_appkits.appkit_editor]); a full-screen game
 
 {!modules:
     Gap_buffer Emacs_editor Emacs_simple Tui_vi Tui_emacs Tui_turbo
+    Turbo_model Turbo_edit Turbo_debug Turbo_menus Turbo_update Turbo_view
     Tui_snake
     Tty_hangman Tty_guess Tty_wumpus
 }
