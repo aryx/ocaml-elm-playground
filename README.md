@@ -44,17 +44,10 @@ browser in its [code map](https://aryx.github.io/ocaml-elm-playground/codemap.ht
 the links saying how many lines a program is open it on that
 program's own code (`w` widens it to what it uses, then to everything).
 
-<a href="https://aryx.github.io/ocaml-elm-playground/tinybox.html"><img src="docs/screenshots/tinybox-menu.png" width="800" alt="tinybox's menu: the games of a genre, the chosen one playing, and its code"></a>
-
-tinybox's menu: the programs of a section, the chosen one previewed
-live, and its code as a map (a click on the picture opens the menu in
-your browser).
-
-<a href="https://aryx.github.io/ocaml-elm-playground/codemap.html"><img src="docs/screenshots/codemap.png" width="800" alt="the code map: the whole repository, each folder a region, each file a block the size of its code"></a>
-
-The code map: the whole repository, each folder a region, each file a
-block the size of its code -- zoom in and the blocks are the code
-itself (a click on the picture opens it in your browser).
+| tinybox ([open it](https://aryx.github.io/ocaml-elm-playground/tinybox.html)) | The code map ([open it](https://aryx.github.io/ocaml-elm-playground/codemap.html)) |
+| :---: | :---: |
+| <a href="https://aryx.github.io/ocaml-elm-playground/tinybox.html"><img src="docs/screenshots/tinybox-menu.png" width="400" alt="tinybox's menu"></a> | <a href="https://aryx.github.io/ocaml-elm-playground/codemap.html"><img src="docs/screenshots/codemap.png" width="400" alt="the code map of the whole repository"></a> |
+| The menu: the programs of a section, the chosen one previewed live, and its code as a map | The whole repository: each folder a region, each file a block the size of its code; zoom in and the blocks are the code itself |
 
 The main goal of all this is to teach people. Almost all of the code,
 the library as much as the programs, was written by an AI, Claude
