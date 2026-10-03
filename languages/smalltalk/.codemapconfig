@@ -240,7 +240,7 @@
         { at: 'def:read', weight: 2 },
       ],
     },
-    'St_kernel.mli': { digest: 'e8facb22f065',
+    'St_kernel.mli': { digest: 'cd13566212eb',
       summary: "The kernel's chunk files, kernel/*.st, embedded by dune in the order St_boot reads them; and Squeak's kernel, the same then kernel/squeak/'s, and MiniMorphic's.",
     },
     'St_boot.mli': { digest: '52eae0a194e3',
@@ -322,7 +322,7 @@
   dirs: {
     kernel: { summary: "The kernel's classes written in Smalltalk, in chunk format: what St_boot compiles into the world." },
     'kernel/morphic': { summary: "MiniMorphic: Morphic in one file of Smalltalk -- a world, a hand, morphs that step, damage rectangles -- kept as a step to read before Squeak's." },
-    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures; Color and Forms with a depth; StrikeFont, text drawn a glyph a BitBlt; Morphic, its machinery (Morphic.st) and its morphs (Morphs.st); the tools as morphs (Tools.st)." },
+    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures; Color and Forms with a depth; StrikeFont, text drawn a glyph a BitBlt; Morphic, its machinery (Morphic.st) and its morphs (Morphs.st); the tools as morphs (Tools.st); Etoys (Etoys.st)." },
     tests: { summary: 'Expressions printed, the class hierarchy, the debugger, the image saved and loaded.' },
   },
 }

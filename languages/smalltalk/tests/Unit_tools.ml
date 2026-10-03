@@ -121,7 +121,7 @@ let tests =
           check "a category's classes" "#(#Morph #HandMorph #PasteUpMorph)" (print w "B categoryList selectItem: 'Morphic-Kernel'. B classList items");
           check "a class: its definition" "Object subclass: #Morph true"
             (print w
-               "B classList selectItem: #Morph. (B codePane contents copyFrom: 1 to: 23), ' ', (B codePane contents includesSubstring: 'instanceVariableNames: ''bounds owner submorphs color''') printString");
+               "B classList selectItem: #Morph. (B codePane contents copyFrom: 1 to: 23), ' ', (B codePane contents includesSubstring: 'instanceVariableNames: ''bounds owner submorphs color heading location''') printString");
           check "its protocols" "true" (print w "B protocolList items includes: 'drawing'");
           check "a protocol's selectors" "#(#drawOn: #fullDrawOn:)" (print w "B protocolList selectItem: 'drawing'. B selectorList items");
           check "a method's source" "drawOn: aCanvas"

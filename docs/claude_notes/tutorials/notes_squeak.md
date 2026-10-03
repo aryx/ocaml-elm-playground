@@ -8,7 +8,7 @@ colour, and an environment, Morphic, written in Smalltalk itself
 tutorial follows the plan's phases, a section each as it is written,
 each ending with the worked example its tests check
 (`Unit_squeak.ml`, `Unit_minimorphic.ml`, `Unit_colour.ml`,
-`Unit_morphic.ml`, `Unit_tools.ml`).
+`Unit_morphic.ml`, `Unit_tools.ml`, `Unit_etoys.ml`).
 
 The thread through it: **the host shrinks**. Every step moves
 something from OCaml into Smalltalk, where the Browser can show it and
@@ -151,6 +151,11 @@ by one block count apart; the two listings above; and the Blue Book
 kernel's own tests give the same answers compiled with closures.
 
 ## 2. MiniMorphic: Morphic in one file
+
+To see it: `dune exec apps/devtools/TinySqueak.exe -- kernel=mini`,
+TinySqueak's host booted from MiniMorphic's kernel instead of Squeak's
+(fifty squares bouncing in black and white; the left button picks one
+up).
 
 Before Squeak's Morphic, a small one to read whole:
 `kernel/morphic/MiniMorphic.st`, 400 lines of Smalltalk, booted by
@@ -591,6 +596,57 @@ typed into and accepted, the atoms in red frames; the halo around the
 box of atoms; a copy of the parts bin's ellipse carried over its
 shadow.
 
+## 7. Etoys
+
+File: `kernel/squeak/Etoys.st`. Tests: `Unit_etoys.ml`.
+
+Etoys (Kay, Wallace, Maloney, Kaehler, 1997) is programming for
+children on top of Morphic, and its first lesson is a car: open its
+viewer, drag out `car forward by 5` and `car turn by 5`, and it drives
+in a circle. It is 370 lines here, because a script is morphs and
+Morphic already runs them:
+
+| Etoys | is |
+|---|---|
+| `forward:`, `turn:`, a heading | three methods of Morph, Logo's turtle on any morph |
+| a phrase, `Car forward by 4` | a `PhraseTileMorph`: a morph, a selector, a number tile |
+| doing a phrase | `target perform: selector with: argument value` |
+| a script | a `ScriptEditorMorph`, a morph that holds phrases |
+| a script running | its `step`: each phrase done, once a cycle |
+| the viewer | a window of phrases and of strings that ask the morph its x, y and heading each cycle |
+
+There is no script interpreter. And dragging tiles needed one thing of
+Morphic that was not there: a morph put down goes *into* the morph
+under the hand that wants it (`wantsDroppedMorph:`,
+`acceptDroppedMorph:`), not always into the world. A script wants
+phrases; a phrase put down on the world itself makes a script around
+itself (`justDroppedInto:`). From a viewer a phrase is dragged as a
+copy, as a part from the parts bin.
+
+**A third of a pixel.** A morph's place is in whole pixels. A step of
+4 at 5 degrees is 0.35 pixel sideways: rounded at each step, the car
+would go straight up for ever. `forward:` keeps the exact place beside
+(`location`), adds to that, and rounds only what it shows. 72 steps of
+`forward: 4. turn: 5` come back to the pixel it started from.
+
+The car is not painted, there being no painting tools: its `drawOn:`
+fills two polygons, the body and the windshield, turned by the
+heading (`FormCanvas>>fillPolygon:color:`, a convex polygon a row at a
+time, as the oval).
+
+The interpreter did not change for Etoys, nor the Blue Book's kernel.
+One trap met: a literal array cannot hold a negative number (`#(-9
+18)` is read as the symbol `-`, then 9): the car's points are given
+from its box's corner.
+
+**Worked examples** (`Unit_etoys.ml`): forward 10 from 100 @ 100 is
+100 @ 90; the circle of 72 steps closes, its diameter 91 pixels; the
+windshield is above the car's middle at heading 0, to its right at 90;
+the viewer's `!` does forward by 5 once and its y reads 95 at the next
+cycle; a phrase dragged out of the viewer onto the world is a script,
+a second one dropped into it, a number typed over, the button pressed:
+the car moves each cycle; a phrase taken out, it only turns.
+
 ## Exercises
 
 - Miranda's finer rule: a temporary assigned only before any block
@@ -604,6 +660,10 @@ shadow.
 - Colour: a Form of 32 bits drawn on one of 8 (Squeak's way: the
   pixel reduced to 5 bits of each colour, a map of 32,768 entries);
   Squeak's own palette of 8 bits; a `Pen` with a colour.
+- Etoys: a painting tool and a `SketchMorph`, the car painted (it
+  needs a Form drawn turned: Squeak's WarpBlt); tests, a phrase done
+  only if another answers yes; a script shown as the Smalltalk text it
+  is, and compiled; more of the viewer (colour, size, bounce).
 - The host: the image saved and loaded, booting from it; the mouse
   wheel; copy and paste with the desktop's clipboard; the Display
   sent in tiles, only those that changed.

@@ -55,7 +55,7 @@ local skeletons = import '../../skeletons.libsonnet';
       ],
       related: ['web/TinySmalltalk80.html', '../../tests/2d/golden/TinySmalltalk80.png'],
     },
-    'TinySqueak.ml': { digest: 'af852d587409',
+    'TinySqueak.ml': { digest: '16b0cc83aa79',
       summary: 'Squeak (Ingalls, Kaehler, Maloney, Kay, 1996): the host of a Smalltalk whose whole environment, Morphic, is Smalltalk.',
       capitals: [
         { at: 'def:run_cycle', say: "the world's doOneCycle, once a frame" },

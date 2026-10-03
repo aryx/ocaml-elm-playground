@@ -20,8 +20,15 @@
  *   inspect it, accept.
  *   The middle button, or Control and the left one (the blue one): a
  *   halo around the morph -- delete (pink), pick up (black), duplicate
- *   (green), resize (yellow), inspect (blue).
+ *   (green), resize (yellow), inspect (blue), its viewer (turquoise).
+ *   Etoys: the car drives by its script, two phrases of tiles done
+ *   each cycle. Click a number and type another; the script's button
+ *   pauses it; drag a phrase out of it, or out of the car's viewer
+ *   into it, or onto the world for a new script.
  *   Control-C interrupts what runs too long.
+ *   Flag: kernel=mini boots MiniMorphic instead, Morphic in one file
+ *   of Smalltalk, to read before the real one: fifty squares bouncing
+ *   in black and white, the left button picking one up.
  *
  * TinySmalltalk80 is the Blue Book's system, and its windows are
  * OCaml. Here everything on the screen is Smalltalk: the windows, the
@@ -55,8 +62,8 @@
  * TinySmalltalk80's); a debugger as a morph (an error is said in the
  * Transcript, and the world goes on); scroll bars; the mouse wheel;
  * copy and paste (Playground_platform.clipboard); Squeak's painting
- * tools; Etoys, a morph's viewer and its scripts of tiles
- * (plan_tiny_squeak.md, Q7).
+ * tools (the car is drawn by a method, not painted); Etoys' tests and
+ * variables.
  *)
 open Playground
 module M = St_memory
@@ -113,6 +120,17 @@ workspace submorphs first contents:
 Transcript show: 'TinySqueak: everything here is a morph.'; cr.
 World addMorph: (BouncingAtomsMorph new position: 594 @ 36; yourself).
 World addMorph: (PartsBinMorph new position: 594 @ 226; yourself)|st};
+    (* the first Etoy: a car, and its script already ticking *)
+    {st|| car script |
+car := CarMorph new.
+World addMorph: car.
+car position: 610 @ 345.
+script := ScriptEditorMorph on: car.
+World addMorph: script.
+script position: 416 @ 350.
+script acceptDroppedMorph: (PhraseTileMorph target: car selector: #forward: label: 'forward by' argument: 4).
+script acceptDroppedMorph: (PhraseTileMorph target: car selector: #turn: label: 'turn by' argument: 5).
+script toggle|st};
   ]
 
 (*****************************************************************************)
@@ -139,12 +157,17 @@ let initial : model = { squeak = None; shown = false; cycle = None; picture = No
 let global (vm : I.vm) (name : string) : M.oop option =
   Option.map (fun a -> M.fetch (I.memory vm) a 1) (St_class.global (I.memory vm) name)
 
-let boot () : I.vm * io =
+(* MiniMorphic's start, the flag kernel=mini: Morphic in one file
+ * (kernel/morphic/MiniMorphic.st), fifty squares bouncing on the Blue
+ * Book's Display, black and white; the left button picks one up *)
+let startup_mini = [ "Smalltalk at: #World put: (WorldMorph bouncingAtoms: 50)" ]
+
+let boot ~(mini : bool) : I.vm * io =
   let io = { mouse = (0, 0, 0); keys = Queue.create () } in
-  let vm = St_boot.boot ~host:(host io) ~kernel:St_kernel.squeak () in
+  let vm = St_boot.boot ~host:(host io) ~kernel:(if mini then St_kernel.mini_morphic else St_kernel.squeak) () in
   List.iter
     (fun text -> match I.evaluate vm ~budget:200_000_000 text with Ok _ -> () | Error e -> prerr_endline ("TinySqueak: " ^ e))
-    startup;
+    (if mini then startup_mini else startup);
   (vm, io)
 
 (*****************************************************************************)
@@ -181,11 +204,15 @@ let key_code : string -> int option = function
   | "ArrowDown" -> Some 31
   | _ -> None
 
-(* why the cycle stopped, said by Smalltalk itself, in its Transcript *)
+(* why the cycle stopped, said by Smalltalk itself, in its Transcript;
+ * by the host if it cannot (MiniMorphic's kernel has no window for it) *)
 let report (vm : I.vm) (why : string) : unit =
-  match global vm "Transcript" with
-  | Some transcript -> ignore (I.call vm ~budget transcript "showError:" [ M.new_string (I.memory vm) why ])
-  | None -> ()
+  let said =
+    match global vm "Transcript" with
+    | Some transcript -> Result.is_ok (I.call vm ~budget transcript "showError:" [ M.new_string (I.memory vm) why ])
+    | None -> false
+  in
+  if not said then prerr_endline ("TinySqueak: " ^ why)
 
 (* the world's cycle: a new one if the last one ended, run for a
  * frame's budget. An error ends it, and the next frame starts
@@ -221,7 +248,8 @@ let take_picture (vm : I.vm) (m : model) : model =
       | None -> m)
 
 let update (computer : computer) (m : model) : model =
-  let m = match m.squeak with None when m.shown -> { m with squeak = Some (boot ()) } | _ -> m in
+  let mini = List.assoc_opt "kernel" computer.flags = Some "mini" in
+  let m = match m.squeak with None when m.shown -> { m with squeak = Some (boot ~mini) } | _ -> m in
   match m.squeak with
   | None -> { m with shown = true }
   | Some (vm, io) ->

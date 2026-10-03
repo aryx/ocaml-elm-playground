@@ -718,6 +718,7 @@ openMenuAt: aPoint
 	menu add: 'new string' target: self selector: #newMorph: argument: StringMorph.
 	menu add: 'new text' target: self selector: #newMorph: argument: TextMorph.
 	menu add: 'new window' target: self selector: #newMorph: argument: SystemWindow.
+	menu add: 'new car' target: self selector: #newMorph: argument: CarMorph.
 	menu add: 'bouncing atoms' target: self selector: #newMorph: argument: BouncingAtomsMorph.
 	menu add: 'parts bin' target: self selector: #newMorph: argument: PartsBinMorph.
 	menu add: 'workspace' target: Workspace selector: #open.

@@ -179,7 +179,17 @@ in `dev/notes_opti_ocaml.md`.
   classic demos: bouncing atoms (an ideal gas as morphs), a flap of
   parts to drag out, a painted car. Golden frames, CATALOG row, web
   page.
-- **Q7, Etoys**: a morph's viewer (its properties and commands as
+- **Q7, Etoys** (done, 2026-10-04: `kernel/squeak/Etoys.st`, 370
+  lines -- `forward:`, `turn:` and a heading on any morph, `CarMorph`
+  drawn turned, `ViewerMorph`, `PhraseTileMorph`, `NumberTileMorph`,
+  `ScriptEditorMorph` whose step does its phrases; Morphic's drop
+  into the morph that wants it; the halo's viewer handle;
+  `Unit_etoys.ml`, the car and its ticking script on TinySqueak's
+  first screen, `notes_squeak.md` section 7. No change to the
+  interpreter nor to the Blue Book's kernel. Left: the car painted
+  (no painting tools, no WarpBlt: it is drawn by a method); tests and
+  variables; a script as Smalltalk text. Also: TinySqueak's flag
+  `kernel=mini` shows MiniMorphic, what Q2b had left to Q6): a morph's viewer (its properties and commands as
   tiles), scripts made by dragging tiles, run by `step` -- the car
   driven by `forward: 5. turn: 5`, the classic first Etoy.
 - **Q8, the VM in Smalltalk**: the Blue Book's interpreter written in

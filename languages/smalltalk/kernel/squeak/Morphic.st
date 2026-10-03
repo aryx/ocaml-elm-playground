@@ -423,6 +423,18 @@ mouseUp: anEvent
 keyStroke: anEvent
 	"A character typed while it has the keyboard focus."! !
 
+!Morph methodsFor: 'dropping'!
+wantsDroppedMorph: aMorph
+	"Does it take what the hand puts down on it? A world does; a
+	script takes tiles (Etoys.st)."
+	^false!
+
+acceptDroppedMorph: aMorph
+	self addMorph: aMorph!
+
+justDroppedInto: aMorph
+	"The hand put it down in that morph."! !
+
 !HandMorph methodsFor: 'initialize'!
 initialize
 	super initialize.
@@ -536,8 +548,16 @@ attachMorph: aMorph
 	self addMorph: aMorph!
 
 dropAll
-	"Into the world, in front."
-	submorphs copy do: [:m | owner addMorph: m].
+	"Each into the morph under the hand that wants it, the frontmost
+	there or the first of its owners that does; the world wants
+	anything, and puts it in front. Then the morph is told where it
+	landed."
+	submorphs copy do: [:m | | target |
+		target := owner morphAt: bounds origin.
+		[target == nil or: [target wantsDroppedMorph: m]] whileFalse: [target := target owner].
+		target == nil ifTrue: [target := owner].
+		target acceptDroppedMorph: m.
+		m justDroppedInto: target].
 	dragging := false! !
 
 !PasteUpMorph class methodsFor: 'instance creation'!
@@ -573,6 +593,9 @@ damage
 	^damage! !
 
 !PasteUpMorph methodsFor: 'submorphs'!
+wantsDroppedMorph: aMorph
+	^true!
+
 morphAt: aPoint
 	"A morph of the world, never the world itself."
 	| found |
@@ -638,6 +661,7 @@ setTarget: aMorph
 	self addHandle: #duplicate color: Color green.
 	self addHandle: #resize color: Color yellow.
 	self addHandle: #inspect color: (Color r: 3/5 g: 4/5 b: 1).
+	self addHandle: #viewer color: (Color r: 2/5 g: 9/10 b: 4/5).
 	bounds := 0 @ 0 corner: 0 @ 0.
 	self step!
 
@@ -659,7 +683,8 @@ containsPoint: aPoint
 step
 	"Follow the target: around it, a handle at the top left (delete),
 	the top's middle (pick up), the top right (duplicate), the bottom
-	right (resize) and the bottom left (inspect). Gone with it."
+	right (resize), the bottom left (inspect) and the left's middle
+	(its viewer: Etoys.st). Gone with it."
 	| box |
 	target owner == nil ifTrue: [^self delete].
 	box := target bounds expandBy: 14.
@@ -671,6 +696,7 @@ step
 	(submorphs at: 3) position: (box right - 14) @ box top.
 	(submorphs at: 4) position: box corner - 14.
 	(submorphs at: 5) position: box left @ (box bottom - 14).
+	(submorphs at: 6) position: box left @ (box top + box bottom - 14 // 2).
 	self changed! !
 
 !HaloMorph methodsFor: 'drawing'!
@@ -685,6 +711,7 @@ handle: action down: anEvent
 		target delete.
 		^self delete].
 	action == #inspect ifTrue: [^target inspect].
+	action == #viewer ifTrue: [^target openViewer].
 	action == #grab ifTrue: [^hand grab: target].
 	action == #duplicate ifTrue: [
 		target := target duplicate.

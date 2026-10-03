@@ -350,7 +350,8 @@ let scenes : Golden_scene.scene list =
     ("apps/devtools/software/TinySmalltalk80", "", 3);
     (* claude: Squeak's screen, all of it morphs drawn by Smalltalk: the
      * Browser on EllipseMorph>>drawOn:, a Workspace, the Transcript,
-     * the bouncing atoms and the parts bin *)
+     * the bouncing atoms, the parts bin, and the car driven by its
+     * script of tiles *)
     ("apps/devtools/software/TinySqueak", "", 3);
     (* claude: Scratch 2's screen: the stage, the cat and the pencil,
      * the Motion palette, the cat's three scripts and, under the
@@ -1774,6 +1775,9 @@ let flagged : Golden_scene.flagged list =
     ("examples/software/PovrayWhitted", "evolution", 45, [ "evolution" ]);
     ("examples/software/PovrayCsg", "evolution", 45, [ "evolution" ]);
     ("games/platform/software/TinyCeleste", "shapes", 5, [ "artwork=shapes" ]);
+    (* claude: MiniMorphic on TinySqueak's host: fifty squares bouncing
+     * on the Blue Book's Display, one bit a pixel *)
+    ("apps/devtools/software/TinySqueak", "mini", 10, [ "kernel=mini" ]);
     ("games/platform/software/TinyVVVVVV", "shapes", 5, [ "artwork=shapes" ]);
     ("games/platform/software/TinyMarioGalaxy2D", "shapes", 5, [ "artwork=shapes" ]);
     (* claude: and juice=off (Juice.mli): every tween at its end at once *)
@@ -1963,6 +1967,10 @@ let scripted_flagged : Golden_scene.scripted_flagged list =
       [] );
     ("apps/devtools/software/TinySqueak", "halo", 6, "at(375;187):1-6,mclick:2", []);
     ("apps/devtools/software/TinySqueak", "drag", 10, "at(356;58):1-3,at(100;-100):4-12,click:2-12", []);
+    (* claude: its Etoy: the car's script ticking, the 4 of "Car forward
+     * by 4" clicked and 9 typed over it, the car further on its wider
+     * circle *)
+    ("apps/devtools/software/TinySqueak", "etoys", 24, "at(197;-107):1-24,click:2,type(9):5", []);
     (* claude: its classic session: 10 fib not understood, its notifier's
      * define, the method typed into the debugger and accepted (the DoIt
      * restarted), proceed -- and 55 printed in the Workspace *)
