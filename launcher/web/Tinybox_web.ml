@@ -51,10 +51,10 @@ let sources_url () = assets () ^ "/js/launcher/tinybox_sources.txt"
 
 (* each file its path, a newline, its length, a newline, its text
  * (Code_bundle's format) *)
-let sources : Tinybox_menu.sources option ref = ref None
+let sources : Menu_model.sources option ref = ref None
 
 let fetch_sources () : unit =
-  sources := Some Tinybox_menu.Loading;
+  sources := Some Menu_model.Loading;
   Fetch_bytes.get (sources_url ())
     ~ok:(fun s ->
       sources :=
@@ -65,18 +65,18 @@ let fetch_sources () : unit =
                * (make_codemap_data -tinybox): counting them here lexes
                * every file, and the first a froze the page *)
               Option.iter (fun r -> Codemap.use_rank (Code_rank.of_string r)) (List.assoc_opt "#rank" files);
-              Tinybox_menu.Sources (List.filter (fun (p, _) -> p <> "#rank") files)
-          | exception Failure _ -> Tinybox_menu.No_sources "not read"))
-    ~failed:(fun why -> sources := Some (Tinybox_menu.No_sources why))
+              Menu_model.Sources (List.filter (fun (p, _) -> p <> "#rank") files)
+          | exception Failure _ -> Menu_model.No_sources "not read"))
+    ~failed:(fun why -> sources := Some (Menu_model.No_sources why))
 
-let get_sources () : Tinybox_menu.sources =
+let get_sources () : Menu_model.sources =
   match !sources with
   | Some s -> s
   | None ->
       fetch_sources ();
-      Tinybox_menu.Loading
+      Menu_model.Loading
 
-let host : Tinybox_menu.host =
+let host : Menu_model.host =
   {
     runnable = List.map (fun (p : Catalogue.program) -> p.name) programs;
     thumbnail = (fun p size -> Some (image size size (Printf.sprintf "%s/pngs/%s.png" (assets ()) p.name)));
@@ -84,7 +84,7 @@ let host : Tinybox_menu.host =
       (fun p ->
         (* claude: this page's URL first made ?chosen=<Name> (replaced, not
          * a new entry in the history): Back from the program comes back
-         * to the menu on it (Tinybox_menu.initial) *)
+         * to the menu on it (Menu_groups.initial) *)
         ignore
           (Ojs.call (Ojs.get_prop_ascii Ojs.global "history") "replaceState"
              [| Ojs.null; Ojs.string_to_js ""; Ojs.string_to_js ("?chosen=" ^ p.name) |]);

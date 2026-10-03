@@ -5,7 +5,12 @@
 (library
  (name tinybox_menu)
  (wrapped false)
- (modules Tinybox_menu Tinybox_data)
+ ; claude: the menu as a Playground game in its parts: Menu_model (the
+ ; types alone), Menu_groups (what is shown), Menu_layout (where),
+ ; Menu_update, Menu_view; Tinybox_menu runs it
+ (modules Tinybox_menu Menu_model Menu_groups Menu_layout Menu_update Menu_view
+   Tinybox_data)
+ (modules_without_implementation menu_model)
  (libraries caps elm_core elm_playground catalogue tinybox_codemap))
 
 ; claude: the programs' own code only (what own_size counts), not

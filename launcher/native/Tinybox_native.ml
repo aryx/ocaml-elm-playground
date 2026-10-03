@@ -307,14 +307,14 @@ let preview_ms (p : Catalogue.program) : float option =
 (* The host *)
 (*****************************************************************************)
 
-let host (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) : Tinybox_menu.host =
+let host (caps : < Cap.fork ; Cap.exec ; Cap.wait ; .. >) (runnable : string list) : Menu_model.host =
   {
     runnable;
     thumbnail;
     play = play caps runnable;
     running = (fun () -> Option.map (fun c -> c.name) !child);
     ended = ended caps;
-    sources = (fun () -> Tinybox_menu.Sources Tinybox_sources.sources);
+    sources = (fun () -> Menu_model.Sources Tinybox_sources.sources);
     preview =
       Some
         {
