@@ -21,12 +21,14 @@
 ; claude: the kernel's source, the chunk files of kernel/, embedded as
 ; strings (St_kernel.mli), in the order they are bootstrapped; and
 ; Squeak's kernel, the same files then those of kernel/squeak/; and
-; MiniMorphic, Squeak's then kernel/morphic/MiniMorphic.st
+; MiniMorphic, Squeak's without its Morphic (Morphic.st, Morphs.st),
+; then kernel/morphic/MiniMorphic.st
 (rule
  (targets St_kernel.ml)
  (deps kernel/Definitions.st kernel/Objects.st kernel/Classes.st kernel/Numbers.st
        kernel/Collections.st kernel/Streams.st kernel/Graphics.st kernel/System.st
        kernel/squeak/Closures.st kernel/squeak/Color.st kernel/squeak/Text.st
+       kernel/squeak/Morphic.st kernel/squeak/Morphs.st
        kernel/morphic/MiniMorphic.st)
  (action
   (with-stdout-to
@@ -59,7 +61,7 @@
     (cat kernel/System.st)
     (echo "|st});\n")
     (echo "]\n")
-    (echo "let squeak = files @ [\n")
+    (echo "let squeak_base = files @ [\n")
     (echo "(\"squeak/Closures.st\", {st|")
     (cat kernel/squeak/Closures.st)
     (echo "|st});\n")
@@ -70,7 +72,15 @@
     (cat kernel/squeak/Text.st)
     (echo "|st});\n")
     (echo "]\n")
-    (echo "let mini_morphic = squeak @ [\n")
+    (echo "let squeak = squeak_base @ [\n")
+    (echo "(\"squeak/Morphic.st\", {st|")
+    (cat kernel/squeak/Morphic.st)
+    (echo "|st});\n")
+    (echo "(\"squeak/Morphs.st\", {st|")
+    (cat kernel/squeak/Morphs.st)
+    (echo "|st});\n")
+    (echo "]\n")
+    (echo "let mini_morphic = squeak_base @ [\n")
     (echo "(\"morphic/MiniMorphic.st\", {st|")
     (cat kernel/morphic/MiniMorphic.st)
     (echo "|st});\n")

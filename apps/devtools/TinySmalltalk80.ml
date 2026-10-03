@@ -696,6 +696,8 @@ let host (io : io) : I.host =
     milliseconds = (fun () -> int_of_float (Sys.time () *. 1000.));
     inspect = (fun o -> io.inspect <- io.inspect @ [ o ]);
     mouse = (fun () -> io.mouse);
+    (* claude: its tools read the keys themselves: none for Smalltalk *)
+    keyboard = (fun () -> None);
   }
 
 let new_vm (io : io) (image : string option) : I.vm =

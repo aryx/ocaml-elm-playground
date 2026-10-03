@@ -665,10 +665,18 @@ pixels a second, a 640 by 400 rectangle: a fill 23 a pixel at a time,
 `Bytes.blit` is a loop); a store 28 and 3,050 (5.8 and 33). Blending
 stays a pixel at a time, 18 (7.2).
 
+A glyph, a source of one bit whose 0 maps to nothing, has its zero
+bytes skipped, eight pixels at once, and only its 1s blended: 100
+lines of 40 characters from 72 to 43 ms natively, 348 to 223 under
+node (what is left is the 130 bytecodes a character).
+
 And a kernel's method: `Integer>>rounded` answering itself instead of
 Number's, which adds a half as a Fraction. A Pen rounds four numbers a
 line: the font drawn from Hershey's strokes went from 1.7 million
-bytecodes to 300,000.
+bytecodes to 300,000. The same in Morphic's `fillOval:color:`: a
+row's width computed in integers but for the square root, no Integer
+added to a Float (a coercion, in Smalltalk, each time): 10 bouncing
+ellipses from 74,000 to 38,000 bytecodes a cycle.
 
 ## Not done, deliberately
 

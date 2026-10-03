@@ -6,7 +6,8 @@ Blue Book's Smalltalk-80: the same language and virtual machine
 colour, and an environment, Morphic, written in Smalltalk itself. This
 tutorial follows the plan's phases, a section each as it is written,
 each ending with the worked example its tests check
-(`Unit_squeak.ml`, `Unit_minimorphic.ml`, `Unit_colour.ml`).
+(`Unit_squeak.ml`, `Unit_minimorphic.ml`, `Unit_colour.ml`,
+`Unit_morphic.ml`).
 
 The thread through it: **the host shrinks**. Every step moves
 something from OCaml into Smalltalk, where the Browser can show it and
@@ -22,6 +23,7 @@ one object memory. What differs is the text the system is booted from
 |---|---|---|
 | the Blue Book's | `kernel/*.st` | `St_boot.boot ()` |
 | Squeak's | the same, then `kernel/squeak/*.st` | `St_boot.boot ~kernel:St_kernel.squeak ()` |
+| MiniMorphic's | Squeak's without its Morphic, then `kernel/morphic/MiniMorphic.st` | `St_boot.boot ~kernel:St_kernel.mini_morphic ()` |
 
 Squeak's files add classes and methods to the Blue Book's, and define
 some again (the last definition of a class is the one booted). The
@@ -314,9 +316,8 @@ the destination's. The definition, a pixel at a time, stays
 A line of 40 characters is 5,200 bytecodes and 0.7 ms natively, 3.5 ms
 under node: the bytecodes are few, the time is the glyphs' pixels,
 blended one by one, most of them the paper's. A page of text redrawn
-whole would be too slow in a browser; skipping the glyphs' zeros a
-byte at a time is the next step if Morphic's damage does not save
-enough.
+whole would be too slow in a browser. (Section 4 took the next step:
+the glyphs' zeros skipped a byte at a time, 0.4 and 2.2 ms.)
 
 **Worked examples** (`Unit_colour.ml`): red of alpha 128 over white is
 (255, 127, 127); `Color r: 1 g: 1/2 b: 0` is the bytes 255 255 128 0
@@ -324,6 +325,121 @@ and the palette's 199; a Form of 8 bits drawn on one of 32, its 0
 showing the yellow under; A in a font 33 pixels high is 18 wide, its
 apex at (9, 4), its bar at 18, its foot at (1, 25) -- Hershey's units,
 16 added; `'AB'` drawn in red at 10 ends at 49.
+
+## 4. Morphic
+
+Files: `kernel/squeak/Morphic.st` (the machinery),
+`kernel/squeak/Morphs.st` (the morphs). Tests: `Unit_morphic.ml`.
+MiniMorphic (section 2) is its skeleton and is not repeated here: a
+morph's bounds, owner and submorphs, `step`, `changed` and the world's
+damage, the cycle. What Morphic adds is what makes it an environment.
+
+### A canvas
+
+A morph does not know BitBlt. Its `drawOn:` is given a `FormCanvas`:
+`fillRectangle:color:`, `frameRectangle:width:color:`,
+`fillOval:color:`, `drawString:at:font:color:`, all clipped to the
+rectangle the world is redrawing. The canvas keeps one BitBlt with no
+source, and changes its halftone (the colour's pixel), its rectangle
+and its clipping.
+
+An oval is a BitBlt a row: how far the ellipse comes in from its box
+at that height, from its equation. So an `EllipseMorph` costs what its
+height costs, twice (its border, then its inside over it).
+
+### Events: who wants the mouse?
+
+The `HandMorph` reads the mouse and the keys once a cycle and makes
+messages of them. When a button goes down:
+
+    the frontmost morph under the hand          morphAt:
+        does it want the mouse?                 handlesMouseDown:
+        no: its owner? ... up to the world
+    one says yes: it gets mouseDown:, then every mouseMove: and the
+        mouseUp:, wherever the hand goes       (the mouse focus)
+    none does: the whole morph is picked up    (grab:)
+
+That last line is why everything on a Morphic screen can be dragged,
+and why a window is moved by its title without a line of code saying
+so: a `StringMorph` does not want the mouse, nor does the window, so
+the hand picks the window up. Its text pane does want it, so a click
+there puts the caret. What the hand carries is drawn over a shadow, a
+rectangle of black glass (rule 24), and is put down in front when the
+button goes up.
+
+The keys go to one morph, the keyboard focus, which a `TextMorph`
+takes when clicked.
+
+### The halo
+
+The blue button on a morph puts a `HaloMorph` around it: four round
+handles, to delete it, pick it up, duplicate it, resize it. The halo
+knows nothing of the morph it is on: the handles send it `delete`,
+`duplicate`, `extent:`, which every morph understands. And the halo is
+a morph: it follows its target by its `step`, and it is not hit by a
+click (`containsPoint:` is false), only its handles are.
+
+`duplicate` copies a morph and what it holds, and then mends the
+copy's instance variables: one that was a submorph (a window's label)
+becomes that submorph's copy.
+
+### The morphs
+
+| morph | what it adds |
+|---|---|
+| `BorderedMorph`, `RectangleMorph`, `EllipseMorph` | a border; the ellipse's `containsPoint:` is its equation, so a click in its corner goes behind |
+| `AtomMorph` | `step`: it bounces in its owner |
+| `StringMorph` | a line of text, as big as its string |
+| `TextMorph` | text typed in: a string, a cursor, lines cut at the returns |
+| `SimpleButtonMorph` | a click (the button up while still on it) sends a message |
+| `MenuMorph`, `MenuItemMorph` | a column of items; gone at the next click not on it |
+| `SystemWindow` | a title, a close box, panes placed by fractions of its area |
+
+A window's pane is given with a rectangle of fractions
+(`0 @ 0 corner: 1/2 @ 1`, the left half); `extent:` calls
+`extentChanged`, and the window places its panes again. The halo's
+resize handle only sends `extent:`.
+
+The world's menu (a click on the world) makes a new morph and gives it
+to the hand, which puts it down at the next click.
+
+### What it costs
+
+Bytecodes a cycle, a world of 800 by 600 at 32 bits:
+
+| | bytecodes | native | under node |
+|---|---|---|---|
+| nothing changed | 800 | 0.06 ms | 0.2 ms |
+| 10 atoms bouncing | 37,700 | 3.6 ms | 17 ms |
+| 50 atoms | 185,000 | 17 ms | 66 ms |
+| a window of 20 lines redrawn whole | 142,000 | 11 ms | 49 ms |
+
+An atom is 3,700 bytecodes a cycle, three times MiniMorphic's
+squares: it is an ellipse 14 pixels high, 2,700 to draw (a row is 88
+bytecodes: a square root, a BitBlt). What was measured and changed:
+
+- the oval's rows in integers but for the root: adding an Integer to
+  a Float coerces one of them, in Smalltalk, each time (74,000
+  bytecodes a cycle for 10 atoms, then 38,000);
+- a move's two damaged rectangles made one when they touch: a lone
+  moving morph was redrawn twice, once for each (7,100 bytecodes,
+  then 4,200);
+- a glyph's zeros skipped a byte at a time in `St_colorblt` (section
+  3's next step): a line of 40 characters from 0.7 to 0.4 ms
+  natively, 3.5 to 2.2 under node.
+
+What is left: a `TextMorph` redraws all its lines at each key (50 ms
+under node for 20 lines); only the changed line should be damaged.
+
+**Worked examples** (`Unit_morphic.ml`): an ellipse's corner is the
+world's gray and a click there is not on it; a rectangle picked up at
+(110, 60) and carried to (150, 100) is at 140 @ 90, its shadow the
+gray 204 darkened to 142; a button's click, and no click when the
+button goes up elsewhere; the halo's resize handle dragged to
+(200, 180) makes the morph 100 by 80, its duplicate handle a copy in
+the hand; `Helo`, an arrow back, `l`, typed in a text; a window's left
+pane 129 wide, then 149 when the window is 300; the world's menu, its
+second item, an ellipse in the hand.
 
 ## Exercises
 
@@ -338,7 +454,13 @@ apex at (9, 4), its bar at 18, its foot at (1, 25) -- Hershey's units,
 - Colour: a Form of 32 bits drawn on one of 8 (Squeak's way: the
   pixel reduced to 5 bits of each colour, a map of 32,768 entries);
   Squeak's own palette of 8 bits; a `Pen` with a colour.
-- Text: a glyph's zeros skipped a byte at a time; kerning; a font from
+- Morphic: a halo on a part of a morph (Squeak's: each blue click
+  goes one morph inward); a morph dropped into the morph under it
+  (`wantsDroppedMorph:`); `stepTime`, a morph stepped every so many
+  milliseconds; a `TextMorph` that wraps its lines, selects, and
+  damages only the line that changed; an ellipse drawn once into a
+  Form and stored at each move.
+- Text: kerning; a font from
   `Vga_font`'s 8 by 16 instead of Hershey's strokes, and what a strike
   of it looks like.
 - The debugger's variables for a closure's activation: its arguments,

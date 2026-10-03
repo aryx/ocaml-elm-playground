@@ -49,9 +49,10 @@
    source Form is not drawn (St_bitblt reads white there).
 
    [blit ~simple:true] is the definition, a pixel at a time. What runs
-   does the two cases that are most of a screen's drawing a row at a
-   time: a rectangle filled with one colour, and a Form stored as it
-   is. A test checks that they agree.
+   does the cases that are most of a screen's drawing faster: a
+   rectangle filled with one colour and a Form stored as it is, a row
+   at a time; a glyph, whose zeros are skipped a byte at a time. A
+   test checks that they agree.
 
    A pixel of 32 bits is an OCaml int: negative under js_of_ocaml,
    whose ints have 32 bits, so the code only shifts and masks it, and

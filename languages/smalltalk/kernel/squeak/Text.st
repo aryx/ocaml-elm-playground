@@ -102,8 +102,11 @@ renderHershey: pixels
 	xTable at: strokes size + 1 put: x.
 	glyphs := Form extent: x @ height.
 	pen := Pen new.
-	pen destForm: glyphs; clipRect: glyphs boundingBox.
-	1 to: strokes size do: [:i | self draw: (strokes at: i) with: pen at: (xTable at: i)]!
+	pen destForm: glyphs.
+	1 to: strokes size do: [:i |
+		"a stroke that rounds past its glyph's side must not mark the next one"
+		pen clipRect: ((xTable at: i) @ 0 corner: (xTable at: i + 1) @ height).
+		self draw: (strokes at: i) with: pen at: (xTable at: i)]!
 
 scale: units
 	"Hershey's units to pixels, rounded."
@@ -159,6 +162,9 @@ widthOfString: aString
 
 !Form methodsFor: 'text'!
 drawString: aString at: aPoint font: aFont color: aColor
+	^self drawString: aString at: aPoint font: aFont color: aColor clipRect: self boundingBox!
+
+drawString: aString at: aPoint font: aFont color: aColor clipRect: aRectangle
 	"From aPoint, the top left of the line; answers the x where it
 	ends. One BitBlt, sent copyBits once a character: its source the
 	font's glyphs, through the colour's map, blended (painted at 8
@@ -168,7 +174,7 @@ drawString: aString at: aPoint font: aFont color: aColor
 	d := self depth.
 	blt := BitBlt destForm: self sourceForm: aFont glyphs halftoneForm: nil
 		combinationRule: (d = 32 ifTrue: [24] ifFalse: [d = 8 ifTrue: [25] ifFalse: [aColor isDark ifTrue: [7] ifFalse: [4]]])
-		destOrigin: aPoint sourceOrigin: 0 @ 0 extent: 0 @ aFont height clipRect: self boundingBox.
+		destOrigin: aPoint sourceOrigin: 0 @ 0 extent: 0 @ aFont height clipRect: aRectangle.
 	d = 1 ifFalse: [blt colorMap: (aColor inkMapForDepth: d)].
 	x := aPoint x.
 	aString do: [:c | | w |

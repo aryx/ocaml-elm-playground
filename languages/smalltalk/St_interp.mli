@@ -76,6 +76,10 @@ type host = {
    * left), 2 yellow (the middle), 1 blue (the right), as Smalltalk-80
    * named them *)
   mouse : unit -> int * int * int;
+  (* the next character typed, taken out of the keys waiting: its code
+   * (13 return, 8 backspace, 28 to 31 the arrows left, right, up and
+   * down, as Squeak has them), None when there is none *)
+  keyboard : unit -> int option;
 }
 
 type process_state =

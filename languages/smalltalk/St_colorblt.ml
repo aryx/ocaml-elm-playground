@@ -101,13 +101,33 @@ let blit_pixels ~(dest : form) ~(source : form option) ~(map : int array option)
  *             of it (Bytes.blit: the machine's memmove)
  *   a store   each row of the source copied onto the destination's
  *
- * Everything else -- text, alpha, a map -- goes a pixel at a time.
- * St_bench times the two ("colour"). *)
+ *   text      a glyph is mostly paper: the source has one bit a
+ *             pixel and its 0 maps to a pixel of zeros, which neither
+ *             blending (alpha 0) nor painting draws. Its bytes are
+ *             read, a zero one skipped -- eight pixels at once -- and
+ *             only the 1s of the others drawn
+ *
+ * Everything else -- alpha, another map -- goes a pixel at a time.
+ * St_bench times them ("colour", "text"). *)
 let blit_rows ~(dest : form) ~(source : form option) ~(map : int array option) ~(halftone : form option) ~(rule : int)
     ~(dx : int) ~(dy : int) ~(sx : int) ~(sy : int) ((x0, y0, x1, y1) as area : int * int * int * int) : unit =
   let bpp = dest.depth / 8 in
   let at y = (y * dest.stride) + (x0 * bpp) and len = (x1 - x0) * bpp in
   match (source, map, halftone) with
+  | Some f, Some table, None when f.depth = 1 && table.(0) = 0 && (rule = 24 || rule = 25) && bpp > 0 ->
+      let ink = table.(1) in
+      for y = y0 to y1 - 1 do
+        let row = (sy + y - dy) * f.stride and x = ref x0 in
+        while !x < x1 do
+          let u = sx + !x - dx in
+          if u land 7 = 0 && !x + 8 <= x1 && byte f (row + (u lsr 3)) = 0 then x := !x + 8
+          else begin
+            if (byte f (row + (u lsr 3)) lsr (7 - (u land 7))) land 1 = 1 then
+              put dest !x y (combine ~rule ~depth:dest.depth ink (get dest !x y));
+            incr x
+          end
+        done
+      done
   | _ when bpp = 0 || rule <> 3 || x1 <= x0 || y1 <= y0 -> blit_pixels ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy area
   | None, _, Some { w = 1; h = 1; _ } ->
       blit_pixels ~dest ~source ~map ~halftone ~rule ~dx ~dy ~sx ~sy (x0, y0, x1, y0 + 1);

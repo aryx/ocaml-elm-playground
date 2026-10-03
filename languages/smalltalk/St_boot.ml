@@ -23,6 +23,7 @@ let quiet_host : I.host =
     milliseconds = (fun () -> int_of_float (Sys.time () *. 1000.));
     inspect = (fun _ -> ());
     mouse = (fun () -> (0, 0, 0));
+    keyboard = (fun () -> None);
   }
 
 let class_named (m : M.t) (name : string) : M.oop =

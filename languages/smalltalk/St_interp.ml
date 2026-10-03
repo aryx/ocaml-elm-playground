@@ -20,6 +20,7 @@ type host = {
   milliseconds : unit -> int;
   inspect : oop -> unit;
   mouse : unit -> int * int * int;
+  keyboard : unit -> int option;
 }
 type process_state = Runnable | Suspended of string | Finished of oop | Terminated
 type process = { id : int; mutable top : oop; mutable state : process_state }

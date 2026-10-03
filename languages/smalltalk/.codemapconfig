@@ -139,7 +139,7 @@
         { at: 'def:define_class', say: 'subclass: ... its instances reshaped', weight: 2 },
       ],
     },
-    'St_interp.mli': { digest: 'd27597c9b5cc',
+    'St_interp.mli': { digest: '8fca3baa559e',
       summary: "The Blue Book's interpreter: contexts are objects, sends through a method cache, non-local return, processes on a budget.",
       capitals: [
         { at: 'def:run', say: 'a process run for a budget of bytecodes' },
@@ -152,7 +152,7 @@
         { at: 'type:process_state', weight: 1 },
       ],
     },
-    'St_interp.ml': { digest: 'f2276691dd8f',
+    'St_interp.ml': { digest: '75dfc5a6051b',
       summary: 'Registers cached from the active context, sends, returns, the bytecodes decoded by range, processes run.',
       capitals: [
         { at: 'def:step', say: 'one bytecode: fetch, decode, execute' },
@@ -176,13 +176,13 @@
         { from: 'def:execute', to: 'def:activate_method' },
       ],
     },
-    'St_primitives.mli': { digest: '64b807b3aafc',
+    'St_primitives.mli': { digest: '34aa391df9b8',
       summary: "What the VM does itself, numbered as in chapter 29: the primitive first, the Smalltalk code when it fails.",
       important: [
         { at: 'comment:"the primitive runs first"', say: 'a failure falls back on Smalltalk', weight: 3 },
       ],
     },
-    'St_primitives.ml': { digest: '1acfb6778b7b',
+    'St_primitives.ml': { digest: '41a4d86a1192',
       summary: 'Numbers, indexing, objects and classes, blocks and perform:, strings, the system, and the table.',
       important: [
         { at: 'def:small_ints', say: 'SmallInteger arithmetic, failing on overflow', weight: 2 },
@@ -210,7 +210,7 @@
         { at: 'def:pixel', weight: 1 },
       ],
     },
-    'St_colorblt.mli': { digest: '5b3d74f300ee',
+    'St_colorblt.mli': { digest: '64b0949ce0e9',
       summary: "BitBlt in colour, Squeak's: Forms of 8 and 32 bits, alpha blending, the colour map that gives text its ink.",
       important: [
         { at: 'comment:"rule 24  alpha blend"', say: 'rules that are arithmetic: blend and paint', weight: 3 },
@@ -219,11 +219,11 @@
         { at: 'def:copy_bits', weight: 2 },
       ],
     },
-    'St_colorblt.ml': { digest: '3dc6abec454d',
+    'St_colorblt.ml': { digest: '9104317068e5',
       summary: 'A pixel read and written at each depth, the rules, the definition a pixel at a time; a fill and a store a row at a time.',
       important: [
         { at: 'def:combine', weight: 3 },
-        { at: 'def:blit_rows', say: 'the first row made, the others copies', weight: 2 },
+        { at: 'def:blit_rows', say: "the first row made, the others copies; a glyph's zeros skipped", weight: 2 },
         { at: 'def:copy_bits', say: "St_bitblt's when everything has one bit", weight: 2 },
       ],
     },
@@ -240,7 +240,7 @@
         { at: 'def:read', weight: 2 },
       ],
     },
-    'St_kernel.mli': { digest: '4884ed4599c8',
+    'St_kernel.mli': { digest: 'b3bbd81c056f',
       summary: "The kernel's chunk files, kernel/*.st, embedded by dune in the order St_boot reads them; and Squeak's kernel, the same then kernel/squeak/'s, and MiniMorphic's.",
     },
     'St_boot.mli': { digest: '52eae0a194e3',
@@ -253,7 +253,7 @@
         { at: 'def:boot', weight: 2 },
       ],
     },
-    'St_boot.ml': { digest: '15d9fbf2273b',
+    'St_boot.ml': { digest: '6697204e3eeb',
       summary: 'The four steps: the classes made empty, filled from their definitions, every method compiled, the rest of the chunks run.',
       important: [
         { at: 'def:definition', say: 'a class definition read from its chunk', weight: 2 },
@@ -322,7 +322,7 @@
   dirs: {
     kernel: { summary: "The kernel's classes written in Smalltalk, in chunk format: what St_boot compiles into the world." },
     'kernel/morphic': { summary: "MiniMorphic: Morphic in one file of Smalltalk -- a world, a hand, morphs that step, damage rectangles -- kept as a step to read before Squeak's." },
-    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures; Color and Forms with a depth; StrikeFont, text drawn a glyph a BitBlt." },
+    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures; Color and Forms with a depth; StrikeFont, text drawn a glyph a BitBlt; Morphic, its machinery (Morphic.st) and its morphs (Morphs.st)." },
     tests: { summary: 'Expressions printed, the class hierarchy, the debugger, the image saved and loaded.' },
   },
 }

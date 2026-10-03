@@ -133,7 +133,16 @@ in `dev/notes_opti_ocaml.md`.
   a Form of glyphs and a table of offsets (the strike format), text
   drawn by BitBlt, a glyph at a time. Hershey's strokes
   (`graphics/font`) rendered once into such a Form.
-- **Q4, Morphic**: `Morph` (bounds, colour, submorphs, owner, `drawOn:`,
+- **Q4, Morphic** (done, 2026-10-03: `kernel/squeak/Morphic.st` and
+  `Morphs.st`, booted by `St_kernel.squeak`, MiniMorphic now on
+  Squeak's kernel without them; `Unit_morphic.ml`, St_bench's
+  "morphs", `notes_squeak.md` section 4; the host's `keyboard` and
+  primitive 92. 50 atoms, ellipses: 185,000 bytecodes a cycle, 17 ms
+  natively, 66 under node; nothing changed, 800. Left: the halo's
+  inspect handle, with Q5's Inspector; a TextMorph redraws all its
+  lines at each key, has no selection and does not wrap, Q5's
+  Workspace needs the first two; a world is on a Form given to it,
+  the Display untouched until Q6): `Morph` (bounds, colour, submorphs, owner, `drawOn:`,
   `step`), `PasteUpMorph` (the world), `HandMorph` (the mouse, what it
   carries, events dispatched to the morph under it), the halo (move,
   resize, duplicate, delete, inspect), `changed` and the world's damage

@@ -67,4 +67,11 @@ let () =
     "Color(255 127 127)";
   check "| f | f := Form extent: 4 @ 4 depth: 32. f fillColor: Color red. f reverse. f colorAt: 1 @ 1" "Color(0 255 255 alpha 0)";
   check "| f | f := Form extent: 40 @ 20 depth: 32. f fillColor: Color white. f drawString: 'A' at: 0 @ 0. f colorAt: 5 @ 2" "Color(0 0 0)";
+  (* Morphic: a cycle, a morph drawn; the hand's shadow, blended *)
+  check
+    "| f w r | f := Form extent: 100 @ 80 depth: 32. w := PasteUpMorph on: f. r := RectangleMorph new. r color: Color green. w addMorph: r. r position: 20 @ 20. w doOneCycle. f colorAt: 30 @ 30"
+    "Color(0 255 0)";
+  check
+    "| f w r | f := Form extent: 100 @ 80 depth: 32. w := PasteUpMorph on: f. r := EllipseMorph new. w hand attachMorph: r. w doOneCycle. Array with: (f colorAt: 25 @ 20) with: (f colorAt: 52 @ 42)"
+    "#(Color(255 255 0) Color(142 142 142))";
   if !failures > 0 then exit 1

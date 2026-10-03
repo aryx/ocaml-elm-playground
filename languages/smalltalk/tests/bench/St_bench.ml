@@ -98,6 +98,33 @@ let text () =
   timed "100 strings of 40"
     "| f | f := Form extent: 400 @ 20 depth: 32. 100 timesRepeat: [f drawString: 'The quick brown fox jumps over the lazy d' at: 0 @ 0]"
 
+(* Squeak's Morphic (kernel/squeak/Morphic.st), as [morphic] for
+ * MiniMorphic: n AtomMorphs, ellipses, bouncing in a world of 800 by
+ * 600 at 32 bits; and a window of text redrawn whole *)
+let morphs (atoms : int) =
+  let vm = St_boot.boot ~kernel:St_kernel.squeak () in
+  let run text = match I.evaluate vm ~budget:2_000_000_000 text with Ok _ -> () | Error e -> print_endline ("error: " ^ e) in
+  run "Smalltalk at: #W put: (PasteUpMorph on: (Form extent: 800 @ 600 depth: 32))";
+  run
+    (Printf.sprintf
+       "1 to: %d do: [:i | | a | a := AtomMorph new. a velocity: (i \\\\ 7 - 3 * 2 + 1) @ (i \\\\ 5 - 2 * 2 + 1). W addMorph: a. a position: (i * 37 \\\\ 780) @ (i * 53 \\\\ 580)]. W doOneCycle"
+       atoms);
+  let timed name cycles text =
+    let before = I.bytecodes_run vm and blits = St_bitblt.changes () and t0 = Sys.time () in
+    run (Printf.sprintf "%d timesRepeat: [%s]" cycles text);
+    let dt = Sys.time () -. t0 and n = I.bytecodes_run vm - before in
+    Printf.printf "morphs    %-22s %10d bytecodes a cycle %6.2f ms a cycle %5d blits\n%!" name (n / cycles)
+      (dt *. 1000. /. float_of_int cycles)
+      ((St_bitblt.changes () - blits) / cycles)
+  in
+  timed (Printf.sprintf "%d atoms" atoms) 200 "W doOneCycle";
+  if atoms = 10 then begin
+    run
+      "| win t | W submorphs copy do: [:m | m delete]. win := SystemWindow new. t := TextMorph new. t contents: ((1 to: 20) inject: '' into: [:s :i | s, 'The quick brown fox jumps over the lazy d', (String with: (Character value: 13))]). win addMorph: t frame: (0 @ 0 corner: 1 @ 1). W addMorph: win. win position: 50 @ 50; extent: 500 @ 400. W doOneCycle";
+    timed "a window, 20 lines" 20 "W restoreDisplay. W doOneCycle";
+    timed "nothing changed" 200 "W doOneCycle"
+  end
+
 let () =
   let only = if Array.length Sys.argv > 1 then Sys.argv.(1) else "" in
   let has (name : string) =
@@ -109,6 +136,7 @@ let () =
   if has "colour" then colour ();
   if has "text" then text ();
   if has "morphic" then List.iter morphic [ 10; 50; 200 ];
+  if has "morphs" then List.iter morphs [ 10; 50; 200 ];
   List.iter
     (fun (kernel, files) ->
       let vm = St_boot.boot ~kernel:files () in

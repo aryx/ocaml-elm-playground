@@ -614,6 +614,7 @@ let install (vm : I.vm) : unit =
   set 91 (fun vm n ->
       let _, _, b = (I.host vm).mouse () in
       answer vm n (M.of_int b));
+  set 92 (fun vm n -> answer vm n (match (I.host vm).keyboard () with Some c -> M.of_int c | None -> M.nil));
   set 96 (fun vm n -> if St_colorblt.copy_bits (I.memory vm) (rcvr vm n) then answer vm n (rcvr vm n) else false);
   set 158 (fun vm n ->
       (I.host vm).inspect (rcvr vm n);
