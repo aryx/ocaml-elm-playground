@@ -42,7 +42,15 @@ val own : string -> string -> bool
 
 (* [closure ~keep sources path]: [path] and the modules it names that
    pass [keep], and the modules they name, transitively, in reading
-   order: [path] first, then breadth first, each .mli before its .ml *)
+   order: [path] first, then breadth first, each .mli before its .ml.
+
+   claude: then the texts of the languages among them, sources that are
+   not OCaml and that no module names (the Smalltalk kernels' .st
+   files, embedded by a rule): those under the folder of a library the
+   program uses; and of that library's deeper folders (kernel/squeak/),
+   only the ones whose name the program's main file says
+   (St_kernel.squeak). Each after the texts defining the classes it
+   subclasses or adds methods to. *)
 val closure : ?keep:(string -> bool) -> (string * string) list -> string -> string list
 
 (* [own_size sources path]: the files of the program's own code and
@@ -58,7 +66,8 @@ val budget : int
    (games/, apps/, gamekits/, appkits/, languages/, playground/, libs/, and
    tinybox's own, launcher/), not the
    build's copies of them (web/, software/, svg/, tests/) nor generated
-   modules: what tinybox embeds, and what budgets are counted over *)
+   modules: what tinybox embeds, and what budgets are counted over.
+   OCaml's files, and the languages' own texts (.st) *)
 val repository_sources : root:string -> (string * string) list
 
 (* claude: [repository_configs ~root]: what the code map's configs say

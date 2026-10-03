@@ -61,6 +61,13 @@ val go_to : Code_map_base.t -> Code_map_base.camera -> Code_names.candidate -> C
 val unit_move :
   Playground.computer -> pressed:(string -> bool) -> arrow:string option -> Code_map_base.t -> clicked:bool -> float -> float -> int option
 
+(* the file a right click goes straight to: the one under the mouse,
+   however deep, when a directory is looked at (the atlas, a region), as
+   in the author's codemap. [unit_move] goes there and keeps where one
+   was (t.came): going out of that file is back there, not to its
+   directory *)
+val straight_to : Playground.computer -> Code_map_base.t -> float -> float -> int option
+
 (* Places named *)
 
 (* a search's hit gone to: a directory or a file framed; a definition's

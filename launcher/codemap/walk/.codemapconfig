@@ -8,7 +8,7 @@
       summary: 'Its sources, its configs and what they import, its projects\' tops; what is left out and why.',
       capitals: [{ at: 'type:t', say: 'a directory, as the map is given it' }],
     },
-    'Code_walk.ml': { digest: '788da4d3238f',
+    'Code_walk.ml': { digest: 'c5f3063d234c',
       summary: 'Walked in name order, links not followed, directories starting with _ skipped.',
       important: [{ at: 'def:walk', weight: 3 }],
     },

@@ -208,6 +208,17 @@ in `dev/notes_opti_ocaml.md`.
 
 ## Later: the kernels in the code map
 
+Done, 2026-10-04: `Highlight_st` (its own scanner, comments kept, the
+chunks told apart; a methods' line one span, a section's title),
+`.st` among tinybox's sources and a directory's, coloured by
+`Code_file`; `Code_deps.closure` adds to a program's code the texts
+under the folder of a library it uses, the deeper folders
+(`kernel/squeak/`, `kernel/morphic/`) only if its main file says their
+name -- TinySmalltalk80 the Blue Book's eight files, TinySqueak all
+sixteen -- in an order found from the classes each builds on, not the
+boot's. Left: a class named in one `.st` file is not resolved to its
+definition in another (a click on `Morph` in Morphs.st).
+
 Most of TinySqueak is Smalltalk (the kernels' `.st` files), which
 tinybox's code map does not show: it counts and draws `.ml`, `.mli`
 and C. To come, at some point (asked 2026-10-03, not a phase yet):
@@ -225,6 +236,27 @@ and C. To come, at some point (asked 2026-10-03, not a phase yet):
   it names. The budget is no concern for TinySmalltalk80 and
   TinySqueak (decided, 2026-10-03): both are on `over_budget`, however
   many lines their kernels add.
+
+## Loose ends (found while building it, 2026-10-04)
+
+Small, each worth doing some day; the notes' exercises have the rest.
+
+- **Text does not wrap** in a `TextMorph`: a method's long line is cut
+  at the pane's edge and its end cannot be reached with the mouse. The
+  biggest gap in the Browser (its window was widened so that the first
+  screen's method fits).
+- **A literal array cannot hold a negative number**: `#(-9 18)` is read
+  as the symbol `-`, then 9 (`St_lexer`, both Smalltalks). `CarMorph`'s
+  points are given from its box's corner because of it.
+- **Never tried by hand**: TinySqueak was only driven offscreen, by
+  scripts. To check in a window and in a browser: its boot (0.6 s
+  natively, 2 to 3 s estimated in a browser from 1.4 s for the kernel
+  under node) and the Browser's 50 to 60 ms a click under node.
+- **Booting from a saved image** (`St_image.mli`), to skip that boot.
+- No scroll bars (a list scrolls when dragged past its edge, a text
+  follows its cursor); no debugger as a morph (an error is said in the
+  Transcript); a carried ellipse's shadow is a rectangle; the Browser's
+  instance/class button is as big as its pane's frame.
 
 ## Left out (exercises, or never)
 

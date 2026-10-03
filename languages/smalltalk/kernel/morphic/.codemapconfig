@@ -1,0 +1,10 @@
+// languages/smalltalk/kernel/morphic/: what the code map says of it (docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-10-04' },
+  summary: "MiniMorphic: Morphic in one file of Smalltalk, kept as a step to read before Squeak's.",
+  files: {
+    'MiniMorphic.st': { digest: '8aef9b5fdd15',
+      summary: "A world, a hand, morphs that step, damaged rectangles redrawn: Morphic's four ideas and nothing else.",
+    },
+  },
+}

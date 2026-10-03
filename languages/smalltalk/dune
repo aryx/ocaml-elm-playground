@@ -8,7 +8,9 @@
 ; St_debug (what a debugger asks of a suspended process), St_image
 ; (the whole memory saved and loaded), St_bitblt (Form and BitBlt, the
 ; display), St_colorblt (the same in colour, Squeak's). TinySmalltalk80
-; (apps/devtools/) is its environment.
+; (apps/devtools/) is its environment, TinySqueak the one of the second
+; kernel. And Highlight_st, the kernels' chunk files coloured for
+; tinybox's code map.
 ;
 ; Pure OCaml, no Playground (languages/README.md). In the package
 ; tiny_languages, as tiny_languages.smalltalk.
@@ -16,6 +18,7 @@
  (name smalltalk)
  (public_name tiny_languages.smalltalk)
  (wrapped false)
+ (libraries highlight_code) ; Highlight_st's categories
 )
 
 ; claude: the kernel's source, the chunk files of kernel/, embedded as

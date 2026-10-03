@@ -23,5 +23,5 @@
   (glob_files_rec %{project_root}/apps/*.{ml,mli})
   (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
   (glob_files_rec %{project_root}/appkits/*.{ml,mli})
-  (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly}))
+  (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly,st}))
  (action (with-stdout-to %{targets} (chdir %{workspace_root} (run %{exe:../codegen/make_tinybox_data.exe} catalogue)))))

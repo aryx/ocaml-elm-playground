@@ -42,6 +42,9 @@ let make (path : string) (src : string) : t =
   let c = List.exists (Filename.check_suffix path) [ ".c"; ".h" ] in
   (* claude: and assembly (Highlight_asm): an OS's entry points *)
   let asm = List.exists (Filename.check_suffix path) [ ".s"; ".S"; ".asm" ] in
+  (* claude: and Smalltalk's chunk files (Highlight_st): the kernels of
+   * TinySmalltalk80 and TinySqueak, most of what those programs are *)
+  let smalltalk = Filename.check_suffix path ".st" in
   let plainly () : Highlight_code.analysis =
     { spans = plain src; occurrences = []; definitions = []; references = []; opens = []; includes = [] }
   in
@@ -49,6 +52,7 @@ let make (path : string) (src : string) : t =
     if ocaml then (try Highlight_ml.analyze src with _ -> plainly ())
     else if c then (try Highlight_c.analyze src with _ -> plainly ())
     else if asm then (try Highlight_asm.analyze src with _ -> plainly ())
+    else if smalltalk then (try Highlight_st.analyze src with _ -> plainly ())
     else plainly ()
   in
   (* claude: a use bound to a prototype of the file (C's extern int
@@ -120,8 +124,12 @@ let make (path : string) (src : string) : t =
           match s.category with
           | Def_function | Def_value | Def_type | Def_module -> defs := (y, s.text, s.category) :: !defs
           | Comment_section when String.length s.text > 4 && s.text.[3] <> '*' ->
-              (* a section's title: (* Model *) *)
-              let t = String.trim (String.sub s.text 2 (String.length s.text - 4)) in
+              (* a section's title: (* Model *), without the comment's
+               * marks; or the line itself when it is no comment
+               * (Smalltalk's Morph methodsFor: 'drawing') *)
+              let c = s.text.[0] in
+              let worded = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') in
+              let t = if worded then s.text else String.trim (String.sub s.text 2 (String.length s.text - 4)) in
               defs := (y, t, s.category) :: !defs
           | _ -> ())
         spans)

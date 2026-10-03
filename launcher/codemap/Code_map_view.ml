@@ -161,6 +161,7 @@ let where_to (computer : computer) (t : t) : string option =
 let keys_help = [
   ("Moving", "");
   ("click, wheel forward, +", "in: a folder, a file, a unit at a time");
+  ("right click on a file", "straight to it; out of it, back where one was");
   ("right click, wheel back, -, Backspace", "out: the unit around");
   ("arrows", "beside: the next unit left, right, up, down");
   ("0, Home", "the whole map");
@@ -333,7 +334,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
       @ [ words dim ("code map " ^ version) |> scale (12. /. words_font_size) |> move (screen.right -. 60.) (screen.bottom +. 18.) ]
       @ key_line ~y:(screen.bottom +. 18.)
           (if t.style.units then
-             [ ("h", "every key"); ("click", "in"); ("right click", "out"); ("/", "search"); ("a", "a file's neighbours"); ("x", "skeleton"); ("m", "marks"); ("l", "layers"); ("g", "the matrix"); ("esc", "back") ]
+             [ ("h", "every key"); ("click", "in"); ("right click", "a file, out"); ("/", "search"); ("a", "a file's neighbours"); ("x", "skeleton"); ("m", "marks"); ("l", "layers"); ("g", "the matrix"); ("esc", "back") ]
            else
              [ ("wheel", "zoom"); ("drag", "pan"); ("click", "fly in, a name to its definition (b back)"); ("enter", "the file view"); ("right click", "up"); ("y", Printf.sprintf "style (%s)" t.style.sname);
                ("t", Printf.sprintf "layout (%s)" algo); ("n", "tour (p back)"); ("o", Printf.sprintf "glass (%s)" (Code_map_glass.glass_name ())); ("0", "all"); ("esc", "back") ])

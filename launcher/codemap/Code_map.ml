@@ -150,7 +150,7 @@ let update_map(computer : computer) ~(pressed : string -> bool) ~(arrow : string
   (* a new layout: back to the whole map *)
   let units = t.style.units in
   let target = if ((not units) && (pressed "Home" || pressed "0")) || t.placed != before then home a else target in
-  if t.placed != before then t.focus <- 0;
+  if t.placed != before then begin t.focus <- 0; t.came <- [] end;
   let target = if (not units) && (pressed "Backspace" || (mouse.mrdown && not t.before_right)) then Code_map_moves.up { t with target } else target in
   let target =
     if units then target
@@ -243,7 +243,7 @@ let update_map(computer : computer) ~(pressed : string -> bool) ~(arrow : string
   (* claude: a lone top folder kept (top_kept, a folder laid out alone)
    * is the top too: up from it leaves, not to the root around it *)
   let at_top = t.focus = 0 || (t.top_kept && Code_units.children t.placed 0 = [ t.focus ]) in
-  let up_from_top = units && at_top && t.peek = None && (pressed "Backspace" || pressed "-" || (mouse.mrdown && not t.before_right) || mouse.mwheel < 0.) in
+  let up_from_top = units && at_top && t.peek = None && Code_map_moves.straight_to computer t mpx mpy = None && (pressed "Backspace" || pressed "-" || (mouse.mrdown && not t.before_right) || mouse.mwheel < 0.) in
   let moved = if units && not up_from_top then Code_map_moves.unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
   (* claude: going in, a folder holding a single unit goes on to it (the
    * author, at Linux 0.01's init/: three clicks to reach main.c) *)

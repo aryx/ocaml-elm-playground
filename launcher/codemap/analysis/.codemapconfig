@@ -17,7 +17,7 @@
         { at: 'def:trick', say: '"the trick of this game", marked', weight: 1 },
       ],
     },
-    'Code_file.ml': { digest: 'd540682f9965',
+    'Code_file.ml': { digest: '5bf34d8305e9',
       summary: "OCaml's or C's highlighter run (plain text if it fails), its spans laid into the grid a byte a cell, the tricks marked.",
     },
     'Code_roles.mli': { digest: '624fec0f6ad3',

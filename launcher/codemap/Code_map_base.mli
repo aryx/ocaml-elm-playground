@@ -81,6 +81,7 @@ type t = {
   mutable flight : flight option; (* a smooth flight under way (a search's, a jump's) *)
   mutable pointer : (float * float) option; (* the layout's point under the mouse, when on the map, for a style's labels *)
   mutable focus : int; (* claude: the unit looked at, its index in [placed] (0: the root), when the style moves by units *)
+  mutable came : (int * int) list; (* claude: the files a right click went straight to, each with the unit looked at then: where going out of it goes back *)
   guide : Code_guide.t; (* claude: what the directories' .codemapconfig say (plan_codemap_v2.md) *)
   mutable street : bool; (* claude: at the ground, the file with what it uses (a: Code_street) *)
   mutable street_mode : int; (* claude: 1 what it uses, on the left; 2 what uses it, on the right; 3 both (a cycling) *)

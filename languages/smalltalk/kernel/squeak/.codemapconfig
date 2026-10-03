@@ -1,0 +1,28 @@
+// languages/smalltalk/kernel/squeak/: what the code map says of it (docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-10-04' },
+  summary: "What Squeak's kernel adds to the Blue Book's: closures, colour, text, Morphic, the tools as morphs, Etoys.",
+  files: {
+    'Closures.st': { digest: 'e77dcca861ca',
+      summary: "BlockClosure: its presence makes the compiler emit closures, a block's value a context of its own.",
+    },
+    'Color.st': { digest: 'c41eaf483c6c',
+      summary: "Color, and Forms with a depth: filled with a colour, drawn on a Form of another depth through a colour map.",
+    },
+    'Text.st': { digest: 'fa865b135d24',
+      summary: "StrikeFont, its glyphs drawn by a Pen from Hershey's strokes; a string drawn a BitBlt a character.",
+    },
+    'Morphic.st': { digest: 'b87a4a4734cf',
+      summary: "Morphic's machinery: the canvas, Morph, the hand and who wants the mouse, the world and its damage, the halo.",
+    },
+    'Morphs.st': { digest: '5af52e6c9649',
+      summary: "The morphs: shapes, text typed in, lists, buttons, menus, windows, the bouncing atoms.",
+    },
+    'Tools.st': { digest: '3e0d317ec763',
+      summary: "The Workspace, the Transcript's window, the Inspector and the Browser, as morphs; to evaluate is to compile a DoIt.",
+    },
+    'Etoys.st': { digest: '79d68ba27903',
+      summary: "Etoys: forward: and turn: on any morph, the car, its viewer, phrases of tiles, a script a morph whose step does them.",
+    },
+  },
+}

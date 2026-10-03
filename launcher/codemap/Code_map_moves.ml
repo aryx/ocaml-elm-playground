@@ -116,11 +116,27 @@ let readable_at (t : t) (u : float) (v : float) : bool =
   | Some i -> ( match t.geometry.(i) with Some g -> readable (at_ratio t.cam (Playground_platform.pixel_ratio ())) g | None -> false)
   | None -> false
 
+(* claude: the file a right click goes straight to, as in the author's
+ * codemap: the one under the mouse, however deep, when a directory is
+ * looked at (the atlas, a region). At a file, a right click is out. *)
+let straight_to (computer : computer) (t : t) (mpx : float) (mpy : float) : int option =
+  let mouse = computer.mouse in
+  if not (mouse.mrdown && (not t.before_right) && on t.target.a mpx mpy && t.peek = None) then None
+  else
+    match t.placed.(t.focus).node with
+    | File _ -> None
+    | Dir _ -> (
+        match under t (to_u t.cam mpx) (to_v t.cam mpy) with
+        | Some j -> ( match t.placed.(j).node with File _ -> Some j | Dir _ -> None)
+        | None -> None)
+
 (* claude: moving by units (Code_units, a style's [units]: Map_atlas's):
  * where a key, the wheel or a click takes the map, a directory or file at
  * a time -- in, out, beside -- or None. A click on a name goes to it
  * (style.unit_at); on a block, a level down at most; on the ground (a
- * file looked at), the clicks are the names' (update). The wheel steps
+ * file looked at), the clicks are the names' (update). A right click on
+ * a file goes straight to it (straight_to), and out of it is back where
+ * one was (t.came). The wheel steps
  * once a gesture: its notches add up to one, then it rests until the
  * wheel has been still a moment (a trackpad's flick is many events) *)
 let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) ~(clicked : bool) (mpx : float) (mpy : float) : int option =
@@ -161,7 +177,20 @@ let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string
   | Some side -> Code_units.sibling t.placed i side
   | None ->
       if pressed "Home" || pressed "0" then Some 0
-      else if pressed "Backspace" || (mouse.mrdown && not t.before_right) || pressed "-" || wheel < 0 then Code_units.parent t.placed i
+      else if straight_to computer t mpx mpy <> None then begin
+        let j = Option.get (straight_to computer t mpx mpy) in
+        t.came <- (j, i) :: t.came;
+        Some j
+      end
+      else if pressed "Backspace" || (mouse.mrdown && not t.before_right) || pressed "-" || wheel < 0 then
+        (* out of a file a right click went straight to: back where one was *)
+        match t.came with
+        | (j, from) :: rest when j = i ->
+            t.came <- rest;
+            Some from
+        | _ ->
+            t.came <- [];
+            Code_units.parent t.placed i
       else if pressed "=" || pressed "+" then (let cu, cv = centre () in Code_units.toward t.placed i cu cv)
       else if wheel > 0 then Code_units.toward t.placed i u v
       else if clicked then

@@ -131,6 +131,87 @@ let own (program_path : string) (p : string) : bool =
 let source_suffixes = [ ".ml"; ".mll"; ".mly" ]
 let is_impl (p : string) : bool = List.exists (Filename.check_suffix p) source_suffixes
 
+(* claude: a language's own texts, sources that are not OCaml and that
+ * no module names: the Smalltalk kernels' chunk files, which a rule
+ * embeds in St_kernel. A program's code as much as the interpreter
+ * under them (TinySqueak: 250 lines of OCaml, 3,000 of Smalltalk).
+ *
+ * Whose are they? A text belongs to the library whose folder it is
+ * under (the nearest one with a module), and so to the programs that
+ * use a module of that folder. A text deeper than the library's first
+ * folder is an addition (kernel/squeak/, kernel/morphic/), and only of
+ * the programs whose main file says its folder's name
+ * (St_kernel.squeak, St_kernel.mini_morphic): TinySmalltalk80 boots
+ * the Blue Book's kernel and no other. *)
+let text_suffixes = [ ".st" ]
+let is_text (p : string) : bool = List.exists (Filename.check_suffix p) text_suffixes
+
+let contains (s : string) (sub : string) : bool =
+  let n = String.length s and m = String.length sub in
+  let rec at i = i + m <= n && (String.sub s i m = sub || at (i + 1)) in
+  m > 0 && at 0
+
+(* the names after each [mark] in a text: "subclass: #" then Morph *)
+let names_after (src : string) (mark : string) : string list =
+  let n = String.length src and m = String.length mark in
+  let is_name c = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') in
+  let rec go i acc =
+    if i + m > n then List.rev acc
+    else if String.sub src i m = mark then begin
+      let j = ref (i + m) in
+      while !j < n && is_name src.[!j] do incr j done;
+      go !j (String.sub src (i + m) (!j - i - m) :: acc)
+    end
+    else go (i + 1) acc
+  in
+  go 0 []
+
+(* the texts in reading order: one that subclasses a class, or adds
+ * methods to it, after the texts that define that class; else by name.
+ * Not the order they are booted in, which only the rule knows *)
+let text_order (texts : (string * string) list) : string list =
+  let defines = List.map (fun (p, src) -> (p, names_after src "ubclass: #")) texts in
+  (* what a text builds on: the receivers of subclass:, the classes of
+   * its "!Morph methodsFor:" lines *)
+  let needs (p, src) =
+    let words = String.split_on_char ' ' (String.map (fun c -> if c = '\n' || c = '\t' || c = '!' then ' ' else c) src) in
+    let rec receivers = function
+      | cls :: kw :: rest when List.mem kw [ "subclass:"; "variableSubclass:"; "variableByteSubclass:"; "methodsFor:" ] -> cls :: receivers rest
+      | cls :: "class" :: "methodsFor:" :: rest -> cls :: receivers rest
+      | _ :: rest -> receivers rest
+      | [] -> []
+    in
+    let mine = List.assoc p defines in
+    let classes = List.filter (fun c -> not (List.mem c mine)) (List.sort_uniq compare (receivers words)) in
+    (* for each class, the texts that define it: one of them is enough
+     * (a later text may define a class again: Etoys.st's Morph) *)
+    List.map (fun c -> List.filter_map (fun (q, defs) -> if q <> p && List.mem c defs then Some q else None) defines) classes
+  in
+  let edges = List.map (fun t -> (fst t, needs t)) texts in
+  let rec go placed rest =
+    let met definers = List.exists (fun q -> List.mem q placed) definers || not (List.exists (fun q -> List.mem q rest) definers) in
+    match List.find_opt (fun p -> List.for_all met (List.assoc p edges)) rest with
+    | Some p -> go (placed @ [ p ]) (List.filter (( <> ) p) rest)
+    | None -> placed @ rest (* a circle: as they come *)
+  in
+  go [] (List.sort compare (List.map fst texts))
+
+let texts_of ~(keep : string -> bool) (sources : (string * string) list) (main : string) (files : string list) : string list =
+  let dirs = Hashtbl.create 256 in
+  List.iter (fun (p, _) -> if List.exists (Filename.check_suffix p) [ ".ml"; ".mll"; ".mly" ] then Hashtbl.replace dirs (Filename.dirname p) ()) sources;
+  let used = Hashtbl.create 64 in
+  List.iter (fun p -> Hashtbl.replace used (Filename.dirname p) ()) files;
+  let said = Option.value (List.assoc_opt main sources) ~default:"" in
+  (* the folders from a text up to its library's, the library's last *)
+  let rec up d acc = if Hashtbl.mem dirs d || d = "." || d = "" then (d, acc) else up (Filename.dirname d) (Filename.basename d :: acc) in
+  let mine (p, _) =
+    is_text p && keep p
+    &&
+    let library, below = up (Filename.dirname p) [] in
+    Hashtbl.mem used library && List.for_all (contains said) (match below with [] -> [] | _ :: deeper -> deeper)
+  in
+  text_order (List.filter mine sources)
+
 let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : string) : string list =
   let by_name : (string, string list) Hashtbl.t = Hashtbl.create 1024 in
   let contents : (string, string) Hashtbl.t = Hashtbl.create 4096 in
@@ -164,11 +245,15 @@ let closure ?(keep = fun _ -> true) (sources : (string * string) list) (path : s
         visit (rest @ used)
   in
   visit [ path ];
-  (* each .ml with its .mli, first *)
-  List.rev !order
-  |> List.concat_map (fun p ->
-         let mli = Filename.remove_extension p ^ ".mli" in
-         if is_impl p && Hashtbl.mem contents mli then [ mli; p ] else [ p ])
+  (* each .ml with its .mli, first; then the texts of the languages
+   * they are *)
+  let files =
+    List.rev !order
+    |> List.concat_map (fun p ->
+           let mli = Filename.remove_extension p ^ ".mli" in
+           if is_impl p && Hashtbl.mem contents mli then [ mli; p ] else [ p ])
+  in
+  files @ texts_of ~keep sources path files
 
 (* claude: the repository's own sources, as they are in _build: its
  * source files, and not the build's copies of them (a genre's web/ and
@@ -208,7 +293,7 @@ let repository_sources ~(root : string) : (string * string) list =
            let path = Filename.concat dir f in
            if is_directory (Filename.concat root path) then if f.[0] = '.' || List.mem f skipped_dirs then [] else walk path
            else if dir = "launcher/native" && not (launcher_own f) then []
-           else if is_impl f || Filename.check_suffix f ".mli" then
+           else if is_impl f || Filename.check_suffix f ".mli" || is_text f then
              let text = read (Filename.concat root path) in
              if generated path text then [] else [ (path, text) ]
            else [])

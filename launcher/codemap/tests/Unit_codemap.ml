@@ -288,6 +288,37 @@ let tests =
        * codemap -check . says the same); a file changed since it was
        * described is the checker's warning, not a failure: editing a
        * game must not break the tests *)
+      (* claude: the Smalltalk kernels' chunk files, sources no module
+       * names: a program's code when it uses their library, the deeper
+       * folders only if its main file says their name *)
+      Testo.create "a language's texts in a program's code: the Smalltalk kernels" (fun () ->
+          let sources = Code_deps.repository_sources ~root:"../../.." in
+          let texts program =
+            Code_deps.closure ~keep:(Code_deps.own program) sources program
+            |> List.filter (fun p -> Filename.check_suffix p ".st")
+            |> List.map (fun p -> String.sub p (String.length "languages/smalltalk/kernel/") (String.length p - String.length "languages/smalltalk/kernel/"))
+          in
+          Alcotest.(check (list string)) "TinySmalltalk80: the Blue Book's, the classes' definitions first"
+            [ "Definitions.st"; "Classes.st"; "Collections.st"; "Graphics.st"; "Numbers.st"; "Objects.st"; "Streams.st"; "System.st" ]
+            (texts "apps/devtools/TinySmalltalk80.ml");
+          let squeak = texts "apps/devtools/TinySqueak.ml" in
+          Alcotest.(check bool) "TinySqueak: Squeak's too, and MiniMorphic (its flag)" true
+            (List.for_all (fun f -> List.mem f squeak) [ "Definitions.st"; "squeak/Morphic.st"; "squeak/Etoys.st"; "morphic/MiniMorphic.st" ]);
+          let before a b =
+            let at f =
+              let rec go i = function [] -> max_int | x :: rest -> if x = f then i else go (i + 1) rest in
+              go 0 squeak
+            in
+            at a < at b
+          in
+          Alcotest.(check bool) "a text after those defining what it builds on" true
+            (before "Definitions.st" "squeak/Color.st" && before "squeak/Color.st" "squeak/Text.st" && before "squeak/Morphic.st" "squeak/Morphs.st"
+           && before "squeak/Morphs.st" "squeak/Tools.st" && before "squeak/Morphs.st" "squeak/Etoys.st");
+          Alcotest.(check (list string)) "a program of no Smalltalk has none" [] (texts "apps/devtools/TinyBasic.ml");
+          (* and they are coloured: a method's selector where it is defined *)
+          let morphic = List.assoc "languages/smalltalk/kernel/squeak/Morphic.st" sources in
+          let file = Code_file.make "Morphic.st" morphic in
+          Alcotest.(check bool) "Morphic.st: its definitions found" true (List.length file.definitions > 100 && Code_file.at file 0 0 = Some Highlight_code.Comment));
       Testo.create "the repository's configs hold" (fun () ->
           let root = "../../.." in
           let sources = Code_deps.repository_sources ~root and configs = Code_deps.repository_configs ~root in
@@ -397,6 +428,34 @@ let tests =
           let cx = Code_map_base.to_px t.cam (r.x +. (r.w /. 2.)) and cy = Code_map_base.to_py t.cam (r.y +. (r.h /. 2.)) in
           Alcotest.(check (option int)) "kernel" (Some !at) (Map_names.unit_at t t.cam 1. cx cy);
           Alcotest.(check (option int)) "nothing at a corner" None (Map_names.unit_at t t.cam 1. 1. 1.));
+      (* claude: a right click on a file, from the whole map: straight to
+       * it, two levels down; out of it, back where one was, not to its
+       * directory *)
+      Testo.create "atlas: a right click, straight to a file and back" (fun () ->
+          let entry path n = { Code_map_base.path; nlines = n; file = lazy (Code_file.make path (String.concat "\n" (List.init n (fun _ -> "let x = 1")))) } in
+          let t =
+            Code_map_base.make ~style:Map_atlas.style ~area:(0., 0., 800, 600) ~title:"t" ~marked:[]
+              [ entry "kernel/a.ml" 300; entry "kernel/b.ml" 300; entry "lib/c.ml" 100 ]
+          in
+          let at path = let r = ref (-1) in Array.iteri (fun i (p : Code_map_base.entry Treemap.placed) -> if p.path = path then r := i) t.placed; !r in
+          let a = at "kernel/a.ml" and kernel = at "kernel" in
+          let r = t.placed.(a).rect in
+          let px = Code_map_base.to_px t.cam (r.x +. (r.w /. 2.)) and py = Code_map_base.to_py t.cam (r.y +. (r.h /. 2.)) in
+          let computer : Playground.computer = Playground.initial_computer in
+          let right = { computer with mouse = { computer.mouse with mrdown = true } } in
+          let move c = Code_map_moves.unit_move c ~pressed:(fun _ -> false) ~arrow:None t ~clicked:false px py in
+          let go i = t.focus <- i; t.target <- Code_map_base.fit t.target.a t.placed.(i).rect in
+          Alcotest.(check (option int)) "no button: nothing" None (move computer);
+          Alcotest.(check (option int)) "straight to a.ml" (Some a) (move right);
+          go a;
+          Alcotest.(check (option int)) "out: back to the whole map" (Some 0) (move right);
+          go 0;
+          Alcotest.(check (option int)) "to a.ml again" (Some a) (move right);
+          go a;
+          Alcotest.(check (option int)) "and back" (Some 0) (move right);
+          (* reached a level at a time, out is its directory *)
+          go a;
+          Alcotest.(check (option int)) "not come to by a right click: its directory" (Some kernel) (move right));
       (* claude: the search (/): names, paths, directories, name//, Tab *)
       Testo.create "search: what a query finds" (fun () ->
           let all =

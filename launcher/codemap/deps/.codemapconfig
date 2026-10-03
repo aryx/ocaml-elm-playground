@@ -17,7 +17,7 @@
     'Code_config.ml': { digest: '767b1c2106f0',
       summary: 'Patterns matched on names or from the root, a directory only when ending with a slash.',
     },
-    'Code_deps.mli': { digest: 'ffd8e0271a9e',
+    'Code_deps.mli': { digest: '1e2f06473c76',
       summary: "A program's code from its main file, over the sources as (path, contents); pure, used at build time too.",
       important: [
         { at: 'def:modules_used', say: 'the modules a file names', weight: 2 },
@@ -26,7 +26,7 @@
         { at: 'def:budget', say: '5,000 lines of its own', weight: 2 },
       ],
     },
-    'Code_deps.ml': { digest: '3aa1714e18c9',
+    'Code_deps.ml': { digest: 'bf7e2bdea458',
       summary: 'Module names found in the text, aliases followed, the closure counted in lines.',
       important: [
         { at: 'def:modules_used', weight: 2 },

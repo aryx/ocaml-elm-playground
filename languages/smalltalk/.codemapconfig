@@ -227,6 +227,19 @@
         { at: 'def:copy_bits', say: "St_bitblt's when everything has one bit", weight: 2 },
       ],
     },
+    'Highlight_st.mli': { digest: '61ac10d206ed',
+      summary: "A chunk file's tokens given their categories for a code view: the methods' line a section, a selector where it is defined, fields, parameters.",
+      important: [
+        { at: 'def:analyze', say: 'spans, bindings, the classes defined and named', weight: 2 },
+      ],
+    },
+    'Highlight_st.ml': { digest: 'dfb91218e91e',
+      summary: 'A scanner that keeps the comments, the chunks told apart, a method\'s pattern and the names bound in it.',
+      important: [
+        { at: 'def:scan', say: 'every token of a file, never failing', weight: 2 },
+        { at: 'def:run', say: 'the chunks: a class defined, the methods\' line, each method', weight: 3 },
+      ],
+    },
     'St_chunk.mli': { digest: 'bd3ceaaa3a8c',
       summary: "The chunk format Smalltalk-80 filed code in and out with: chunks ended by !, methodsFor: then methods.",
       important: [

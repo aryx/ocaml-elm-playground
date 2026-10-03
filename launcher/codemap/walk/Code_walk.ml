@@ -10,7 +10,7 @@
 
 (* See Code_walk.mli *)
 
-let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h"; ".s"; ".S"; ".asm" ]
+let source_extensions = [ ".ml"; ".mli"; ".mll"; ".mly"; ".c"; ".h"; ".s"; ".S"; ".asm"; ".st" ]
 
 type t = { roots : string list; sources : (string * string) list; configs : string list; jsonnet : (string * string) list }
 

@@ -14,7 +14,7 @@
    (glob_files_rec %{project_root}/apps/*.{ml,mli})
    (glob_files_rec %{project_root}/gamekits/*.{ml,mli})
    (glob_files_rec %{project_root}/appkits/*.{ml,mli})
-   (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly})
+   (glob_files_rec %{project_root}/languages/*.{ml,mli,mll,mly,st})
    (glob_files_rec %{project_root}/playground/*.{ml,mli})
    (glob_files_rec %{project_root}/libs/*.{ml,mli})
    (glob_files_rec %{project_root}/launcher/*.{ml,mli})
