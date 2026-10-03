@@ -50,6 +50,12 @@ tinybox's menu: the programs of a section, the chosen one previewed
 live, and its code as a map (a click on the picture opens the menu in
 your browser).
 
+<a href="https://aryx.github.io/ocaml-elm-playground/codemap.html"><img src="docs/screenshots/codemap.png" width="800" alt="the code map: the whole repository, each folder a region, each file a block the size of its code"></a>
+
+The code map: the whole repository, each folder a region, each file a
+block the size of its code -- zoom in and the blocks are the code
+itself (a click on the picture opens it in your browser).
+
 The main goal of all this is to teach people. Almost all of the code,
 the library as much as the programs, was written by an AI, Claude
 Code, under the author's direction (see the
