@@ -134,6 +134,11 @@
 - Playground_platform.clipboard, set_clipboard: the desktop's shared
   text, for a program's copy and paste (SDL's natively; on the web,
   written through navigator.clipboard, read back from what was written)
+- Physics.simulate ~steps: several small steps in a tick, for what is
+  thin or fast (a stick 2 thick landing on its end was pushed out of
+  the floor sideways, and thrown: the .mli says why); Physics.grouped:
+  bodies of a group pass through each other (a ragdoll's limbs). Both
+  found missing by mini-soldat's twins, which worked around them
 - Playground.mouse.mmdown: the middle button (the wheel pressed), beside
   mdown and mrdown, on every platform (SDL's Button.middle, the
   browser's button 1); mclick:n in a -script. Asked for by mini-soldat,

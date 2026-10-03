@@ -24,12 +24,13 @@ type body = {
   bounciness : number;
   friction : number;
   upright : bool;
+  group : int; (* claude: 0: none. Two bodies of the same group do not collide *)
   ax : number;
   ay : number;
 }
 
 let body (shape : shape) : body =
-  { shape; x = 0.; y = 0.; vx = 0.; vy = 0.; angle = 0.; spin = 0.; mass = 1.; bounciness = 0.; friction = 0.; upright = false; ax = 0.; ay = 0. }
+  { shape; x = 0.; y = 0.; vx = 0.; vy = 0.; angle = 0.; spin = 0.; mass = 1.; bounciness = 0.; friction = 0.; upright = false; group = 0; ax = 0.; ay = 0. }
 
 let at x y (b : body) : body = { b with x; y }
 let moving vx vy (b : body) : body = { b with vx; vy }
@@ -55,6 +56,7 @@ let bouncy bounciness (b : body) : body = { b with bounciness }
 let rough friction (b : body) : body = { b with friction }
 let immovable (b : body) : body = { b with mass = infinity }
 let upright (b : body) : body = { b with upright = true }
+let grouped group (b : body) : body = { b with group }
 
 (* the accumulator: every push adds an acceleration, [step] uses them up *)
 let accelerate ax ay (b : body) : body = { b with ax = b.ax +. ax; ay = b.ay +. ay }
@@ -202,22 +204,25 @@ type world = { bodies : body list; memory : Solver.memory; joints : Joint2d.t li
 
 let world (bodies : body list) : world = { bodies; memory = Solver.nothing; joints = [] }
 
-let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_starting = true) (w : world) : world =
+(* claude: one step of [dt] seconds of a world: [simulate]'s tick, or
+ * one of its small steps. What pushes a body (ax, ay) is left on it:
+ * [simulate] uses it up when the tick is over, so that every small
+ * step feels the same push *)
+let step_world ~(dt : float) ~(gravity : float) ~(iterations : int) ~(warm_starting : bool) (w : world) : world =
   let moving (b : body) = b.mass <> infinity in
   (* the pushes change the velocities (semi-implicit Euler: the
    * velocities first, the positions last, with the new velocities) *)
   let bodies =
     Array.of_list w.bodies
-    |> Array.map (fun b ->
-           if not (moving b) then b
-           else let b = fall gravity b in { b with vx = b.vx +. (b.ax *. tick); vy = b.vy +. (b.ay *. tick) })
+    |> Array.map (fun b -> if not (moving b) then b else { b with vx = b.vx +. (b.ax *. dt); vy = b.vy +. ((b.ay -. gravity) *. dt) })
   in
   (* the contacts: the broad phase's pairs, each with its points; two
-   * bodies joined by a joint don't collide (a seesaw sits on its pivot) *)
+   * bodies joined by a joint don't collide (a seesaw sits on its
+   * pivot), nor two of the same group (a ragdoll's limbs) *)
   let joined i j = List.exists (fun (jt : Joint2d.t) -> (jt.a = i && jt.b = j) || (jt.a = j && jt.b = i)) w.joints in
   let pairs =
     (Broadphase.sort_and_sweep (Array.map bounds bodies)).pairs
-    |> List.filter (fun (i, j) -> not (joined i j))
+    |> List.filter (fun (i, j) -> not (joined i j || (bodies.(i).group <> 0 && bodies.(i).group = bodies.(j).group)))
     |> List.filter_map (fun (i, j) ->
            let a = bodies.(i) and b = bodies.(j) in
            let hb = hitboxes b in
@@ -231,7 +236,7 @@ let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_st
   in
   let angles = Array.map (fun b -> radians b.angle) bodies in
   let (states, memory) =
-    Solver.solve { Solver.default with iterations; warm_starting } ~dt:tick ~joints:(angles, w.joints) (Array.map state bodies)
+    Solver.solve { Solver.default with iterations; warm_starting } ~dt ~joints:(angles, w.joints) (Array.map state bodies)
       pairs w.memory
   in
   (* the moves, with the solved velocities *)
@@ -239,10 +244,18 @@ let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_st
     Array.mapi
       (fun i b ->
         let b = with_state states.(i) b in
-        { b with x = b.x +. (b.vx *. tick); y = b.y +. (b.vy *. tick); angle = b.angle +. (b.spin *. tick); ax = 0.; ay = 0. })
+        { b with x = b.x +. (b.vx *. dt); y = b.y +. (b.vy *. dt); angle = b.angle +. (b.spin *. dt) })
       bodies
   in
   { w with bodies = Array.to_list bodies; memory }
+
+let simulate ?(gravity = 0.) ?(iterations = Solver.default.iterations) ?(warm_starting = true) ?(steps = 1) (w : world) : world =
+  let steps = max 1 steps in
+  let dt = tick /. float_of_int steps in
+  let rec go n w = if n = 0 then w else go (n - 1) (step_world ~dt ~gravity ~iterations ~warm_starting w) in
+  let w = go steps w in
+  (* the pushes are used up *)
+  { w with bodies = List.map (fun (b : body) -> { b with ax = 0.; ay = 0. }) w.bodies }
 
 (* the joints, made from where the bodies are now (see Physics.mli) *)
 let states (w : world) : Body.t array * float array =

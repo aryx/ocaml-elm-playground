@@ -57,6 +57,7 @@ type body = {
   bounciness : number;    (* how it bounces, 0 (clay) by default *)
   friction : number;      (* how it grips what it slides on, 0 by default *)
   upright : bool;         (* true: collisions never turn it (false by default) *)
+  group : int;            (* bodies of the same group never collide (0, none: see [grouped]) *)
   ax : number;            (* what pushes it until the next [step]: *)
   ay : number;            (*   accelerations, set by fall, push, ... *)
 }
@@ -127,6 +128,40 @@ val immovable : body -> body
  * bit. (The contact point, only used through the lever arms, then
  * doesn't matter either.) Drawn, its angle never changes. *)
 val upright : body -> body
+
+(* [grouped n b]: [b] in the group [n] (a number of the game's choosing,
+ * not 0: 0 is "no group", what [body] gives). Two bodies of the same
+ * group never collide in [simulate]: they pass through each other, as
+ * if the other were not there. Everything else still collides with
+ * both.
+ *
+ * What it is for: things that overlap *by design*. A soldier seen
+ * from the side has its arms over its chest and one leg over the
+ * other, all the time; a car's wheels sit inside its wheel arches;
+ * the links of a chain cross at their pins. Made of bodies and
+ * joints, such a thing would tear itself apart, each part pushed out
+ * of the others at every step. Give all its parts the same group:
+ *
+ *   let limb shape = body shape |> grouped 7
+ *
+ * and they collide with the floor, the walls and other soldiers
+ * (another group, or none), but not with each other.
+ *
+ * Before this there was one way to say "these two do not collide": a
+ * joint between them (a seesaw sits on its pivot, see Joints below).
+ * mini-soldat's ragdoll, ten limbs, had nine real joints and 36 ropes
+ * ten thousand pixels long, never taut, between every other pair,
+ * only to say so. That is what this replaces.
+ *
+ * It is the simplest of the ways engines have for it: Box2D has this
+ * one (a negative "group index": never collide) and also sixteen
+ * categories with a mask each ("I am a bullet, I hit walls and
+ * soldiers but not bullets"), which says more and takes two more
+ * numbers a body; a category for each kind of thing is the next step
+ * if a game needs "bullets go through bullets". Not asked by [bounce],
+ * [bounce_all] or [touching]: there the game names the two bodies
+ * itself, and can leave a pair out. *)
+val grouped : int -> body -> body
 
 (*****************************************************************************)
 (* {1 What pushes it (until the next step)} *)
@@ -278,8 +313,77 @@ val world : body list -> world
  *   let w = w |> simulate ~gravity:800.
  * [iterations] (10 by default: more is stiffer, slower) and
  * [warm_starting] (true) are there to see what they do: with 1
- * iteration, or without warm starting, a pyramid sags and slides. *)
-val simulate : ?gravity:number -> ?iterations:int -> ?warm_starting:bool -> world -> world
+ * iteration, or without warm starting, a pyramid sags and slides.
+ *
+ * {b [steps]: several small steps in a tick} (1 by default).
+ *
+ * A step moves every body by its speed times the step's length, and
+ * only then looks at what overlaps. Nothing is looked at *on the way*.
+ * So a body that goes farther in one step than it is thick can be,
+ * when the step ends, deeper inside what it hit than it is wide --
+ * or right through it (a bullet through a wall: the classic,
+ * "tunnelling"; [went_through] above is for that one, a ray along its
+ * way).
+ *
+ * The first case is the nastier, and what [steps] is for. Two shapes
+ * that overlap are pushed apart along the direction in which they
+ * overlap *least* (physics/2d/Collide.mli: the separating axis test),
+ * which is right when the overlap is shallow: a box resting on the
+ * floor overlaps it by a hair, downwards, and is pushed up. But take
+ * a stick 2 pixels thick, standing on its end, falling at 200 pixels a
+ * second: at 60 steps a second it moves 3.3 pixels a step, and the
+ * step in which it reaches the floor leaves it 3.2 deep in it.
+ *
+ *       before the step      after: 3.2 deep, 2 wide
+ *
+ *            |                     |
+ *            |                     |
+ *     -------+------         ------|------    the least overlap is now
+ *                                  |          *across* the stick (2),
+ *                                             not up (3.2)
+ *
+ * The least overlap is now sideways, so the stick is pushed out
+ * sideways -- along a floor that has no side to come out of. The next
+ * step finds it still inside and pushes again, harder; in a few
+ * steps it leaves at 10,000 pixels a second. Nothing is wrong with
+ * the solver: it was asked the wrong question, about where the stick
+ * is rather than how it got there. (Found in mini-soldat, where a
+ * rifle let go is exactly that stick; a box 4 thick is not thrown, 2
+ * is.)
+ *
+ * The cure is not to let a body go farther in a step than its
+ * thinnest part: [~steps:4] cuts the tick into four steps of 1/240 of
+ * a second, each with its own contacts found and solved, and the
+ * stick, moving 0.8 a step, is caught while its overlap with the
+ * floor is still the shallow one:
+ *
+ *   let w = w |> simulate ~gravity:800. ~steps:4
+ *
+ * Still one tick: speeds are per second as always, what was added
+ * with fall, push... pushes during all four, and the world a tick
+ * later comes back. What changes, besides that nothing is thrown:
+ *
+ * - it costs [steps] times the work: use it where something is thin
+ *   or fast, not everywhere;
+ * - a fall is a little shorter. Each step adds its part of gravity to
+ *   the speed and then moves, so in one tick from rest a body falls
+ *   g/3600 with one step, and g/3600 x (1+2+3+4)/16 = 0.625 of that
+ *   with four (the exact answer is half: Euler's error, which
+ *   smaller steps shrink; Integrate.mli has the picture). A game that
+ *   compared positions to the pixel after a step will see it;
+ * - joints and piles are stiffer, for the same reason more
+ *   [iterations] are: an error is corrected a part at each step.
+ *
+ * Rule of thumb: steps >= the fastest speed, in pixels a tick, over
+ * the thinnest body's thickness. Box2D calls these sub-steps and now
+ * prefers them to iterations ("Solver2D", Erin Catto, 2024: many small
+ * steps of one iteration beat one step of many); the other cure,
+ * looking along the way of every fast body (continuous collision
+ * detection), costs less but is far more code.
+ *
+ * Two bodies of the same group (see [grouped]) do not collide, nor two
+ * that a joint holds together. *)
+val simulate : ?gravity:number -> ?iterations:int -> ?warm_starting:bool -> ?steps:int -> world -> world
 
 (*****************************************************************************)
 (* {1 Joints} *)
