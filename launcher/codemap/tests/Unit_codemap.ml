@@ -443,19 +443,19 @@ let tests =
           let px = Code_map_base.to_px t.cam (r.x +. (r.w /. 2.)) and py = Code_map_base.to_py t.cam (r.y +. (r.h /. 2.)) in
           let computer : Playground.computer = Playground.initial_computer in
           let right = { computer with mouse = { computer.mouse with mrdown = true } } in
-          let move c = Code_map_moves.unit_move c ~pressed:(fun _ -> false) ~arrow:None t ~clicked:false px py in
-          let go i = t.focus <- i; t.target <- Code_map_base.fit t.target.a t.placed.(i).rect in
-          Alcotest.(check (option int)) "no button: nothing" None (move computer);
-          Alcotest.(check (option int)) "straight to a.ml" (Some a) (move right);
-          go a;
-          Alcotest.(check (option int)) "out: back to the whole map" (Some 0) (move right);
-          go 0;
-          Alcotest.(check (option int)) "to a.ml again" (Some a) (move right);
-          go a;
-          Alcotest.(check (option int)) "and back" (Some 0) (move right);
+          let move t c = Code_map_moves.unit_move c ~pressed:(fun _ -> false) ~arrow:None t ~clicked:false px py in
+          (* the move taken, as update does: the camera's target on the unit *)
+          let go (t : Code_map_base.t) i = t.focus <- i; { t with target = Code_map_base.fit t.target.a t.placed.(i).rect } in
+          Alcotest.(check (option int)) "no button: nothing" None (move t computer);
+          Alcotest.(check (option int)) "straight to a.ml" (Some a) (move t right);
+          let t = go t a in
+          Alcotest.(check (option int)) "out: back to the whole map" (Some 0) (move t right);
+          let t = go t 0 in
+          Alcotest.(check (option int)) "to a.ml again" (Some a) (move t right);
+          let t = go t a in
+          Alcotest.(check (option int)) "and back" (Some 0) (move t right);
           (* reached a level at a time, out is its directory *)
-          go a;
-          Alcotest.(check (option int)) "not come to by a right click: its directory" (Some kernel) (move right));
+          Alcotest.(check (option int)) "not come to by a right click: its directory" (Some kernel) (move t right));
       (* claude: the search (/): names, paths, directories, name//, Tab *)
       Testo.create "search: what a query finds" (fun () ->
           let all =
