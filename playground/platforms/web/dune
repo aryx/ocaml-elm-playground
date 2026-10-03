@@ -4,7 +4,11 @@
 (library
  (public_name elm_playground_web)
  (implements elm_playground)
- (modules Playground_platform Web_connect Web_store)
+ ; claude: Playground_platform is run_app, the loop; the Web_* are its
+ ; parts, one per concern (the virtual DOM, shapes to SVG, events, sound,
+ ; requests, phones, the store, the sockets)
+ (modules Playground_platform Web_vdom Web_render Web_events Web_audio
+   Web_http Web_phone Web_connect Web_store)
  (libraries
    vdom
    ; commons
