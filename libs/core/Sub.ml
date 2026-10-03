@@ -8,6 +8,9 @@ type 'msg onesub =
   (* pad: not in Elm (its onMouseDown gives the event, with its button) *)
   | SubRightMouseDown of (unit -> 'msg)
   | SubRightMouseUp of (unit -> 'msg)
+  (* claude: the middle button (the wheel pressed), as the right one *)
+  | SubMiddleMouseDown of (unit -> 'msg)
+  | SubMiddleMouseUp of (unit -> 'msg)
   | SubKeyDown of (Keyboard.key -> 'msg)
   | SubKeyUp of (Keyboard.key -> 'msg)
   (* claude: the three an application needs and a game never did (see
@@ -51,6 +54,13 @@ let (on_right_mouse_down: (unit -> 'msg) -> 'msg t) = fun f ->
 let (on_right_mouse_up: (unit -> 'msg) -> 'msg t) = fun f ->
   [SubRightMouseUp f]
 
+(* claude: and the middle one *)
+let (on_middle_mouse_down: (unit -> 'msg) -> 'msg t) = fun f ->
+  [SubMiddleMouseDown f]
+
+let (on_middle_mouse_up: (unit -> 'msg) -> 'msg t) = fun f ->
+  [SubMiddleMouseUp f]
+
 let (on_key_down: (Keyboard.key -> 'msg) -> 'msg t) = fun f ->
   [SubKeyDown f]
 
@@ -78,6 +88,7 @@ type event =
   | EMouseMoveBy of (float * float) (* dx, dy, y up *)
   | EMouseButton of bool (* is_down = true *)
   | ERightMouseButton of bool (* is_down = true *)
+  | EMiddleMouseButton of bool (* claude: the same, for the middle button *)
   | EKeyChanged of (bool (* down = true *) * Keyboard.key)
   (* claude: the characters typed, not the keys pressed *)
   | ETyped of string
@@ -133,6 +144,18 @@ let event_to_msgopt event subs =
   | ERightMouseButton (false) ->
       subs |> find_map_opt (function
         | SubRightMouseUp f ->
+           Some (f ())
+       | _ -> None
+      )
+  | EMiddleMouseButton (true) ->
+      subs |> find_map_opt (function
+        | SubMiddleMouseDown f ->
+           Some (f ())
+       | _ -> None
+      )
+  | EMiddleMouseButton (false) ->
+      subs |> find_map_opt (function
+        | SubMiddleMouseUp f ->
            Some (f ())
        | _ -> None
       )

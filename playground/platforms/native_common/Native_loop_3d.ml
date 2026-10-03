@@ -141,10 +141,12 @@ let mouse_move mx my (mouse : Playground.mouse) : Playground.mouse = { mouse wit
 let mouse_down mdown (mouse : Playground.mouse) : Playground.mouse =
   { mouse with mdown; mclick = ((not mdown) || mouse.mclick) }
 
-(* claude: a press/release of the right button sets mrdown, of any
- * other mdown (the left, main one) *)
+(* claude: a press/release of the right button sets mrdown, of the
+ * middle one mmdown, of any other mdown (the left, main one) *)
 let mouse_button (sdl_event : Sdl.event) (is_down : bool) (mouse : Playground.mouse) : Playground.mouse =
-  if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.right then { mouse with mrdown = is_down }
+  let button = Sdl.Event.(get sdl_event mouse_button_button) in
+  if button = Sdl.Button.right then { mouse with mrdown = is_down }
+  else if button = Sdl.Button.middle then { mouse with mmdown = is_down }
   else mouse_down is_down mouse
 
 (* claude: one name for a key whatever names it, as the 2D loop does
@@ -301,7 +303,7 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
             (* claude: SDL counts a burst's clicks for us; the second one
              * is an ordinary click plus this flag (plan_gui_teaching.md,
              * phase 0) *)
-            if Sdl.Event.(get sdl_event mouse_button_button) <> Sdl.Button.right
+            if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.left
                && Sdl.Event.(get sdl_event mouse_button_clicks) >= 2
             then computer := { !computer with mouse = { (!computer).mouse with mdouble = true } }
 
@@ -391,7 +393,9 @@ let run ~(sdl_window : Sdl.window) ~(sx : int) ~(sy : int) ~(title_prefix : stri
                let m = (!computer).mouse in
                computer :=
                  { !computer with
-                   mouse = (if right then { m with mrdown = is_down } else mouse_down is_down m) })
+                   mouse = (if right then { m with mrdown = is_down } else mouse_down is_down m) });
+        Input_script.middle_changes sc frame
+        |> List.iter (fun is_down -> computer := { !computer with mouse = { (!computer).mouse with mmdown = is_down } })
     | None -> ());
 
     let now = match !fixed_time with Some t -> t | None -> Unix.gettimeofday () in

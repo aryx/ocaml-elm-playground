@@ -134,6 +134,10 @@
 - Playground_platform.clipboard, set_clipboard: the desktop's shared
   text, for a program's copy and paste (SDL's natively; on the web,
   written through navigator.clipboard, read back from what was written)
+- Playground.mouse.mmdown: the middle button (the wheel pressed), beside
+  mdown and mrdown, on every platform (SDL's Button.middle, the
+  browser's button 1); mclick:n in a -script. Asked for by mini-soldat,
+  where it throws a grenade
 - Playground_platform.set_cursor: the mouse's cursor over the window,
   one of the system's (Playground.cursor: Arrow, Hand, Text,
   Crosshair) or Hidden -- a browser's hand over a link, a game's own

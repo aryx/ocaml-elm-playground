@@ -50,10 +50,12 @@ let scancode_to_keystring = function
  | s -> String.lowercase_ascii s
 
 (* claude: a mouse button press/release as a playground event: the right
- * button is ERightMouseButton, any other the (left) EMouseButton *)
+ * button is ERightMouseButton, the middle one EMiddleMouseButton, any
+ * other the (left) EMouseButton *)
 let mouse_button_event (sdl_event : Sdl.event) (is_down : bool) : E.event =
-  if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.right
-  then E.ERightMouseButton is_down
+  let button = Sdl.Event.(get sdl_event mouse_button_button) in
+  if button = Sdl.Button.right then E.ERightMouseButton is_down
+  else if button = Sdl.Button.middle then E.EMiddleMouseButton is_down
   else E.EMouseButton is_down
 
 (* claude: SDL counts the clicks of a burst for us (mouse_button_clicks
@@ -62,7 +64,7 @@ let mouse_button_event (sdl_event : Sdl.event) (is_down : bool) : E.event =
  * pair plus this extra event -- a program that ignores EMouseDouble
  * still sees two normal clicks, as before *)
 let mouse_double_event (sdl_event : Sdl.event) : E.event option =
-  if Sdl.Event.(get sdl_event mouse_button_button) <> Sdl.Button.right
+  if Sdl.Event.(get sdl_event mouse_button_button) = Sdl.Button.left
      && Sdl.Event.(get sdl_event mouse_button_clicks) >= 2
   then Some E.EMouseDouble
   else None
@@ -606,6 +608,7 @@ let run ~(platform_keys : bool) ~(follow_window : bool) ~(skip_same_view : bool)
         |> List.iter (fun (right, is_down) ->
                apply_playground_event
                  (if right then E.ERightMouseButton is_down else E.EMouseButton is_down));
+        Input_script.middle_changes sc frame |> List.iter (fun is_down -> apply_playground_event (E.EMiddleMouseButton is_down));
         (match Input_script.typed sc frame with
         | "" -> ()
         | s -> apply_playground_event (E.ETyped s))

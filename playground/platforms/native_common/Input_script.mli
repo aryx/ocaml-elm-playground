@@ -22,7 +22,7 @@
  * origin at the center of the screen and y up, hence the semicolon,
  * since commas separate the entries -- clicks there at frame 5, moves
  * to (60, -20) and clicks again at 12. [click] is the left button and
- * [rclick] the right one; a click at frame n is the button down
+ * [rclick] the right one, [mclick] the middle one; a click at frame n is the button down
  * during n and up at n+1, which is what makes it a click
  * (Playground.mli's [mclick]).
  *
@@ -71,3 +71,8 @@ val typed : t -> int -> string
  * is the right one -- the same edges as [changes], for the two
  * buttons the playground has *)
 val button_changes : t -> int -> (bool * bool) list
+
+(* claude: [middle_changes script frame]: the same for the middle
+ * button ([mclick]): [true] the frame it goes down, [false] the frame
+ * it goes up, nothing else *)
+val middle_changes : t -> int -> bool list

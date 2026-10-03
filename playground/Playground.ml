@@ -304,6 +304,9 @@ type mouse = {
   (* pad: not in original Playground.elm: the right button, e.g. to
    * place a block in TinyMinecraft (the left one removes) *)
   mrdown: bool;
+  (* claude: not in original Playground.elm either: the middle button
+   * (the wheel pressed), e.g. to throw a grenade in mini-soldat *)
+  mmdown: bool;
   (* pad: not in original Playground.elm either: how far the mouse
    * moved since the last frame (y up, like my), even when it can't be
    * seen or can't move, e.g. captured by a first-person 3D game (see
@@ -329,6 +332,8 @@ let mouse_down mdown mouse =
   { mouse with mdown }
 let mouse_right_down mrdown mouse =
   { mouse with mrdown }
+let mouse_middle_down mmdown mouse =
+  { mouse with mmdown }
 (* accumulated until the next frame's update, then reset *)
 let mouse_move_by dx dy mouse =
   { mouse with mdx = mouse.mdx +. dx; mdy = mouse.mdy +. dy }
@@ -482,7 +487,7 @@ type computer = {
 and flags = (string * string) list
 
 let initial_computer = {
-  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; mdx = 0.; mdy = 0.;
+  mouse = { mx = 0.; my = 0.; mdown = false; mclick = false; mrdown = false; mmdown = false; mdx = 0.; mdy = 0.;
             mwheel = 0.; mdouble = false };
   keyboard = empty_keyboard;
   screen = to_screen default_width default_height;
@@ -629,6 +634,7 @@ type msg =
   | MouseClick (* reset after a Tick *)
   | MouseButton of bool (* true = down, false = up *)
   | RightMouseButton of bool (* the same, for the right button *)
+  | MiddleMouseButton of bool (* claude: and for the middle one *)
   (* claude: phase 0 of plan_gui_teaching.md; all three are consumed by
    * the Tick that follows them *)
   | Typed of string
@@ -650,6 +656,7 @@ let animation_update msg (Animation (s, t) as state) =
   | MouseClick
   | MouseButton _
   | RightMouseButton _
+  | MiddleMouseButton _
   | KeyChanged _
   | Typed _
   | MouseWheel _
@@ -738,6 +745,9 @@ let (game_update: (computer -> 'memory -> 'memory) -> msg -> 'memory game ->
     | RightMouseButton is_down ->
         Game (memory,
              { computer with mouse = mouse_right_down is_down computer.mouse })
+    | MiddleMouseButton is_down ->
+        Game (memory,
+             { computer with mouse = mouse_middle_down is_down computer.mouse })
     | KeyChanged (is_down, key) ->
         Game (memory,
              { computer with keyboard = update_keyboard is_down key 
@@ -779,6 +789,8 @@ let (game:
       Sub.on_mouse_up   (fun () -> MouseButton false);
       Sub.on_right_mouse_down (fun () -> RightMouseButton true);
       Sub.on_right_mouse_up   (fun () -> RightMouseButton false);
+      Sub.on_middle_mouse_down (fun () -> MiddleMouseButton true);
+      Sub.on_middle_mouse_up   (fun () -> MiddleMouseButton false);
       Sub.on_key_down (fun key -> KeyChanged (true, key));
       Sub.on_key_up   (fun key -> KeyChanged (false, key));
       Sub.on_typed (fun str -> Typed str);

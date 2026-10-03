@@ -59,7 +59,15 @@ let test_buttons () =
   Alcotest.check changes "frame 5: the left button goes down" [ (false, true) ] (Input_script.button_changes s 5);
   Alcotest.check changes "frame 6: and up" [ (false, false) ] (Input_script.button_changes s 6);
   Alcotest.check changes "frame 12: the right one" [ (true, true) ] (Input_script.button_changes s 12);
-  Alcotest.check changes "frame 30: nothing" [] (Input_script.button_changes s 30)
+  Alcotest.check changes "frame 30: nothing" [] (Input_script.button_changes s 30);
+  (* claude: the middle button, by itself *)
+  (match Input_script.parse "mclick:7-9,click:8" with
+  | Error e -> Alcotest.fail e
+  | Ok m ->
+      Alcotest.(check (list bool)) "frame 7: the middle button goes down" [ true ] (Input_script.middle_changes m 7);
+      Alcotest.(check (list bool)) "frame 8: held, nothing" [] (Input_script.middle_changes m 8);
+      Alcotest.(check (list bool)) "frame 10: up" [ false ] (Input_script.middle_changes m 10);
+      Alcotest.check changes "and it is not the left one's business" [ (false, true) ] (Input_script.button_changes m 8))
 
 (* characters, which are not keys: all of them in the frame they are
  * typed at, and nothing at the others *)

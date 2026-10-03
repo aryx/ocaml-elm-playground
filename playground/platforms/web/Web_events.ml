@@ -98,6 +98,11 @@ let js_event_to_event evt (svg_opt : Element.t option) =
       Some (E.ERightMouseButton true)
   | "mouseup", _ when Ojs.int_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) "button") = 2 ->
       Some (E.ERightMouseButton false)
+  (* claude: 1 is the middle one (the wheel pressed) *)
+  | "mousedown", _ when Ojs.int_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) "button") = 1 ->
+      Some (E.EMiddleMouseButton true)
+  | "mouseup", _ when Ojs.int_of_js (Ojs.get_prop_ascii (Event.t_to_js evt) "button") = 1 ->
+      Some (E.EMiddleMouseButton false)
   | ("mousedown" | "mouseup"), _ ->
       let b = Event.buttons evt land 1 <> 0 in
       Some (E.EMouseButton b)

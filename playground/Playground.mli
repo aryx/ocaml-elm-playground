@@ -650,7 +650,8 @@ while the mouse button is down.
 
 [mdown] is the left (main) button; [mrdown], not in the original Elm
 playground, is the right one (e.g. TinyMinecraft: left click
-removes a block, right click places one).
+removes a block, right click places one); [mmdown], not in it either,
+is the middle one, the wheel pressed (e.g. mini-soldat: a grenade).
 
 [mdx] and [mdy], not in the original Elm playground either, are how far
 the mouse moved since the last frame (y up, like [my]), for turning a
@@ -669,6 +670,7 @@ type mouse = {
       follows the release sees it, and the next tick clears it. *)
   mclick : bool;
   mrdown : bool;
+  mmdown : bool;
   mdx : number;
   mdy : number;
   (** How far the wheel turned since the last frame, in notches,
@@ -1177,6 +1179,7 @@ type msg =
   | MouseClick
   | MouseButton of bool
   | RightMouseButton of bool
+  | MiddleMouseButton of bool
   | Typed of string
   | MouseWheel of number
   | MouseDouble

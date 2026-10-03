@@ -15,6 +15,7 @@ type entry =
   | Key of string * int * int
   | At of float * float * int * int
   | Button of bool (* the right one *) * int * int
+  | Middle of int * int (* claude: the middle button *)
   | Type of string * int
 
 type t = entry list
@@ -38,7 +39,7 @@ let parse_entry (entry : string) : (entry, string) result =
   let bad () =
     Error
       (Printf.sprintf
-         "bad -script entry %S, expected key:n, key:a-b, at(x;y):n, click:n, rclick:n or type(text):n"
+         "bad -script entry %S, expected key:n, key:a-b, at(x;y):n, click:n, rclick:n, mclick:n or type(text):n"
          entry)
   in
   (* claude: the last ':', not the first: the frames never hold one, and
@@ -62,6 +63,7 @@ let parse_entry (entry : string) : (entry, string) result =
             match what with
             | "click" -> Ok (Button (false, a, b))
             | "rclick" -> Ok (Button (true, a, b))
+            | "mclick" -> Ok (Middle (a, b))
             | "" -> bad ()
             | key -> Ok (Key (key_name key, a, b))))
 
@@ -111,3 +113,8 @@ let button_changes (script : t) (frame : int) : (bool * bool) list =
   let now = buttons_down script frame and before = buttons_down script (frame - 1) in
   List.map (fun r -> (r, true)) (List.filter (fun r -> not (List.mem r before)) now)
   @ List.map (fun r -> (r, false)) (List.filter (fun r -> not (List.mem r now)) before)
+
+(* claude: the middle button's edges, as [button_changes]' *)
+let middle_changes (script : t) (frame : int) : bool list =
+  let down f = List.exists (function Middle (a, b) -> covers f a b | _ -> false) script in
+  match (down (frame - 1), down frame) with (false, true) -> [ true ] | (true, false) -> [ false ] | _ -> []
