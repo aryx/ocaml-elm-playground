@@ -390,6 +390,11 @@ asFloat
 truncated
 	^self!
 
+rounded
+	"Number's adds a half, a Fraction made and thrown away: a Pen
+	rounds four numbers a line."
+	^self!
+
 asCharacter
 	^Character value: self!
 

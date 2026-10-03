@@ -65,5 +65,10 @@ val copy_bits : St_memory.t -> oop -> bool
  * it changed *)
 val changes : unit -> int
 
+(* for St_colorblt, the same primitive with colours: one more copyBits,
+ * and a field read as an integer (a Float rounded), if it is one *)
+val count_change : unit -> unit
+val int_field : St_memory.t -> oop -> int -> int option
+
 (* a Form's width, height and pixels (true black), for the host *)
 val form : St_memory.t -> oop -> (int * int * (int -> int -> bool)) option

@@ -70,7 +70,7 @@ Smalltalk bootstrapped from their text.
 {!modules:
     St_lexer St_ast St_parse St_chunk St_memory St_class St_bytecode
     St_compile St_interp St_primitives St_kernel St_boot St_debug
-    St_image St_bitblt
+    St_image St_bitblt St_colorblt
 }
 
 {2:scratch Scratch and Snap!}

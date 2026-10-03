@@ -61,6 +61,43 @@ let morphic (atoms : int) =
     ((St_bitblt.changes () - blits) / cycles)
     (float_of_int n /. 1e6 /. dt)
 
+(* BitBlt in colour alone (St_colorblt.mli), at 32 bits: a 640 by 400
+ * rectangle filled with a colour, a Form stored, the definition then
+ * what runs; and a Form blended, a pixel at a time either way *)
+let colour () =
+  let form w h : St_colorblt.form = { bits = Bytes.make (4 * w * h) '\165'; w; h; stride = 4 * w; depth = 32 } in
+  let dest = form 800 600 and source = form 700 500 and pixel = form 1 1 in
+  List.iter
+    (fun (name, simple, source, halftone, rule, times) ->
+      let t0 = Sys.time () in
+      for i = 1 to times do
+        St_colorblt.blit ~simple ~dest ~source ~map:None ~halftone ~rule ~dx:(40 + (i land 7)) ~dy:50 ~sx:3 ~sy:7
+          (40 + (i land 7), 50, 680, 450)
+      done;
+      let dt = Sys.time () -. t0 in
+      Printf.printf "colour    %-18s %10d pixels    %6.2f s %6.1f M pixels/s\n%!" name (times * 640 * 400) dt
+        (float_of_int (times * 640 * 400) /. 1e6 /. dt))
+    [
+      ("fill, a pixel", true, None, Some pixel, 3, 40);
+      ("fill, a row", false, None, Some pixel, 3, 2000);
+      ("store, a pixel", true, Some source, None, 3, 40);
+      ("store, a row", false, Some source, None, 3, 2000);
+      ("blend", false, Some source, None, 24, 40);
+    ]
+
+(* Squeak's text (kernel/squeak/Text.st): the font drawn from Hershey's
+ * strokes, then strings of 40 characters on a Form of 32 bits *)
+let text () =
+  let vm = St_boot.boot ~kernel:St_kernel.squeak () in
+  let timed name text =
+    let before = I.bytecodes_run vm and t0 = Sys.time () in
+    (match I.evaluate vm ~budget:2_000_000_000 text with Ok _ -> () | Error e -> print_endline ("error: " ^ e));
+    Printf.printf "text      %-18s %10d bytecodes %6.2f ms\n%!" name (I.bytecodes_run vm - before) ((Sys.time () -. t0) *. 1000.)
+  in
+  timed "the font" "StrikeFont default";
+  timed "100 strings of 40"
+    "| f | f := Form extent: 400 @ 20 depth: 32. 100 timesRepeat: [f drawString: 'The quick brown fox jumps over the lazy d' at: 0 @ 0]"
+
 let () =
   let only = if Array.length Sys.argv > 1 then Sys.argv.(1) else "" in
   let has (name : string) =
@@ -69,6 +106,8 @@ let () =
     n = 0 || at 0
   in
   if has "blit" then blit ();
+  if has "colour" then colour ();
+  if has "text" then text ();
   if has "morphic" then List.iter morphic [ 10; 50; 200 ];
   List.iter
     (fun (kernel, files) ->

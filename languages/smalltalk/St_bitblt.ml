@@ -16,6 +16,7 @@ type oop = M.oop
 
 let count = ref 0
 let changes () = !count
+let count_change () = incr count
 
 (* a Form's bits, width, height, and bytes per row *)
 type form = { bits : Bytes.t; w : int; h : int; stride : int }

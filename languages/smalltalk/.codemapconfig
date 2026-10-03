@@ -176,13 +176,13 @@
         { from: 'def:execute', to: 'def:activate_method' },
       ],
     },
-    'St_primitives.mli': { digest: 'defc584499d5',
+    'St_primitives.mli': { digest: '64b807b3aafc',
       summary: "What the VM does itself, numbered as in chapter 29: the primitive first, the Smalltalk code when it fails.",
       important: [
         { at: 'comment:"the primitive runs first"', say: 'a failure falls back on Smalltalk', weight: 3 },
       ],
     },
-    'St_primitives.ml': { digest: '2407adf9231b',
+    'St_primitives.ml': { digest: '1acfb6778b7b',
       summary: 'Numbers, indexing, objects and classes, blocks and perform:, strings, the system, and the table.',
       important: [
         { at: 'def:small_ints', say: 'SmallInteger arithmetic, failing on overflow', weight: 2 },
@@ -192,7 +192,7 @@
         { at: 'def:install', say: 'the table of primitives', weight: 2 },
       ],
     },
-    'St_bitblt.mli': { digest: '3577a1d8656a',
+    'St_bitblt.mli': { digest: '7fb1776097cc',
       summary: "Form and BitBlt (Ingalls, 1981), the one drawing primitive: a rectangle copied under one of 16 rules.",
       important: [
         { at: 'comment:"rule 0  0        clear"', say: 'the 16 rules: truth tables of two bits', weight: 3 },
@@ -200,7 +200,7 @@
         { at: 'def:blit', say: 'the rectangle combined, a byte or a pixel at a time', weight: 2 },
       ],
     },
-    'St_bitblt.ml': { digest: '7f52a9e880e9',
+    'St_bitblt.ml': { digest: 'fcdd121f2bc0',
       summary: 'BitBlt a pixel at a time, the definition, and a byte at a time, what runs: shifts and masks, as Ingalls worked a word at a time.',
       capitals: [
         { at: 'def:copy_bits', say: 'everything the display did' },
@@ -208,6 +208,23 @@
       important: [
         { at: 'def:copy_bits', weight: 3 },
         { at: 'def:pixel', weight: 1 },
+      ],
+    },
+    'St_colorblt.mli': { digest: '5b3d74f300ee',
+      summary: "BitBlt in colour, Squeak's: Forms of 8 and 32 bits, alpha blending, the colour map that gives text its ink.",
+      important: [
+        { at: 'comment:"rule 24  alpha blend"', say: 'rules that are arithmetic: blend and paint', weight: 3 },
+        { at: 'def:combine', say: 'a source pixel on a destination pixel', weight: 2 },
+        { at: 'def:blit', say: 'a pixel or a row at a time', weight: 2 },
+        { at: 'def:copy_bits', weight: 2 },
+      ],
+    },
+    'St_colorblt.ml': { digest: '3dc6abec454d',
+      summary: 'A pixel read and written at each depth, the rules, the definition a pixel at a time; a fill and a store a row at a time.',
+      important: [
+        { at: 'def:combine', weight: 3 },
+        { at: 'def:blit_rows', say: 'the first row made, the others copies', weight: 2 },
+        { at: 'def:copy_bits', say: "St_bitblt's when everything has one bit", weight: 2 },
       ],
     },
     'St_chunk.mli': { digest: 'bd3ceaaa3a8c',
@@ -223,7 +240,7 @@
         { at: 'def:read', weight: 2 },
       ],
     },
-    'St_kernel.mli': { digest: '429566533815',
+    'St_kernel.mli': { digest: '4884ed4599c8',
       summary: "The kernel's chunk files, kernel/*.st, embedded by dune in the order St_boot reads them; and Squeak's kernel, the same then kernel/squeak/'s, and MiniMorphic's.",
     },
     'St_boot.mli': { digest: '52eae0a194e3',
@@ -305,7 +322,7 @@
   dirs: {
     kernel: { summary: "The kernel's classes written in Smalltalk, in chunk format: what St_boot compiles into the world." },
     'kernel/morphic': { summary: "MiniMorphic: Morphic in one file of Smalltalk -- a world, a hand, morphs that step, damage rectangles -- kept as a step to read before Squeak's." },
-    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures." },
+    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures; Color and Forms with a depth; StrikeFont, text drawn a glyph a BitBlt." },
     tests: { summary: 'Expressions printed, the class hierarchy, the debugger, the image saved and loaded.' },
   },
 }

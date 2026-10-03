@@ -56,10 +56,12 @@ with everything left out listed.
   whole system, as TinySmalltalk80 and TinyChrome do; it gets its line
   in `Unit_catalog.ml`'s `over_budget`.
 
+- **Squeak 1.x first** (decided, 2026-10-03): 1996-1998, Morphic
+  arriving, colour; Etoys a later phase; the Squeak 3.x years
+  (Monticello, traits) out.
+
 ## Proposed decisions (to confirm)
 
-- **Squeak 1.x first** (1996-1998: Morphic arriving, colour); Etoys a
-  later phase; the Squeak 3.x years (Monticello, traits) out.
 - **Direct pointers or the object table**: Squeak dropped the object
   table in 1996 and pays for `become:` with a scan of memory. Keeping
   the table is simpler here; the change is an exercise, and the notes
@@ -117,7 +119,16 @@ in `dev/notes_opti_ocaml.md`.
   `notes_squeak.md`), as the intermediate step to study -- Morphic in a
   few hundred lines before the real one, as the Blue Book's kernel
   stays beside Squeak's.
-- **Q3, colour and text**: Forms of 8 and 32 bits, a colour BitBlt
+- **Q3, colour and text** (done, 2026-10-03: `St_colorblt`,
+  `kernel/squeak/Color.st` and `Text.st`, `Unit_colour.ml`,
+  `notes_squeak.md` section 3. A fill and a store a row at a time,
+  120 times faster natively, 6 to 13 under node; the font drawn by a
+  Pen from Hershey's strokes the first time it is asked for, 300,000
+  bytecodes. Left: text is blended a pixel at a time, a line of 40
+  characters 3.5 ms under node -- a glyph's zeros to skip if Q4's
+  damage does not save enough; the Display still has one bit, Q6's
+  host makes it 32; a Form of 32 bits on one of 8, an exercise):
+  Forms of 8 and 32 bits, a colour BitBlt
   (its rules, and alpha blending, Squeak's rule 24), `Color`; a font as
   a Form of glyphs and a table of offsets (the strike format), text
   drawn by BitBlt, a glyph at a time. Hershey's strokes

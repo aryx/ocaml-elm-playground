@@ -6,7 +6,7 @@ Blue Book's Smalltalk-80: the same language and virtual machine
 colour, and an environment, Morphic, written in Smalltalk itself. This
 tutorial follows the plan's phases, a section each as it is written,
 each ending with the worked example its tests check
-(`Unit_squeak.ml`).
+(`Unit_squeak.ml`, `Unit_minimorphic.ml`, `Unit_colour.ml`).
 
 The thread through it: **the host shrinks**. Every step moves
 something from OCaml into Smalltalk, where the Browser can show it and
@@ -223,6 +223,108 @@ not a redraw of the world; an atom at 780 bounces off the wall at 800;
 the hand picks a morph up, carries it, and puts it down in front of
 another; fifty atoms after a hundred cycles are all in the box.
 
+## 3. Colour and text
+
+Files: `St_colorblt.mli`, `kernel/squeak/Color.st`,
+`kernel/squeak/Text.st`. Tests: `Unit_colour.ml`.
+
+### A pixel is more than a bit
+
+The Blue Book's Form has one bit a pixel. Squeak's has a **depth**,
+its fourth field, and BitBlt is the same primitive at every depth: the
+same fields, the same clipping, a pixel now a number instead of a bit.
+Two depths are here:
+
+| depth | a pixel | a row |
+|---|---|---|
+| 1 | a bit, 1 black | padded to 16 bits (the Blue Book's) |
+| 8 | a byte, the number of a colour in a palette | padded to 32 bits |
+| 32 | four bytes: alpha, red, green, blue | 4 bytes a pixel |
+
+The palette of the 8-bit Forms: 0 is transparent, then 216 colours, six
+levels of each of red, green and blue (`1 + 36 r + 6 g + b`). Squeak
+ran on such a screen in 1996.
+
+The sixteen rules still work, on every bit of the two pixels: 3 stores,
+6 reverses. Three things are new.
+
+**Rules that are arithmetic.** Rule 24 blends: the source over the
+destination, as much as the source's alpha `a` says, for each of red,
+green and blue:
+
+    result = (s * a + d * (255 - a) + 127) / 255
+
+Rule 25 paints: the source where it is not 0, a sprite whose colour 0
+is transparent.
+
+**The colour map**, BitBlt's fifteenth field: a table with an entry
+for each value a source pixel may have, each a pixel of the
+destination, through which every source pixel goes first. It is how a
+Form of one depth is drawn on a Form of another (8 bits on 32: the
+palette, 256 entries), and how text gets its colour (below).
+
+**The halftone is a Form of the destination's depth**, of any size,
+repeated. One pixel is a plain colour: `fill:color:` is a BitBlt with
+no source, that pixel as its halftone, rule 3 -- or 24 if the colour
+is glass.
+
+A `Color` is red, green, blue and alpha, and knows its pixel at each
+depth. Nowhere is a pixel of 32 bits a Smalltalk number (it would be a
+LargePositiveInteger, 31 bits being a SmallInteger's): a colour
+writes its four bytes into a ByteArray, the bits of a Form of one
+pixel or an entry of a map.
+
+### Text is BitBlt
+
+A font is a picture: all its characters side by side in one Form of
+one bit a pixel, and a table of where each starts -- the strike
+format, the Alto's.
+
+    xTable:  0     9      18    27 ...
+    glyphs:  |  A  |  B   |  C  |
+
+`drawString:at:font:color:` is one BitBlt sent `copyBits` once a
+character, its source rectangle moved along the glyphs and its
+destination along the line. The colour is a map of two entries: the
+glyphs' 0 becomes a pixel of zeros (alpha 0: nothing), their 1 the
+ink; blended by rule 24, so ink may be glass too.
+
+The glyphs are not stored. The first time the font is asked for, a
+Pen -- the Blue Book's, Bresenham's lines by BitBlt -- draws them from
+Hershey's strokes (1967), each glyph a String in the kernel's text, a
+point two characters counted from the letter R. Smalltalk draws its
+own font: about 300,000 bytecodes, 20 ms natively, 150 under node,
+once.
+
+### What it costs
+
+| 640 by 400 at 32 bits, M pixels/s | native | under node |
+|---|---|---|
+| a fill, a pixel at a time | 23 | 5.7 |
+| a fill, a row at a time | 2,800 | 75 |
+| a Form stored, a pixel at a time | 28 | 5.8 |
+| a Form stored, a row at a time | 3,050 | 33 |
+| a Form blended (a pixel at a time) | 18 | 7.2 |
+
+A fill and a store are most of a screen, and both are a row at a time:
+the first row made, the others copies of it; a source's row copied on
+the destination's. The definition, a pixel at a time, stays
+(`blit ~simple:true`), and a test checks the two agree.
+
+A line of 40 characters is 5,200 bytecodes and 0.7 ms natively, 3.5 ms
+under node: the bytecodes are few, the time is the glyphs' pixels,
+blended one by one, most of them the paper's. A page of text redrawn
+whole would be too slow in a browser; skipping the glyphs' zeros a
+byte at a time is the next step if Morphic's damage does not save
+enough.
+
+**Worked examples** (`Unit_colour.ml`): red of alpha 128 over white is
+(255, 127, 127); `Color r: 1 g: 1/2 b: 0` is the bytes 255 255 128 0
+and the palette's 199; a Form of 8 bits drawn on one of 32, its 0
+showing the yellow under; A in a font 33 pixels high is 18 wide, its
+apex at (9, 4), its bar at 18, its foot at (1, 25) -- Hershey's units,
+16 added; `'AB'` drawn in red at 10 ends at 49.
+
 ## Exercises
 
 - Miranda's finer rule: a temporary assigned only before any block
@@ -233,6 +335,12 @@ another; fifty atoms after a hundred cycles are all in the box.
   is thrown); a `drawOn:` that is not a rectangle (a Pen's dragon in a
   morph); Squeak's DamageRecorder, merging the rectangles that touch,
   and when it wins.
+- Colour: a Form of 32 bits drawn on one of 8 (Squeak's way: the
+  pixel reduced to 5 bits of each colour, a map of 32,768 entries);
+  Squeak's own palette of 8 bits; a `Pen` with a colour.
+- Text: a glyph's zeros skipped a byte at a time; kerning; a font from
+  `Vga_font`'s 8 by 16 instead of Hershey's strokes, and what a strike
+  of it looks like.
 - The debugger's variables for a closure's activation: its arguments,
   its copied values and its temp vectors by name (today only a
   method's).

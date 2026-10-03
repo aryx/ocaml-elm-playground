@@ -656,6 +656,20 @@ replaces: MiniMorphic's cycle went from 206,000 to 61,000 bytecodes by
 remembering damaged rectangles without comparing them
 (`notes_squeak.md`, section 2).
 
+**BitBlt in colour, a row at a time** (`St_colorblt.mli`): at 32 bits a
+pixel, the two cases that are most of a screen need no pixel looked at.
+A fill: the first row made a pixel at a time, the others `Bytes.blit`
+copies of it. A Form stored: each of its rows copied. Millions of
+pixels a second, a 640 by 400 rectangle: a fill 23 a pixel at a time,
+2,800 a row at a time natively (5.7 and 75 under node, whose
+`Bytes.blit` is a loop); a store 28 and 3,050 (5.8 and 33). Blending
+stays a pixel at a time, 18 (7.2).
+
+And a kernel's method: `Integer>>rounded` answering itself instead of
+Number's, which adds a half as a Fraction. A Pen rounds four numbers a
+line: the font drawn from Hershey's strokes went from 1.7 million
+bytecodes to 300,000.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the

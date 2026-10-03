@@ -29,7 +29,7 @@
      83       perform:, perform:with:...
      84       perform:withArguments:
      90       Sensor mousePoint; 91 the buttons (4 red, 2 yellow, 1 blue)
-     96       BitBlt copyBits (St_bitblt.mli)
+     96       BitBlt copyBits (St_bitblt.mli, St_colorblt.mli)
      105      replaceFrom:to:with:startingAt:
      110      ==
      111      class

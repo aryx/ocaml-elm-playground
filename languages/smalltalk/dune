@@ -7,7 +7,8 @@
 ; St_boot (the kernel/*.st files bootstrapped into a running system),
 ; St_debug (what a debugger asks of a suspended process), St_image
 ; (the whole memory saved and loaded), St_bitblt (Form and BitBlt, the
-; display). TinySmalltalk80 (apps/devtools/) is its environment.
+; display), St_colorblt (the same in colour, Squeak's). TinySmalltalk80
+; (apps/devtools/) is its environment.
 ;
 ; Pure OCaml, no Playground (languages/README.md). In the package
 ; tiny_languages, as tiny_languages.smalltalk.
@@ -25,7 +26,8 @@
  (targets St_kernel.ml)
  (deps kernel/Definitions.st kernel/Objects.st kernel/Classes.st kernel/Numbers.st
        kernel/Collections.st kernel/Streams.st kernel/Graphics.st kernel/System.st
-       kernel/squeak/Closures.st kernel/morphic/MiniMorphic.st)
+       kernel/squeak/Closures.st kernel/squeak/Color.st kernel/squeak/Text.st
+       kernel/morphic/MiniMorphic.st)
  (action
   (with-stdout-to
    %{targets}
@@ -60,6 +62,12 @@
     (echo "let squeak = files @ [\n")
     (echo "(\"squeak/Closures.st\", {st|")
     (cat kernel/squeak/Closures.st)
+    (echo "|st});\n")
+    (echo "(\"squeak/Color.st\", {st|")
+    (cat kernel/squeak/Color.st)
+    (echo "|st});\n")
+    (echo "(\"squeak/Text.st\", {st|")
+    (cat kernel/squeak/Text.st)
     (echo "|st});\n")
     (echo "]\n")
     (echo "let mini_morphic = squeak @ [\n")

@@ -62,4 +62,9 @@ let () =
   in
   check "| fact | fact := [:n | n < 2 ifTrue: [1] ifFalse: [n * (fact value: n - 1)]]. fact value: 20" "2432902008176640000";
   check "(#(1 2 3) collect: [:i | [i * 10]]) collect: [:b | b value]" "#(10 20 30)";
+  (* colour: a pixel of 32 bits is a negative int here (St_colorblt.mli) *)
+  check "| f | f := Form extent: 4 @ 4 depth: 32. f fillColor: Color white. f fillColor: (Color red alpha: 1/2). f colorAt: 1 @ 1"
+    "Color(255 127 127)";
+  check "| f | f := Form extent: 4 @ 4 depth: 32. f fillColor: Color red. f reverse. f colorAt: 1 @ 1" "Color(0 255 255 alpha 0)";
+  check "| f | f := Form extent: 40 @ 20 depth: 32. f fillColor: Color white. f drawString: 'A' at: 0 @ 0. f colorAt: 5 @ 2" "Color(0 0 0)";
   if !failures > 0 then exit 1
