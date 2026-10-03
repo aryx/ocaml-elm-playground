@@ -46,52 +46,12 @@ let laid_out (t : t) (algo : Treemap.algo) : t =
 let make ?fan_in ?counted ?top_kept ?numbered ?colours ?roots ?guide ?beyond ?style ~area ~title ~marked entries : t =
   Code_map_base.make ?fan_in ?counted ?top_kept ?numbered ?colours ?roots ?guide ?beyond ~style:(match style with Some s -> s | None -> !chosen) ~area ~title ~marked entries
 
-(* claude: the map framing a unit by its path (a directory's or a
- * file's), at once *)
-(* claude: the animation from another map to this one (a folder laid
- * out anew, or back): each rectangle from where it was on the screen,
- * in the other map, to where it is in this one (Transition, over
- * graphics_animation); a unit only here grows from its centre *)
-let morph_duration = 0.45
-
-let morph_from ~(old : t) (t : t) ~(now : float) : unit =
-  let rect (r : Treemap.rect) : Transition.rect = { x = r.x; y = r.y; w = r.w; h = r.h } in
-  let where = Hashtbl.create 256 in
-  Array.iter (fun (p : entry Treemap.placed) -> Hashtbl.replace where p.path p.rect) old.placed;
-  (* a rectangle of the old map on the screen, in this map's units *)
-  let across (r : Treemap.rect) : Transition.rect =
-    let px0 = to_px old.cam r.x and py0 = to_py old.cam r.y and px1 = to_px old.cam (r.x +. r.w) and py1 = to_py old.cam (r.y +. r.h) in
-    let u0 = to_u t.cam px0 and v0 = to_v t.cam py0 and u1 = to_u t.cam px1 and v1 = to_v t.cam py1 in
-    { x = u0; y = v0; w = u1 -. u0; h = v1 -. v0 }
-  in
-  let after = Array.to_list (Array.map (fun (p : entry Treemap.placed) -> (p.path, rect p.rect)) t.placed) in
-  let before = List.filter_map (fun (k, _) -> Option.map (fun r -> (k, across r)) (Hashtbl.find_opt where k)) after in
-  t.morph <- Some (Transition.make ~before ~after (), now)
-
-(* the map as it is at [now], its rectangles on their way *)
-let morphed (t : t) ~(now : float) : t =
-  match t.morph with
-  | Some (tr, start) when now < start +. morph_duration ->
-      let p = Timing.at Timing.ease_in_out ((now -. start) /. morph_duration) in
-      let at = Hashtbl.create 256 in
-      List.iter (fun (f : string Transition.frame) -> Hashtbl.replace at f.key f.rect) (Transition.at tr p);
-      let placed =
-        Array.map
-          (fun (q : entry Treemap.placed) ->
-            match Hashtbl.find_opt at q.path with Some (r : Transition.rect) -> { q with rect = { x = r.x; y = r.y; w = Float.max 0.01 r.w; h = Float.max 0.01 r.h } } | None -> q)
-          t.placed
-      in
-      let geometry = Array.mapi (fun i (q : entry Treemap.placed) -> match (q.node, t.geometry.(i)) with File (_, _, e), Some _ -> Some (geometry_of q.rect (max 1 e.nlines)) | _ -> t.geometry.(i)) placed in
-      { t with placed; geometry; painted = None }
-  | Some _ ->
-      t.morph <- None;
-      t
-  | None -> t
-
 let street_on (t : t) : bool = t.street
 
 let has (t : t) (path : string) : bool = Array.exists (fun (p : entry Treemap.placed) -> p.path = path) t.placed
 
+(* claude: the map framing a unit by its path (a directory's or a
+ * file's), at once *)
 let focus_on (t : t) (path : string) : t =
   let found = ref None in
   Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = path then found := Some i) t.placed;
@@ -102,401 +62,14 @@ let focus_on (t : t) (path : string) : t =
       { t with target = c; cam = c }
   | None -> t
 
+let entries (t : t) : entry list = t.entries
+let number (t : t) (path : string) : int option = Hashtbl.find_opt t.order path
+
 (*****************************************************************************)
 (* Update *)
 (*****************************************************************************)
 
-let clamp_cam (c : camera) : camera = { c with z = Float.max 0.5 (Float.min 400. c.z) }
-
-(* the camera a step nearer its target: the zoom eased in its logarithm,
- * so that going in 100 times feels as steady as going in 2 *)
-let ease (c : camera) (target : camera) : camera =
-  let a = 0.22 in
-  let z = Float.exp (Float.log c.z +. (a *. (Float.log target.z -. Float.log c.z))) in
-  (* the centre moves so that the point the zoom goes to stays put: a
-   * straight line in the layout at a rate scaled by the zoom's *)
-  let near = Float.abs (Float.log (z /. target.z)) < 0.002 && Float.abs (c.cx -. target.cx) *. z < 0.3 && Float.abs (c.cy -. target.cy) *. z < 0.3 in
-  if near then target else { c with cx = c.cx +. (a *. (target.cx -. c.cx)); cy = c.cy +. (a *. (target.cy -. c.cy)); z }
-
-(* the directory round the view, a size bigger: where going up goes *)
-let up (t : t) : camera =
-  let c = t.target in
-  let vw = float_of_int c.a.pw /. c.z and vh = float_of_int c.a.ph /. c.z in
-  let best = ref None in
-  Array.iter
-    (fun (p : entry Treemap.placed) ->
-      match p.node with
-      | Dir _ when inside p.rect c.cx c.cy && (p.rect.w > vw *. 1.3 || p.rect.h > vh *. 1.3) -> (
-          match !best with
-          | Some (b : entry Treemap.placed) when b.rect.w *. b.rect.h <= p.rect.w *. p.rect.h -> ()
-          | _ -> best := Some p)
-      | _ -> ())
-    t.placed;
-  match !best with Some p when p.depth > 0 -> fit c.a p.rect | _ -> home c.a
-
-(* claude: the stops of Codemap's tour in a file: its header, its
- * sections (the (* Model *) between rules of stars), and the places
- * saying "the trick of this game"; lexes the file *)
-let stops (e : entry) : (int * string) list =
-  let f = Lazy.force e.file in
-  let sections = List.filter_map (fun (l, name, cat) -> if cat = Highlight_code.Comment_section && l > 0 then Some (l, name) else None) f.defs in
-  let marks = List.filter_map (fun l -> if l > 0 then Some (l, Code_file.trick) else None) f.tricks in
-  (0, "its header") :: List.sort_uniq (fun (a, _) (b, _) -> compare a b) (sections @ marks)
-
-(* claude: the definition a line is in: its header, to the line before
- * the next top-level one *)
-let def_extent (f : Code_file.t) (line : int) : int * int =
-  let heads =
-    List.filter_map (fun (l, _, (cat : Highlight_code.category)) -> match cat with Def_function | Def_value | Def_type | Def_module -> Some l | _ -> None) f.defs
-    |> List.sort_uniq compare
-  in
-  let first = List.fold_left (fun acc l -> if l <= line then l else acc) (match heads with l :: _ when l <= line -> l | _ -> line) heads in
-  let last = match List.find_opt (fun l -> l > first) heads with Some n -> n - 1 | None -> Code_file.nlines f - 1 in
-  (* claude: in a literate program's source (principia's), the chunk's
-   * markers at the left margin bound it: the body ends before the next
-   * one (not the next definition's name, its return type and marker
-   * with it), and starts just under its own /*s: ... */ when only its
-   * lines lie between (a comment, a Plan 9 return type on its own
-   * line); the markers inside a body are indented *)
-  let chunk l = Code_file.syncweb_marker f l && Code_file.at f l 0 <> None in
-  let last = let rec go l = if l > last then last else if chunk l then l - 1 else go (l + 1) in go (first + 1) in
-  let first =
-    let blank l = let rec any c = c < Code_file.cols && (Code_file.at f l c <> None || any (c + 1)) in not (any 0) in
-    let rec go l k = if l < 0 || k > 4 || blank l then first else if chunk l then l + 1 else go (l - 1) (k + 1) in
-    go (first - 1) 0
-  in
-  (* not the next section's banner and comment: up to its last line of code *)
-  let trailer l =
-    let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at f l c with Some cat -> Some cat | None -> first_cat (c + 1) in
-    match first_cat 0 with None -> true | Some (Comment | Comment_section) -> true | Some _ -> false
-  in
-  let rec trim l = if l > first && trailer l then trim (l - 1) else l in
-  (first, max first (trim last))
-
-(* claude: a section: its title's line, to the line before the next
- * section's banner *)
-let section_extent (f : Code_file.t) (line : int) : int * int =
-  let titles =
-    List.filter_map (fun (l, _, (cat : Highlight_code.category)) -> if cat = Comment_section && l > line + 1 then Some l else None) f.defs
-    |> List.sort_uniq compare
-  in
-  let next = match titles with l :: _ -> l - 2 | [] -> Code_file.nlines f - 1 in
-  (line, max line next)
-
-(* claude: the definition a click at a line and column of [path]'s file
- * peeks at: the name's there (its binding), or, defined elsewhere, found
- * among the sources (the map's, and those beyond it); else the line's
- * own definition *)
-let peek_where (t : t) (f : Code_file.t) (path : string) (line : int) (col : int) : (string * int) option =
-  match Code_file.name_at f line col with
-  | Some o -> Some (path, fst o.bound_at)
-  | None -> (
-      match Code_file.ref_at f line col with
-      | Some r -> (
-          match Code_names.find_in ~roots:t.roots (index_of t) ~from:path f r with
-          | c :: _, _ -> Some (c.path, c.line)
-          | [], _ ->
-              t.note <- r.rname ^ ": not found";
-              None)
-      | None -> Some (path, line))
-
-(* the peeks: one on top of the others, four at most, each its scroll *)
-(* claude: the lines a peek at [l] of [p]'s file [g] shows: a top-level
- * comment whole, else the definition with the comment just above it *)
-let peek_extent (g : Code_file.t) (p : string) (l : int) : int * int =
-  (* claude: a line's text, whole (its spans at their columns) *)
-  let text l =
-    let b = Buffer.create 80 in
-    List.iter (fun (sp : Highlight_code.span) -> while Buffer.length b < sp.col do Buffer.add_char b ' ' done; Buffer.add_string b sp.text) g.lines.(l);
-    Buffer.contents b
-  in
-  let count sub str =
-    let n = String.length str and m = String.length sub in
-    let k = ref 0 in
-    for i = 0 to n - m do if String.sub str i m = sub then incr k done;
-    !k
-  in
-  (* claude: each language its own markers: an OCaml file writing
-   * libc/*.s in a comment is no C comment opened (the author, at
-   * ~/ix's TinyAssembler.ml: every peek grew back to the header) *)
-  let ml = List.exists (Filename.check_suffix p) [ ".ml"; ".mli"; ".mll"; ".mly" ] in
-  let opens l = let t = text l in if ml then count "(*" t else count "/*" t
-  and closes l = let t = text l in if ml then count "*)" t else count "*/" t in
-  (* the comments' depth at each line's start, the file read once *)
-  let n = Code_file.nlines g in
-  let depth = Array.make (n + 1) 0 in
-  for i = 0 to n - 1 do depth.(i + 1) <- max 0 (depth.(i) + opens i - closes i) done;
-  (* claude: a top-level comment clicked (a game's header): the whole
-   * comment, from where it opens to where it closes (the author: "not
-   * just what started at the line clicked"), scrolled if long *)
-  let rec opening_of i = if i > 0 && depth.(i) > 0 then opening_of (i - 1) else i in
-  let rec closing_of i = if i + 1 < n && depth.(i + 1) > 0 then closing_of (i + 1) else i in
-  let top_comment =
-    if l < n && (depth.(l) > 0 || opens l > 0) then
-      let o = opening_of l in
-      let starts_line = String.length (text o) >= 2 && (String.sub (text o) 0 2 = "(*" || String.sub (text o) 0 2 = "/*") in
-      if starts_line then Some (o, closing_of l) else None
-    else None
-  in
-  let first, last =
-    match top_comment with
-    | Some ext -> ext
-    | None ->
-        let first, last = def_extent g l in
-        (* claude: with the comment just above it, which likely says
-         * what it is (the author), all of it, its blank lines too;
-         * comments stacked right above one another with it; not a
-         * section's banner *)
-        (* claude: not a syncweb marker, /*s: function [[f]] */ above
-         * it, or the previous chunk's /*e: ... */ (the author:
-         * boilerplate, at principia) *)
-        let comment_end l =
-          let rec first_cat c = if c >= Code_file.cols then None else match Code_file.at g l c with Some cat -> Some cat | None -> first_cat (c + 1) in
-          l >= 0 && (match first_cat 0 with Some Comment -> true | _ -> false) && not (Code_file.syncweb_marker g l)
-        in
-        (* a banner's rule, (*----*): where a section begins, not a comment *)
-        let rule l =
-          let t = String.trim (text l) in
-          String.length t >= 8 && String.for_all (fun c -> String.contains "(*)-=/ " c) t
-        in
-        let rec up l =
-          if comment_end (l - 1) then
-            let o = opening_of (l - 1) in
-            if List.exists rule (List.init (l - o) (fun k -> o + k)) then l else up o
-          else l
-        in
-        (up first, last)
-  in
-  (first, last)
-
-let open_peek (t : t) (file_of : string -> Code_file.t option) ((p, l) : string * int) : unit =
-  match file_of p with
-  | Some g ->
-      let first, last = peek_extent g p l in
-      (match t.peek with Some top -> t.peek_stack <- (top, t.peek_scroll) :: t.peek_stack | None -> ());
-      t.peek <- Some (p, first, last);
-      t.peek_scroll <- 0
-  | None -> ()
-
-let close_peek (t : t) : unit =
-  match t.peek_stack with
-  | (top, scroll) :: rest ->
-      t.peek <- Some top;
-      t.peek_scroll <- scroll;
-      t.peek_stack <- rest
-  | [] -> t.peek <- None
-
-let entries (t : t) : entry list = t.entries
-let number (t : t) (path : string) : int option = Hashtbl.find_opt t.order path
-
-(* claude: the name under a point of the layout, bound in its file
- * (Code_file.name_at, plan_codemap_naming.md levels 1 and 2), if the file
- * is lexed: the file's index in [placed], and the occurrence *)
-let name_under (t : t) (u : float) (v : float) : (int * Highlight_code.occurrence) option =
-  match under t u v with
-  | Some i -> (
-      match (t.placed.(i).node, t.geometry.(i)) with
-      | File (_, _, e), Some g when Lazy.is_val e.file ->
-          let r = t.placed.(i).rect in
-          let k = int_of_float ((u -. r.x) /. g.colw) in
-          let col = int_of_float ((u -. r.x -. (float_of_int k *. g.colw)) /. g.cell_w) in
-          Option.map (fun o -> (i, o)) (Code_file.name_at (Lazy.force e.file) (line_at g r u v) col)
-      | _ -> None)
-  | None -> None
-
-(* claude: the name defined elsewhere under a point of the layout
- * (Code_file.ref_at, level 3): the file's index and its path, and the
- * reference *)
-let ref_under (t : t) (u : float) (v : float) : (int * string * Highlight_code.reference) option =
-  match under t u v with
-  | Some i -> (
-      match (t.placed.(i).node, t.geometry.(i)) with
-      | File (_, _, e), Some g when Lazy.is_val e.file ->
-          let r = t.placed.(i).rect in
-          let k = int_of_float ((u -. r.x) /. g.colw) in
-          let col = int_of_float ((u -. r.x -. (float_of_int k *. g.colw)) /. g.cell_w) in
-          Option.map (fun x -> (i, e.path, x)) (Code_file.ref_at (Lazy.force e.file) (line_at g r u v) col)
-      | _ -> None)
-  | None -> None
-
-(* where it goes, among the map's files (Code_names), the last search kept *)
-let found (t : t) (i : int) (path : string) (r : Highlight_code.reference) : Code_names.candidate list * bool =
-  let key = (path, r.rline, r.rcol) in
-  match t.found with
-  | Some (k, res) when k = key -> res
-  | _ ->
-      let f = match t.placed.(i).node with File (_, _, e) -> Lazy.force e.file | Dir _ -> assert false in
-      let res = Code_names.find_in ~roots:t.roots (index_of t) ~from:path f r in
-      t.found <- Some (key, res);
-      res
-
-(* claude: a candidate's place on the map, the camera moved there (b
- * coming back), its name lit: its code a readable size, 10 units a line
- * at least *)
-let go_to (t : t) (target : camera) (c : Code_names.candidate) : camera =
-  let at = ref None in
-  Array.iteri (fun i (p : entry Treemap.placed) -> match p.node with File (_, _, e) when e.path = c.path -> at := Some i | _ -> ()) t.placed;
-  match !at with
-  | Some i -> (
-      match t.geometry.(i) with
-      | Some g ->
-          t.back <- (target, t.jumped) :: t.back;
-          t.jumped <- Some (i, (c.line, c.col));
-          t.choices <- None;
-          let x, y = name_pos t.placed.(i).rect g c.line c.col in
-          { target with cx = x; cy = y +. (g.cell_h /. 2.); z = Float.max target.z (10. /. g.cell_h) }
-      | None -> target)
-  | None -> target
-
-(* claude: the file under a point readable where the camera is: its code
- * read on the map itself, no glass needed *)
-let readable_at (t : t) (u : float) (v : float) : bool =
-  match under t u v with
-  | Some i -> ( match t.geometry.(i) with Some g -> readable (at_ratio t.cam (Playground_platform.pixel_ratio ())) g | None -> false)
-  | None -> false
-
-(* claude: the magnifying glass (below): round, a reading glass (80
- * columns), or none -- none at first, o going from one to the next, one
- * setting for every map (tinybox's panel and its explorer) *)
-type glass = Round | Reading | No_glass
-
-let glass_shape = ref No_glass
-
-(* claude: the menu's panel its own glass, round at first: there the map
- * is a tease, the whole program in miniature, the glass roaming over it *)
-let panel_glass_shape = ref Round
-let shape_of ~panel = if panel then panel_glass_shape else glass_shape
-let cycle_glass ?(panel = false) () = let g = shape_of ~panel in g := match !g with Round -> Reading | Reading -> No_glass | No_glass -> Round
-let glass_name ?(panel = false) () = match !(shape_of ~panel) with Round -> "round" | Reading -> "wide" | No_glass -> "none"
-
-(* claude: moving by units (Code_units, a style's [units]: Map_atlas's):
- * where a key, the wheel or a click takes the map, a directory or file at
- * a time -- in, out, beside -- or None. A click on a name goes to it
- * (style.unit_at); on a block, a level down at most; on the ground (a
- * file looked at), the clicks are the names' (update). The wheel steps
- * once a gesture: its notches add up to one, then it rests until the
- * wheel has been still a moment (a trackpad's flick is many events) *)
-let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) ~(clicked : bool) (mpx : float) (mpy : float) : int option =
-  let mouse = computer.mouse in
-  let (Time now) = computer.time in
-  let a = t.target.a in
-  (* the camera moved some other way (a search, a jump): what it frames *)
-  let frames (r : Treemap.rect) =
-    let c = t.target and f = fit a r in
-    Float.abs (Float.log (f.z /. c.z)) < 0.15
-    && Float.abs (f.cx -. c.cx) *. c.z < 0.05 *. float_of_int a.pw
-    && Float.abs (f.cy -. c.cy) *. c.z < 0.05 *. float_of_int a.ph
-  in
-  if not (frames t.placed.(t.focus).rect) then t.focus <- Code_units.deepest t.placed (fun q -> frames q.rect);
-  let i = t.focus in
-  let u = to_u t.cam mpx and v = to_v t.cam mpy in
-  let on_map = on a mpx mpy in
-  let wheel =
-    if mouse.mwheel = 0. || not on_map || t.peek <> None then 0
-    else if now -. t.wheel_at < 0.3 then (t.wheel_at <- now; t.wheel_debt <- 0.; 0)
-    else begin
-      t.wheel_debt <- t.wheel_debt +. mouse.mwheel;
-      if Float.abs t.wheel_debt < 1. then 0
-      else begin
-        let step = if t.wheel_debt > 0. then 1 else -1 in
-        t.wheel_debt <- 0.;
-        t.wheel_at <- now;
-        step
-      end
-    end
-  in
-  let is_file = match t.placed.(i).node with File _ -> true | Dir _ -> false in
-  let side : Code_units.side option =
-    match arrow with Some "ArrowLeft" -> Some Left | Some "ArrowRight" -> Some Right | Some "ArrowUp" -> Some Up | Some "ArrowDown" -> Some Down | _ -> None
-  in
-  let centre () = (t.target.cx, t.target.cy) in
-  match side with
-  | Some side -> Code_units.sibling t.placed i side
-  | None ->
-      if pressed "Home" || pressed "0" then Some 0
-      else if pressed "Backspace" || (mouse.mrdown && not t.before_right) || pressed "-" || wheel < 0 then Code_units.parent t.placed i
-      else if pressed "=" || pressed "+" then (let cu, cv = centre () in Code_units.toward t.placed i cu cv)
-      else if wheel > 0 then Code_units.toward t.placed i u v
-      else if clicked then
-        match t.style.unit_at t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
-        | Some j -> Some j
-        | None -> (
-            (* a section's title (Map_atlas's, column -1) is peeked at, not flown into *)
-            match t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
-            | Some (_, _, c) when c < 0 -> None
-            | _ -> if is_file then None else Code_units.toward t.placed i u v)
-      else None
-
-(* claude: a search's hit gone to (Enter, or a click on a match): a
- * directory or file framed; a definition's or a line's file, and its
- * definition peeked at *)
-let search_go (t : t) (h : Code_search.hit) : camera option =
-  let found = ref None in
-  Array.iteri (fun i (p : entry Treemap.placed) -> if p.path = h.path then found := Some i) t.placed;
-  match !found with
-  (* claude: a hit beyond the map (a program's map, searching the whole
-   * repository): peeked at where one is *)
-  | None ->
-      (if h.kind = Def || h.kind = Text then
-         let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
-         open_peek t file_of (h.path, h.line));
-      None
-  | Some i ->
-      t.focus <- i;
-      t.jumped <- None;
-      t.choices <- None;
-      t.peek <- None;
-      t.peek_stack <- [];
-      (if h.kind = Def || h.kind = Text then
-         let file_of p = List.find_map (fun (e : entry) -> if e.path = p then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
-         open_peek t file_of (h.path, h.line));
-      Some (fit t.target.a t.placed.(i).rect)
-
-(* claude: a config's tour (Code_guide.tours): each stop a file and an
- * anchor, flown to and its definition peeked at, the stop's words in a
- * banner (Map_atlas.tour_banner); n the next, p the one before *)
-let tour_go (t : t) (tr : Code_guide.tour) (k : int) : camera option =
-  match List.nth_opt tr.stops k with
-  | None -> None
-  | Some i ->
-      t.tour_on <- Some (tr, k);
-      let hit : Code_search.hit =
-        match Code_guide.split i.at with
-        | Some path, anchor -> (
-            match Map_atlas.anchor_line t path anchor with Some line -> { kind = Def; path; line; name = Code_guide.anchor_name anchor } | None -> { kind = File; path; line = 0; name = path })
-        | None, path -> { kind = File; path; line = 0; name = path }
-      in
-      search_go t hit
-
-(* claude: a config's view: its files, or a file and those it uses or
- * that use it (Code_rank.links) *)
-let view_set (t : t) (v : Code_guide.view) : string list =
-  match v.of_ with
-  | None -> v.files
-  | Some f ->
-      let links = Code_rank.links (rank_of t) in
-      let others =
-        List.filter_map
-          (fun (a, b, _) ->
-            match v.with_ with
-            | Some "uses" -> if a = f then Some b else None
-            | _ -> if b = f then Some a else None)
-          links
-      in
-      f :: List.sort_uniq compare others @ v.files
-
-(* claude: back from the matrix (Map_graph): a unit flown to, a
- * definition peeked at *)
-let go_back_to (t : t) (path : string) (line : int option) : t =
-  let is_file = List.exists (fun (e : entry) -> e.path = path) (t.entries @ t.beyond) in
-  let hit : Code_search.hit =
-    match line with
-    | Some l -> { kind = Def; path; line = l; name = "" }
-    | None -> { kind = (if is_file then File else Dir); path; line = 0; name = "" }
-  in
-  match search_go t hit with Some c -> { t with target = c } | None -> t
-
-let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
+let update_map(computer : computer) ~(pressed : string -> bool) ~(arrow : string option) (t : t) : t * action =
   let mouse = computer.mouse in
   let a = t.target.a in
   let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
@@ -514,7 +87,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     | _ -> target
   in
   (* claude: the glass's shape, the panel's too *)
-  if pressed "o" then cycle_glass ();
+  if pressed "o" then Code_map_glass.cycle_glass ();
   (* claude: at the ground, the file with what it uses (Map_atlas) *)
   (* claude: a: what it uses, then what uses it, then both, then off *)
   (* claude: the first press, the mode that fits the file (uses and
@@ -578,7 +151,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   let units = t.style.units in
   let target = if ((not units) && (pressed "Home" || pressed "0")) || t.placed != before then home a else target in
   if t.placed != before then t.focus <- 0;
-  let target = if (not units) && (pressed "Backspace" || (mouse.mrdown && not t.before_right)) then up { t with target } else target in
+  let target = if (not units) && (pressed "Backspace" || (mouse.mrdown && not t.before_right)) then Code_map_moves.up { t with target } else target in
   let target =
     if units then target
     else if pressed "=" || pressed "+" then { target with z = target.z *. 1.5 }
@@ -589,7 +162,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   let target =
     if mouse.mwheel <> 0. && on_map && not units then
       let u = to_u target mpx and v = to_v target mpy in
-      let z = (clamp_cam { target with z = target.z *. (1.25 ** mouse.mwheel) }).z in
+      let z = (Code_map_moves.clamp_cam { target with z = target.z *. (1.25 ** mouse.mwheel) }).z in
       { target with cx = u -. ((mpx -. (float_of_int a.pw /. 2.)) /. z); cy = v -. ((mpy -. (float_of_int a.ph /. 2.)) /. z); z }
     else target
   in
@@ -617,11 +190,11 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
       (match t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
       | Some (p, l, col) when col >= 0 && l >= 0 -> (
           match file_of p with
-          | Some f -> ( match peek_where t f p l col with Some w when List.length t.peek_stack < 3 -> open_peek t file_of w | _ -> ())
+          | Some f -> ( match Code_map_peek.peek_where t f p l col with Some w when List.length t.peek_stack < 3 -> Code_map_peek.open_peek t file_of w | _ -> ())
           | None -> ())
       (* inside the peek, not on a line (its title): nothing *)
       | Some _ -> ()
-      | None -> close_peek t);
+      | None -> Code_map_peek.close_peek t);
       false
     end
     else clicked
@@ -648,7 +221,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     if clicked && units then
       match (Map_atlas.street_title_at t t.cam mpx mpy, Map_atlas.hovered_bone t t.cam, Map_atlas.hovered_match t t.cam) with
       (* claude: a street panel's name clicked: to that file, its street *)
-      | Some path, _, _ -> (search_go t { kind = File; path; line = 0; name = path }, false)
+      | Some path, _, _ -> (Code_map_moves.search_go t { kind = File; path; line = 0; name = path }, false)
       | None, bone, found -> (
       match (bone, found) with
       (* claude: a bone clicked (the X-ray's): its definition peeked at,
@@ -659,8 +232,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
             | Some line when bn.banchor <> "" -> { kind = Def; path = bn.bpath; line; name = bn.role }
             | _ -> { kind = File; path = bn.bpath; line = 0; name = bn.role }
           in
-          (search_go t hit, false)
-      | None, Some (h, _, _) -> (search_go t h, false)
+          (Code_map_moves.search_go t hit, false)
+      | None, Some (h, _, _) -> (Code_map_moves.search_go t h, false)
       | None, None -> (None, clicked))
     else (None, clicked)
   in
@@ -671,7 +244,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
    * is the top too: up from it leaves, not to the root around it *)
   let at_top = t.focus = 0 || (t.top_kept && Code_units.children t.placed 0 = [ t.focus ]) in
   let up_from_top = units && at_top && t.peek = None && (pressed "Backspace" || pressed "-" || (mouse.mrdown && not t.before_right) || mouse.mwheel < 0.) in
-  let moved = if units && not up_from_top then unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
+  let moved = if units && not up_from_top then Code_map_moves.unit_move computer ~pressed ~arrow t ~clicked mpx mpy else None in
   (* claude: going in, a folder holding a single unit goes on to it (the
    * author, at Linux 0.01's init/: three clicks to reach main.c) *)
   let moved =
@@ -714,10 +287,10 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   let choice = match t.choices with Some cs -> List.find_opt (fun k -> k <= List.length cs && pressed (string_of_int k)) [ 1; 2; 3; 4; 5; 6; 7; 8; 9 ] | None -> None in
   let target, action =
     if pressed "Escape" && t.help then (t.help <- false; (target, Stay))
-    else if pressed "Escape" && t.peek <> None then (close_peek t; (target, Stay))
+    else if pressed "Escape" && t.peek <> None then (Code_map_peek.close_peek t; (target, Stay))
     else if pressed "Escape" && t.choices <> None then (t.choices <- None; (target, Stay))
     else if pressed "Escape" then (target, Close)
-    else if choice <> None then (go_to t target (List.nth (Option.get t.choices) (Option.get choice - 1)), Stay)
+    else if choice <> None then (Code_map_moves.go_to t target (List.nth (Option.get t.choices) (Option.get choice - 1)), Stay)
     else if pressed "b" then
       match t.back with
       | (c, j) :: rest ->
@@ -748,11 +321,11 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
                * the map (Map_atlas's peek): the name's under the mouse, its
                * own file's or, defined elsewhere, found there; else the
                * definition the line is in *)
-              if col >= 0 then Option.iter (open_peek t file_of) (peek_where t f path line col);
+              if col >= 0 then Option.iter (Code_map_peek.open_peek t file_of) (Code_map_peek.peek_where t f path line col);
               (* a section's title (col -1, Map_atlas's table of contents): the
                * whole section *)
               if col < 0 then begin
-                let first, last = section_extent f line in
+                let first, last = Code_map_peek.section_extent f line in
                 t.peek <- Some (path, first, last);
                 t.peek_scroll <- 0
               end;
@@ -771,7 +344,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
               in
               if pressed "Enter" then (target, Open (Lazy.force e.file, line_at g p.rect u v))
               else if close_enough then
-                match name_under t u v with
+                match Code_map_moves.name_under t u v with
                 | Some (_, o) ->
                     let bl, bc = o.bound_at in
                     let x, y = name_pos p.rect g bl bc in
@@ -781,13 +354,13 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
                 | None -> (
                     (* claude: defined elsewhere: there if sure, else the
                      * places to choose from *)
-                    match ref_under t u v with
+                    match Code_map_moves.ref_under t u v with
                     | Some (_, path, r) -> (
-                        match found t i path r with
+                        match Code_map_moves.found t i path r with
                         | [], _ ->
                             t.note <- r.rname ^ ": not in this map";
                             (target, Stay)
-                        | c :: _, true -> (go_to t target c, Stay)
+                        | c :: _, true -> (Code_map_moves.go_to t target c, Stay)
                         | cs, false ->
                             t.choices <- Some cs;
                             (target, Stay))
@@ -798,8 +371,8 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
     end
     else (target, Stay)
   in
-  let target = clamp_cam target in
-  let cam = if cam_now then target else ease t.cam target in
+  let target = Code_map_moves.clamp_cam target in
+  let cam = if cam_now then target else Code_map_moves.ease t.cam target in
   (* claude: the folder laid out anew, or back up from the top *)
   let action =
     match (with_ties, zoom, action) with
@@ -850,7 +423,7 @@ let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
         end
         else
           let k = if pressed "n" then min (List.length tr.stops - 1) (k + 1) else max 0 (k - 1) in
-          match tour_go t tr k with Some c -> { t with target = c } | None -> t
+          match Code_map_moves.tour_go t tr k with Some c -> { t with target = c } | None -> t
       in
       update_map computer ~pressed:(fun _ -> false) ~arrow:None t
   | None -> update_map computer ~pressed ~arrow t
@@ -893,15 +466,15 @@ let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
               (* claude: a view: its files together; a tour: its first stop *)
               | Some { kind = View; line; _ } -> (
                   t.search <- None;
-                  match List.nth_opt (Code_guide.views t.guide) line with Some v -> (t, Select (v.vname, view_set t v)) | None -> (t, Stay))
+                  match List.nth_opt (Code_guide.views t.guide) line with Some v -> (t, Select (v.vname, Code_map_moves.view_set t v)) | None -> (t, Stay))
               | Some { kind = Tour; line; _ } -> (
                   t.search <- None;
                   match List.nth_opt (Code_guide.tours t.guide) line with
-                  | Some tr -> ( match tour_go t tr 0 with Some c -> ({ t with target = c }, Stay) | None -> (t, Stay))
+                  | Some tr -> ( match Code_map_moves.tour_go t tr 0 with Some c -> ({ t with target = c }, Stay) | None -> (t, Stay))
                   | None -> (t, Stay))
               | Some h ->
                   t.search <- None;
-                  (match search_go t h with Some c -> ({ t with target = c }, Stay) | None -> (t, Stay))
+                  (match Code_map_moves.search_go t h with Some c -> ({ t with target = c }, Stay) | None -> (t, Stay))
               | None -> (t, Stay))
         end
         else begin
@@ -921,470 +494,6 @@ let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
       in
       let t, a = update_map computer ~pressed:(fun _ -> false) ~arrow:None t in
       (t, if action <> Stay then action else a)
-
-(*****************************************************************************)
-(* View *)
-(*****************************************************************************)
-
-(* claude: on the map read up close, as in the file view (Code_view): the
- * name under the mouse, its binding framed cyan and its uses lit yellow,
- * in its file; and the binding a click went to, lit green *)
-let names_lit (computer : computer) (t : t) : shape list =
-  (* claude: on a file, Map_atlas lights the names itself, where its lines
-   * are (Map_cards.names_glow): the treemap is not what is on the map *)
-  if t.style.units && (match t.placed.(t.focus).node with File _ -> true | Dir _ -> false) then []
-  else
-  let c = t.cam in
-  let a = c.a in
-  (* [glow]: pulsing (Code_view.glow), where the eye must go *)
-  let place ?(glow = false) (i : int) ((line, col) : int * int) (len : int) (color : color) (alpha : float) : shape list =
-    match t.geometry.(i) with
-    | Some g ->
-        let x, y = name_pos t.placed.(i).rect g line col in
-        let w = float_of_int len *. g.cell_w *. c.z and h = g.cell_h *. c.z in
-        let px = to_px c x +. (w /. 2.) and py = to_py c y +. (h /. 2.) in
-        if not (on a px py) then []
-        else if glow then List.map (move (sx a px) (sy a py)) (Code_view.glow computer color w h)
-        else [ rectangle color w h |> move (sx a px) (sy a py) |> fade alpha ]
-    | None -> []
-  in
-  let file (i : int) = match t.placed.(i).node with File (_, _, e) when Lazy.is_val e.file -> Some (Lazy.force e.file) | _ -> None in
-  let mouse = computer.mouse in
-  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
-  let u = to_u c mpx and v = to_v c mpy in
-  let hovered =
-    if t.moving || not (on a mpx mpy && readable_at t u v) then []
-    else
-      match name_under t u v with
-      | Some (i, o) -> (
-          match file i with
-          | Some f ->
-              List.concat_map
-                (fun (w : Highlight_code.occurrence) ->
-                  let binding = (w.line, w.col) = o.bound_at in
-                  place ~glow:binding i (w.line, w.col) w.len (if binding then rgb 0 225 255 else yellow) 0.25)
-                (Code_file.uses f o)
-          | None -> [])
-      | None -> []
-  in
-  let jumped =
-    match t.jumped with
-    | Some (i, at) -> (
-        match file i with
-        | Some f -> (
-            match Code_file.name_at f (fst at) (snd at) with Some o -> place ~glow:true i at o.len (rgb 90 210 120) 0.45 | None -> [])
-        | None -> [])
-    | None -> []
-  in
-  (* claude: a name defined elsewhere, framed magenta (level 3) *)
-  let elsewhere =
-    if hovered <> [] || t.moving || not (on a mpx mpy && readable_at t u v) then []
-    else match ref_under t u v with Some (i, _, r) -> place i (r.rline, r.rcol) r.rlen (rgb 230 90 230) 0.3 | None -> []
-  in
-  (* the places to choose from, numbered *)
-  let choices =
-    match t.choices with
-    | Some cs ->
-        let cs = List.filteri (fun k _ -> k < 9) cs in
-        let n = List.length cs in
-        let row_h = 22. and w = 700. in
-        let top = computer.screen.bottom +. 90. +. (float_of_int n *. row_h) in
-        [ rectangle (rgb 20 18 40) w ((float_of_int n *. row_h) +. 40.) |> move 0. (top -. ((float_of_int n *. row_h) /. 2.) +. 8.) |> fade 0.92 ]
-        @ [ words yellow "several places: 1 to 9 to choose, esc to close" |> scale (13. /. words_font_size) |> move 0. (top +. 14.) ]
-        @ List.mapi
-            (fun k (c : Code_names.candidate) ->
-              words ink (Printf.sprintf "%d   %s:%d%s" (k + 1) c.path (c.line + 1) (if c.other_project then "   (another project)" else ""))
-              |> scale (14. /. words_font_size)
-              |> move 0. (top -. (float_of_int (k + 1) *. row_h) +. 6.))
-            cs
-    | None -> []
-  in
-  jumped @ hovered @ elsewhere @ choices
-
-(* claude: for the status line: where the name under the mouse, defined
- * elsewhere, goes; or what the last click found (Code_map.note) *)
-let where_to (computer : computer) (t : t) : string option =
-  let c = t.cam in
-  let a = c.a in
-  let mpx = px_of a computer.mouse.mx and mpy = py_of a computer.mouse.my in
-  let u = to_u c mpx and v = to_v c mpy in
-  let hover =
-    if t.moving || not (on a mpx mpy && readable_at t u v) then None
-    else
-      match ref_under t u v with
-      | Some (i, path, r) -> (
-          let name = String.concat "." (r.rpath @ [ r.rname ]) in
-          match found t i path r with
-          | [], _ -> Some (name ^ ": not in this map")
-          | c :: _, true ->
-              Some
-                (Printf.sprintf "%s -> %s:%d%s   (click to go, b back)" name c.path (c.line + 1)
-                   (if c.other_project then ", in another project" else ""))
-          | cs, false -> Some (Printf.sprintf "%s -> %d places as near (click to choose)" name (List.length cs)))
-      | None -> None
-  in
-  match hover with Some s -> Some s | None -> if t.note <> "" then Some t.note else None
-
-(* claude: every key, explained (h): the author, "all keys should be
- * explained at the bottom or in a hover card" *)
-let keys_help = [
-  ("Moving", "");
-  ("click, wheel forward, +", "in: a folder, a file, a unit at a time");
-  ("right click, wheel back, -, Backspace", "out: the unit around");
-  ("arrows", "beside: the next unit left, right, up, down");
-  ("0, Home", "the whole map");
-  ("Seeing more", "");
-  ("hover a name", "its card: what the configs say of it; a folder's or file's ties drawn");
-  ("click a name in the code", "a peek at its definition; the wheel scrolls it; Escape closes");
-  ("a", "at a file: its neighbours, what it uses, what uses it (a again: the next)");
-  ("x", "the X-ray: the skeleton; x again, the next one; 1-5 the plates (hover the legend)");
-  ("m", "the marks: patterns lit everywhere (the configs', and those kept)");
-  ("l", "the layers, shift+l back: the map coloured by a measure (used vs using, the call depth, roles, tested, described)");
-  ("Searching", "");
-  ("/", "search: a name, or file: dir: def: type: view: tour: bone: text: ref:");
-  ("  in the search", "Tab complete, up/down choose, Enter go, shift+Enter all found together, ctrl+Enter a mark");
-  ("Dependencies", "");
-  ("shift+click a name", "it and the units tied to it, together (d: users, uses, both, alone)");
-  ("g, ctrl+click a name", "codegraph's matrix of it and its ties");
-  ("g over nothing", "the matrix of where one is: its parts against each other");
-  ("Tours and views", "");
-  ("n, p", "the tour: the next stop, the one before");
-  ("w", "a program's map: its own code, with what it uses, the whole repository");
-  ("Enter", "the file view, the file read whole");
-  ("b", "back, after a jump to a definition");
-  ("y", "the other style of map (atlas, classic: the code painted from afar, the wheel zooming freely)");
-  ("h", "this help; Escape, back");
-]
-
-let help_shapes (computer : computer) : shape list =
-  let screen = computer.screen in
-  let w = 980. and row = 22. in
-  let h = 40. +. (row *. float_of_int (List.length keys_help)) in
-  let top = h /. 2. in
-  ignore screen;
-  [ rectangle yellow (w +. 4.) (h +. 4.) |> fade 0.5; rectangle (rgb 16 14 34) w h |> fade 0.97 ]
-  @ List.concat
-      (List.mapi
-         (fun i (k, what) ->
-           let y = top -. 30. -. (float_of_int i *. row) in
-           let x0 = -.(w /. 2.) +. 24. in
-           if what = "" then [ words yellow k |> scale (15. /. words_font_size) |> move (x0 +. (text_width 15. k /. 2.)) y ]
-           else
-             [ words ink k |> scale (14. /. words_font_size) |> move (x0 +. 20. +. (text_width 14. k /. 2.)) y;
-               words dim what |> scale (14. /. words_font_size) |> move (x0 +. 330. +. (text_width 14. what /. 2.)) y ])
-         keys_help)
-
-(* claude: the code map's version, at the bottom right (the author: to
- * see at once whether a page runs the latest, a browser keeping the
- * program it has for a while): 0.01, 0.02, ..., raised by hand at each
- * publish of a change to the map (make publish, make codemap-web) *)
-let version = "0.07"
-
-(* claude: a line of keys and what they do, centred at [y], the keys in
- * yellow, the rest dim; the widths Code_map_base.text_width's *)
-let key_line ~(y : float) (items : (string * string) list) : shape list =
-  let size = 12. and gap = "   " in
-  let pieces = List.concat_map (fun (k, d) -> [ (k, yellow); (" " ^ d ^ gap, dim) ]) items in
-  let width s = text_width size s in
-  let total = List.fold_left (fun acc (s, _) -> acc +. width s) 0. pieces -. width gap in
-  let x = ref (-.total /. 2.) in
-  List.map
-    (fun (s, col) ->
-      let w = width s in
-      let shape = words col s |> scale (size /. words_font_size) |> move (!x +. (w /. 2.)) y in
-      x := !x +. w;
-      shape)
-    pieces
-
-let view ?(chrome = true) (computer : computer) (t : t) : shape list =
-  let c = t.cam in
-  let a = c.a in
-  (* claude: the picture at the window's resolution (at_ratio),
-   * anti-aliased, when the camera is still; while it moves, a quick one:
-   * half the screen's resolution, one sample a pixel -- a zoom repaints
-   * every frame, and the sharp picture (7 million pixels at 4K, 4 samples
-   * each) would make it stutter; it comes the frame after the camera
-   * stops *)
-  let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
-  (* claude: a relayout under way: the rectangles on their way, painted
-   * quickly each frame *)
-  let moving_layout = t.morph <> None in
-  let t = let (Time now) = computer.time in morphed t ~now in
-  let still = t.last = Some c && not moving_layout in
-  t.last <- Some c;
-  t.moving <- not still;
-  let want = if still then q else Float.min q 0.5 in
-  let img =
-    match t.painted with
-    | Some (pc, pq, img) when pc = c && pq = want -> img
-    | _ ->
-        let img = t.style.paint ~aa:still t (at_ratio c want) in
-        t.painted <- Some (c, want, img);
-        img
-  in
-  let mouse = computer.mouse in
-  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
-  let u = to_u c mpx and v = to_v c mpy in
-  let hovered = if on a mpx mpy then under t u v else None in
-  t.pointer <- (if on a mpx mpy then Some (u, v) else None);
-  (let (Time now) = computer.time in t.clock <- now);
-  let box color th (x0, y0, x1, y1) = frame a color (float_of_int x0) (float_of_int y0) (float_of_int x1) (float_of_int y1) th in
-  let marks =
-    Array.to_list t.placed
-    |> List.concat_map (fun (p : entry Treemap.placed) ->
-           match p.node with
-           (* claude: not on a file in the atlas (the ground, the street): the
-            * treemap is not what is on the map *)
-           | File (_, _, e) when List.mem e.path t.marked && not (t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false) -> (
-               match clip c p.rect with Some b -> box yellow 3. b | None -> [])
-           | _ -> [])
-  in
-  (* claude: a style's own place under the mouse (Map_atlas's ground: the
-   * lines laid out anew), else the treemap's *)
-  let picked = if on a mpx mpy then t.style.pick t c q mpx mpy else None in
-  (* a file's line, and the definition it is in, for the status line *)
-  let where (e : entry) (line : int) =
-    let def =
-      if Lazy.is_val e.file then List.fold_left (fun acc (l, name, _) -> if l <= line then Some name else acc) None (Lazy.force e.file).defs
-      else None
-    in
-    Printf.sprintf "%s:%d%s   (%d lines)" e.path (line + 1) (match def with Some d -> "   " ^ d | None -> "") e.nlines
-  in
-  (* claude: on a file (Map_atlas's ground and street) the treemap is not
-   * what is on the map: no frame, and the status line the style's place
-   * under the mouse (its file and line, a panel's too), else nothing *)
-  let on_a_file = t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false in
-  let hover, status =
-    match (picked, hovered) with
-    (* claude: a peek open (Map_atlas's) is what is under the mouse *)
-    | _ when t.peek <> None -> ([], "")
-    | Some (path, line, _), _ -> ([], match List.find_opt (fun (e : entry) -> e.path = path) t.entries with Some e -> where e line | None -> "")
-    | None, _ when on_a_file -> ([], "")
-    | None, Some i -> (
-        let p = t.placed.(i) in
-        (* claude: no frame round the unit one is in *)
-        let frame = match clip c p.rect with Some b when not (t.style.units && i = t.focus) -> box white 1.5 b | _ -> [] in
-        match (p.node, t.geometry.(i)) with
-        | File (_, _, e), Some g -> (frame, where e (line_at g p.rect u v))
-        | _ -> (frame, p.path))
-    | None, None -> ([], "")
-  in
-  let algo = match t.algo with Ordered -> "ordered" | Squarified -> "squarified" | Slice_and_dice -> "slice and dice" in
-  let screen = computer.screen in
-  (if chrome then [ rectangle (rgb 12 10 28) screen.width screen.height ] else [])
-  @ [ bitmap (float_of_int a.pw) (float_of_int a.ph) img |> move (sx a (float_of_int a.pw /. 2.)) (sy a (float_of_int a.ph /. 2.)) ]
-  @ t.style.labels t c q @ marks
-  @
-  if not chrome then []
-  else
-    hover @ names_lit computer t
-    @ (if t.help then help_shapes computer else [])
-    @ [
-        (* claude: flown into a unit (the atlas), its summary, not the project's
-         * (the author: "at earth level it's the summary of the project,
-         * but at appkit level the summary of what appkit is") *)
-        (let title =
-           if t.style.units && t.focus <> 0 then
-             let p = t.placed.(t.focus) in
-             let said =
-               match p.node with
-               | File _ -> Option.bind (Code_guide.file_note t.guide p.path) (fun n -> n.summary)
-               | Dir _ -> Code_guide.dir_summary t.guide p.path
-             in
-             match said with Some s -> p.path ^ ": " ^ s | None -> p.path
-           else t.title
-         in
-         words yellow title |> scale (22. /. words_font_size) |> move 0. (screen.top -. 45.));
-        words ink (match where_to computer t with Some s -> s | None -> status) |> scale (14. /. words_font_size) |> move 0. (screen.bottom +. 45.);
-      ]
-      (* claude: the keys in yellow, what they do dim (the author: "so it
-       * reads better"), laid out from the centre *)
-      @ [ words dim ("code map " ^ version) |> scale (12. /. words_font_size) |> move (screen.right -. 60.) (screen.bottom +. 18.) ]
-      @ key_line ~y:(screen.bottom +. 18.)
-          (if t.style.units then
-             [ ("h", "every key"); ("click", "in"); ("right click", "out"); ("/", "search"); ("a", "a file's neighbours"); ("x", "skeleton"); ("m", "marks"); ("l", "layers"); ("g", "the matrix"); ("esc", "back") ]
-           else
-             [ ("wheel", "zoom"); ("drag", "pan"); ("click", "fly in, a name to its definition (b back)"); ("enter", "the file view"); ("right click", "up"); ("y", Printf.sprintf "style (%s)" t.style.sname);
-               ("t", Printf.sprintf "layout (%s)" algo); ("n", "tour (p back)"); ("o", Printf.sprintf "glass (%s)" (glass_name ())); ("0", "all"); ("esc", "back") ])
-
-(*****************************************************************************)
-(* The magnifying glass *)
-(*****************************************************************************)
-
-(* claude: a glass over the map, the part under the cursor closer. Not a
- * zoom of the map's picture (that would only enlarge its pixels, blurred,
- * the problem pixel_ratio solved): the part under the glass painted
- * again, by the same paint, with a camera [power] times closer, at the
- * window's resolution, anti-aliased. The power is chosen for the file
- * under the cursor, so that its lines come out about 16 units high, the
- * VGA font's own size: readable whatever the file's size. The glass's
- * shape is its picture's pixels made transparent (alpha 0, a soft edge):
- * the playground has no clipping. Painted again only when the cursor
- * moves.
- *
- * Two glasses. A round one, a glance at the code under the mouse. A
- * reading glass, the rectangular
- * kind laid over a page, where one reads: 80 columns of 8 units (640,
- * and a margin) by some 16 lines, whole lines of code rather than a
- * keyhole of them. o goes from one to the other, and to none (the
- * glass always enlarges, even over code big enough to read: none is the
- * way to be rid of it). *)
-
-(* the file under the mouse (its rectangle and geometry), and the power
- * that makes its lines 16 units high; None when the mouse is off the map *)
-let under_glass (computer : computer) (t : t) =
-  let c = t.cam in
-  let a = c.a in
-  let mouse = computer.mouse in
-  let mpx = px_of a mouse.mx and mpy = py_of a mouse.my in
-  if not (on a mpx mpy) then None
-  else
-    let u = to_u c mpx and v = to_v c mpy in
-    let file = match under t u v with Some i -> ( match t.geometry.(i) with Some g -> Some (t.placed.(i).rect, g) | None -> None) | None -> None in
-    let power = match file with Some (_, g) -> float_of_int Vga_font.height /. (g.cell_h *. c.z) | None -> 4. in
-    Some (u, v, file, power)
-
-(* the part of the map [lc] sees, painted, the pixels of its picture out
- * of the glass's shape transparent: [alpha w h fx fy], w and h the
- * picture's size, fx fy a pixel's centre, gives its alpha *)
-let glass_picture (t : t) (lc : camera) (alpha : float -> float -> float -> float -> int option) : Rgba_image.t * float =
-  let q = Float.max 0.5 (Float.min 3. (Playground_platform.pixel_ratio ())) in
-  let img =
-    match t.lens with
-    | Some (pc, img) when pc = lc && img.width = (at_ratio lc q).a.pw -> img
-    | _ ->
-        let img = t.style.paint ~aa:true t (at_ratio lc q) in
-        let w = float_of_int img.width and h = float_of_int img.height in
-        for y = 0 to img.height - 1 do
-          for x = 0 to img.width - 1 do
-            match alpha w h (float_of_int x +. 0.5) (float_of_int y +. 0.5) with
-            | Some al -> Bigarray.Array1.unsafe_set img.rgba ((4 * ((y * img.width) + x)) + 3) al
-            | None -> ()
-          done
-        done;
-        t.lens <- Some (lc, img);
-        img
-  in
-  (img, q)
-
-(* one pixel of soft edge, [dist] from a circle's centre of radius [r] *)
-let soft_edge (r : float) (dist : float) : int = if dist <= r -. 1. then 255 else if dist >= r then 0 else int_of_float ((r -. dist) *. 255.)
-
-(* the round glass: centred on the point under the cursor *)
-let lens_radius = 185.
-
-let lens (computer : computer) (t : t) : shape list =
-  match under_glass computer t with
-  | None -> []
-  | Some (u, v, _, power) ->
-      let power = Float.max 2. (Float.min 10. power) in
-      let d = int_of_float (2. *. lens_radius) in
-      let lc = { cx = u; cy = v; z = t.cam.z *. power; a = { (t.cam.a) with pw = d; ph = d } } in
-      let img, _ =
-        glass_picture t lc (fun w _ fx fy ->
-            let r = w /. 2. in
-            let dx = fx -. r and dy = fy -. r in
-            Some (soft_edge r (Float.sqrt ((dx *. dx) +. (dy *. dy)))))
-      in
-      let x = computer.mouse.mx and y = computer.mouse.my in
-      let r = lens_radius in
-      [
-        (* the handle, down and to the right, as a magnifying glass is held *)
-        rectangle (rgb 90 60 30) 22. 110. |> move 0. (-.(r +. 50.)) |> rotate 45. |> move x y;
-        rectangle (rgb 150 150 160) 26. 18. |> move 0. (-.(r +. 4.)) |> rotate 45. |> move x y;
-        (* the rim *)
-        circle (rgb 40 40 50) (r +. 9.) |> move x y;
-        circle (rgb 190 190 205) (r +. 6.) |> move x y;
-        circle (rgb 12 10 28) (r +. 1.) |> move x y;
-        bitmap (2. *. r) (2. *. r) img |> move x y;
-        (* a glint on the glass *)
-        oval white (r *. 0.5) (r *. 0.18) |> rotate 35. |> move (x -. (r *. 0.45)) (y +. (r *. 0.55)) |> fade 0.12;
-        words (rgb 190 190 205) (Printf.sprintf "x%.0f" power) |> scale (12. /. words_font_size) |> move (x +. (r *. 0.62)) (y -. (r *. 0.85));
-      ]
-
-(* the reading glass. Over a file, it lines up with the start of the
- * column of lines under the mouse (a file is laid out in several), so it
- * shows whole lines from their first character, not the end of one column
- * and the start of the next; up and down, the line under the mouse is
- * drawn where the mouse is. It stays on the screen. *)
-let reading_w = 660.
-let reading_h = 272.
-let reading_corner = 22.
-
-(* a rectangle with rounded corners, from rectangles and circles (the
- * playground has no rounded rectangle) *)
-let rounded (color : color) (w : number) (h : number) (r : number) : shape =
-  group
-    [
-      rectangle color w (h -. (2. *. r));
-      rectangle color (w -. (2. *. r)) h;
-      circle color r |> move ((w /. 2.) -. r) ((h /. 2.) -. r);
-      circle color r |> move (-.((w /. 2.) -. r)) ((h /. 2.) -. r);
-      circle color r |> move ((w /. 2.) -. r) (-.((h /. 2.) -. r));
-      circle color r |> move (-.((w /. 2.) -. r)) (-.((h /. 2.) -. r));
-    ]
-
-let reading_glass (computer : computer) (t : t) : shape list =
-  match under_glass computer t with
-  | None -> []
-  | Some (u, v, file, power) ->
-      let power = Float.max 1.5 (Float.min 10. power) in
-      let c = t.cam in
-      let a = c.a in
-      let mouse = computer.mouse in
-      let z = c.z *. power in
-      let margin = 10. in
-      let screen = computer.screen in
-      let keep lo hi x = Float.max lo (Float.min hi x) in
-      let on_screen_x x = keep (screen.left +. (reading_w /. 2.) +. 4.) (screen.right -. (reading_w /. 2.) -. 4.) x in
-      let gy = keep (screen.bottom +. (reading_h /. 2.) +. 4.) (screen.top -. (reading_h /. 2.) -. 4.) mouse.my in
-      (* across: the column's start at the glass's left margin, the glass
-       * over the column on the map; else the point under the mouse where
-       * the mouse is *)
-      let gx, cx =
-        match file with
-        | Some (r, g) ->
-            let start = r.x +. (Float.floor ((u -. r.x) /. g.colw) *. g.colw) in
-            (on_screen_x (sx a (to_px c start) +. (reading_w /. 2.) -. margin), start +. (((reading_w /. 2.) -. margin) /. z))
-        | None ->
-            let gx = on_screen_x mouse.mx in
-            (gx, u +. ((gx -. mouse.mx) /. z))
-      in
-      (* down: the line under the mouse drawn where the mouse is *)
-      let lc = { cx; cy = v -. ((gy -. mouse.my) /. z); z; a = { a with pw = int_of_float reading_w; ph = int_of_float reading_h } } in
-      let img, _ =
-        glass_picture t lc (fun w h fx fy ->
-            (* rounded corners: the distance to the corner's centre *)
-            let r = reading_corner *. (w /. reading_w) in
-            let dx = Float.max 0. (Float.max (r -. fx) (fx -. (w -. r))) and dy = Float.max 0. (Float.max (r -. fy) (fy -. (h -. r))) in
-            if dx > 0. && dy > 0. then Some (soft_edge r (Float.sqrt ((dx *. dx) +. (dy *. dy)))) else None)
-      in
-      let w = reading_w and h = reading_h and r = reading_corner in
-      [
-        (* the handle, from the bottom right corner, as a reading glass is held *)
-        rectangle (rgb 90 60 30) 24. 120. |> move 0. (-60.) |> rotate 45. |> move (gx +. (w /. 2.) -. 10.) (gy -. (h /. 2.) +. 10.);
-        (* the rim *)
-        rounded (rgb 40 40 50) (w +. 18.) (h +. 18.) (r +. 9.) |> move gx gy;
-        rounded (rgb 190 190 205) (w +. 12.) (h +. 12.) (r +. 6.) |> move gx gy;
-        rounded (rgb 12 10 28) (w +. 2.) (h +. 2.) (r +. 1.) |> move gx gy;
-        bitmap w h img |> move gx gy;
-        (* a glint on the glass *)
-        oval white (w *. 0.3) (h *. 0.1) |> rotate 8. |> move (gx -. (w *. 0.28)) (gy +. (h *. 0.36)) |> fade 0.1;
-        words (rgb 190 190 205) (Printf.sprintf "x%.1f" power) |> scale (12. /. words_font_size) |> move (gx +. (w /. 2.) -. 24.) (gy +. (h /. 2.) +. 1.);
-      ]
-
-(* claude: no glass while the map moves under it: its picture follows
- * the map's camera, so it would be painted anew every frame, as much
- * again as the map's own (on the web, half of a zoom's frame); it comes
- * back the frame the camera stops, as the map's sharp picture does *)
-let glass ?(panel = false) (computer : computer) (t : t) : shape list =
-  (* claude: none over code read on the map itself, where the names under
-   * the mouse are lit (names_lit) *)
-  let a = t.cam.a in
-  let mpx = px_of a computer.mouse.mx and mpy = py_of a computer.mouse.my in
-  (* claude: none in the atlas, whose hover previews and peeks show the code *)
-  if t.moving || t.style.units || readable_at t (to_u t.cam mpx) (to_v t.cam mpy) then []
-  else match !(shape_of ~panel) with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []
 
 (* claude: a key needing the uses counted (l, the layers; g, the matrix
  * and a unit's ties), pressed while they are not (natively, the menu's
@@ -1406,3 +515,14 @@ let update (computer : computer) ~(pressed : string -> bool) ~(arrow : string op
           t.deferred <- Some k;
           (t, Stay)
       | _ -> update_now computer ~pressed ~arrow t)
+
+(* claude: the parts' own, for the map's users: one module to know *)
+let morph_from = Code_map_view.morph_from
+let view = Code_map_view.view
+let version = Code_map_view.version
+let go_back_to = Code_map_moves.go_back_to
+let stops = Code_map_moves.stops
+let peek_extent = Code_map_peek.peek_extent
+let glass = Code_map_glass.glass
+let cycle_glass = Code_map_glass.cycle_glass
+let glass_name = Code_map_glass.glass_name

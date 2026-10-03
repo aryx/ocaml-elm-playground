@@ -42,7 +42,7 @@
     'Map_cards.mli': { digest: '9a694437b8d8',
       summary: "Under the mouse and beside the code: a unit's card and ties, the config's notes, previews of code.",
     },
-    'Map_cards.ml': { digest: '90321b0f609f',
+    'Map_cards.ml': { digest: '599161d69891',
       summary: "The hover card, the roads to a unit's users and uses, the ground's notes, the street's titles, cards of code.",
       important: [
         { at: 'def:card', say: 'what the configs say, on hover', weight: 2 },

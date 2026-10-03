@@ -59,12 +59,12 @@
         { at: 'Timing.ml', role: "the curve: a time's fraction to the way's" },
         { at: 'Animation.ml', role: 'a value on its way; implicit animations by key' },
         { at: 'Transition.ml', role: "a layout's rectangles, before to after" },
-        { at: '../../../launcher/codemap/Code_map.ml:def:morphed', role: 'the user: the map relaid out, animated' },
+        { at: '../../../launcher/codemap/Code_map_view.ml:def:morphed', role: 'the user: the map relaid out, animated' },
       ],
       joints: [
         { from: 'Animation.ml', to: 'Timing.ml', say: 'its progress' },
-        { from: '../../../launcher/codemap/Code_map.ml:def:morphed', to: 'Timing.ml', say: 'ease_in_out at' },
-        { from: '../../../launcher/codemap/Code_map.ml:def:morphed', to: 'Transition.ml', say: 'the frames at p' },
+        { from: '../../../launcher/codemap/Code_map_view.ml:def:morphed', to: 'Timing.ml', say: 'ease_in_out at' },
+        { from: '../../../launcher/codemap/Code_map_view.ml:def:morphed', to: 'Transition.ml', say: 'the frames at p' },
       ],
     },
     {

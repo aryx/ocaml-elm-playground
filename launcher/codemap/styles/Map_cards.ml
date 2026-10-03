@@ -294,7 +294,7 @@ let line_lit (t : t) (c : camera) (e : entry) : shape list =
 
 (* claude: at the ground or the street, the name under the mouse bound
  * in its file: its binding pulsing cyan, its uses yellow, as on the
- * map read up close (Code_map.names_lit), placed where the lines are
+ * map read up close (Code_map_view.names_lit), placed where the lines are
  * laid out now (Code_ground), in the focus and in the panels; and a use
  * in a line too thin to read magnified while the mouse is there, a
  * callout (the author: "temporarily magnify the calls") -- not the
