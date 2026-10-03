@@ -605,6 +605,11 @@
   quoted one -- from OCaml 5.2 a CR LF in a string literal is read as
   an LF, and the dictionary has 110 of them (122,674 bytes left of
   122,784: wrong words on OCaml 5.2 and later)
+- 0.3.6, what opam-repository's review asked of 0.3.5: one bound on
+  dune in each opam file ("dune" {>= "3.17"}, not {>= "3.0" & >=
+  "3.17"}) -- the dune language is 3.17, and no package lists dune
+  among its dependencies any more; and the opam files' comments say
+  which virtual library keeps a package off Windows, once
 
 ** docs
 - README-3d.md, and many tutorials in docs/claude_notes/: notes_2d.md,
