@@ -383,20 +383,20 @@ let tests =
           Alcotest.(check bool) "kernel beside lib" true
             (Code_units.sibling placed kernel Right = Some lib || Code_units.sibling placed kernel Down = Some lib);
           Alcotest.(check (list int)) "a.ml's ancestors" [ 0; kernel; a ] (Code_units.ancestors placed a));
-      (* claude: Map_v2's names are clickable: a region's, at its centre,
+      (* claude: Map_atlas's names are clickable: a region's, at its centre,
        * is the region, not a file under it *)
-      Testo.create "v2: a directory's name clicked" (fun () ->
+      Testo.create "atlas: a directory's name clicked" (fun () ->
           let entry path n = { Code_map_base.path; nlines = n; file = lazy (Code_file.make path (String.concat "\n" (List.init n (fun _ -> "let x = 1")))) } in
           let t =
-            Code_map_base.make ~style:Map_v2.style ~area:(0., 0., 800, 600) ~title:"t" ~marked:[]
+            Code_map_base.make ~style:Map_atlas.style ~area:(0., 0., 800, 600) ~title:"t" ~marked:[]
               [ entry "kernel/a.ml" 300; entry "kernel/b.ml" 300; entry "lib/c.ml" 100 ]
           in
           let at = ref (-1) in
           Array.iteri (fun i (p : Code_map_base.entry Treemap.placed) -> if p.path = "kernel" then at := i) t.placed;
           let r = t.placed.(!at).rect in
           let cx = Code_map_base.to_px t.cam (r.x +. (r.w /. 2.)) and cy = Code_map_base.to_py t.cam (r.y +. (r.h /. 2.)) in
-          Alcotest.(check (option int)) "kernel" (Some !at) (Map_v2.unit_at t t.cam 1. cx cy);
-          Alcotest.(check (option int)) "nothing at a corner" None (Map_v2.unit_at t t.cam 1. 1. 1.));
+          Alcotest.(check (option int)) "kernel" (Some !at) (Map_names.unit_at t t.cam 1. cx cy);
+          Alcotest.(check (option int)) "nothing at a corner" None (Map_names.unit_at t t.cam 1. 1. 1.));
       (* claude: the search (/): names, paths, directories, name//, Tab *)
       Testo.create "search: what a query finds" (fun () ->
           let all =

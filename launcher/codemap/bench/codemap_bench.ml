@@ -39,7 +39,7 @@ let () =
   Printf.printf "read: %d files, %.0f ms\n%!" (List.length w.sources) ms;
   let guide, _ = Code_guide.load ~read:(fun p -> Code_walk.read (Filename.concat dir p)) w.configs in
   let screen : Playground.screen = { width = 1778.; height = 1000.; left = -889.; right = 889.; top = 500.; bottom = -500. } in
-  Code_map.choose_style "v2";
+  Code_map.choose_style "atlas";
   (* OPTI=off: the simple code, not the optimized (Opti.mli) *)
   if Sys.getenv_opt "OPTI" = Some "off" then Opti.enabled := false;
   (* RANK=once: the uses counted once and given to every map, as a web

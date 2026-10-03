@@ -1,5 +1,5 @@
-(* Map_v2: the code map redesigned (plan_codemap_v2.md; the name to be
-   found), the default of tinybox codemap <dir>.
+(* Map_atlas: the code map as an atlas (plan_codemap_v2.md), the default
+   style of tinybox codemap <dir>.
 
    The earth and region levels (the plan's step 1): no code from afar,
    it is clutter. A file is its columns -- a strip per column of 80
@@ -42,61 +42,45 @@
    a right click or - one level out, the arrows to a neighbour. The unit
    looked at and those holding it are named on a breadcrumb at the top
    left (clickable too), not over the map; outside it, the map is in the
-   shade, the neighbours' names faint, their files' gone. *)
+   shade, the neighbours' names faint, their files' gone.
 
-(* the picture, and the names (Code_map_base.style's fields) *)
-val paint : aa:bool -> Code_map_base.t -> Code_map_base.camera -> Rgba_image.t
+   claude: a module per concern, each drawing its part and answering the
+   mouse's questions about it; this one puts them together (labels: the
+   order they are drawn in, what hides what) and is the style Code_map
+   chooses:
+
+     Map_paint      the picture: the columns, the ground, the street
+     Map_names      the names over it, placed; the unit under a pixel
+     Map_cards      the hover card, a unit's ties; notes, previews
+     Map_skeleton   the X-ray: bones and joints; where a line is now
+     Map_anatomy    the X-ray's other plates, the legend
+     Map_peek       a definition read over the map
+     Map_search     the search and the marks
+     Map_layers     the map coloured by a measure
+
+   Each uses only those above it in this list. *)
+
+(* the style: Map_paint.paint, [labels], Map_names.unit_at, and
+   the line under a pixel at the ground or in a peek *)
+val style : Code_map_base.style
+
+(* all that is drawn over the picture, back to front: the layer's tints,
+   the notes or the street's titles, the names, the X-ray, a unit's ties
+   and its card, the peeks, the marks and the search, the cards under
+   the mouse, the layer's key, the tour's banner *)
 val labels : Code_map_base.t -> Code_map_base.camera -> float -> Playground.shape list
 
-(* the directory or file whose name is under a pixel of the map ([q],
-   px, py): its index in [placed] *)
-val unit_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> float -> int option
-
-(* claude: the search (/, Code_search): its hits now (the files shown
-   only if asked), and the directories a query ending in // takes
-   together *)
-val search_hits : Code_map_base.t -> Code_search.hit list
-val search_named : Code_map_base.t -> string list
-
-(* claude: all a search found, its directories and files (else its
-   definitions' files), to see together (shift+Enter) *)
-val search_set : Code_map_base.t -> string list
-
-(* claude: the groups of marks l cycles through: those kept (ctrl+Enter
-   in the search), then each config's, their names *)
-val mark_groups : Code_map_base.t -> (string * Code_map_base.mark list) list
+(* claude: What is under the mouse, across the parts *)
 
 (* claude: the match (a search's, a mark's) under the mouse, if any:
    its hit, colour and meaning; a click on it peeks at its definition *)
 val hovered_match : Code_map_base.t -> Code_map_base.camera -> (Code_search.hit * Playground.color * string option) option
 
-(* claude: the street mode that fits the file looked at: 3 its uses and
-   users, 1 its uses only, 2 its users only (a's first press) *)
-val best_street_mode : Code_map_base.t -> int
-
-(* claude: the unit whose name is under the mouse, and the units tied
-   to it, its users and what it uses: shift+click's view *)
-val unit_with_ties : Code_map_base.t -> Code_map_base.camera -> (string * string list * string list) option
+(* claude: the bone under the mouse, in the X-ray: a click peeks at it *)
+val hovered_bone : Code_map_base.t -> Code_map_base.camera -> Code_guide.bone option
 
 (* claude: at the street, the panel whose name is under a pixel *)
 val street_title_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> string option
 
-(* claude: the X-ray's legend row under a pixel (a click toggles it) *)
-val legend_row_at : Code_map_base.t -> Code_map_base.camera -> float -> float -> Code_anatomy.system option
-
-(* claude: at the street, its panels' files *)
-val street_files : Code_map_base.t -> string list
-
-(* claude: the bone under the mouse, in the X-ray: a click peeks at it *)
-val hovered_bone : Code_map_base.t -> Code_map_base.camera -> Code_guide.bone option
-
 (* claude: the line of an anchor ("def:march") in a file of the map *)
 val anchor_line : Code_map_base.t -> string -> string -> int option
-
-(* claude: the marks' colours, one each, in turn *)
-val mark_colours : (int * int * int) list
-
-val style : Code_map_base.style
-
-(* claude: the layers l cycles through (the call stack), how many *)
-val layer_count : int

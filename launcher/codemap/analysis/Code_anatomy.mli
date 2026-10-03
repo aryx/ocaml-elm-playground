@@ -1,5 +1,5 @@
 (* Code_anatomy: a program as a body, each of its systems a plate of the
-   code map's X-ray (plan_codemap_v2.md, "Anatomy"; Map_v2):
+   code map's X-ray (plan_codemap_v2.md, "Anatomy"; Map_atlas):
 
      skeleton  the structure the rest hangs on: bones and joints, the
                configs' (Code_guide.skeleton)

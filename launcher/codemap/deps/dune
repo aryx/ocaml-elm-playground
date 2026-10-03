@@ -7,3 +7,6 @@
  (name tinybox_codedeps)
  (wrapped false)
  (libraries lang_ocaml))
+
+; claude: the folder above gathers its folders' modules; not this one's
+(include_subdirs no)

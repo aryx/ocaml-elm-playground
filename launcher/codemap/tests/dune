@@ -23,3 +23,6 @@
    (glob_files_rec %{project_root}/examples/*.{ml,mli})
    (glob_files %{project_root}/tests/2d/golden/*.png)
    (glob_files %{project_root}/tests/3d/golden/*.png)))
+
+; claude: the folder above gathers its folders' modules; not this one's
+(include_subdirs no)

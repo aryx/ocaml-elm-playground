@@ -3,7 +3,7 @@
    camera and its two spaces, the parts' colours, the pixels painted, a
    file's code painted as SeeSoft's picture or as letters, and the labels
    placed. Code_map includes it, and adds what every style shares (the
-   moves, the names lit and clicked, the glass); a style (Map_v2,
+   moves, the names lit and clicked, the glass); a style (Map_atlas,
    Map_classic) draws the picture and its names.
 
    Two spaces: the layout's, where the treemap is laid out once in a
@@ -70,7 +70,7 @@ type t = {
   style : style; (* how the map is drawn *)
   mutable index : Code_names.index option; (* its files indexed, once (index_of) *)
   mutable rank : Code_rank.t option; (* its definitions' uses, once (rank_of) *)
-  mutable search : search option; (* claude: the search box (/, Map_v2), while open *)
+  mutable search : search option; (* claude: the search box (/, Map_atlas), while open *)
   mutable search_all : Code_search.hit array option; (* claude: what a search looks among, gathered once *)
   mutable tour_on : (Code_guide.tour * int) option; (* claude: a config's tour under way, its stop (n, p) *)
   mutable marks : mark list; (* claude: searches kept, each lit in its colour, all at once (ctrl+Enter in the search) *)
@@ -85,7 +85,7 @@ type t = {
   mutable street : bool; (* claude: at the ground, the file with what it uses (a: Code_street) *)
   mutable street_mode : int; (* claude: 1 what it uses, on the left; 2 what uses it, on the right; 3 both (a cycling) *)
   mutable clock : float; (* claude: the frame's time (view's), for what pulses *)
-  mutable xray : bool; (* claude: the skeletons shown, the rest in the shade (x: Map_v2) *)
+  mutable xray : bool; (* claude: the skeletons shown, the rest in the shade (x: Map_atlas) *)
   mutable xray_n : int; (* claude: which of the skeletons at hand the X-ray shows (x again: the next) *)
   mutable peek : (string * int * int) option; (* claude: a definition's body shown readable over the map: its file, first and last lines (a click at the ground or the street) *)
   mutable peek_scroll : int; (* claude: the peek's first line shown, a long section's scrolled by the wheel *)
@@ -121,11 +121,11 @@ and style = {
   labels : t -> camera -> float -> Playground.shape list;
   (* the definition a label under a pixel of the map ([q], px, py) names,
      if the style's labels name any: its file, line and name *)
-  pick : t -> camera -> float -> float -> float -> (string * int * int) option; (* claude: its file, line and column (Map_v2's ground, street and region panels) *)
+  pick : t -> camera -> float -> float -> float -> (string * int * int) option; (* claude: its file, line and column (Map_atlas's ground, street and region panels) *)
   (* claude: the directory or file whose name is under a pixel of the map,
-     if the style's names are clickable (Map_v2's): a click flies to it *)
+     if the style's names are clickable (Map_atlas's): a click flies to it *)
   unit_at : t -> camera -> float -> float -> float -> int option;
-  (* claude: the camera moves a unit at a time (Code_units: Map_v2's), or
+  (* claude: the camera moves a unit at a time (Code_units: Map_atlas's), or
      freely (the others') *)
   units : bool;
 }

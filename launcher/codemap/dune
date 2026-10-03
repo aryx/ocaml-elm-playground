@@ -3,6 +3,10 @@
 ; source lexed and coloured, languages' highlighters), Code_map (the
 ; treemap under a camera, zoomed at will), Code_view (a file read) and
 ; Codemap (the two, and which files a program's map shows)
+; claude: styles/, analysis/ and layout/ are folders only, their modules
+; this library's; the other subfolders have stanzas of their own
+(include_subdirs unqualified)
+
 (library
  (name tinybox_codemap)
  (wrapped false)

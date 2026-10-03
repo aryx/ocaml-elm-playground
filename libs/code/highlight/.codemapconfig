@@ -37,13 +37,13 @@
         { at: 'Highlight_code.ml', role: 'the colours, and tokens cut into lines' },
         { at: '../../../languages/ocaml/Highlight_ml.ml', role: "OCaml's highlighter, one producer" },
         { at: '../../../languages/c/Highlight_c.ml', role: "C's, another" },
-        { at: '../../../launcher/codemap/Code_file.ml', role: 'the consumer: a file on the map' },
+        { at: '../../../launcher/codemap/analysis/Code_file.ml', role: 'the consumer: a file on the map' },
       ],
       joints: [
         { from: 'Highlight_code.ml', to: 'Highlight_code.mli', say: 'implements' },
         { from: '../../../languages/ocaml/Highlight_ml.ml', to: 'Highlight_code.mli', say: 'produces an analysis' },
         { from: '../../../languages/c/Highlight_c.ml', to: 'Highlight_code.mli', say: 'produces an analysis' },
-        { from: '../../../launcher/codemap/Code_file.ml', to: 'Highlight_code.mli', say: 'reads' },
+        { from: '../../../launcher/codemap/analysis/Code_file.ml', to: 'Highlight_code.mli', say: 'reads' },
       ],
     },
     {

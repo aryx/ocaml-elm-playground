@@ -7,7 +7,7 @@
        user ====------......  used
        green     ->      red
 
-   The roads of Map_v2 (a unit's ties, the skeletons' joints) and of
+   The roads of Map_atlas (a unit's ties, the skeletons' joints) and of
    Code_street (a use to its definition).
 
    Worked example (the tests'): the spline through (0, 0), (10, 10),

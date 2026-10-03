@@ -602,7 +602,7 @@ Each line of the output answers a question:
   which the modules opening it see as `List.map`. **Don't forget the
   `.mli`**: without the module in the interface, the modules opening
   Code_map_base still got Stdlib's `List.map`, and the second run still
-  overflowed, now at `Map_v2.ml:2087`.
+  overflowed, now at `Map_atlas.ml:2087`.
 
 Traps met on the way, each costing a run:
 
@@ -630,7 +630,7 @@ Traps met on the way, each costing a run:
 
 The same run also measures a stall that is not a bug: `/` pressed
 while the files are still being lexed in the background makes the
-search lex the rest at once (Map_v2's `search_all`), a
+search lex the rest at once (Map_atlas's `search_all`), a
 `longest_gap_ms` of 2 to 3 s, once.
 
 ## 12. A native program that freezes or runs hot: sample it, then ask lldb
@@ -658,7 +658,7 @@ found them:
 4. **Find who calls the hot function.** `sample` can't see past
    `caml_c_call`; `lldb -p <pid>` with a breakpoint on it and `bt`
    can. Or a temporary `Printexc.get_callstack` printed where the work
-   starts (a `lazy` forced): it named `Map_v2.unit_ties`, the hover,
+   starts (a `lazy` forced): it named `Map_cards.unit_ties`, the hover,
    starting the 9 s count on the first frame the mouse rested on a
    name.
 5. **A cost that stays after the first fix**: time it late (frame

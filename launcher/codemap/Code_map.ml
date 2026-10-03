@@ -26,10 +26,10 @@ type action = Stay | Open of Code_file.t * int | Close | Select of string * stri
 
 (* claude: the styles, y going from one to the other, one setting for
  * every map (as the glass's), a flag's at the start (style=) *)
-let styles = [ Map_classic.style; Map_v2.style ]
+let styles = [ Map_classic.style; Map_atlas.style ]
 (* claude: v2 the default, everywhere (plan_codemap_v2.md, step 11);
  * the classic behind y, zooming freely, the code painted from afar *)
-let chosen = ref Map_v2.style
+let chosen = ref Map_atlas.style
 let choose_style (name : string) = match List.find_opt (fun s -> s.sname = name) styles with Some s -> chosen := s | None -> ()
 let style_name () = !chosen.sname
 
@@ -369,7 +369,7 @@ let shape_of ~panel = if panel then panel_glass_shape else glass_shape
 let cycle_glass ?(panel = false) () = let g = shape_of ~panel in g := match !g with Round -> Reading | Reading -> No_glass | No_glass -> Round
 let glass_name ?(panel = false) () = match !(shape_of ~panel) with Round -> "round" | Reading -> "wide" | No_glass -> "none"
 
-(* claude: moving by units (Code_units, a style's [units]: Map_v2's):
+(* claude: moving by units (Code_units, a style's [units]: Map_atlas's):
  * where a key, the wheel or a click takes the map, a directory or file at
  * a time -- in, out, beside -- or None. A click on a name goes to it
  * (style.unit_at); on a block, a level down at most; on the ground (a
@@ -421,7 +421,7 @@ let unit_move (computer : computer) ~(pressed : string -> bool) ~(arrow : string
         match t.style.unit_at t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
         | Some j -> Some j
         | None -> (
-            (* a section's title (Map_v2's, column -1) is peeked at, not flown into *)
+            (* a section's title (Map_atlas's, column -1) is peeked at, not flown into *)
             match t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy with
             | Some (_, _, c) when c < 0 -> None
             | _ -> if is_file then None else Code_units.toward t.placed i u v)
@@ -454,7 +454,7 @@ let search_go (t : t) (h : Code_search.hit) : camera option =
 
 (* claude: a config's tour (Code_guide.tours): each stop a file and an
  * anchor, flown to and its definition peeked at, the stop's words in a
- * banner (Map_v2.tour_banner); n the next, p the one before *)
+ * banner (Map_atlas.tour_banner); n the next, p the one before *)
 let tour_go (t : t) (tr : Code_guide.tour) (k : int) : camera option =
   match List.nth_opt tr.stops k with
   | None -> None
@@ -463,7 +463,7 @@ let tour_go (t : t) (tr : Code_guide.tour) (k : int) : camera option =
       let hit : Code_search.hit =
         match Code_guide.split i.at with
         | Some path, anchor -> (
-            match Map_v2.anchor_line t path anchor with Some line -> { kind = Def; path; line; name = Code_guide.anchor_name anchor } | None -> { kind = File; path; line = 0; name = path })
+            match Map_atlas.anchor_line t path anchor with Some line -> { kind = Def; path; line; name = Code_guide.anchor_name anchor } | None -> { kind = File; path; line = 0; name = path })
         | None, path -> { kind = File; path; line = 0; name = path }
       in
       search_go t hit
@@ -515,30 +515,30 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   in
   (* claude: the glass's shape, the panel's too *)
   if pressed "o" then cycle_glass ();
-  (* claude: at the ground, the file with what it uses (Map_v2) *)
+  (* claude: at the ground, the file with what it uses (Map_atlas) *)
   (* claude: a: what it uses, then what uses it, then both, then off *)
   (* claude: the first press, the mode that fits the file (uses and
-   * users, its uses only, its users only: Map_v2.best_street_mode); then
+   * users, its uses only, its users only: Map_paint.best_street_mode); then
    * the others in turn, then off *)
   if pressed "a" then begin
-    let best = Map_v2.best_street_mode t in
+    let best = Map_paint.best_street_mode t in
     t.street_mode <- (if t.street_mode = 0 then best else let next = (t.street_mode mod 3) + 1 in if next = best then 0 else next);
     t.street <- t.street_mode <> 0;
     t.painted <- None
   end;
-  (* claude: the skeletons, at any level (Map_v2) *)
-  (* x: the X-ray on its first skeleton, then the next, then off (Map_v2
+  (* claude: the skeletons, at any level (Map_atlas) *)
+  (* x: the X-ray on its first skeleton, then the next, then off (Map_atlas
    * turns it off past the last) *)
   if pressed "x" then if t.xray then t.xray_n <- t.xray_n + 1 else begin t.xray <- true; t.xray_n <- 0 end;
   (* claude: in the X-ray, 1 to 6 the anatomy's plates (Code_anatomy) *)
   if t.xray && t.choices = None then List.iter (fun s -> if pressed (Code_anatomy.key s) then Code_anatomy.toggle s) Code_anatomy.all;
-  (* claude: m, the marks hidden, shown (Map_v2) *)
+  (* claude: m, the marks hidden, shown (Map_atlas) *)
   (* claude: l, the layers, the map coloured by a measure, in turn, then
-   * none (Map_v2.layer_shapes); the uses counted first (Code_rank) *)
+   * none (Map_layers.layer_shapes); the uses counted first (Code_rank) *)
   if (pressed "l" || pressed "L") && t.search = None then begin
     (* claude: shift+l, back (the author: "cycling can take time"); a
      * browser names it L *)
-    let n = Map_v2.layer_count + 1 in
+    let n = Map_layers.layer_count + 1 in
     t.layer <- (if pressed "L" || Set_.mem "Shift" computer.keyboard.keys then t.layer + n - 1 else t.layer + 1) mod n;
     (* the map painted again, its regions grey under a layer *)
     t.painted <- None
@@ -546,10 +546,10 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   (* claude: h, every key explained, again to close *)
   if pressed "h" && t.search = None then t.help <- not t.help;
   (* claude: m, the marks lit: those kept (ctrl+Enter), then each
-   * config's, then none, in turn (Map_v2.mark_groups); l is kept for
+   * config's, then none, in turn (Map_search.mark_groups); l is kept for
    * the layers, a map coloured by a measure (the author) *)
   if pressed "m" then begin
-    let groups = Map_v2.mark_groups t in
+    let groups = Map_search.mark_groups t in
     let n = List.length groups in
     if n > 0 then begin
       (* the next group with marks, or none past the last *)
@@ -630,15 +630,15 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
    * tied to *)
   (* claude: a click on the X-ray's legend: that plate on or off *)
   let clicked =
-    match (clicked && units, Map_v2.legend_row_at t t.cam mpx mpy) with
+    match (clicked && units, Map_anatomy.legend_row_at t t.cam mpx mpy) with
     | true, Some s -> Code_anatomy.toggle s; t.painted <- None; false
     | _ -> clicked
   in
-  let with_ties = if clicked && units && Set_.mem "Shift" computer.keyboard.keys then Map_v2.unit_with_ties t t.cam else None in
+  let with_ties = if clicked && units && Set_.mem "Shift" computer.keyboard.keys then Map_cards.unit_with_ties t t.cam else None in
   (* claude: ctrl+click on a unit's name, or g over it: its ties in
    * codegraph's matrix (Map_graph) *)
   let to_graph =
-    if units && ((clicked && Set_.mem "Control" computer.keyboard.keys) || (pressed "g" && t.search = None)) then Map_v2.unit_with_ties t t.cam else None
+    if units && ((clicked && Set_.mem "Control" computer.keyboard.keys) || (pressed "g" && t.search = None)) then Map_cards.unit_with_ties t t.cam else None
   in
   let with_ties = if to_graph <> None then None else with_ties in
   let clicked = if with_ties <> None then false else clicked in
@@ -646,7 +646,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
    * its definition peeked at, as Enter in the search *)
   let jumped_to, clicked =
     if clicked && units then
-      match (Map_v2.street_title_at t t.cam mpx mpy, Map_v2.hovered_bone t t.cam, Map_v2.hovered_match t t.cam) with
+      match (Map_atlas.street_title_at t t.cam mpx mpy, Map_atlas.hovered_bone t t.cam, Map_atlas.hovered_match t t.cam) with
       (* claude: a street panel's name clicked: to that file, its street *)
       | Some path, _, _ -> (search_go t { kind = File; path; line = 0; name = path }, false)
       | None, bone, found -> (
@@ -655,7 +655,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
        * or its file or directory flown to *)
       | Some bn, _ ->
           let hit : Code_search.hit =
-            match Map_v2.anchor_line t bn.bpath bn.banchor with
+            match Map_atlas.anchor_line t bn.bpath bn.banchor with
             | Some line when bn.banchor <> "" -> { kind = Def; path = bn.bpath; line; name = bn.role }
             | _ -> { kind = File; path = bn.bpath; line = 0; name = bn.role }
           in
@@ -732,9 +732,9 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
         t.note <- ""
       end;
       let u = to_u t.cam mpx and v = to_v t.cam mpy in
-      (* claude: a name clicked (Map_v2's): to its directory or file *)
+      (* claude: a name clicked (Map_atlas's): to its directory or file *)
       let named = if clicked then t.style.unit_at t t.cam (Playground_platform.pixel_ratio ()) mpx mpy else None in
-      (* claude: a line the style placed itself (Map_v2's ground), not
+      (* claude: a line the style placed itself (Map_atlas's ground), not
        * the treemap's: Enter opens it there, a click stays *)
       let picked = t.style.pick t t.cam (Playground_platform.pixel_ratio ()) mpx mpy in
       let file_of path = List.find_map (fun (e : entry) -> if e.path = path then Some (Lazy.force e.file) else None) (t.entries @ t.beyond) in
@@ -745,11 +745,11 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
           | Some f when pressed "Enter" -> (target, Open (f, line))
           | Some f ->
               (* claude: a click shows a definition's body, readable, over
-               * the map (Map_v2's peek): the name's under the mouse, its
+               * the map (Map_atlas's peek): the name's under the mouse, its
                * own file's or, defined elsewhere, found there; else the
                * definition the line is in *)
               if col >= 0 then Option.iter (open_peek t file_of) (peek_where t f path line col);
-              (* a section's title (col -1, Map_v2's table of contents): the
+              (* a section's title (col -1, Map_atlas's table of contents): the
                * whole section *)
               if col < 0 then begin
                 let first, last = section_extent f line in
@@ -816,7 +816,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
          | "", [ one ] -> Graph ("", [ one ])
          | "", kids -> Graph ("", kids)
          (* at the street: the file and its neighbours, the file open *)
-         | here, _ when t.street && Map_v2.street_files t <> [] -> Graph (here, here :: Map_v2.street_files t)
+         | here, _ when t.street && Map_paint.street_files t <> [] -> Graph (here, here :: Map_paint.street_files t)
          | here, _ -> Graph (here, [ here ]))
     | Some (h, users, uses), _, Stay -> Tied (h, users, uses)
     | None, Some p, Stay -> Select (p, [ p ])
@@ -825,7 +825,7 @@ let update_map (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
   in
   ({ t with target; cam; before_right = mouse.mrdown }, action)
 
-(* claude: the search (/, Code_search, drawn by Map_v2): typed letters
+(* claude: the search (/, Code_search, drawn by Map_atlas): typed letters
  * the query, a / first where it looks (the files shown, or all), Tab
  * completing, up and down the hit, Enter going there -- a directory or
  * file flown to, a definition's file and its peek; name// the
@@ -855,7 +855,7 @@ let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
       update_map computer ~pressed:(fun _ -> false) ~arrow:None t
   | None -> update_map computer ~pressed ~arrow t
   | Some s ->
-      let hits = Map_v2.search_hits t in
+      let hits = Map_search.search_hits t in
       let n = List.length hits in
       let t, action =
         if pressed "Escape" then (t.search <- None; (t, Stay))
@@ -865,7 +865,7 @@ let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
           (if List.exists (fun (l : mark) -> l.mquery = s.query) t.marks then t.marks <- List.filter (fun (l : mark) -> l.mquery <> s.query) t.marks
            else if s.query <> "" then begin
              let used = List.map (fun (l : mark) -> l.mcolour) t.marks in
-             let mcolour = match List.find_opt (fun c -> not (List.mem c used)) Map_v2.mark_colours with Some c -> c | None -> List.hd Map_v2.mark_colours in
+             let mcolour = match List.find_opt (fun c -> not (List.mem c used)) Map_search.mark_colours with Some c -> c | None -> List.hd Map_search.mark_colours in
              t.marks <- t.marks @ [ { mquery = s.query; mcolour; msay = None; mhits = None } ];
              t.mark_group <- 0
            end);
@@ -876,14 +876,14 @@ let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
         (* claude: shift+Enter, all it found together: its directories and
          * files, else the files of its definitions *)
         else if pressed "Enter" && Set_.mem "Shift" computer.keyboard.keys then begin
-          match Map_v2.search_set t with
+          match Map_search.search_set t with
           | [] -> (t, Stay)
           | set ->
               t.search <- None;
               (t, Select (Printf.sprintf "%s: the %d found" s.query (List.length set), set))
         end
         else if pressed "Enter" then begin
-          match Map_v2.search_named t with
+          match Map_search.search_named t with
           | _ :: _ :: _ as dirs ->
               t.search <- None;
               let name = Code_search.basename (List.hd dirs) in
@@ -930,8 +930,8 @@ let update_now (computer : computer) ~(pressed : string -> bool) ~(arrow : strin
  * name under the mouse, its binding framed cyan and its uses lit yellow,
  * in its file; and the binding a click went to, lit green *)
 let names_lit (computer : computer) (t : t) : shape list =
-  (* claude: on a file, Map_v2 lights the names itself, where its lines
-   * are (Map_v2.names_glow): the treemap is not what is on the map *)
+  (* claude: on a file, Map_atlas lights the names itself, where its lines
+   * are (Map_cards.names_glow): the treemap is not what is on the map *)
   if t.style.units && (match t.placed.(t.focus).node with File _ -> true | Dir _ -> false) then []
   else
   let c = t.cam in
@@ -1052,7 +1052,7 @@ let keys_help = [
   ("w", "a program's map: its own code, with what it uses, the whole repository");
   ("Enter", "the file view, the file read whole");
   ("b", "back, after a jump to a definition");
-  ("y", "the other style of map (v2, classic: the code painted from afar, the wheel zooming freely)");
+  ("y", "the other style of map (atlas, classic: the code painted from afar, the wheel zooming freely)");
   ("h", "this help; Escape, back");
 ]
 
@@ -1133,13 +1133,13 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
     Array.to_list t.placed
     |> List.concat_map (fun (p : entry Treemap.placed) ->
            match p.node with
-           (* claude: not on a file in v2 (the ground, the street): the
+           (* claude: not on a file in the atlas (the ground, the street): the
             * treemap is not what is on the map *)
            | File (_, _, e) when List.mem e.path t.marked && not (t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false) -> (
                match clip c p.rect with Some b -> box yellow 3. b | None -> [])
            | _ -> [])
   in
-  (* claude: a style's own place under the mouse (Map_v2's ground: the
+  (* claude: a style's own place under the mouse (Map_atlas's ground: the
    * lines laid out anew), else the treemap's *)
   let picked = if on a mpx mpy then t.style.pick t c q mpx mpy else None in
   (* a file's line, and the definition it is in, for the status line *)
@@ -1150,13 +1150,13 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
     in
     Printf.sprintf "%s:%d%s   (%d lines)" e.path (line + 1) (match def with Some d -> "   " ^ d | None -> "") e.nlines
   in
-  (* claude: on a file (Map_v2's ground and street) the treemap is not
+  (* claude: on a file (Map_atlas's ground and street) the treemap is not
    * what is on the map: no frame, and the status line the style's place
    * under the mouse (its file and line, a panel's too), else nothing *)
   let on_a_file = t.style.units && match t.placed.(t.focus).node with File _ -> true | Dir _ -> false in
   let hover, status =
     match (picked, hovered) with
-    (* claude: a peek open (Map_v2's) is what is under the mouse *)
+    (* claude: a peek open (Map_atlas's) is what is under the mouse *)
     | _ when t.peek <> None -> ([], "")
     | Some (path, line, _), _ -> ([], match List.find_opt (fun (e : entry) -> e.path = path) t.entries with Some e -> where e line | None -> "")
     | None, _ when on_a_file -> ([], "")
@@ -1180,7 +1180,7 @@ let view ?(chrome = true) (computer : computer) (t : t) : shape list =
     hover @ names_lit computer t
     @ (if t.help then help_shapes computer else [])
     @ [
-        (* claude: flown into a unit (v2), its summary, not the project's
+        (* claude: flown into a unit (the atlas), its summary, not the project's
          * (the author: "at earth level it's the summary of the project,
          * but at appkit level the summary of what appkit is") *)
         (let title =
@@ -1382,7 +1382,7 @@ let glass ?(panel = false) (computer : computer) (t : t) : shape list =
    * the mouse are lit (names_lit) *)
   let a = t.cam.a in
   let mpx = px_of a computer.mouse.mx and mpy = py_of a computer.mouse.my in
-  (* claude: none in v2, whose hover previews and peeks show the code *)
+  (* claude: none in the atlas, whose hover previews and peeks show the code *)
   if t.moving || t.style.units || readable_at t (to_u t.cam mpx) (to_v t.cam mpy) then []
   else match !(shape_of ~panel) with Round -> lens computer t | Reading -> reading_glass computer t | No_glass -> []
 

@@ -1,0 +1,65 @@
+// launcher/codemap/layout/: what the code map says of it
+// (plan_codemap_v2.md, docs/claude_notes/codemapconfig_guidelines.md)
+{
+  generated: { by: 'claude-opus-5-5', on: '2026-10-03' },
+  summary: "Where things go: the treemap, a file at the ground, the street of panels, the roads between.",
+  files: {
+    'Treemap.mli': { digest: 'd90cf8cdcbf4',
+      summary: "A tree of sizes as nested rectangles: ordered (codemap's), slice and dice, squarified, side by side.",
+      capitals: [
+        { at: 'def:layout', say: 'directories and files as nested rectangles' },
+        { at: 'type:tree', say: 'directories and sized files' },
+      ],
+      important: [
+        { at: 'type:placed', say: 'a unit laid out: its rectangle and depth', weight: 2 },
+      ],
+    },
+    'Treemap.ml': { digest: '1ab6db5cd63a',
+      summary: "The three algorithms: the pivot by middle, the strips, Bruls' rows closed when the worst ratio grows.",
+      important: [
+        { at: 'def:ordered', say: 'pivot by middle: the alphabet kept', weight: 3 },
+        { at: 'def:squarify_areas', say: 'a row closed when its worst aspect grows', weight: 2 },
+      ],
+    },
+    'Code_ground.mli': { digest: '7720e1b15300',
+      summary: "A file at the ground: the whole map, each line as high as it matters, laid out like a newspaper's columns.",
+      capitals: [
+        { at: 'def:layout', say: "a file's lines, as high as they matter" },
+      ],
+      important: [
+        { at: 'def:weights', say: 'blank, comment, statement, header, important', weight: 2 },
+      ],
+    },
+    'Code_ground.ml': { digest: '74add58a85eb',
+      summary: 'The heights weighed, the columns chosen to keep 80 characters wide, each line painted at its height.',
+    },
+    'Code_street.mli': { digest: 'e019123e4147',
+      summary: 'A file at the street: what it uses on the left, what uses it on the right, roads from each use to its definition.',
+      capitals: [
+        { at: 'def:layout', say: 'the focus between its uses and users' },
+      ],
+      important: [
+        { at: 'def:uses', say: 'the sure references to other files', weight: 2 },
+        { at: 'type:mode', say: 'uses, users, or both', weight: 1 },
+      ],
+    },
+    'Code_street.ml': { digest: '6a7a7f44e8f0',
+      summary: "Panels chosen (own code first, thrice the room), each a ground with the tied lines tall, roads bundled.",
+      important: [
+        { at: 'def:roads', say: 'green at the use, red at the definition', weight: 2 },
+      ],
+    },
+    'Code_road.mli': { digest: 'a0d554cb6743',
+      summary: 'A use drawn as a road: a B-spline, green and wide at the user, red and thin at the used, no arrowhead.',
+      capitals: [
+        { at: 'def:road', say: 'a road, tapered from user to used' },
+      ],
+    },
+    'Code_road.ml': { digest: '2979550e0af1',
+      summary: 'The clamped cubic B-spline, cut into pieces of one length, a quad a piece in the gradient.',
+      important: [
+        { at: 'def:resample', say: 'pieces of the same length: a smooth gradient', weight: 1 },
+      ],
+    },
+  },
+}

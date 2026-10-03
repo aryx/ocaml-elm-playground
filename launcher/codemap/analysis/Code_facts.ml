@@ -294,7 +294,7 @@ let coverage ~(guide : Code_guide.t) ~(sources : (string * string) list) : strin
   in
   (* claude: every module its skeleton, and every folder (the author:
    * "ideally every file, every folder"): the map derives one where none
-   * is written (Map_v2.derived_file), but a written one is the judgement
+   * is written (Map_skeleton.derived_file), but a written one is the judgement
    * the derived one lacks. A module: its .ml or .c, 150 lines or more
    * (below, the derived one is honest enough: the author agreed 40 was
    * too many); a folder: two sources or more *)

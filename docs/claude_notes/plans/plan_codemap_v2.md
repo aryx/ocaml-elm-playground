@@ -1,7 +1,11 @@
 # Plan: the code map, v2 -- what the LLM knows, drawn
 
-(the name v2 is temporary: `launcher/codemap/Map_v2.ml`, the default of
-`tinybox codemap <dir>` since 2026-09-29, a blank slate for now)
+(the name v2 was temporary: it is `Map_atlas` and its parts, `Map_paint`
+to `Map_layers`, in `launcher/codemap/styles/`, `style=atlas`, the default
+of `tinybox codemap <dir>` since 2026-09-29. An earlier style had that
+name, the edge bundles of `plan_codemap_google_maps.md`, deleted since:
+where this plan says "the atlas" of bundles and heat beside the streets,
+it is that one)
 
 ## Context
 
@@ -354,7 +358,7 @@ root's `skeletons.libsonnet` (`mvu(file)`), extended by `+:`;
 TinyInvaders' (MVU, its spine to `march`, across to `Shots.advance`)
 and the repository's ("How a program runs", `Program.main` to the frame
 loop, across `libs/`, `playground/` and its platforms). The X-ray, `x`,
-at every level (`Map_v2.skeleton_shapes`); from afar, a file's close
+at every level (`Map_skeleton.skeleton_shapes`); from afar, a file's close
 bones packed into one dot. To come: a skeleton for every game (the
 template's default, checked), the apps' and the languages' (a
 compiler's passes), the earth level marking each file by its skeleton,
@@ -445,7 +449,7 @@ directory, file, or entity, with completion", "incremental search that
 would dynamically highlight matches on the current zoom level", "a
 search that is restricted to the current showed files", and "arm///
 ... a multi-dir selection view with all the arm folders". Done
-(`Code_search`, pure and tested; the box and the lights in `Map_v2`;
+(`Code_search`, pure and tested; the box and the lights in `Map_atlas`;
 the keys in `Code_map.update`):
 
 - `/` opens a box under the title; the map goes on under it (the mouse
@@ -607,7 +611,7 @@ The same patterns serve search (`/` with a pattern) and anchors
 
 ## Steps
 
-0. `Map_v2` as a style, the default of `tinybox codemap <dir>`; the
+0. `Map_atlas` as a style, the default of `tinybox codemap <dir>`; the
    glass off by default. (Done, 2026-09-29.)
 1. **Earth and region levels, without config**: column strips instead of
    code, directory and subdirectory names large (diagonal when narrow),
@@ -646,11 +650,11 @@ The same patterns serve search (`/` with a pattern) and anchors
    tinybox beside the sources (`Code_deps.repository_configs`,
    `Codemap.guide_of`); checked by the code map's tests, a mistake
    failing them, a stale digest only the checker's warning. The
-   capitals drawn by `Map_v2`, a dot and a name, their card saying why.)
+   capitals drawn by `Map_atlas`, a dot and a name, their card saying why.)
 
 5. **Ground level**: lines' heights by category and weight; tested with
    a golden frame of TinyInvaders. (Done, 2026-09-29: `Code_ground`,
-   the weights, the columns, the painter; `Map_v2` at the ground when the
+   the weights, the columns, the painter; `Map_atlas` at the ground when the
    unit is a file and the camera there, the important lines marked in
    the margin, the config's words as notes after them when the column
    has room; Enter and the status line through `style.pick`. To come: a

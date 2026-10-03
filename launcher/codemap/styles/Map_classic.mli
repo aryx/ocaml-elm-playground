@@ -1,13 +1,13 @@
 (* Map_classic: the first code map, codemap's own look, as a style beside
-   Map_v2 (y): SeeSoft's picture of every file at every zoom, turning into
+   Map_atlas (y): SeeSoft's picture of every file at every zoom, turning into
    letters up close (Code_map_base.paint_code), the directories dark in
    their part's colour; the names over it: the directories' big and faint
    and their paths on tabs, the files' on tabs, the tricks marked, and,
    from afar, what each file defines, bigger for a function than a
    local (Highlight_code.emphasis), placed greedily each frame.
 
-   Kept beside Map_v2 because it paints every file's content from the
-   start, at any zoom the wheel gives: what v2's names and columns hide
+   Kept beside Map_atlas because it paints every file's content from the
+   start, at any zoom the wheel gives: what Map_atlas's names and columns hide
    from afar (a directory of boilerplate, a file unlike its
    neighbours) shows here. *)
 

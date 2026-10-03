@@ -79,7 +79,7 @@ type action =
   | Graph of string * string list (* claude: a unit and the units tied to it, in codegraph's matrix: ctrl+click's, g's *)
 
 (* keys as Code_view's; the mouse; Escape closes. claude: / opens the
-   search (Map_v2's), which takes the keys while open *)
+   search (Map_atlas's), which takes the keys while open *)
 val update : Playground.computer -> pressed:(string -> bool) -> arrow:string option -> t -> t * action
 
 (* the map, and with [chrome] (the default) the screen round it: its
@@ -119,10 +119,10 @@ val cycle_glass : ?panel:bool -> unit -> unit
 (* the glass now, for a hint: "round", "wide" or "none" *)
 val glass_name : ?panel:bool -> unit -> string
 
-(* claude: the map's style (Code_map_base.style: Map_v2, the default;
+(* claude: the map's style (Code_map_base.style: Map_atlas, the default;
    Map_classic, the first one, the code painted at every zoom), one
    setting for every map as the glass's: y (in update, or cycle_style)
-   goes to the other; choose_style by its name (the flag style=, "v2"
+   goes to the other; choose_style by its name (the flag style=, "atlas"
    or "classic"); a map is made in the style chosen *)
 val cycle_style : unit -> unit
 val choose_style : string -> unit

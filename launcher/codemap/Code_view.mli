@@ -24,5 +24,5 @@ val view : Playground.computer -> t -> Playground.shape list
    pulsing (a halo growing and fading), for the map too (Code_map) *)
 val glow : Playground.computer -> Playground.color -> float -> float -> Playground.shape list
 
-(* claude: the same at a time (Map_v2's ground, which has no computer) *)
+(* claude: the same at a time (Map_atlas's ground, which has no computer) *)
 val glow_at : float -> Playground.color -> float -> float -> Playground.shape list

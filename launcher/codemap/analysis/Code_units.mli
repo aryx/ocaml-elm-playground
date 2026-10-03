@@ -1,6 +1,6 @@
 (* Code_units: the tree of the map's units -- its directories and files
    as placed (Treemap.placed, a directory before its children, the root
-   first, at index 0) -- for moving from one to the next (Map_v2's way,
+   first, at index 0) -- for moving from one to the next (Map_atlas's way,
    plan_codemap_v2.md, step 2): the camera goes a whole directory or file
    at a time, in, out, or beside, never stopping halfway. Pure.
 

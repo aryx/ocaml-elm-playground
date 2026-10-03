@@ -53,7 +53,7 @@ one.
     backtrace, a few times;
   - **which closure is `camlMap_v2__fun_4678`**: `otool -tV -p
     _camlMap_v2__fun_4678 prog.exe`, the functions it calls
-    (`outside`, `text`, `wrap`: the labelling loop of `Map_v2.names`).
+    (`outside`, `text`, `wrap`: the labelling loop of `Map_names.names`).
   - a quicker `lldb`: `Printexc.get_callstack` printed once inside the
     expensive function (a `lazy`'s first force), removed after.
 
@@ -525,7 +525,7 @@ could be kept:
   fall as before, and each include resolved once per directory, what
   its answer depends on. The count 9.4 s to 1.1 s, its result the same
   byte for byte (the bundle compared).
-- **Per frame, what does not depend on the camera** (`Map_v2.capitals`,
+- **Per frame, what does not depend on the camera** (`Map_names.capitals`,
   `unit_ties`): the capitals chosen among the configs' (a sort, a
   table of the 2,200 units) and a hovered unit's ties (every link gone
   through) were computed every frame; kept, keyed by `==` on the
@@ -540,7 +540,7 @@ could be kept:
   allocated per character per word. Compared in place, and only where
   a word can start (after no letter of a name: the check that was last,
   done first). 15 ms a file to ~1.
-- **A budget in items, not time** (`Map_v2.facts_of`): 30 files' facts
+- **A budget in items, not time** (`Map_anatomy.facts_of`): 30 files' facts
   a frame, when one costs from nothing to milliseconds: frames of half
   a second. 8 ms a frame, as the background lexing. And the hover no
   longer starts work it cannot finish in a frame (the uses counted

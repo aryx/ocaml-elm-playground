@@ -25,7 +25,7 @@
  *   sources (the simple way: each map its own, Code_map_base.rank_of);
  * - Code_anatomy.line_has: words tried where one can start, compared in
  *   place (line_has_simple);
- * - Map_v2.capitals and unit_ties: what does not depend on the camera
+ * - Map_names.capitals and unit_ties: what does not depend on the camera
  *   kept (capitals_chosen, ties_of); placed_of and entry_of: a table by
  *   path (placed_of_simple, entry_of_simple: a scan). *)
 

@@ -168,9 +168,9 @@ let make_own ~(own : string -> bool) ~(area : float * float * int * int) ~(sourc
   let sources, guide = guide_of sources in
   let colours = match guide with Some g -> Code_guide.colours g | None -> [] in
   let map = map_of ~style:None ~guide ~roots:[] ~colours ~own ~area ~sources ~program ~path ~scope:Own in
-  (* claude: in v2, opened on the program's file, at the ground: its kits
+  (* claude: in the atlas, opened on the program's file, at the ground: its kits
    * a (the street) or the wheel away (plan_codemap_v2.md) *)
-  let map = if Code_map.style_name () = "v2" then Code_map.focus_on map path else map in
+  let map = if Code_map.style_name () = "atlas" then Code_map.focus_on map path else map in
   { program; path; sources; scope = Own; area; map; file = None; graph = None; tour = None; own; guide }
 
 let make ~area ~sources ~program ~path : t = make_own ~own:(Code_deps.own path) ~area ~sources ~program ~path
@@ -368,7 +368,7 @@ let opened_at (c : t) (flags : (string * string) list) : t =
             let own = Code_deps.own path in
             let colours = match c.guide with Some g -> Code_guide.colours g | None -> [] in
             let map = map_of ~style:None ~guide:c.guide ~roots:[] ~colours ~own ~area:c.area ~sources:c.sources ~program:name ~path ~scope:Own in
-            let map = if Code_map.style_name () = "v2" && not (List.mem_assoc "all" flags) then Code_map.focus_on map path else map in
+            let map = if Code_map.style_name () = "atlas" && not (List.mem_assoc "all" flags) then Code_map.focus_on map path else map in
             { c with program = name; path; scope = Own; own; map })
   in
   let focus = List.assoc_opt "focus" flags in
@@ -396,7 +396,7 @@ let opened_at (c : t) (flags : (string * string) list) : t =
     match List.assoc_opt "street" flags with
     | None -> m
     | Some v ->
-        let mode = match int_of_string_opt v with Some k when k >= 1 && k <= 3 -> k | _ -> Map_v2.best_street_mode m in
+        let mode = match int_of_string_opt v with Some k when k >= 1 && k <= 3 -> k | _ -> Map_paint.best_street_mode m in
         m.street_mode <- mode;
         m.street <- true;
         m.painted <- None;
@@ -530,8 +530,8 @@ let run_loading ?(waiting : unit -> string * float option = fun () -> ("its code
    * the code map's list there), to see what each buys *)
   if List.assoc_opt "opti" flags = Some "off" then Opti.enabled := false;
   (* claude: style=classic, the map's style (Code_map); a directory's
-   * map is drawn by default in Map_v2 *)
-  Code_map.choose_style (Option.value (List.assoc_opt "style" flags) ~default:"v2");
+   * map is drawn by default in Map_atlas *)
+  Code_map.choose_style (Option.value (List.assoc_opt "style" flags) ~default:"atlas");
   Playground_platform.run_app ~window:{ Playground.default_window with screen_size = Some (1778, 1000) } ~flags
     (Playground.game view update { code = None; before = Set_.empty; repeat = None })
 

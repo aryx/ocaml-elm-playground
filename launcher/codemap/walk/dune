@@ -5,3 +5,6 @@
  (name tinybox_codewalk)
  (wrapped false)
  (libraries tinybox_codedeps unix))
+
+; claude: the folder above gathers its folders' modules; not this one's
+(include_subdirs no)

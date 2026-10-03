@@ -1,4 +1,4 @@
-(* Code_search: the code map's search (/, Map_v2), its matching and
+(* Code_search: the code map's search (/, Map_atlas), its matching and
    completion, pure: what a query finds among the directories, the files
    and the definitions.
 
