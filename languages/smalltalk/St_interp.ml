@@ -51,6 +51,9 @@ type vm = {
   mutable hits : int;
   mutable misses : int;
   mutable count : int;
+  (* the contexts that returned and that nothing refers to, by size,
+   * to be used again (St_interp.mli, "Contexts recycled") *)
+  pool : oop list array;
 }
 
 and primitive = vm -> int -> bool
@@ -94,6 +97,7 @@ let create (m : M.t) (host : host) : vm =
     hits = 0;
     misses = 0;
     count = 0;
+    pool = Array.make (c_temps + 256) [];
   }
 
 let memory (vm : vm) : M.t = vm.m
@@ -156,6 +160,56 @@ let activate_context (vm : vm) (ctx : oop) : unit =
   load vm ctx
 
 (*****************************************************************************)
+(* Contexts recycled *)
+(*****************************************************************************)
+
+let is_context (vm : vm) (o : oop) : bool =
+  (not (M.is_int o)) && o <> M.nil
+  && let cls = M.class_of vm.m o and k = M.known vm.m in cls = k.method_context || cls = k.block_context
+
+(* someone holds this context now (thisContext, a block's home, a
+ * closure's outer context, a sender read): not to be used again when
+ * it returns *)
+let escape (vm : vm) (o : oop) : unit = if is_context vm o then M.escape vm.m o
+
+(* the debugger is about to look at a process: its whole stack *)
+let escape_stack (vm : vm) (top : oop) : unit =
+  (* a Blue Book block that called itself is its own sender *)
+  let seen = Hashtbl.create 64 in
+  let rec up ctx =
+    if is_context vm ctx && not (Hashtbl.mem seen ctx) then begin
+      Hashtbl.replace seen ctx ();
+      M.escape vm.m ctx;
+      up (M.fetch vm.m ctx c_sender)
+    end
+  in
+  up top
+
+(* a MethodContext of [size] fields, the first [c_temps + temps] nil:
+ * one from the pool, or a new one.
+ *
+ * claude: before the pool, every send was
+ *   M.alloc vm.m ~cls:method_context (M.Pointers (Array.make size M.nil))
+ * an array OCaml's collector had to promote (the object table is old)
+ * and ours to sweep: a third of a send's time. *)
+let new_context (vm : vm) (size : int) ~(temps : int) : oop =
+  match vm.pool.(size) with
+  | ctx :: rest ->
+      vm.pool.(size) <- rest;
+      Array.fill (M.fields vm.m ctx) 0 (c_temps + temps) M.nil;
+      ctx
+  | [] -> M.alloc vm.m ~cls:(M.known vm.m).method_context (M.Pointers (Array.make size M.nil))
+
+(* a context that returned: into the pool, unless someone may hold it
+ * (or it is a BlockContext, which is the block itself) *)
+let release (vm : vm) (ctx : oop) : unit =
+  let m = vm.m in
+  if (not (M.escaped m ctx)) && M.class_of m ctx = (M.known m).method_context then begin
+    let n = M.size m ctx in
+    if n < Array.length vm.pool then vm.pool.(n) <- ctx :: vm.pool.(n)
+  end
+
+(*****************************************************************************)
 (* The stack *)
 (*****************************************************************************)
 
@@ -197,27 +251,31 @@ let lookup (vm : vm) (cls : oop) (sel : oop) : oop option =
 
 (* a new MethodContext for [meth], its receiver and arguments taken off
  * the stack, and made active *)
-let activate_method (vm : vm) (meth : oop) (nargs : int) : unit =
-  let h = B.header vm.m meth in
-  if h.num_args <> nargs then raise (Fatal "wrong number of arguments");
-  let a = Array.make (c_temps + h.frame_size) M.nil in
+let activate_method (vm : vm) (meth : oop) (header : int) (nargs : int) : unit =
+  if B.num_args_of header <> nargs then raise (Fatal "wrong number of arguments");
+  let num_temps = B.num_temps_of header in
+  let ctx = new_context vm (c_temps + B.frame_size_of header) ~temps:num_temps in
+  let a = M.fields vm.m ctx in
   a.(c_sender) <- vm.active;
   a.(c_ip) <- M.of_int 0;
-  a.(c_sp) <- M.of_int (c_temps + h.num_temps - 1);
+  a.(c_sp) <- M.of_int (c_temps + num_temps - 1);
   a.(c_method) <- meth;
   a.(c_receiver) <- vm.slots.(vm.sp - nargs);
   for i = 0 to nargs - 1 do
     a.(c_temps + i) <- vm.slots.(vm.sp - nargs + 1 + i)
   done;
-  let ctx = M.alloc vm.m ~cls:(M.known vm.m).method_context (M.Pointers a) in
   vm.sp <- vm.sp - nargs - 1;
   save vm;
   load vm ctx
 
+(* claude: the header was decoded twice a send, here and in
+ * activate_method, each time into a record of four fields
+ * (B.header vm.m meth); now read once, as the SmallInteger it is *)
 let rec execute (vm : vm) (meth : oop) (nargs : int) : unit =
-  let h = B.header vm.m meth in
-  let ok = h.primitive <> 0 && match vm.prims.(h.primitive) with Some p -> p vm nargs | None -> false in
-  if not ok then activate_method vm meth nargs
+  let header = M.int_of (M.fetch vm.m meth 0) in
+  let primitive = B.primitive_of header in
+  let ok = primitive <> 0 && match vm.prims.(primitive) with Some p -> p vm nargs | None -> false in
+  if not ok then activate_method vm meth header nargs
 
 and send_to_class (vm : vm) (cls : oop) (sel : oop) (nargs : int) : unit =
   match lookup vm cls sel with
@@ -249,6 +307,7 @@ let kill (vm : vm) (ctx : oop) : unit =
   M.store vm.m ctx c_ip M.nil
 
 let cannot_return (vm : vm) (v : oop) : unit =
+  escape vm vm.active;
   push vm vm.active;
   push vm v;
   send vm (M.symbol vm.m "cannotReturn:") 1
@@ -266,8 +325,30 @@ let return_from_method (vm : vm) (v : oop) : unit =
   end
   else if dead vm target then cannot_return vm v
   else begin
-    kill vm home;
-    if vm.active <> home then kill vm vm.active;
+    if vm.active = home then begin
+      kill vm home;
+      release vm home
+    end
+    else begin
+      (* a block's "^": the contexts between it and its home have
+       * returned too, if the home is among its senders *)
+      let m = vm.m in
+      (* (bounded: a Blue Book block that called itself is its own
+       * sender, a chain without an end) *)
+      let rec below ctx n = ctx <> M.nil && n > 0 && (ctx = home || below (M.fetch m ctx c_sender) (n - 1)) in
+      let below ctx = below ctx 100_000 in
+      let rec unwind ctx =
+        let sender = M.fetch m ctx c_sender in
+        kill vm ctx;
+        release vm ctx;
+        if ctx <> home then unwind sender
+      in
+      if below vm.active then unwind vm.active
+      else begin
+        kill vm home;
+        kill vm vm.active
+      end
+    end;
     load vm target;
     push vm v
   end
@@ -278,6 +359,7 @@ let return_from_block (vm : vm) (v : oop) : unit =
   if caller = M.nil || dead vm caller then cannot_return vm v
   else begin
     kill vm vm.active;
+    release vm vm.active;
     load vm caller;
     push vm v
   end
@@ -415,7 +497,9 @@ let step (vm : vm) : unit =
         super_send vm vm.lits.(1 + i) nargs
     | 135 -> pop vm 1
     | 136 -> push vm (stack vm 0)
-    | 137 -> push vm vm.active
+    | 137 ->
+        M.escape m vm.active;
+        push vm vm.active
     | 138 ->
         let e = next_byte vm in
         let n = e land 127 in
@@ -441,6 +525,7 @@ let step (vm : vm) : unit =
         let size = next_byte vm in
         let size = (size * 256) + next_byte vm in
         let a = Array.make (3 + copied) M.nil in
+        M.escape m vm.active;
         a.(0) <- vm.active;
         a.(1) <- M.of_int vm.ip;
         a.(2) <- M.of_int (e land 15);
@@ -468,6 +553,8 @@ let step (vm : vm) : unit =
 let collect (vm : vm) : unit =
   save vm;
   let roots = (vm.active :: List.map (fun p -> p.top) vm.processes) @ vm.extra_roots () in
+  (* the pool's contexts are garbage like any other *)
+  Array.fill vm.pool 0 (Array.length vm.pool) [];
   ignore (M.gc vm.m ~roots);
   flush_cache vm
 
@@ -519,6 +606,8 @@ let run ?stop_when (vm : vm) (p : process) ~(budget : int) : unit =
   | Runnable ->
       vm.stop <- None;
       vm.finished <- None;
+      (* a debugger stepping holds contexts (St_debug.mli) *)
+      if stop_when <> None then escape_stack vm p.top;
       load vm p.top;
       let n = ref 0 in
       (try
@@ -542,7 +631,11 @@ let run ?stop_when (vm : vm) (p : process) ~(budget : int) : unit =
       | None -> (
           save vm;
           p.top <- vm.active;
-          match vm.stop with Some label -> p.state <- Suspended label | None -> ()));
+          match vm.stop with
+          | Some label ->
+              p.state <- Suspended label;
+              escape_stack vm p.top
+          | None -> ()));
       vm.active <- M.nil
 
 let resume (p : process) : unit = match p.state with Suspended _ -> p.state <- Runnable | _ -> ()

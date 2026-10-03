@@ -102,6 +102,13 @@ val fits : int -> bool (* in SmallInteger's 31 bits *)
 
 val alloc : t -> cls:oop -> body -> oop
 
+(* a bit an entry of the table keeps for the interpreter: whether
+ * something may still refer to this context once it has returned
+ * (St_interp.mli, "Contexts recycled"). Clear in a new object. Not for
+ * SmallIntegers. *)
+val escaped : t -> oop -> bool
+val escape : t -> oop -> unit
+
 (* the class of any oop, SmallIntegers' included *)
 val class_of : t -> oop -> oop
 val set_class : t -> oop -> oop -> unit

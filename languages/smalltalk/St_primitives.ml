@@ -248,8 +248,19 @@ let inst_var_at : I.primitive =
   let m = I.memory vm in
   let o = rcvr vm n and i = arg vm n 0 in
   match M.body m o with
-  | M.Pointers a when M.is_int i && M.int_of i >= 1 && M.int_of i <= Array.length a -> answer vm n a.(M.int_of i - 1)
+  | M.Pointers a when M.is_int i && M.int_of i >= 1 && M.int_of i <= Array.length a ->
+      (* claude: a context's sender, read this way *)
+      I.escape vm a.(M.int_of i - 1);
+      answer vm n a.(M.int_of i - 1)
   | _ -> false
+
+(* ContextPart>>sender: the context is the program's now, not to be
+ * recycled (St_interp.mli) *)
+let context_sender : I.primitive =
+ fun vm n ->
+  let sender = M.fetch (I.memory vm) (rcvr vm n) I.c_sender in
+  I.escape vm sender;
+  answer vm n sender
 
 let inst_var_at_put : I.primitive =
  fun vm n ->
@@ -324,7 +335,8 @@ let start_closure vm (blk : oop) (args : oop list) : bool =
     else begin
       let outer = M.fields m c.(0) in
       let meth = outer.(I.c_method) in
-      let a = Array.make (I.c_temps + (St_bytecode.header m meth).frame_size) M.nil in
+      let ctx = I.new_context vm (I.c_temps + St_bytecode.frame_size_of (M.int_of (M.fetch m meth 0))) ~temps:(nargs + copied) in
+      let a = M.fields m ctx in
       a.(I.c_sender) <- I.active_context vm;
       a.(I.c_ip) <- c.(1);
       a.(I.c_sp) <- M.of_int (I.c_temps + nargs + copied - 1);
@@ -334,7 +346,7 @@ let start_closure vm (blk : oop) (args : oop list) : bool =
       List.iteri (fun i v -> a.(I.c_temps + i) <- v) args;
       Array.blit c 3 a (I.c_temps + nargs) copied;
       I.pop vm (nargs + 1);
-      I.activate_context vm (M.alloc m ~cls:(M.known m).method_context (M.Pointers a));
+      I.activate_context vm ctx;
       true
     end
 
@@ -528,6 +540,7 @@ let install (vm : I.vm) : unit =
         answer vm n a
       end);
   set 73 inst_var_at;
+  set 159 context_sender;
   set 74 inst_var_at_put;
   set 75 (fun vm n -> let o = rcvr vm n in answer vm n (if M.is_int o then o else M.of_int (o lsr 1)));
   set 80 block_copy;

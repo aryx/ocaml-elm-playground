@@ -41,6 +41,7 @@ type known = {
 type t = {
   mutable classes : oop array; (* entry i's class *)
   mutable bodies : body array;
+  mutable flags : Bytes.t; (* entry i's escaped bit *)
   mutable free : int list; (* entries freed, used first *)
   mutable top : int; (* the entries from here on were never used *)
   mutable in_use : int;
@@ -83,6 +84,7 @@ let create () : t =
     {
       classes = Array.make n 0;
       bodies = Array.make n Free;
+      flags = Bytes.make n '\000';
       free = [];
       top = 1;
       in_use = 1;
@@ -114,11 +116,13 @@ let index (o : oop) : int = o lsr 1
 
 let grow (m : t) : unit =
   let n = Array.length m.classes in
-  let classes = Array.make (2 * n) 0 and bodies = Array.make (2 * n) Free in
+  let classes = Array.make (2 * n) 0 and bodies = Array.make (2 * n) Free and flags = Bytes.make (2 * n) '\000' in
   Array.blit m.classes 0 classes 0 n;
   Array.blit m.bodies 0 bodies 0 n;
+  Bytes.blit m.flags 0 flags 0 n;
   m.classes <- classes;
-  m.bodies <- bodies
+  m.bodies <- bodies;
+  m.flags <- flags
 
 let alloc (m : t) ~(cls : oop) (b : body) : oop =
   let i =
@@ -134,9 +138,13 @@ let alloc (m : t) ~(cls : oop) (b : body) : oop =
   in
   m.classes.(i) <- cls;
   m.bodies.(i) <- b;
+  Bytes.set m.flags i '\000';
   m.in_use <- m.in_use + 1;
   m.allocated <- m.allocated + 1;
   i lsl 1
+
+let escaped (m : t) (o : oop) : bool = Bytes.get m.flags (index o) <> '\000'
+let escape (m : t) (o : oop) : unit = Bytes.set m.flags (index o) '\001'
 
 let class_of (m : t) (o : oop) : oop = if is_int o then m.known.small_integer else m.classes.(index o)
 let set_class (m : t) (o : oop) (c : oop) : unit = m.classes.(index o) <- c
@@ -264,6 +272,7 @@ let restore (known : known) (es : (int * oop * body) list) : t =
     {
       classes = Array.make !n 0;
       bodies = Array.make !n Free;
+      flags = Bytes.make !n '\000';
       free = [];
       top;
       in_use = 0;

@@ -580,6 +580,47 @@ the two agree. Not for everything: a one-line change (`Int.max` for
 no switch. The comments of either kind say `claude: opti:` (`grep -rn
 "opti:"`).
 
+## 19. An object a call: the Smalltalk interpreter's contexts
+
+Smalltalk's contexts are objects (`St_interp.mli`): every send made a
+MethodContext, `Array.make` then an entry in the object table. The
+table is old, so OCaml's collector promoted each array to its major
+heap (`caml_modify`, `do_some_marking`, `caml_oldify_one` high in the
+profile), and our own collector swept them later. Measured with
+`St_bench.exe` (`languages/smalltalk/tests/bench/`: a recursive
+`benchFib`, a loop of `inject:into:`, a sieve, a Dictionary filled, 300
+factorial printed, the Pen's dragon), millions of bytecodes a second,
+natively then under node, the Blue Book's kernel / Squeak's (closures):
+
+| change | sends | blocks | arrays | dictionary | pen |
+|---|---|---|---|---|---|
+| first version, native | 11.2 / 11.9 | 16.7 / 12.4 | 25.0 / 16.4 | 13.2 / 13.5 | 11.1 / 11.7 |
+| contexts recycled | 17.6 / 17.4 | 17.2 / 14.8 | 26.3 / 23.8 | 18.3 / 17.6 | 13.9 / 13.9 |
+| first version, node | 3.7 / 3.7 | 4.6 / 3.5 | | 3.8 / 4.1 | 3.0 / 3.3 |
+| contexts recycled, the header read once, node | 5.0 / 4.9 | 4.5 / 4.0 | 6.5 / 5.9 | 4.9 / 5.1 | 3.7 / 4.0 |
+
+- **Contexts recycled** (Deutsch and Schiffman's observation, 1984:
+  most contexts are never looked at): a context that returns goes into
+  a pool, by size, unless it *escaped* -- a bit of its entry in the
+  table, set when the program gets hold of it (thisContext, a block
+  made, its sender read, the debugger). The next send takes its
+  context from the pool. A send is 1.5 times faster; the loop of
+  blocks gains little, each of its methods making a block, whose home
+  escapes.
+- **The header read once**: a method's header was decoded twice a
+  send, into a record each time; now its fields are taken off the
+  SmallInteger. Within the noise natively.
+
+The lesson: what is garbage for the interpreted language is garbage
+for OCaml too, and worse, since the object table makes every object
+old. Reuse beats allocating twice.
+
+Callgrind on the loop of blocks, after: `step` itself 20%, then
+`St_memory.body` and `fields` (the table read at each variable), the
+primitives called through a closure (`caml_apply2`), `caml_modify`.
+Not done yet: `at:` and `at:put:` by their bytecodes, the receiver's
+fields kept in a register.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the

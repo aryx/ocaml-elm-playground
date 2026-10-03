@@ -55,7 +55,7 @@
         { from: 'def:binary_expr', to: 'def:unary_expr' },
       ],
     },
-    'St_bytecode.mli': { digest: '0b89631e17e5',
+    'St_bytecode.mli': { digest: 'ee701f12421e',
       summary: "The Blue Book's instruction set, chapter 28, byte for byte, and a CompiledMethod's header, literals and pc map.",
       important: [
         { at: 'comment:"0-15     push receiver variable #iiii"', say: 'the instruction set, by ranges of bytes', weight: 3 },
@@ -63,7 +63,7 @@
         { at: 'def:pcmap', say: 'each send to its text, for the debugger', weight: 2 },
       ],
     },
-    'St_bytecode.ml': { digest: 'c0c234191ab2',
+    'St_bytecode.ml': { digest: '4d590eccc80e',
       summary: 'The header packed in a SmallInteger, a CompiledMethod made and read, and disassembled.',
       important: [
         { at: 'def:special_selectors', say: 'the sends with a bytecode of their own', weight: 2 },
@@ -103,7 +103,7 @@
         { from: 'def:gen_send', to: 'def:inline_block' },
       ],
     },
-    'St_memory.mli': { digest: 'ad2809520139',
+    'St_memory.mli': { digest: '8cd6bffa4c02',
       summary: "The object memory, chapter 30: an oop a SmallInteger or an index in the object table; become:, the collector.",
       capitals: [
         { at: 'type:oop', say: 'an int: a SmallInteger, or an object' },
@@ -115,7 +115,7 @@
         { at: 'def:gc', weight: 1 },
       ],
     },
-    'St_memory.ml': { digest: '94222f4130ea',
+    'St_memory.ml': { digest: 'f37aef437ea9',
       summary: 'The table: classes and bodies by index, allocation, symbols, become:, mark and sweep from the roots.',
       important: [
         { at: 'def:alloc', weight: 2 },
@@ -139,7 +139,7 @@
         { at: 'def:define_class', say: 'subclass: ... its instances reshaped', weight: 2 },
       ],
     },
-    'St_interp.mli': { digest: '4ed7daebeb93',
+    'St_interp.mli': { digest: 'd27597c9b5cc',
       summary: "The Blue Book's interpreter: contexts are objects, sends through a method cache, non-local return, processes on a budget.",
       capitals: [
         { at: 'def:run', say: 'a process run for a budget of bytecodes' },
@@ -147,11 +147,12 @@
       important: [
         { at: 'comment:"**Contexts are objects**"', say: 'the call stack as a list of objects', weight: 3 },
         { at: 'comment:"**Returns**"', say: '^ in a block returns from its home', weight: 2 },
+        { at: 'comment:"**Contexts recycled.**"', say: 'a context nobody holds is used again', weight: 2 },
         { at: 'type:host', say: 'the Transcript, the clock, the mouse: the host\'s', weight: 2 },
         { at: 'type:process_state', weight: 1 },
       ],
     },
-    'St_interp.ml': { digest: 'd91b3c68ff03',
+    'St_interp.ml': { digest: 'ee33ef2ccd85',
       summary: 'Registers cached from the active context, sends, returns, the bytecodes decoded by range, processes run.',
       capitals: [
         { at: 'def:step', say: 'one bytecode: fetch, decode, execute' },
@@ -181,7 +182,7 @@
         { at: 'comment:"the primitive runs first"', say: 'a failure falls back on Smalltalk', weight: 3 },
       ],
     },
-    'St_primitives.ml': { digest: 'bc163ea03610',
+    'St_primitives.ml': { digest: '2407adf9231b',
       summary: 'Numbers, indexing, objects and classes, blocks and perform:, strings, the system, and the table.',
       important: [
         { at: 'def:small_ints', say: 'SmallInteger arithmetic, failing on overflow', weight: 2 },

@@ -1,0 +1,11 @@
+; claude: the interpreter timed, both kernels, natively and under node
+; (notes_opti_ocaml.md, "The Smalltalk interpreter"):
+;   dune exec languages/smalltalk/tests/bench/St_bench.exe
+;   dune build languages/smalltalk/tests/bench/St_bench.bc.js &&
+;     node _build/default/languages/smalltalk/tests/bench/St_bench.bc.js
+; an argument: the workloads whose name has it
+(executable
+ (name St_bench)
+ (modes exe js)
+ (libraries smalltalk)
+)

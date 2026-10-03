@@ -32,6 +32,13 @@ type header = { primitive : int; num_args : int; num_temps : int; frame_size : i
 let encode_header (h : header) : int =
   h.primitive lor (h.num_args lsl 9) lor (h.num_temps lsl 14) lor (h.frame_size lsl 20)
 
+(* the same fields one at a time, off the SmallInteger: what a send
+ * reads, without making the record *)
+let primitive_of (i : int) : int = i land 511
+let num_args_of (i : int) : int = (i lsr 9) land 31
+let num_temps_of (i : int) : int = (i lsr 14) land 63
+let frame_size_of (i : int) : int = (i lsr 20) land 255
+
 let decode_header (i : int) : header =
   { primitive = i land 511; num_args = (i lsr 9) land 31; num_temps = (i lsr 14) land 63; frame_size = (i lsr 20) land 255 }
 

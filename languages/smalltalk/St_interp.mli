@@ -42,6 +42,19 @@
    returned, #cannotReturn: is sent instead. A returned context is
    marked by a nil sender and a nil ip.
 
+   **Contexts recycled.** A context for every send is the price of
+   contexts being objects, and most are garbage as soon as they return:
+   nobody ever looked at them (Deutsch and Schiffman, 1984, built their
+   fast Smalltalk on it; the Blue Book kept a free list of contexts
+   too, knowing by reference counts which could go on it). Here an
+   object's entry in the table has a bit, *escaped*, set when a context
+   is handed to the program -- thisContext, a block made (its home, a
+   closure's outer context), its sender read, the debugger looking at
+   its process. A context that returns with the bit clear goes into a
+   pool, by size, and the next send of that size takes it from there
+   instead of allocating. A method that makes no block is recycled; one
+   that does is not.
+
    **Processes**: a process is a chain of contexts not running. The
    host runs one at a time, for a budget of bytecodes, so that an
    endless loop never freezes the screen; a process ends when its
@@ -143,6 +156,14 @@ val send : vm -> oop -> int -> unit
 val active_context : vm -> oop
 val ip : vm -> int
 val home_context : vm -> oop
+
+(* a MethodContext of this many fields, recycled or new, its fixed
+ * fields and its first [temps] temporaries nil *)
+val new_context : vm -> int -> temps:int -> oop
+
+(* an object handed to the program that may be a context: if it is, it
+ * will not be recycled *)
+val escape : vm -> oop -> unit
 
 (* make a context active (a block's value), saving the current one *)
 val activate_context : vm -> oop -> unit

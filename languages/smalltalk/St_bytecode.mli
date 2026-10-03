@@ -81,6 +81,12 @@ type header = { primitive : int; num_args : int; num_temps : int (* the argument
 val encode_header : header -> int
 val decode_header : int -> header
 
+(* an encoded header's fields, one at a time: the interpreter's sends *)
+val primitive_of : int -> int
+val num_args_of : int -> int
+val num_temps_of : int -> int
+val frame_size_of : int -> int
+
 (*****************************************************************************)
 (* A CompiledMethod *)
 (*****************************************************************************)

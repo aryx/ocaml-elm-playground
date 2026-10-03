@@ -97,7 +97,12 @@ in `dev/notes_opti_ocaml.md`.
   them. Worked example: `fact := [:n | n < 2 ifTrue: [1] ifFalse: [n *
   (fact value: n - 1)]]` answers 120 for 5; two blocks made in one loop
   keep their own `i`.
-- **Q2, speed**: the items above, measured.
+- **Q2, speed** (started, 2026-10-03: `St_bench`, contexts recycled,
+  the header read once -- a send 1.5 times faster natively, 1.3 under
+  node; numbers in `notes_opti_ocaml.md` section 19; left: `at:` and
+  `at:put:` by their bytecodes, the receiver's fields in a register,
+  BitBlt a row at a time, then the bouncing-morphs spike): the items
+  above, measured.
 - **Q3, colour and text**: Forms of 8 and 32 bits, a colour BitBlt
   (its rules, and alpha blending, Squeak's rule 24), `Color`; a font as
   a Form of glyphs and a table of offsets (the strike format), text

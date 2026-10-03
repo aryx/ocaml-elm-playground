@@ -207,6 +207,9 @@ blockCopy: numArgs
 
 !ContextPart methodsFor: 'accessing'!
 sender
+	"The virtual machine answers it, to know that someone holds the
+	sender now: a context nobody holds is used again (St_interp.mli)."
+	<primitive: 159>
 	^sender!
 
 method
