@@ -312,7 +312,36 @@ let start_block vm (blk : oop) (args : oop list) : bool =
       true
     end
 
-let value : I.primitive = fun vm n -> start_block vm (rcvr vm n) (List.init n (fun i -> arg vm n i))
+(* a closure's value: a new MethodContext for this activation, so that
+ * a block can be running twice (St_interp.mli) *)
+let start_closure vm (blk : oop) (args : oop list) : bool =
+  let m = I.memory vm in
+  if M.is_int blk || M.class_of m blk <> (M.known m).block_closure then false
+  else
+    let c = M.fields m blk in
+    let nargs = List.length args and copied = Array.length c - 3 in
+    if M.int_of c.(2) <> nargs then false
+    else begin
+      let outer = M.fields m c.(0) in
+      let meth = outer.(I.c_method) in
+      let a = Array.make (I.c_temps + (St_bytecode.header m meth).frame_size) M.nil in
+      a.(I.c_sender) <- I.active_context vm;
+      a.(I.c_ip) <- c.(1);
+      a.(I.c_sp) <- M.of_int (I.c_temps + nargs + copied - 1);
+      a.(I.c_method) <- meth;
+      a.(I.c_closure) <- blk;
+      a.(I.c_receiver) <- outer.(I.c_receiver);
+      List.iteri (fun i v -> a.(I.c_temps + i) <- v) args;
+      Array.blit c 3 a (I.c_temps + nargs) copied;
+      I.pop vm (nargs + 1);
+      I.activate_context vm (M.alloc m ~cls:(M.known m).method_context (M.Pointers a));
+      true
+    end
+
+let value : I.primitive =
+ fun vm n ->
+  let args = List.init n (fun i -> arg vm n i) in
+  start_block vm (rcvr vm n) args || start_closure vm (rcvr vm n) args
 
 let value_with_arguments : I.primitive =
  fun vm n ->
@@ -325,7 +354,7 @@ let value_with_arguments : I.primitive =
     (* the Array's elements where value: would have its arguments *)
     I.pop vm 1;
     List.iter (I.push vm) l;
-    if start_block vm blk l then true
+    if start_block vm blk l || start_closure vm blk l then true
     else begin
       I.pop vm (List.length l);
       I.push vm args;

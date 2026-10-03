@@ -34,6 +34,19 @@
               blockCopy: value value: do: new new: x y
      208-255  send literal selector #iiii with 0, 1 or 2 arguments
 
+   Five more, Squeak's of 2008 for its closures (St_compile.mli), in
+   numbers the Blue Book left unused; its own compiler never emits
+   them:
+
+     138      push a new Array: jkkkkkkk, of k nils (j = 0) or of the k
+              values popped off the stack (j = 1)
+     140      push temporary k of the temp vector in temporary j: then
+              a byte k, a byte j
+     141      store into it; 142 pop and store
+     143      push a closure: llllkkkk, l values copied off the stack,
+              k arguments, then two bytes, the length of the block's
+              body, which follows and is jumped over
+
    The 32 "special selectors" of 176-207 cost one byte and no literal;
    for the arithmetic ones on SmallIntegers the interpreter does not
    even look the method up (St_interp.mli).

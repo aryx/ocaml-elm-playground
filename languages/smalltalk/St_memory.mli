@@ -62,6 +62,9 @@ type known = {
   mutable compiled_method : oop;
   mutable method_context : oop;
   mutable block_context : oop;
+  (* nil in a kernel without BlockClosure, the Blue Book's: what tells
+   * the compiler which blocks to make (St_compile.mli) *)
+  mutable block_closure : oop;
   mutable message : oop;
   mutable association : oop;
   mutable point : oop;

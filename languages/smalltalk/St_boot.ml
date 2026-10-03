@@ -71,12 +71,23 @@ let line_of (text : string) (pos : int) : int =
   String.iteri (fun i c -> if i < pos && c = '\n' then incr n) text;
   !n
 
-let boot ?(host = quiet_host) () : I.vm =
+let boot ?(host = quiet_host) ?(kernel = St_kernel.files) () : I.vm =
   let m = M.create () in
   let k = M.known m in
-  let items = List.concat_map (fun (file, text) -> List.map (fun i -> (file, text, i)) (St_chunk.read text)) St_kernel.files in
+  let items = List.concat_map (fun (file, text) -> List.map (fun i -> (file, text, i)) (St_chunk.read text)) kernel in
   let defs =
     List.filter_map (fun (_, _, i) -> match i with St_chunk.Doit (t, _) -> definition t | St_chunk.Methods _ -> None) items
+  in
+  (* claude: a class defined twice, by a later file changing an earlier
+   * one's (Squeak's MethodContext): its last definition, in the place
+   * of the first *)
+  let defs =
+    let last name = List.find (fun d -> d.name = name) (List.rev defs) in
+    let rec go seen = function
+      | [] -> []
+      | d :: rest -> if List.mem d.name seen then go seen rest else last d.name :: go (d.name :: seen) rest
+    in
+    go [] defs
   in
   (* 1. the classes, empty *)
   let table = Hashtbl.create 64 in
@@ -101,6 +112,7 @@ let boot ?(host = quiet_host) () : I.vm =
   k.compiled_method <- get "CompiledMethod";
   k.method_context <- get "MethodContext";
   k.block_context <- get "BlockContext";
+  k.block_closure <- Option.value (Hashtbl.find_opt table "BlockClosure") ~default:M.nil;
   k.message <- get "Message";
   k.association <- get "Association";
   k.point <- get "Point";

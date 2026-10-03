@@ -52,4 +52,14 @@ let () =
   let same = St_image.save (I.memory vm2) = image in
   Printf.printf "%s the image saved again, the same bytes\n" (if same then "ok  " else "FAIL");
   if not same then incr failures;
+  (* Squeak's kernel: closures *)
+  let vm = St_boot.boot ~kernel:St_kernel.squeak () in
+  let print text = match I.evaluate vm text with Ok v -> I.print_string vm v | Error e -> "error: " ^ e in
+  let check text expected =
+    let got = print text in
+    Printf.printf "%s %s = %s\n" (if got = expected then "ok  " else "FAIL") text got;
+    if got <> expected then incr failures
+  in
+  check "| fact | fact := [:n | n < 2 ifTrue: [1] ifFalse: [n * (fact value: n - 1)]]. fact value: 20" "2432902008176640000";
+  check "(#(1 2 3) collect: [:i | [i * 10]]) collect: [:b | b value]" "#(10 20 30)";
   if !failures > 0 then exit 1

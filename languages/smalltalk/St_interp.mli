@@ -7,10 +7,21 @@
 
    **Contexts are objects**, in the object memory like any other:
 
-     MethodContext  0 sender  1 ip  2 sp  3 method  4 -  5 receiver
+     MethodContext  0 sender  1 ip  2 sp  3 method  4 closure  5 receiver
                     6... the arguments, the temporaries, then the stack
      BlockContext   0 caller  1 ip  2 sp  3 argument count
                     4 initial ip  5 home  6... the stack
+
+   With closures (Squeak's, St_compile.mli) there is no BlockContext:
+   a block is a BlockClosure, not a context,
+
+     BlockClosure   0 outerContext  1 startpc  2 numArgs
+                    3... the values it copied when it was made
+
+   and each "value" makes a new MethodContext for it, field 4 naming
+   the closure, the receiver its outer context's, the temporaries its
+   arguments then its copied values. Its home, where "^" returns from,
+   is found up the closures' outer contexts.
 
    A send makes a new MethodContext whose sender is the active one;
    a return makes the sender active again. So the stack of calls is a
@@ -156,6 +167,7 @@ val c_sender : int
 val c_ip : int
 val c_sp : int
 val c_method : int
+val c_closure : int
 val c_receiver : int
 val c_home : int
 val c_temps : int
@@ -163,5 +175,6 @@ val c_temps : int
 (* for the debugger: whether a context is a block's, its method, its
  * home, its receiver *)
 val is_block_context : vm -> oop -> bool
+val is_closure_context : vm -> oop -> bool (* a closure's activation *)
 val context_method : vm -> oop -> oop
 val context_home : vm -> oop -> oop

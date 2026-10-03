@@ -34,7 +34,7 @@ let label (vm : I.vm) (ctx : oop) : string =
   let base =
     if mcls = rcls || mcls = M.nil then C.name m rcls ^ ">>" ^ sel else C.name m rcls ^ "(" ^ C.name m mcls ^ ")>>" ^ sel
   in
-  if I.is_block_context vm ctx then "[] in " ^ base else base
+  if I.is_block_context vm ctx || I.is_closure_context vm ctx then "[] in " ^ base else base
 
 (* the send in progress: at the top of a stepped process, the one about
  * to be made; elsewhere, the last one made *)

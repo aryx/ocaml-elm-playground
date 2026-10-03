@@ -40,6 +40,9 @@ View's method changes the screen at once.
 
 ## 2. Real closures (Squeak, 2008)
 
+Done for Squeak's kernel (`plan_tiny_squeak.md`, Q1); the Blue Book's
+kernel keeps the Blue Book's blocks.
+
 The Blue Book's blocks share their home's temporaries and cannot be
 reentered: `fact := [:n | n < 2 ifTrue: [1] ifFalse: [n * (fact
 value: n - 1)]]` gives a wrong answer today, and the notes say why.

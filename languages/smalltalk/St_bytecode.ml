@@ -79,8 +79,9 @@ let pcmap (m : M.t) (meth : oop) : (int * int * int) list =
 
 let length_at (b : Bytes.t) (pc : int) : int =
   match Char.code (Bytes.get b pc) with
-  | 128 | 129 | 130 | 131 | 133 -> 2
-  | 132 | 134 -> 3
+  | 128 | 129 | 130 | 131 | 133 | 138 -> 2
+  | 132 | 134 | 140 | 141 | 142 -> 3
+  | 143 -> 4
   | c when c >= 160 && c <= 175 -> 2
   | _ -> 1
 
@@ -120,6 +121,14 @@ let disassemble ~(show_literal : int -> string) (b : Bytes.t) : (int * string) l
         | 135 -> "pop"
         | 136 -> "dup"
         | 137 -> "push thisContext"
+        | 138 when ext () < 128 -> Printf.sprintf "push a new Array of %d" (ext ())
+        | 138 -> Printf.sprintf "pop %d into a new Array" (ext () land 127)
+        | 140 -> Printf.sprintf "push temporary %d of the vector in %d" (ext ()) (byte (pc + 2))
+        | 141 -> Printf.sprintf "store into temporary %d of the vector in %d" (ext ()) (byte (pc + 2))
+        | 142 -> Printf.sprintf "pop into temporary %d of the vector in %d" (ext ()) (byte (pc + 2))
+        | 143 ->
+            Printf.sprintf "push a closure of %d arguments copying %d, to %d" (ext () land 15) (ext () lsr 4)
+              (pc + 4 + (byte (pc + 2) * 256) + byte (pc + 3))
         | c when c >= 144 && c <= 151 -> Printf.sprintf "jump to %d" (pc + 1 + (c - 143))
         | c when c >= 152 && c <= 159 -> Printf.sprintf "jump on false to %d" (pc + 1 + (c - 151))
         | c when c >= 160 && c <= 167 -> Printf.sprintf "jump to %d" (pc + 2 + (((c - 164) * 256) + ext ()))

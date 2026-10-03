@@ -228,7 +228,8 @@ then the code itself. `blockCopy:` makes a BlockContext that will start
 after that jump. The block's arguments are temporaries **of the
 method**, which is why the Blue Book's blocks cannot be reentered: a
 block that calls itself overwrites its own argument. Real closures came
-in Squeak in 2008 (Eliot Miranda); they are an exercise.
+in Squeak in 2008 (Eliot Miranda); the same compiler emits them for
+Squeak's kernel (`notes_squeak.md`, section 1).
 
 **Worked example**: `Rectangle>>center`'s bytes are `0 1 176 119 185
 124`; the listing above is `sign:`'s.
@@ -381,8 +382,6 @@ windows until the screen menu's "restore display".
 
 ## Exercises
 
-- Real closures: a block's own temporaries, reentrant blocks
-  (Miranda's closure compiler for Squeak, 2008).
 - MVC in Smalltalk: the environment's windows as Smalltalk objects,
   a View drawing with BitBlt, a Controller reading the Sensor.
 - The compiler in Smalltalk, compiled by the OCaml one, then compiling

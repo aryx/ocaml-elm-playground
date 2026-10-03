@@ -18,11 +18,13 @@
 )
 
 ; claude: the kernel's source, the chunk files of kernel/, embedded as
-; strings (St_kernel.mli), in the order they are bootstrapped
+; strings (St_kernel.mli), in the order they are bootstrapped; and
+; Squeak's kernel, the same files then those of kernel/squeak/
 (rule
  (targets St_kernel.ml)
  (deps kernel/Definitions.st kernel/Objects.st kernel/Classes.st kernel/Numbers.st
-       kernel/Collections.st kernel/Streams.st kernel/Graphics.st kernel/System.st)
+       kernel/Collections.st kernel/Streams.st kernel/Graphics.st kernel/System.st
+       kernel/squeak/Closures.st)
  (action
   (with-stdout-to
    %{targets}
@@ -52,5 +54,10 @@
     (echo "|st});\n")
     (echo "(\"System.st\", {st|")
     (cat kernel/System.st)
+    (echo "|st});\n")
+    (echo "]\n")
+    (echo "let squeak = files @ [\n")
+    (echo "(\"squeak/Closures.st\", {st|")
+    (cat kernel/squeak/Closures.st)
     (echo "|st});\n")
     (echo "]\n")))))

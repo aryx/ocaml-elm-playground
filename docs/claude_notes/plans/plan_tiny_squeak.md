@@ -43,17 +43,23 @@ Squeak's own VM is: a few thousand lines of C under a world of objects.
 **The tiny rule**, as for TinySmalltalk80: a core small enough to read,
 with everything left out listed.
 
+## Decisions
+
+- **One library, two kernels** (decided, 2026-10-03): TinySqueak on
+  the same `languages/smalltalk`, booted from a second set of kernel
+  files (the Blue Book's kernel, plus closures, colour and Morphic), so
+  that the interpreter's improvements serve both, and the older,
+  simpler kernel can still be read and inspected alone:
+  TinySmalltalk80 keeps booting the Blue Book's kernel only, and
+  nothing of Squeak's is added to those files.
+- **Over the budget** (decided, 2026-10-03): TinySqueak carries a
+  whole system, as TinySmalltalk80 and TinyChrome do; it gets its line
+  in `Unit_catalog.ml`'s `over_budget`.
+
 ## Proposed decisions (to confirm)
 
 - **Squeak 1.x first** (1996-1998: Morphic arriving, colour); Etoys a
   later phase; the Squeak 3.x years (Monticello, traits) out.
-- **One library, two kernels**: TinySqueak on the same
-  `languages/smalltalk`, booted from a second set of kernel files
-  (the Blue Book's kernel, plus closures, colour and Morphic), so that
-  the interpreter's improvements serve both. The alternative, a frozen
-  Blue Book library and a diverging copy for Squeak, keeps
-  TinySmalltalk80's code exactly the book's, at the price of two
-  interpreters.
 - **Direct pointers or the object table**: Squeak dropped the object
   table in 1996 and pays for `become:` with a scan of memory. Keeping
   the table is simpler here; the change is an exercise, and the notes
@@ -80,7 +86,12 @@ in `dev/notes_opti_ocaml.md`.
 - **Q0, the plan** (this file), then `notes_squeak.md`: Morphic, the
   shrinking host, closures, Slang, a section each with its worked
   example.
-- **Q1, closures**: `BlockClosure` (its outer context, its copied
+- **Q1, closures** (done, 2026-10-03: `kernel/squeak/Closures.st`,
+  `St_compile`'s two passes, bytecodes 138 and 140 to 143,
+  `notes_squeak.md` section 1, `Unit_squeak.ml`; a block-heavy loop
+  runs 1.4 times slower than with the Blue Book's blocks, Q2's
+  business; left: the debugger's variables in a closure's
+  activation): `BlockClosure` (its outer context, its copied
   values, its start), temporaries that outlive their method in a
   shared temp vector, the bytecodes for them, the compiler emitting
   them. Worked example: `fact := [:n | n < 2 ifTrue: [1] ifFalse: [n *
@@ -123,6 +134,26 @@ in `dev/notes_opti_ocaml.md`.
   `kernel/squeak/` (closures, Color, Morphic, the tools), booted by
   `St_boot.boot ~kernel:`.
 - `apps/devtools/TinySqueak.ml`, its `software/` and `web/` twins.
+
+## Later: the kernels in the code map
+
+Most of TinySqueak is Smalltalk (the kernels' `.st` files), which
+tinybox's code map does not show: it counts and draws `.ml`, `.mli`
+and C. To come, at some point (asked 2026-10-03, not a phase yet):
+
+- `Highlight_st`, a Smalltalk highlighter giving `Highlight_code`'s
+  spans, as `Highlight_ml` does for OCaml. `St_lexer`'s tokens know
+  where they start and stop, but it drops the comments, which a
+  highlighter must keep. The categories: a chunk file's `!Class
+  methodsFor: '...'!` line a section, a method's selector a
+  `Def_function`, a class defined a `Def_type`, a capitalized name a
+  global, the pseudo-variables keywords.
+- the `.st` files among the code map's sources, in their folder
+  (`kernel/`, `kernel/squeak/`), counted by `Code_deps` as part of
+  the program's own code; a file's uses of another being the classes
+  it names. The budget is no concern for TinySmalltalk80 and
+  TinySqueak (decided, 2026-10-03): both are on `over_budget`, however
+  many lines their kernels add.
 
 ## Left out (exercises, or never)
 

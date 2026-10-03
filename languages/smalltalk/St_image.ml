@@ -81,14 +81,16 @@ let known_oops (k : M.known) : int list =
   [
     k.small_integer; k.string; k.symbol; k.array; k.float; k.character; k.compiled_method; k.method_context;
     k.block_context; k.message; k.association; k.point; k.large_positive; k.large_negative; k.metaclass;
-    k.method_dictionary; k.true_; k.false_; k.smalltalk;
+    k.method_dictionary; k.true_; k.false_; k.smalltalk; k.block_closure;
   ]
 
 let known_of (l : int list) (characters : int array) (specials : int array) : M.known =
-  match l with
+  (* claude: an image saved before closures has no BlockClosure *)
+  match if List.length l = 19 then l @ [ M.nil ] else l with
   | [
    small_integer; string; symbol; array; float; character; compiled_method; method_context; block_context; message;
    association; point; large_positive; large_negative; metaclass; method_dictionary; true_; false_; smalltalk;
+   block_closure;
   ] ->
       {
         M.small_integer;
@@ -100,6 +102,7 @@ let known_of (l : int list) (characters : int array) (specials : int array) : M.
         compiled_method;
         method_context;
         block_context;
+        block_closure;
         message;
         association;
         point;

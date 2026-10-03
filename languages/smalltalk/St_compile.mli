@@ -21,8 +21,55 @@
    blockCopy: makes a BlockContext that starts after the jump. Its
    arguments and temporaries are temporaries *of the method* -- the
    Blue Book's blocks, which is why a block cannot call itself
-   recursively (it would overwrite its own arguments). Real closures
-   came in 2008 (Squeak, Eliot Miranda): an exercise.
+   recursively (it would overwrite its own arguments).
+
+   **Closures** came in 2008 (Squeak, Eliot Miranda's compiler), and
+   are what is compiled when the kernel has a BlockClosure class
+   (St_kernel.squeak): every value of a block then runs in a context of
+   its own, with its own arguments and temporaries. What is left to
+   decide is how a block reaches the temporaries *outside* it, whose
+   context may be gone when it runs. Two answers, by what happens to
+   them:
+
+   - a temporary that no longer changes once a block has it is
+     **copied**: its value is pushed when the block is made and kept in
+     the BlockClosure; in the block it is one more temporary, after the
+     arguments. "adder: n ^[:x | x + n]" is
+
+       0 push temporary 0 (n)    1 push a closure of 1 argument copying 1
+       5 push temporary 0 (x)    6 push temporary 1 (its n)
+       7 send +   8 block return top               9 return top
+
+   - one that changes cannot be copied, the copies would part: it lives
+     in a **temp vector**, an Array made when its method (or block)
+     starts, and it is the vector that blocks copy, all sharing the one
+     variable in it. "counter | n | n := 0. ^[n := n + 1]" is
+
+       0 push a new Array of 1   2 pop into temporary 0 (the vector)
+       3 push 0                  4 pop into temporary 0 of the vector
+       7 push temporary 0        8 push a closure of 0 arguments copying 1
+       12 push temporary 0 of the vector in 0   15 push 1   16 send +
+       17 store into temporary 0 of the vector  20 block return top
+       21 return top
+
+   A temporary "changes" if it is assigned from a block inside the one
+   that declares it, or after a block that uses it, or in a loop: a
+   simple rule that may put in a vector a temporary that could have
+   been copied, never the reverse (a finer one is an exercise).
+
+   Knowing all that takes a look at the whole method before the first
+   byte is emitted, so with closures the method is compiled twice: a
+   first pass, thrown away, that only learns which temporaries each
+   block uses and which change; a second that lays them out and emits.
+   The Blue Book's blocks need one.
+
+   to:do: with a literal block is compiled as a loop over a temporary,
+   no block made, which would give every turn of the loop the
+   same variable; when a block holds it, the loop is sent instead, to
+   Number>>to:do:, and each turn has its own (the first pass runs again
+   once it has found such a loop). The trap left: a temporary declared
+   in a whileTrue:'s literal block is its method's, one for all the
+   turns.
 
    **Inlined messages**: ifTrue:, ifFalse:, ifTrue:ifFalse:,
    ifFalse:ifTrue:, and:, or:, whileTrue:, whileFalse: and whileTrue,

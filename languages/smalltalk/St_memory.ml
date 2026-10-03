@@ -23,6 +23,7 @@ type known = {
   mutable compiled_method : oop;
   mutable method_context : oop;
   mutable block_context : oop;
+  mutable block_closure : oop;
   mutable message : oop;
   mutable association : oop;
   mutable point : oop;
@@ -61,6 +62,7 @@ let empty_known () =
     compiled_method = 0;
     method_context = 0;
     block_context = 0;
+    block_closure = 0;
     message = 0;
     association = 0;
     point = 0;

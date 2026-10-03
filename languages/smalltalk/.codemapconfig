@@ -55,7 +55,7 @@
         { from: 'def:binary_expr', to: 'def:unary_expr' },
       ],
     },
-    'St_bytecode.mli': { digest: '6b743acbe04e',
+    'St_bytecode.mli': { digest: '0b89631e17e5',
       summary: "The Blue Book's instruction set, chapter 28, byte for byte, and a CompiledMethod's header, literals and pc map.",
       important: [
         { at: 'comment:"0-15     push receiver variable #iiii"', say: 'the instruction set, by ranges of bytes', weight: 3 },
@@ -63,7 +63,7 @@
         { at: 'def:pcmap', say: 'each send to its text, for the debugger', weight: 2 },
       ],
     },
-    'St_bytecode.ml': { digest: '2892ce8ae2d9',
+    'St_bytecode.ml': { digest: 'c0c234191ab2',
       summary: 'The header packed in a SmallInteger, a CompiledMethod made and read, and disassembled.',
       important: [
         { at: 'def:special_selectors', say: 'the sends with a bytecode of their own', weight: 2 },
@@ -71,19 +71,20 @@
         { at: 'def:disassemble', weight: 2 },
       ],
     },
-    'St_compile.mli': { digest: '05183c95738e',
-      summary: "A method's tree to bytecodes in one pass: blocks in the middle of their method, ifTrue: and whileTrue: inlined as jumps.",
+    'St_compile.mli': { digest: '2c5ae133f679',
+      summary: "A method's tree to bytecodes: blocks in the middle of their method, ifTrue: and whileTrue: inlined as jumps; in one pass for the Blue Book's blocks, two for Squeak's closures.",
       capitals: [
         { at: 'def:compile', say: 'a parsed method into a CompiledMethod' },
       ],
       important: [
         { at: 'comment:"**Blocks** are compiled in the middle of their method"', say: "the Blue Book's blocks, not closures", weight: 2 },
+        { at: 'comment:"**Closures** came in 2008"', say: 'copied values and temp vectors, when the kernel has BlockClosure', weight: 3 },
         { at: 'comment:"**Inlined messages**"', say: 'no send at all: jumps', weight: 3 },
         { at: 'def:compile_and_install', say: "the Browser's accept", weight: 2 },
       ],
     },
-    'St_compile.ml': { digest: '6dbe48713d77',
-      summary: 'Code in pieces so a jump knows its length; names resolved, literals collected, sends and inlined messages emitted.',
+    'St_compile.ml': { digest: '10714d019ca2',
+      summary: 'Code in pieces so a jump knows its length; names resolved, literals collected, sends and inlined messages emitted; temporaries laid out in frames, a first pass learning what closures capture.',
       capitals: [
         { at: 'def:gen_send', say: 'a send, or the inlined control structure' },
       ],
@@ -91,7 +92,9 @@
         { at: 'def:resolve', say: 'a name: temporary, instance, class variable, global', weight: 2 },
         { at: 'def:gen', weight: 2 },
         { at: 'def:gen_send', weight: 3 },
-        { at: 'def:gen_block', say: 'blockCopy:, then the body jumped over', weight: 2 },
+        { at: 'def:gen_block_context', say: 'blockCopy:, then the body jumped over', weight: 2 },
+        { at: 'def:gen_closure', say: 'what it copies pushed, then the closure, a frame of its own', weight: 2 },
+        { at: 'type:facts', say: 'what the first pass learns for the second', weight: 2 },
         { at: 'def:compile', weight: 2 },
       ],
       links: [
@@ -100,7 +103,7 @@
         { from: 'def:gen_send', to: 'def:inline_block' },
       ],
     },
-    'St_memory.mli': { digest: 'a80bee0e202d',
+    'St_memory.mli': { digest: 'ad2809520139',
       summary: "The object memory, chapter 30: an oop a SmallInteger or an index in the object table; become:, the collector.",
       capitals: [
         { at: 'type:oop', say: 'an int: a SmallInteger, or an object' },
@@ -112,7 +115,7 @@
         { at: 'def:gc', weight: 1 },
       ],
     },
-    'St_memory.ml': { digest: '7f291be1d3aa',
+    'St_memory.ml': { digest: '94222f4130ea',
       summary: 'The table: classes and bodies by index, allocation, symbols, become:, mark and sweep from the roots.',
       important: [
         { at: 'def:alloc', weight: 2 },
@@ -136,7 +139,7 @@
         { at: 'def:define_class', say: 'subclass: ... its instances reshaped', weight: 2 },
       ],
     },
-    'St_interp.mli': { digest: '6f0190d9d926',
+    'St_interp.mli': { digest: '4ed7daebeb93',
       summary: "The Blue Book's interpreter: contexts are objects, sends through a method cache, non-local return, processes on a budget.",
       capitals: [
         { at: 'def:run', say: 'a process run for a budget of bytecodes' },
@@ -148,7 +151,7 @@
         { at: 'type:process_state', weight: 1 },
       ],
     },
-    'St_interp.ml': { digest: '66786df13d99',
+    'St_interp.ml': { digest: 'd91b3c68ff03',
       summary: 'Registers cached from the active context, sends, returns, the bytecodes decoded by range, processes run.',
       capitals: [
         { at: 'def:step', say: 'one bytecode: fetch, decode, execute' },
@@ -178,7 +181,7 @@
         { at: 'comment:"the primitive runs first"', say: 'a failure falls back on Smalltalk', weight: 3 },
       ],
     },
-    'St_primitives.ml': { digest: '3b10ffcc0684',
+    'St_primitives.ml': { digest: 'bc163ea03610',
       summary: 'Numbers, indexing, objects and classes, blocks and perform:, strings, the system, and the table.',
       important: [
         { at: 'def:small_ints', say: 'SmallInteger arithmetic, failing on overflow', weight: 2 },
@@ -218,10 +221,10 @@
         { at: 'def:read', weight: 2 },
       ],
     },
-    'St_kernel.mli': { digest: '225f2a08f946',
-      summary: "The kernel's chunk files, kernel/*.st, embedded by dune in the order St_boot reads them.",
+    'St_kernel.mli': { digest: '1970d43c52cc',
+      summary: "The kernel's chunk files, kernel/*.st, embedded by dune in the order St_boot reads them; and Squeak's kernel, the same then kernel/squeak/'s.",
     },
-    'St_boot.mli': { digest: '31cc14babd9a',
+    'St_boot.mli': { digest: '52eae0a194e3',
       summary: "Smalltalk-80 never booted; here the world is made from its classes' text, in four steps.",
       capitals: [
         { at: 'def:boot', say: 'from the kernel\'s text to a running Smalltalk' },
@@ -231,7 +234,7 @@
         { at: 'def:boot', weight: 2 },
       ],
     },
-    'St_boot.ml': { digest: '6569d32f6740',
+    'St_boot.ml': { digest: '15d9fbf2273b',
       summary: 'The four steps: the classes made empty, filled from their definitions, every method compiled, the rest of the chunks run.',
       important: [
         { at: 'def:definition', say: 'a class definition read from its chunk', weight: 2 },
@@ -246,7 +249,7 @@
         { at: 'def:restart', weight: 2 },
       ],
     },
-    'St_debug.ml': { digest: '2f7b17528a02',
+    'St_debug.ml': { digest: 'ce8f04e13ad0',
       summary: 'The stack read from the contexts, and moving on under a condition checked before each bytecode.',
       capitals: [
         { at: 'def:restart', say: 'a frame run again, its method taken afresh' },
@@ -266,7 +269,7 @@
         { at: 'def:load', weight: 2 },
       ],
     },
-    'St_image.ml': { digest: '86a61a46096e',
+    'St_image.ml': { digest: 'c38ad6e5bb8b',
       summary: 'Every object written with varints, oops tagged, the known objects by name; loaded into a new VM.',
       important: [
         { at: 'def:put_oop', say: "a zigzagged payload, 31 bits: the web's ints", weight: 2 },
@@ -299,6 +302,7 @@
   ],
   dirs: {
     kernel: { summary: "The kernel's classes written in Smalltalk, in chunk format: what St_boot compiles into the world." },
+    'kernel/squeak': { summary: "What Squeak's kernel adds to the Blue Book's and changes in it: BlockClosure, whose presence makes the compiler emit closures." },
     tests: { summary: 'Expressions printed, the class hierarchy, the debugger, the image saved and loaded.' },
   },
 }

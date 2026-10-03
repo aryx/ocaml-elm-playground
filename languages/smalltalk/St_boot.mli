@@ -22,6 +22,9 @@
    4. the virtual machine made, and the chunks that are not definitions
       run: from here, everything is Smalltalk.
 
+   A later file may define again a class of an earlier one, with
+   other instance variables: the last definition is the class's.
+
    A mistake in the kernel is an OCaml exception naming its file and
    line. *)
 
@@ -30,8 +33,11 @@ exception Error of string
 (* a host that throws the Transcript away *)
 val quiet_host : St_interp.host
 
-(* the running system *)
-val boot : ?host:St_interp.host -> unit -> St_interp.vm
+(* the running system: Smalltalk-80, from the Blue Book's kernel
+ * (St_kernel.files), or the system of another kernel -- Squeak's,
+ * [~kernel:St_kernel.squeak], whose BlockClosure class makes the
+ * compiler emit closures for every method, the Blue Book's included *)
+val boot : ?host:St_interp.host -> ?kernel:(string * string) list -> unit -> St_interp.vm
 
 (* a class by name, from the globals *)
 val class_named : St_memory.t -> string -> St_memory.oop

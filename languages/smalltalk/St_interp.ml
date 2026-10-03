@@ -61,6 +61,7 @@ let c_sender = 0
 let c_ip = 1
 let c_sp = 2
 let c_method = 3
+let c_closure = 4
 let c_receiver = 5
 let c_home = 5
 let c_temps = 6
@@ -113,7 +114,17 @@ let bytecodes_run (vm : vm) : int = vm.count
 (*****************************************************************************)
 
 let is_block_context (vm : vm) (ctx : oop) : bool = M.class_of vm.m ctx = (M.known vm.m).block_context
-let context_home (vm : vm) (ctx : oop) : oop = if is_block_context vm ctx then M.fetch vm.m ctx c_home else ctx
+let is_closure_context (vm : vm) (ctx : oop) : bool = (not (is_block_context vm ctx)) && M.fetch vm.m ctx c_closure <> M.nil
+
+(* a closure's activation is a MethodContext that names its closure:
+ * its home is the closure's outer context's, up to a method's *)
+let rec closure_home (m : M.t) (ctx : oop) : oop =
+  let closure = M.fetch m ctx c_closure in
+  if closure = M.nil then ctx else closure_home m (M.fetch m closure 0)
+
+let context_home (vm : vm) (ctx : oop) : oop =
+  if is_block_context vm ctx then M.fetch vm.m ctx c_home else closure_home vm.m ctx
+
 let context_method (vm : vm) (ctx : oop) : oop = M.fetch vm.m (context_home vm ctx) c_method
 
 let load (vm : vm) (ctx : oop) : unit =
@@ -244,7 +255,7 @@ let cannot_return (vm : vm) (v : oop) : unit =
 
 (* from the home's method: to the home's sender *)
 let return_from_method (vm : vm) (v : oop) : unit =
-  let home = vm.home in
+  let home = if vm.temps.(c_closure) = M.nil then vm.home else closure_home vm.m vm.home in
   let target = M.fetch vm.m home c_sender in
   if dead vm home then cannot_return vm v
   else if target = M.nil then begin
@@ -405,6 +416,38 @@ let step (vm : vm) : unit =
     | 135 -> pop vm 1
     | 136 -> push vm (stack vm 0)
     | 137 -> push vm vm.active
+    | 138 ->
+        let e = next_byte vm in
+        let n = e land 127 in
+        let a = Array.make n M.nil in
+        if e >= 128 then begin
+          Array.blit vm.slots (vm.sp - n + 1) a 0 n;
+          pop vm n
+        end;
+        push vm (M.new_array m a)
+    | 140 | 141 | 142 ->
+        let i = next_byte vm in
+        let vector = vm.temps.(c_temps + next_byte vm) in
+        if b = 140 then push vm (M.fetch m vector i)
+        else begin
+          M.store m vector i (stack vm 0);
+          if b = 142 then pop vm 1
+        end
+    | 143 ->
+        (* a BlockClosure: 0 outerContext 1 startpc 2 numArgs, then
+         * what it copies, popped off the stack *)
+        let e = next_byte vm in
+        let copied = e lsr 4 in
+        let size = next_byte vm in
+        let size = (size * 256) + next_byte vm in
+        let a = Array.make (3 + copied) M.nil in
+        a.(0) <- vm.active;
+        a.(1) <- M.of_int vm.ip;
+        a.(2) <- M.of_int (e land 15);
+        Array.blit vm.slots (vm.sp - copied + 1) a 3 copied;
+        pop vm copied;
+        push vm (M.alloc m ~cls:(M.known m).block_closure (M.Pointers a));
+        vm.ip <- vm.ip + size
     | _ when b >= 144 && b <= 151 -> vm.ip <- vm.ip + (b - 143)
     | _ when b >= 152 && b <= 159 -> jump_if vm false (b - 151)
     | _ when b >= 160 && b <= 167 ->
