@@ -131,6 +131,9 @@
   the next one wanted, and all are encoded again at each frame
   (mini-soldat's soldiers, a picture a limb, and its map's tiles: 64
   pictures in a frame) (Playground_platform.bitmap_url)
+- Playground_platform.clipboard, set_clipboard: the desktop's shared
+  text, for a program's copy and paste (SDL's natively; on the web,
+  written through navigator.clipboard, read back from what was written)
 - Playground_platform.set_cursor: the mouse's cursor over the window,
   one of the system's (Playground.cursor: Arrow, Hand, Text,
   Crosshair) or Hidden -- a browser's hand over a link, a game's own

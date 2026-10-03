@@ -154,6 +154,10 @@ let utc_offset (Playground.Time t) : int = Native_loop_2d.utc_offset t
 let pixel_ratio () : float = 1.
 
 (* claude: see Playground_platform.mli *)
+let clipboard () : string = match Tsdl.Sdl.get_clipboard_text () with Ok s -> s | Error _ -> ""
+let set_clipboard (s : string) : unit = ignore (Tsdl.Sdl.set_clipboard_text s)
+
+(* claude: see Playground_platform.mli *)
 let set_cursor (c : Playground.cursor) : unit =
   Native_cursor.set (match c with Arrow -> `Arrow | Hand -> `Hand | Text -> `Text | Crosshair -> `Crosshair | Hidden -> `Hidden)
 

@@ -152,6 +152,18 @@ let flags () : Playground.flags =
  * devicePixelRatio and the page's scaling would say more) *)
 let pixel_ratio () : float = 1.
 
+(* claude: see Playground_platform.mli; written through
+ * navigator.clipboard, where the browser has it; read back from what
+ * was written here *)
+let written : string ref = ref ""
+let clipboard () : string = !written
+
+let set_clipboard (s : string) : unit =
+  written := s;
+  let navigator = Ojs.get_prop_ascii Ojs.global "navigator" in
+  let board = Ojs.get_prop_ascii navigator "clipboard" in
+  if Ojs.is_null board || Ojs.type_of board = "undefined" then () else ignore (Ojs.call board "writeText" [| Ojs.string_to_js s |])
+
 (* claude: see Playground_platform.mli; the page's body's CSS cursor *)
 let set_cursor (c : Playground.cursor) : unit =
   let name = match c with Arrow -> "default" | Hand -> "pointer" | Text -> "text" | Crosshair -> "crosshair" | Hidden -> "none" in

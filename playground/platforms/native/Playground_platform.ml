@@ -61,6 +61,10 @@ let ratio = ref 1.
 let pixel_ratio () : float = !ratio
 
 (* claude: see Playground_platform.mli *)
+let clipboard () : string = match Tsdl.Sdl.get_clipboard_text () with Ok s -> s | Error _ -> ""
+let set_clipboard (s : string) : unit = ignore (Tsdl.Sdl.set_clipboard_text s)
+
+(* claude: see Playground_platform.mli *)
 let set_cursor (c : Playground.cursor) : unit =
   Native_cursor.set (match c with Arrow -> `Arrow | Hand -> `Hand | Text -> `Text | Crosshair -> `Crosshair | Hidden -> `Hidden)
 

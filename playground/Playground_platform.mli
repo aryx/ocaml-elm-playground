@@ -88,6 +88,20 @@ val pixel_ratio: unit -> float
 val set_cursor: Playground.cursor -> unit
 
 (*****************************************************************************)
+(* {1 The clipboard} *)
+(*****************************************************************************)
+
+(* The text every program of the desktop shares: what a copy puts
+ * there ([set_clipboard]) and a paste takes ([clipboard], "" when it
+ * holds no text). Effects, as [set_cursor]: a program calls them from
+ * its update, on Ctrl+C and Ctrl+V. Natively SDL's. On the web a page
+ * may write the clipboard but is only given it back later, by a
+ * promise, and after asking the user: [clipboard] there is what this
+ * program last wrote. *)
+val clipboard: unit -> string
+val set_clipboard: string -> unit
+
+(*****************************************************************************)
 (* {1 Images, loaded ahead} *)
 (*****************************************************************************)
 
