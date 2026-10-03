@@ -28,6 +28,23 @@ let workloads =
 
 let fib = "benchFib\n\t^self < 2 ifTrue: [self] ifFalse: [(self - 1) benchFib + (self - 2) benchFib]"
 
+(* BitBlt alone: a 640 by 400 rectangle of the Display xor-ed with a
+ * Form put anywhere, the definition then what runs *)
+let blit () =
+  let form w h : St_bitblt.form = { bits = Bytes.make ((w + 15) / 16 * 2 * h) '\165'; w; h; stride = (w + 15) / 16 * 2 } in
+  let dest = form 800 600 and source = form 700 500 in
+  List.iter
+    (fun (name, simple, times) ->
+      let t0 = Sys.time () in
+      for i = 1 to times do
+        St_bitblt.blit ~simple ~dest ~source:(Some source) ~halftone:None ~rule:6 ~dx:(40 + (i land 7)) ~dy:50 ~sx:3 ~sy:7
+          (40 + (i land 7), 50, 680, 450)
+      done;
+      let dt = Sys.time () -. t0 in
+      Printf.printf "blit      %-11s %10d pixels    %6.2f s %6.1f M pixels/s\n%!" name (times * 640 * 400) dt
+        (float_of_int (times * 640 * 400) /. 1e6 /. dt))
+    [ ("a pixel", true, 20); ("a byte", false, 400) ]
+
 let () =
   let only = if Array.length Sys.argv > 1 then Sys.argv.(1) else "" in
   let has (name : string) =
@@ -35,6 +52,7 @@ let () =
     let rec at i = i + n <= String.length name && (String.sub name i n = only || at (i + 1)) in
     n = 0 || at 0
   in
+  if has "blit" then blit ();
   List.iter
     (fun (kernel, files) ->
       let vm = St_boot.boot ~kernel:files () in

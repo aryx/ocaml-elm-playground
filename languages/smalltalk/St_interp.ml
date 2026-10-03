@@ -403,6 +403,48 @@ let arith (vm : vm) (i : int) : bool =
     | 15 -> int (x lor y)
     | _ -> false
 
+(* claude: at: and at:put: on an Array, at: on a String, done by their
+ * bytecodes (192, 193) as the arithmetic ones are: no lookup, no
+ * primitive called through its closure. Only for those two classes
+ * exactly, and an index in range; anything else is sent. As for +, a
+ * method Array>>at: written in the Browser would not be called. *)
+let at (vm : vm) : bool =
+  let m = vm.m in
+  let r = stack vm 1 and i = stack vm 0 in
+  if M.is_int r || not (M.is_int i) then false
+  else
+    let k = M.known m and cls = M.class_of m r and j = M.int_of i - 1 in
+    if cls = k.array then
+      match M.body m r with
+      | M.Pointers a when j >= 0 && j < Array.length a ->
+          pop vm 2;
+          push vm a.(j);
+          true
+      | _ -> false
+    else if cls = k.string then
+      match M.body m r with
+      | M.Bytes s when j >= 0 && j < Bytes.length s ->
+          pop vm 2;
+          push vm k.characters.(Char.code (Bytes.get s j));
+          true
+      | _ -> false
+    else false
+
+let at_put (vm : vm) : bool =
+  let m = vm.m in
+  let r = stack vm 2 and i = stack vm 1 in
+  if M.is_int r || (not (M.is_int i)) || M.class_of m r <> (M.known m).array then false
+  else
+    let j = M.int_of i - 1 in
+    match M.body m r with
+    | M.Pointers a when j >= 0 && j < Array.length a ->
+        let v = stack vm 0 in
+        a.(j) <- v;
+        pop vm 3;
+        push vm v;
+        true
+    | _ -> false
+
 let jump_if (vm : vm) (cond : bool) (off : int) : unit =
   let v = pop_top vm in
   let k = M.known vm.m in
@@ -445,6 +487,8 @@ let step (vm : vm) : unit =
     let i = b - 176 in
     let k = M.known m in
     if i < 16 && arith vm i then ()
+    else if i = 16 && at vm then ()
+    else if i = 17 && at_put vm then ()
     else if i = 22 then begin
       let r = stack vm 0 = stack vm 1 in
       pop vm 2;

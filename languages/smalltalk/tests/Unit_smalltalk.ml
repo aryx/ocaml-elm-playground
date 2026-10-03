@@ -199,4 +199,36 @@ let tests =
           check "the pen goes up" "#(1 0)"
             (print ~vm "| p | Display fillWhite. p := Pen new. p go: 50. Array with: (Display pixelAt: 400 @ 260) with: (Display pixelAt: 410 @ 260)");
           check "the dragon" "a Pen" (print ~vm "Display fillWhite. Pen new dragon: 6"));
+      Testo.create "BitBlt: a byte at a time is the definition, a pixel at a time" (fun () ->
+          let rng = Random.State.make [| 1981 |] in
+          let int n = Random.State.int rng n in
+          let new_form w h : St_bitblt.form =
+            let stride = (w + 15) / 16 * 2 in
+            let bits = Bytes.init (stride * h) (fun _ -> Char.chr (int 256)) in
+            (* the padding past the width stays clear, as in a Form made by Smalltalk *)
+            for y = 0 to h - 1 do
+              for x = w to (stride * 8) - 1 do
+                let i = (y * stride) + (x / 8) in
+                Bytes.set bits i (Char.chr (Char.code (Bytes.get bits i) land lnot (128 lsr (x land 7)) land 255))
+              done
+            done;
+            { bits; w; h; stride }
+          in
+          for trial = 1 to 4000 do
+            let dest = new_form (1 + int 70) (1 + int 20) in
+            let source = match int 4 with 0 -> None | 1 -> Some dest | _ -> Some (new_form (1 + int 70) (1 + int 20)) in
+            let halftone = if int 3 = 0 then Some (new_form 16 16) else None in
+            let rule = trial land 15 and dx = int 80 - 5 and dy = int 24 - 2 and sx = int 80 - 5 and sy = int 24 - 2 in
+            let x0 = max dx 0 and y0 = max dy 0 in
+            let x1 = min (dx + int 80) dest.w and y1 = min (dy + int 24) dest.h in
+            let run simple =
+              let d = { dest with bits = Bytes.copy dest.bits } in
+              let source = match source with Some f when f == dest -> Some d | s -> s in
+              St_bitblt.blit ~simple ~dest:d ~source ~halftone ~rule ~dx ~dy ~sx ~sy (x0, y0, x1, y1);
+              Bytes.to_string d.bits
+            in
+            if run true <> run false then
+              Alcotest.failf "trial %d: rule %d, %dx%d at %d,%d from %d,%d, rectangle %d,%d to %d,%d" trial rule dest.w dest.h dx
+                dy sx sy x0 y0 x1 y1
+          done);
     ]

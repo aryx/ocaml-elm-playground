@@ -618,8 +618,34 @@ old. Reuse beats allocating twice.
 Callgrind on the loop of blocks, after: `step` itself 20%, then
 `St_memory.body` and `fields` (the table read at each variable), the
 primitives called through a closure (`caml_apply2`), `caml_modify`.
-Not done yet: `at:` and `at:put:` by their bytecodes, the receiver's
-fields kept in a register.
+
+Then, the wall clock of a shared machine being too noisy for changes
+of a few percent, in instructions (callgrind, the boot subtracted,
+millions; both kernels together):
+
+| change | sends | blocks | arrays | pen | dictionary |
+|---|---|---|---|---|---|
+| contexts recycled, the header read once | 4342 | 16024 | 5190 | 5063 | 3663 |
+| `at:`, `at:put:` by their bytecodes, and the receiver's fields in a register | 4580 | 15905 | 4497 | 5179 | 3839 |
+| the same without the register | 4350 | 15307 | 4378 | 5028 | 3671 |
+
+- **`at:` and `at:put:` by their bytecodes**, for an Array (and `at:`
+  for a String), as the arithmetic selectors are: no lookup, no
+  primitive called through its closure. The sieve 16% fewer
+  instructions, the loop of blocks (its `do:`) 4%.
+- **Tried, not kept: the receiver's fields in a register**, read when a
+  context becomes active instead of at each instance variable. More
+  instructions everywhere, 5% on the sends: a context becomes active
+  twice a send, and reads far fewer instance variables than that. The
+  profile had `St_memory.fields` high, but most of its calls were not
+  the receiver's. Measure the change, not the hunch.
+
+**BitBlt a byte at a time** (`St_bitblt.mli`): the rule applied to
+eight pixels by one and, or and not, the source's bits shifted to line
+up with the destination's bytes, a mask at each end of a row. A 640 by
+400 rectangle xor-ed, millions of pixels a second: 39 a pixel at a
+time, 288 a byte at a time natively; 11 and 68 under node. The pixel
+version stays, as the definition the other is tested against.
 
 ## Not done, deliberately
 

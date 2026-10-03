@@ -152,7 +152,7 @@
         { at: 'type:process_state', weight: 1 },
       ],
     },
-    'St_interp.ml': { digest: 'ee33ef2ccd85',
+    'St_interp.ml': { digest: 'f2276691dd8f',
       summary: 'Registers cached from the active context, sends, returns, the bytecodes decoded by range, processes run.',
       capitals: [
         { at: 'def:step', say: 'one bytecode: fetch, decode, execute' },
@@ -192,15 +192,16 @@
         { at: 'def:install', say: 'the table of primitives', weight: 2 },
       ],
     },
-    'St_bitblt.mli': { digest: 'b1bbbe5bd486',
+    'St_bitblt.mli': { digest: '3577a1d8656a',
       summary: "Form and BitBlt (Ingalls, 1981), the one drawing primitive: a rectangle copied under one of 16 rules.",
       important: [
         { at: 'comment:"rule 0  0        clear"', say: 'the 16 rules: truth tables of two bits', weight: 3 },
         { at: 'def:copy_bits', weight: 2 },
+        { at: 'def:blit', say: 'the rectangle combined, a byte or a pixel at a time', weight: 2 },
       ],
     },
-    'St_bitblt.ml': { digest: 'be726d047d60',
-      summary: 'BitBlt a pixel at a time, where Ingalls worked a word at a time.',
+    'St_bitblt.ml': { digest: '55e7d639abdd',
+      summary: 'BitBlt a pixel at a time, the definition, and a byte at a time, what runs: shifts and masks, as Ingalls worked a word at a time.',
       capitals: [
         { at: 'def:copy_bits', say: 'everything the display did' },
       ],
