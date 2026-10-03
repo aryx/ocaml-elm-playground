@@ -832,6 +832,12 @@ let flags () : Playground.flags =
  * devicePixelRatio and the page's scaling would say more) *)
 let pixel_ratio () : float = 1.
 
+(* claude: see Playground_platform.mli; the page's body's CSS cursor *)
+let set_cursor (c : Playground.cursor) : unit =
+  let name = match c with Arrow -> "default" | Hand -> "pointer" | Text -> "text" | Crosshair -> "crosshair" | Hidden -> "none" in
+  let body = Ojs.get_prop_ascii (Ojs.get_prop_ascii Ojs.global "document") "body" in
+  Ojs.set_prop_ascii (Ojs.get_prop_ascii body "style") "cursor" (Ojs.string_to_js name)
+
 let utc_offset (Playground.Time t) : int =
   Stdlib.( ~- ) (Date.get_timezone_offset (Date.new_date (t *. 1000.)))
 

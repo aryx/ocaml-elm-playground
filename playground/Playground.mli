@@ -1127,6 +1127,21 @@ type window = { screen_size : (int * int) option; follows_window : bool; platfor
     frame drawn *)
 val default_window : window
 
+(** What the mouse's cursor looks like over the window, set with
+    [Playground_platform.set_cursor]:
+
+    - [Arrow], the usual one;
+    - [Hand], over what a click follows or presses: a link, a button
+      (CSS's [cursor: pointer]);
+    - [Text], the I-beam, over text that can be typed in or selected;
+    - [Crosshair], for aiming and for drawing;
+    - [Hidden], none: a game that draws its own (a sight, a brush) at
+      [mouse.x], [mouse.y], or that has no use for one.
+
+    These are the system's own shapes, not pictures of ours: they look
+    as every other program's on the machine. *)
+type cursor = Arrow | Hand | Text | Crosshair | Hidden
+
 (*****************************************************************************)
 (** {1 Playgrounds} *)
 (*****************************************************************************)

@@ -28,7 +28,7 @@
  (name elm_playground_native_common)
  (package elm_playground_software)
  (wrapped false)
- (modules Input_script Native_loop_2d Store Commands)
+ (modules Input_script Native_loop_2d Store Commands Native_cursor)
  (libraries
    unix
    networking networking_unix ; Http_request and Http_client (https://, our TLS), for the Cmd.Http_get of Commands

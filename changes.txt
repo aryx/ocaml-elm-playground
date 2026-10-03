@@ -131,6 +131,10 @@
   the next one wanted, and all are encoded again at each frame
   (mini-soldat's soldiers, a picture a limb, and its map's tiles: 64
   pictures in a frame) (Playground_platform.bitmap_url)
+- Playground_platform.set_cursor: the mouse's cursor over the window,
+  one of the system's (Playground.cursor: Arrow, Hand, Text,
+  Crosshair) or Hidden -- a browser's hand over a link, a game's own
+  sight. SDL's system cursors natively, the page's CSS cursor on the web
 - skip_same_view, for an application rather than a game: a frame whose
   view is the very list of the frame before (==) is not drawn nor
   presented again, unless an event came to the window since; the

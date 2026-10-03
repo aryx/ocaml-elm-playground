@@ -535,6 +535,9 @@ type window = { screen_size : (int * int) option; follows_window : bool; platfor
 
 let default_window = { screen_size = None; follows_window = false; platform_keys = true; skip_same_view = false }
 
+(* claude: see Playground.mli *)
+type cursor = Arrow | Hand | Text | Crosshair | Hidden
+
 type ('model, 'msg) app =
   {
     init: (flags -> ('model * 'msg Cmd.t));

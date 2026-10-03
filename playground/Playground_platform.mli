@@ -76,6 +76,18 @@ val utc_offset: Playground.time -> int
 val pixel_ratio: unit -> float
 
 (*****************************************************************************)
+(* {1 The mouse's cursor} *)
+(*****************************************************************************)
+
+(* The cursor shown over the window from now on (Playground.cursor says
+ * what each is for). An effect, not a part of the view: a program
+ * calls it when what is under the mouse changes (a browser, in its
+ * update, when the pointer comes over a link), or once at the start (a
+ * game that hides it). Asking for the one already shown costs nothing.
+ * Natively SDL's system cursors; on the web the page's CSS cursor. *)
+val set_cursor: Playground.cursor -> unit
+
+(*****************************************************************************)
 (* {1 Images, loaded ahead} *)
 (*****************************************************************************)
 

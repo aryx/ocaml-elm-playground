@@ -153,6 +153,11 @@ let utc_offset (Playground.Time t) : int = Native_loop_2d.utc_offset t
  * screen's size, a unit a pixel *)
 let pixel_ratio () : float = 1.
 
+(* claude: see Playground_platform.mli *)
+let set_cursor (c : Playground.cursor) : unit =
+  Native_cursor.set (match c with Arrow -> `Arrow | Hand -> `Hand | Text -> `Text | Crosshair -> `Crosshair | Hidden -> `Hidden)
+
+
 (* claude: documents, in a directory (native_common/Store); the
  * capability is the caller's proof it may, see the .mli *)
 let store (_ : < Cap.open_out; .. >) name bytes = Store.store name bytes
