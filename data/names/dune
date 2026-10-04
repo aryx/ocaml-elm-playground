@@ -1,0 +1,28 @@
+; claude: the names every model of ai/language/ is first taught on:
+; names.txt, 32,033 first names in lower case, one a line, the most
+; frequent first, 228 KB (from github.com/karpathy/makemore, MIT; the
+; names are the US Social Security Administration's, public domain).
+; The file Karpathy's makemore lectures and microgpt use, so that a
+; loss measured here can be put beside theirs (Makemore_names.mli).
+; A library, so that a program pays for these 228 KB only if it names
+; it; in the package tiny_libs, as tiny_libs.data_names, since the
+; tests of libs/ai read it. See data/README.md.
+(include_subdirs no)
+
+(library
+ (name data_names)
+ (public_name tiny_libs.data_names)
+ (wrapped false)
+)
+
+; the file embedded as a string (files_to_string_ml.ml), so the
+; library needs no file at runtime
+(rule
+ (targets Makemore_names.ml)
+ (deps names.txt %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml names.txt)
+    (echo "let text = names_txt\n")))))

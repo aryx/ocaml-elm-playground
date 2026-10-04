@@ -124,10 +124,75 @@ let test_cost () =
   Printf.eprintf "gradient: by hand %.1f us, by graph %.1f us (%.0fx)\n" hand graph (graph /. hand);
   Alcotest.(check bool) "scalars are the slow way" true (graph > hand)
 
+(* choosing among several: the .mli's numbers, and the slope that
+   comes out as "given minus deserved" without anybody deriving it *)
+let test_cross_entropy () =
+  let open Grad in
+  let near = Alcotest.(float 1e-9) in
+  let scores = [ value 1.; value 2.; value 3. ] in
+  let p = List.map of_ (softmax scores) in
+  Alcotest.(check (list (float 0.005))) "the shares" [ 0.09; 0.24; 0.67 ] p;
+  Alcotest.(check near) "they sum to 1" 1. (List.fold_left ( +. ) 0. p);
+  let loss = cross_entropy scores 2 in
+  Alcotest.(check (float 0.005)) "the answer was the likeliest" 0.41 (of_ loss);
+  Alcotest.(check (float 0.005)) "the answer was the least likely" 2.41 (of_ (cross_entropy scores 0));
+  backward loss;
+  List.iteri
+    (fun i s ->
+      let deserved = if i = 2 then 1. else 0. in
+      Alcotest.(check near) (Printf.sprintf "score %d: p - deserved" i) (List.nth p i -. deserved) (slope s))
+    scores;
+  (* scores that would overflow exp by themselves *)
+  let big = [ value 1000.; value 1001. ] in
+  Alcotest.(check (float 1e-6)) "large scores" (log (1. +. exp (-1.))) (of_ (cross_entropy big 1));
+  (* a power, and a weight changed between two graphs *)
+  let x = value 3. in
+  let y = pow x (-0.5) in
+  backward y;
+  Alcotest.(check near) "d(x^-1/2)/dx" (-0.5 *. (3. ** -1.5)) (slope x);
+  set x 4.;
+  let y = square x in
+  backward y;
+  Alcotest.(check near) "the new value" 16. (of_ y);
+  Alcotest.(check near) "and its slope, the old one forgotten" 8. (slope x)
+
+(* a graph the size of a language model's loss: a chain as long as
+   the graph (a browser's stack would not hold a recursive walk of
+   it), and the walk in time proportional to it. The table in Grad.ml
+   comes from here. *)
+let test_large_graph () =
+  let chain n =
+    let x = Grad.value 1.0001 in
+    let y = ref x in
+    for _ = 1 to n do
+      y := Grad.( *: ) !y x
+    done;
+    (x, !y)
+  in
+  let time n =
+    let (_, y) = chain n in
+    let t0 = Unix.gettimeofday () in
+    Grad.backward y;
+    1e3 *. (Unix.gettimeofday () -. t0)
+  in
+  let (ms1, ms4, ms16) = (time 1000, time 4000, time 16000) in
+  Printf.eprintf "backward on a chain: 1000 nodes %.2f ms, 4000 %.2f ms, 16000 %.2f ms\n" ms1 ms4 ms16;
+  (* d(x^(n+1))/dx = (n+1) x^n *)
+  let n = 100_000 in
+  let (x, y) = chain n in
+  Grad.backward y;
+  Alcotest.(check int) "the nodes" (n + 1) (Grad.nodes y);
+  (* no check of the times, which a loaded machine makes anything:
+     that this ends at all is the check -- the walk through a list of
+     the nodes seen took twelve seconds here *)
+  Alcotest.(check (float 1e-6)) "its slope" 1. (Grad.slope x /. (float_of_int (n + 1) *. (1.0001 ** float_of_int n)))
+
 let tests =
   [
     t "Grad, the graph and the chain rule" test_graph;
     t "Grad, one derivative per operation" test_rules;
+    t "Grad, softmax and cross-entropy" test_cross_entropy;
+    t "Grad, a graph of a hundred thousand nodes" test_large_graph;
     t "Grad, the same gradient as the hand-written pass" test_same_as_backprop;
     t "Grad, and what that convenience costs" test_cost;
   ]

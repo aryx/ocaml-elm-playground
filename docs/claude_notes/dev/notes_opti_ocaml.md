@@ -678,6 +678,48 @@ row's width computed in integers but for the square root, no Integer
 added to a Float (a coercion, in Smalltalk, each time): 10 bouncing
 ellipses from 74,000 to 38,000 bytecodes a cycle.
 
+## 20. "Have I been here?" asked of a list: `Grad`'s walk
+
+Reverse-mode autodiff visits each node of a graph once, inputs before
+outputs. `Grad.order` kept the nodes seen in a list and asked
+`List.memq` of it at each node: a walk of the list per node, quadratic.
+A network of 105 weights never showed it; a language model's loss is
+tens of thousands of nodes every step. The fix is a field: each walk
+has a number, written on the nodes it meets, so the question is one
+comparison (and no table to allocate, no hash of a mutable record).
+`backward` on a chain of products:
+
+| nodes | the list | the mark |
+|---|---|---|
+| 1,000 | 1.9 ms | 0.2 ms |
+| 4,000 | 25.6 ms | 0.4 ms |
+| 16,000 | 313.7 ms | 3.4 ms |
+
+It also changed a number that had been taken for the price of the
+idea: scalar autodiff against the hand-written backward pass went from
+20x to 4.5x (`Grad.mli`). Measure before blaming the approach.
+
+The same walk was recursive, one OCaml frame per node of the longest
+chain; a sum of ten thousand terms is such a chain, and a browser's
+stack is short. The way back is now a list of the walk's own. The old
+`order` is in a comment beside the new one.
+
+Two more, found on `Ngram_mlp`'s training step (32 examples through a
+6-100-27 network, a graph rebuilt at each step):
+
+- **A node per number, when one per sum would do** (`Grad.dot`): a
+  neuron's weighted sum as one node, with one closure walking the two
+  arrays, instead of n products and n additions each a node. 175 ms a
+  step to 45 ms. The same idea taken to its end is a node per matrix
+  product, which is the next module's.
+- **The minor heap again (section 16)**: a step's graph is a few
+  megabytes that all die when the step ends, but the default minor
+  heap (256k words) fills many times within a step, so the graph is
+  promoted and left to the major collector. `Gc.set` with a minor
+  heap of 8M words in the program's main (`AiNames.ml`): 45 ms to
+  12 ms, no line of the library changed. Found by running once with
+  `OCAMLRUNPARAM=s=16M` before looking for a culprit in the code.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the

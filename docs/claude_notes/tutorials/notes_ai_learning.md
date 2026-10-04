@@ -25,7 +25,16 @@ formula is one a reader can check with a pen.
 | `Backprop` (done) | the loss, gradient descent, the chain rule | §3, §4 |
 | `Grad` (done) | reverse-mode autodiff: the same, written once | §5 |
 | `Train` (done) | batches, learning rate, train/test, the loop | §6 |
+| `Adam` (done) | descent with a memory: momentum, a scale per weight | §6 |
+| `Weights` (done) | what was learned, as a file a program embeds | §6 |
 | `Qlearn` (done) | rewards, temporal difference, Q-learning | §8 |
+
+| module (`ai/language/`) | what | section |
+|---|---|---|
+| `Tokenizer` (done) | a text as numbers, the boundary token | §11 |
+| `Sampling` (done) | drawing the next token, temperature | §11 |
+| `Bigram` (done) | the table of pairs, counted, then learned | §11 |
+| `Ngram_mlp` (done) | embeddings, a network three letters back | §12 |
 
 Sections 1 to 7 are supervised learning (here are the answers, find the
 rule); 8 and 9 are learning to *play*, where nobody knows the answers
@@ -253,8 +262,11 @@ six digits but to the *last* digit, over all 105 weights of a 2-8-8-1
 network, because they are the same arithmetic in a different order
 (`Unit_grad`).
 
-What the convenience costs, measured on that gradient: 9.6 us by hand,
-197 us through the graph, about 20x. That is why a real library runs
+What the convenience costs, measured on that gradient: 6.4 us by hand,
+29 us through the graph, about 4.5x. (It was 20x until the walk
+stopped looking each node up in a list of those seen: most of the
+price was ours, not the idea's. `Grad.ml` keeps both walks.) That is
+why a real library runs
 reverse mode over whole *arrays* -- one node per matrix multiply
 instead of one per multiplication -- while the idea stays exactly this
 one. And the reason to have it at all, in one line from the test: the
@@ -280,6 +292,27 @@ The parts that no formula warns you about:
 - **The learning rate**, still the one knob that matters most: too
   small, nothing; too large, NaN; and decaying it over time beats any
   fixed value.
+- **A rate per weight** (`Adam`): one rate is wrong for most weights.
+  In a narrow valley the slope across is a hundred times the slope
+  along, and the rate that does not bounce off the walls crawls along
+  the floor. Adam keeps, per weight, a running average of its slopes
+  (momentum: the bounces cancel, the steady direction adds up) and of
+  their squares (its own scale), and steps by one over the root of the
+  other: about `rate` in every direction, steep or flat. On
+  Rosenbrock's valley, 2000 steps each: plain descent ends at a loss
+  of 0.078, Adam at 0.00078 (`Unit_adam`). Every language model below
+  is trained with it.
+- **Which one, not how much** (`Grad.softmax`, `Grad.cross_entropy`):
+  a network that chooses (a digit, the next letter) gives a score per
+  choice; softmax makes them probabilities, and the loss is the
+  surprise at the right answer, `-log p`. Its slope with respect to
+  each score is the probability given minus the probability deserved,
+  which the graph finds without being told.
+- **Keeping what was learned** (`Weights`): a network that trains in a
+  minute trains in its window; one that takes a night is trained once
+  by a program of its own and its matrices written to a file, with the
+  seed, the data and the result that made them in its header. The
+  program that plays embeds the file and never trains.
 
 ## 7. Three examples, each watchable
 
@@ -315,6 +348,11 @@ learn.
   the network. The instructive failure is built in: it does fine on
   digits that look like its font and worse on yours, which is what "the
   training distribution" means, concretely.
+- `AiNames.ml` (**written**) -- names made up three ways, sections 11
+  and 12: the table of letter pairs counted ("c"), the same table
+  forgotten and learned again until it is the counted one ("g"), and a
+  network reading three letters back, its letters' places drawn as
+  they move ("m").
 
 ## 8. Learning to play
 
@@ -488,6 +526,99 @@ exercise once its module exists, in rough order of difficulty:
   its weights shared across the image, against the 256-64-10 network;
 - §9's loop on tic-tac-toe or connect four before 9x9 Go, where a
   result comes in minutes and perfect play is known to check it.
+
+## 11. Language: what comes next
+
+Everything so far answered a question about a position or a point. A
+*language model* answers one question about a text: given what came
+before, what comes next? Sections 11 and on follow Karpathy's makemore
+and microgpt, on makemore's own 32,033 names (`data/names/`), so that
+each number here can be put beside his
+(`plans/plan_ai_zero_to_hero.md` has the whole road, to a small chat
+model).
+
+**Tokens** (`Tokenizer`). A text becomes numbers: its characters,
+sorted, numbered from 1, and token 0 for the *boundary*, where a name
+starts and where it ends. "emma" is `0 5 13 13 1 0`. The model learns
+when to stop the same way it learns anything else: the boundary is
+just a token that sometimes comes next.
+
+**The table of pairs** (`Bigram`). Count how often each token follows
+each other one: 27 by 27 numbers. 4,410 names start with an a, 6,763
+end with an n. A row divided by its sum is a probability, and a name
+is written by drawing a token from the current token's row until the
+boundary comes (`Sampling`: where a random number falls among the
+probabilities laid end to end; a *temperature* sharpens or flattens
+them first). It writes `vanile`, `mylin`, `zanayo`: pairs of letters
+that names have.
+
+**The loss, in bits.** How good is it? As good as the probability it
+gave to what really came next, averaged as `-log p` over the text:
+
+```
+knowing nothing, 27 tokens alike     3.296     4.75 bits a letter
+the table of pairs                   2.454     3.54
+```
+
+2.454 is makemore's number. In bits it is Shannon's measure (1948):
+how many yes-or-no questions the next letter still costs. Every model
+below is this one number going down, and section 3's loss was never
+anything else.
+
+**The same table, learned.** Now forget the counts. Make the table 729
+scores, all zero; a row's softmax is the probabilities; walk downhill
+on the same loss with `Grad` and `Adam`. Two hundred steps later the
+loss is 2.4540 and no cell is further than 0.001 from the table that
+counting gave (`Unit_bigram`, and `examples/AiNames.ml`, key "g",
+shows it happen). **A count and a learned weight are the same thing.**
+That is the reason to do it the long way once: counting stops at one
+letter of context, and the learned version does not.
+
+One detail of the code is worth its line: the text enters the loss
+only through its counts, so the graph is the table's size, a few
+thousand nodes, whatever the text's length. 228,146 pairs are 729
+numbers.
+
+## 12. A network instead of a table
+
+Three letters of context would be a table of 19,683 rows, most never
+seen, and a table learns nothing about "mma" from "nna". Bengio's
+answer (2003), `Ngram_mlp`: give each token a *place*, a few numbers
+learned like any weight (an **embedding**), and let a network read the
+places of the last three tokens:
+
+```
+. e m  ->  three rows of the embedding, end to end (6 numbers)
+       ->  100 neurons, tanh
+       ->  27 scores, softmax  ->  m, probably
+```
+
+3,481 numbers. Tokens that behave alike are pulled to the same place,
+and what is learned about one holds for its neighbours. With two
+coordinates the places can be drawn, and `AiNames`' key "m" draws them
+as they move: within a minute the vowels are together, nobody having
+said what a vowel is.
+
+Two things are new in the training. **Batches**: a step looks at 32
+examples drawn at random out of 182,000, a noisy slope a thousand
+times cheaper than the true one. And **held-out names**: a tenth of
+the names is never trained on, and the loss that counts is the loss on
+those.
+
+```
+the table of pairs                    2.454
+Ngram_mlp, after  2,000 steps         2.49       22 s
+           after 10,000               2.40      110 s
+           after 20,000               2.35      221 s
+makemore's, the same sizes            about 2.3, after 200,000 steps
+```
+
+It is slow: a node of the graph per number. `Grad.dot`, a neuron's
+whole weighted sum as one node, took a step from 175 ms to 45; a minor
+heap with room for a step's graph, to 12 (`notes_opti_ocaml.md`,
+section 20). Reverse mode over whole arrays, one node per matrix
+product, is the module that comes next, and the same network on it is
+where a GPT becomes affordable.
 
 ## Glossary
 

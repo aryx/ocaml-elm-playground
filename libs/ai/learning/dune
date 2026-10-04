@@ -1,6 +1,7 @@
 ; claude: learning: a neuron, layers, backpropagation,
 ; autodiff, the training loop (Matrix, Neuron, Net, Backprop, Grad,
-; Train), and learning to play from rewards (Qlearn);
+; Train, Adam), what was learned kept as a file (Weights), and
+; learning to play from rewards (Qlearn);
 ; notes_ai_learning.md. In the package tiny_libs, as
 ; tiny_libs.ai_learning; see ai/README.md.
 (library

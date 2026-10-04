@@ -8,8 +8,8 @@
 ; significant first (Bits) and fixed code tables (Vlc); and DEFLATE's
 ; successor, Zstandard (RFC 8878), decoded: Zstd, over Fse (its entropy
 ; coder, tANS) and Xxhash (its checksum, XXH64). The Web's, Brotli
-; (RFC 7932), is a library of its own, brotli/ (and its words,
-; brotli_words/). Independent of
+; (RFC 7932), is a library of its own, brotli/ (its words are data,
+; data/brotli_words/). Independent of
 ; any format, so that audio's may use them as images' and videos' do.
 ; In the package tiny_libs, as tiny_libs.compression, pure OCaml.
 ;
@@ -18,8 +18,8 @@
 ; Gzip, and Adler32, zlib's checksum) and zstd/ (Zstd, with Fse and
 ; Xxhash, which nothing else uses); here, what several formats share
 ; (Huffman, Crc32, Bits, Vlc) and the formats of one module (Lzw,
-; Packbits). brotli/, brotli_words/ and tests/ have stanzas of their
-; own, so each says (include_subdirs no).
+; Packbits). brotli/ and tests/ have stanzas of their own, so each
+; says (include_subdirs no).
 (include_subdirs unqualified)
 
 (library

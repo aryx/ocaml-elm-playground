@@ -1,0 +1,18 @@
+; claude: language: what comes next? A text as numbers (Tokenizer),
+; a table of which letter follows which, counted and then learned
+; (Bigram), a network that reads several letters back (Ngram_mlp);
+; notes_ai_learning.md sections 11 and on, plan_ai_zero_to_hero.md.
+; After Karpathy's makemore. Above ai_learning, which it is written
+; with. In the package tiny_libs, as tiny_libs.ai_language; see
+; ai/README.md. The text they are taught on is data/names/, a library
+; of its own (data_names).
+(include_subdirs no)
+
+(library
+ (name ai_language)
+ (public_name tiny_libs.ai_language)
+ (wrapped false)
+ (libraries
+  ai_learning
+  random ; claude: Lehmer, the same names sampled on every OCaml
+ ))

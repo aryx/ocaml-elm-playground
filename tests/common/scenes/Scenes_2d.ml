@@ -282,6 +282,8 @@ let scenes : Golden_scene.scene list =
     ("examples/software/AiNeuralNet", "", 3);
     ("examples/software/AiDigits", "", 3);
     ("examples/software/AiQlearn", "", 3);
+    (* claude: makemore's table of letter pairs, counted *)
+    ("examples/software/AiNames", "", 3);
     (* claude: the image formats taken apart: JPEG from 6 coefficients
      * a block, PNG's filtered bytes, GIF's LZW 40 codes in *)
     ("examples/software/ImageJpeg", "", 3);
@@ -696,6 +698,12 @@ let scripted : Golden_scene.scripted list =
      * values seeped back across the grid, and the greedy way it has
      * learned drawn over them: thirteen steps along the edge *)
     ("examples/software/AiQlearn", "learned", 95, "f:2,g:90");
+    (* claude: the same table forgotten and learned again, ninety
+     * steps downhill: the counted one already, to 0.002; and the
+     * network reading three letters back, sixty batches in, the
+     * vowels already drifting to one side *)
+    ("examples/software/AiNames", "learned", 95, "g:3");
+    ("examples/software/AiNames", "network", 65, "m:3");
     (* claude: JPEG from one coefficient a block, each its average: the
      * mosaic; PNG with no filter, its bytes as they are, bright; GIF's
      * LZW a second into playing, the codes 8 bits wide *)

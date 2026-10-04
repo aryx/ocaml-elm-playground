@@ -3,5 +3,7 @@
 (test
  (name Test)
  (package tiny_libs)
- (libraries alcotest testo unix ai random) ; unix: Unit_matrix times the two products
+ (libraries alcotest testo unix ai random ; unix: Unit_matrix times the two products
+  data_names ; claude: the names Unit_bigram and Unit_ngram_mlp learn
+ )
 )

@@ -1,7 +1,8 @@
 ; claude: Brotli (RFC 7932), the Web's compression, decoded: Brotli,
 ; over Brotli_dictionary (the words' layout and the 121 transforms;
-; the words themselves, 120 KB, are the library brotli_words/, linked
-; only by who asks). A library of its own, apart from compression
+; the words themselves, 120 KB, are the library
+; compression_brotli_words, in data/brotli_words/, linked only by who
+; asks). A library of its own, apart from compression
 ; (whose Huffman it uses): a program with a Brotli of its own
 ; (mini-chrome's, where the format is told with the browser it was
 ; made for) links compression without a second module of that name.
