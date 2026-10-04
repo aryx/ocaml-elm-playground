@@ -114,9 +114,17 @@ let think (p : position) : int option * number list * counts =
  * evaluation.
  *
  * The network was not trained here: scripts/train/train_connect4 did
- * it, and what it learned is a file of data/weights, whose first
- * lines say how long it trained and how it then did against this
- * game's own alpha-beta.
+ * it, 72,000 games against itself in 38 minutes, and what it learned
+ * is a file of data/weights (its README has the figures). It began by
+ * losing every game to the computer above. It now wins two in three:
+ * a program told what a position is worth, with every trick of
+ * section 9, beaten by one told nothing.
+ *
+ * Not by much, and not for nothing: its search does 1,600 playouts a
+ * move; at 400 they are level, and the network alone, without a
+ * search, still loses to a search of one move. What it learned is a
+ * good guess, and a guess is worth what the search behind it makes
+ * of it.
  *
  * "a" changes who you play, and the flag ai= who you start with:
  * classic (the computer above), network (the search guided by the
@@ -137,7 +145,10 @@ let net : Policy_value.t Lazy.t =
     | Ok net -> net
     | Error why -> failwith ("connect4.weights: " ^ why))
 
-let playouts = 400
+(* over 40 games against the computer above, from random openings:
+ * 18-0-22 with 100 playouts a move, 20-2-18 with 400, 26-1-13 with
+ * 1,600 -- a tenth of a second a move *)
+let playouts = 1600
 
 (* what the network thought of each column before any search, and
  * where the search then spent its playouts: two shares a column *)

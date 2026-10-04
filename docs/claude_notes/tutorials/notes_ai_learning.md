@@ -847,9 +847,40 @@ mean all along, and section 9's numbers moved a little with it.
 (`notes_ai_dark_arts.md` has this failure and the others, each with
 what it taught.)
 
-Tic-tac-toe is the check, not the goal. The same loop, a board of
-seven columns, a trainer that runs for an hour, and a weights file:
-Connect 4, then Go, then chess (`plans/plan_ai_zero_to_hero.md`).
+Tic-tac-toe is the check, not the goal.
+
+**Connect 4**, where nobody can search to the end. The same loop,
+unchanged, in a trainer (`scripts/train/train_connect4`): the rules
+from a kit the game shares (`gamekits/boards/Connect4`), a network of
+28,424 numbers, and two things to get more games out of an hour --
+the games of an iteration played by 48 processes at once, and each
+lesson learned also as in a mirror. 150 iterations, 72,000 games, 38
+minutes. Against `AiConnect4`'s own computer, alpha-beta seven moves
+deep with a hand-written evaluation, over 40 games from random
+openings:
+
+```
+knowing nothing                       0-0-20
+trained, 100 playouts a move         18-0-22
+         400                         20-2-18
+       1,600                         26-1-13
+```
+
+A program told what a line of three is worth, with every trick of
+section 9, against one told the rules: level at the same small
+budget, and behind when the other is allowed to think a tenth of a
+second. `AiConnect4`'s "a" key plays it, and shows under the board
+its policy at a glance and where the search then went.
+
+Two things the curve says. Nearly all of it was learned in the first
+twelve minutes; the rest of the run moved nothing twenty games could
+see. And the network *alone*, no search, stays weak: it loses to a
+search one move deep. What it has is a good guess, and a guess is
+worth what a search makes of it -- which is the whole design, but
+also a limit: this network reads the board as 84 unrelated numbers,
+and has to learn separately that three in a row on the left is three
+in a row on the right. A network that sees the board as a board is
+the next step, with Go (`plans/plan_ai_zero_to_hero.md`).
 
 ## 17. The dark arts
 

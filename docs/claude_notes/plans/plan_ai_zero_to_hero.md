@@ -495,13 +495,12 @@ both, kept apart because only one of them is honest about facts.
   first ten megabytes after one night, against `Deflate`'s. That
   number says how far to go.
 
-**Mostly done (2026-10-04), the training still running**:
-`gamekits/boards/Connect4` (D6: the rules, the evaluation and the
-search's hints moved as they were, `AiConnect4.ml` including it),
-`Selfplay.iterate` and `learn` (the loop as a function),
-`scripts/train/train_connect4`, `data/weights/connect4/`, and
-`AiConnect4` with `ai=classic|network|policy`, "a" changing engine in
-play, the network's policy and the search's visits shown under the
+**Done (2026-10-04)**: `gamekits/boards/Connect4` (D6: the rules, the
+evaluation and the search's hints moved as they were, `AiConnect4.ml`
+including it), `Selfplay.iterate` and `learn` (the loop as a
+function), `scripts/train/train_connect4`, `data/weights/connect4/`,
+and `AiConnect4` with `ai=classic|network|policy`, "a" changing engine
+in play, the network's policy and the search's visits shown under the
 board.
 
 What it took, each in `notes_ai_dark_arts.md`: the network's opinion
@@ -511,12 +510,21 @@ and each lesson mirrored (480 games an iteration where there were 40);
 and a measure from two random opening moves, the first one having
 counted two games as twenty.
 
-At iteration 45, twelve minutes, over 20 games each: 15-0-5 against
-the search without a network, 15-0-5 against alpha-beta at depth 3,
-11-0-9 at depth 5, and 10-0-10 at depth 7, the game's own computer;
-from 5-0-15, 3-0-17, 0-0-20 and 0-0-20 knowing nothing. The final
-figures, and whether `ai=network` becomes the default, when the run
-ends.
+The result: 150 iterations, 72,000 games, 38 minutes. Against the
+game's own alpha-beta at depth 7, over 40 games: 18-0-22 with 100
+playouts a move, 20-2-18 with 400, 26-1-13 with 1,600 (and 26-3-11
+against depth 5 with 400); knowing nothing, 0-0-20. So: level with the
+hand-written engine at the trainer's own budget, ahead of it with more
+search, and the game plays it at 1,600. `ai=classic` stays the
+default, the game being about alpha-beta's tricks; a decision for the
+author.
+
+What the curve says: nearly all of it was learned by iteration 45,
+twelve minutes; the next hundred iterations moved nothing that twenty
+games can see. And the policy alone stays weak (8-0-12 against plain
+MCTS). Both point at the same things, which are Q11's anyway: a
+network that sees the board as a board (`Conv`), and more playouts in
+the games it learns from.
 
 ### Q11. AlphaZero on 9 by 9 Go: `Conv`, `train_go`, `AiGo ai=network` (size after Q9)
 

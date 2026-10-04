@@ -27,7 +27,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:othello', weight: 3 },
       ],
     },
-    'AiConnect4.ml': { digest: '646cfb2b3e9a',
+    'AiConnect4.ml': { digest: '3c0bff999e3c',
       summary: 'Connect Four (1974, solved 1988): iterative deepening, ordering, Zobrist keys, and what each saved; or a network that taught itself.',
       capitals: [{ at: 'def:think', say: 'the search, deepening, the nodes counted' }],
       important: [

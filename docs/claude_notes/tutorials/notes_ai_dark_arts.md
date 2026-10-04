@@ -106,6 +106,18 @@ nothing, because the trainer writes its weights after every iteration
 and can go on from the file. *A run of more than a few minutes
 checkpoints, from the first version.*
 
+**A long run that learned in its first third** (the Connect 4
+trainer). Measured every fifth iteration, the score against alpha-beta
+at depth 7 went from 0-0-20 to 10-0-10 in 45 iterations, and then
+stayed there for a hundred more: 38 minutes spent where 12 would have
+done. Nothing was wrong; the network had learned what a network of
+that shape can learn from games of that quality. More of the same
+does not move a plateau. What does is changing what limits it: here,
+more search when *playing* (1,600 playouts instead of 100: 18-0-22
+becomes 26-1-13), and, not yet tried, a network that sees the board
+as a board. *Measure as it goes, and stop when the curve does; then
+ask what the limit is, not how much longer.*
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and

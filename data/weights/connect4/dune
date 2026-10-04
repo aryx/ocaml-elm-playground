@@ -2,7 +2,9 @@
 ; connect4.weights (Weights.mli: a text header saying how it was made
 ; and how it then did against the search without it and against
 ; alpha-beta, then the numbers), written by
-; scripts/train/train_connect4. AiConnect4's network (ai=network). A
+; scripts/train/train_connect4 in 38 minutes: 150 iterations, 72,000
+; games against itself. Level with the game's alpha-beta at depth 7
+; with 400 playouts a move, ahead with 1,600 (26-1-13 over 40 games). AiConnect4's network (ai=network). A
 ; library of its own, as every folder of data/ is: a program carries
 ; it only if it names it. In the package tiny_libs, as
 ; tiny_libs.data_weights_connect4.
