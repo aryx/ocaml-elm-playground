@@ -720,6 +720,39 @@ Two more, found on `Ngram_mlp`'s training step (32 examples through a
   12 ms, no line of the library changed. Found by running once with
   `OCAMLRUNPARAM=s=16M` before looking for a culprit in the code.
 
+## 21. A product with a transposed copy: `Tensor.mul_t`
+
+A network's layer, for a row of inputs per example, is `X W^T`. With
+a matrix product and a transpose to hand, that is
+`mul x (transpose w)`, and reverse-mode autodiff of it:
+
+- copies `W` turned (a node of the graph);
+- `Matrix.mul_fast` then transposes its right operand again, to read
+  it along rows: the copy is undone;
+- on the way back, the slopes are two more products, each with its
+  own transposed copy, and the transpose node turns its slopes back.
+
+Six passes over `W` where one was needed, and `W` is where the numbers
+are. `Matrix.mul_t` is the product of rows against rows, nothing
+copied; and the slopes go back a row at a time (`add_scaled`: a row
+plus a multiple of another), since for each number `g` of the
+output's slope at (i, j), row i of `X` gets `g` times row j of `W` and
+row j of `W` gets `g` times row i of `X`. One name's gradient through
+`Gpt`:
+
+| the model | numbers | on `Grad` | through transposes | `mul_t` |
+|---|---|---|---|---|
+| microgpt's, 16 wide | 4,192 | 4.0 ms | 0.80 ms | 0.41 ms |
+| 32 wide | 14,528 | 18 ms | 2.6 ms | 0.98 ms |
+| 64 wide, 2 layers | 102,784 | 217 ms | 16 ms | 6.0 ms |
+| 128 wide, 4 layers | 795,392 | 2050 ms | 165 ms | 44 ms |
+
+`Tensor.direct := false` is the long way, kept to time. The lesson is
+section 7's again in other clothes: the work was proportional to the
+copies, not to the product. What is left to try, in OCaml: the product
+blocked for matrices that do not fit the cache, and `Bigarray`s of
+32-bit floats, half the memory to read.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the

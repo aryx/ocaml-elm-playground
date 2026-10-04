@@ -74,6 +74,10 @@ let test_operations () =
   against_a_nudge "sub" [ a; c ] (two sub);
   against_a_nudge "mul" [ a; b ] (two mul);
   against_a_nudge "times" [ a; c ] (two times);
+  against_a_nudge "mul_t" [ a; c ] (two mul_t);
+  direct := false;
+  against_a_nudge "mul_t, the long way" [ a; c ] (two mul_t);
+  direct := true;
   against_a_nudge "scale" [ a ] (one (scale 2.5));
   against_a_nudge "shift" [ a ] (one (shift 2.5));
   against_a_nudge "transpose" [ a ] (one transpose);

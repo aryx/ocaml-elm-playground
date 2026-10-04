@@ -1,7 +1,7 @@
 ; claude: what Gpt learned of makemore's names: names_gpt.weights
 ; (Weights.mli: a text header saying how it was made, then the
 ; numbers), 17 KB, written by scripts/train/train_names_gpt in half a
-; minute (30,000 names, one a step; loss 2.218 on the names held
+; minute (30,000 names, one a step; loss 2.21 on the names held
 ; out). AiShannon's strongest opponent. A library of its own, as every
 ; folder of data/ is: a program carries it only if it names it. In
 ; the package tiny_libs, as tiny_libs.data_weights_names_gpt.

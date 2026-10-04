@@ -754,19 +754,25 @@ What it buys, on one name's gradient:
 
 ```
 the model                numbers    on Grad      on Tensor
-microgpt's, 16 wide        4,192      4.1 ms       0.8 ms      5x
-32 wide                   14,528     20   ms       2.6 ms      8x
-64 wide, 2 layers        102,784    226   ms      19   ms     12x
-128 wide, 4 layers       795,392   2240   ms     190   ms     12x
+microgpt's, 16 wide        4,192      4.0 ms      0.41 ms     10x
+32 wide                   14,528     18   ms      0.98 ms     19x
+64 wide, 2 layers        102,784    217   ms      6.0  ms     36x
+128 wide, 4 layers       795,392   2050   ms     44    ms     47x
 ```
 
-Five to twelve times, and it stops there: what is left is `Matrix`'s
-own product, plain OCaml loops at about two hundred million
-multiplications a second. The graph is no longer the cost; the
-arithmetic is, and making *that* faster (no transposes, blocked loops)
-is ordinary optimisation, to do next. Meanwhile microgpt's 30,000
-names take half a minute where they took two and a half, and
-`AiGpt` reads six names a frame.
+Ten to fifty times, growing with the model: the larger the matrices,
+the more of the time is arithmetic and the less is bookkeeping. The
+last line is about 800 million multiplications a second, in plain
+OCaml loops, and no line of C (the README's "OCaml all the way down").
+
+A third of it came from one operation. A layer is `X W^T`; written as
+a product with a transposed copy of `W`, it copies `W` turned, the
+product turns it back, and the way back makes two more products and
+two more copies. `Tensor.mul_t` reads the rows of both as they lie
+and sends the slopes back a row at a time: two to four times faster
+than the first version of this module (`notes_opti_ocaml.md`,
+section 21). Microgpt's 30,000 names take twenty seconds where they
+took two and a half minutes, and `AiGpt` reads six names a frame.
 
 This is what PyTorch is, with the loops on a GPU and a third
 dimension for batches. Here a matrix is all there is, and a batch is

@@ -75,7 +75,7 @@
  *     Ngram_mlp, 3 back, after 20,000 batches of 32   2.35      221 s
  *     this, after  1,000 names                        2.36        1 s
  *     this, after  5,000 names                        2.27        5 s
- *     this, after 30,000 names                        2.22       31 s
+ *     this, after 30,000 names                        2.21       23 s
  *
  * on names never learned from: past the network that reads three
  * letters in a fortieth of its time and a hundredth of its examples.
@@ -103,7 +103,7 @@
  * the version to read first, a token at a time, the whole model in
  * [read], every piece a function of ten lines. And on [Tensor], the
  * whole text at once, a row per token: the same arithmetic in forty
- * nodes instead of thirty thousand, five times faster here and more
+ * nodes instead of thirty thousand, ten times faster here and fifty
  * as the model grows ([on_arrays], Tensor.mli's table). The two give
  * the same loss and the same slopes to ten decimals (Unit_gpt).
  *

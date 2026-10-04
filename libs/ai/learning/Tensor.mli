@@ -39,16 +39,23 @@
  * Unit_gpt):
  *
  *     the model                 numbers    on Grad      here
- *     microgpt's, 16 wide         4,192      4.1 ms    0.8 ms     5x
- *     32 wide                    14,528     20   ms    2.6 ms     8x
- *     64 wide, 2 layers         102,784    226   ms   19   ms    12x
- *     128 wide, 4 layers        795,392   2240   ms  190   ms    12x
+ *     microgpt's, 16 wide         4,192      4.0 ms    0.41 ms    10x
+ *     32 wide                    14,528     18   ms    0.98 ms    19x
+ *     64 wide, 2 layers         102,784    217   ms    6.0  ms    36x
+ *     128 wide, 4 layers        795,392   2050   ms   44    ms    47x
  *
- * Five to twelve times, growing with the model, and no more: what is
- * left is [Matrix]'s own product and the transposes made on the way,
- * plain OCaml loops at something like 200 million multiplications a
- * second. That is the next thing to make faster, and a different
- * subject (notes_opti_ocaml.md): the graph is no longer the cost.
+ * Ten to fifty times, growing with the model: the larger the
+ * matrices, the more of the time is arithmetic and the less is
+ * bookkeeping. The last line is about 800 million multiplications a
+ * second, in plain OCaml loops.
+ *
+ * A third of that came from one operation, [mul_t]. A layer is
+ * X W^T, and written [mul x (transpose w)] it copies W turned, the
+ * product turns it back to read along its rows, and the way back
+ * makes two more products and two more copies. [mul_t] reads the rows
+ * of both as they lie, and sends the slopes back a row at a time
+ * ([direct], off, is the long way: 0.80, 2.6, 16 and 165 ms above,
+ * two to four times slower). notes_opti_ocaml.md, section 21.
  *
  * A matrix is all there is: no third dimension, no broadcasting but
  * the two operations that say so ([scale_rows], [row_mean]). A batch
@@ -91,6 +98,16 @@ val add : t -> t -> t (* the same shapes *)
 val sub : t -> t -> t
 val mul : t -> t -> t (* the matrix product *)
 val times : t -> t -> t (* element by element *)
+
+(* [mul_t a b]: a times the transpose of b, each row of [a] against
+ * each row of [b]. A layer on every row at once is [mul_t x w], and
+ * attention's scores [mul_t queries keys]. The same numbers as
+ * [mul a (transpose b)], without the copies: see [direct]. *)
+val mul_t : t -> t -> t
+
+(* false: [mul_t] the long way, through [transpose] and [mul], to time
+ * what the direct one saves *)
+val direct : bool ref
 val scale : float -> t -> t (* every number times a constant *)
 val shift : float -> t -> t (* every number plus a constant *)
 val transpose : t -> t

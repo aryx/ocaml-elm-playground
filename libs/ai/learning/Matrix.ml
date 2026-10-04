@@ -108,3 +108,41 @@ let mul_fast (a : t) (b : t) : t =
 
 let fast = ref true
 let mul (a : t) (b : t) : t = if !fast then mul_fast a b else mul_simple a b
+
+(* a times b transposed, without making the transpose: row i of a
+ * against row j of b, both read along. It is [mul_fast]'s loop with
+ * nothing to copy first, because the rows of b are already what the
+ * product b^T wants as columns *)
+let mul_t (a : t) (b : t) : t =
+  if a.cols <> b.cols then invalid_arg "Matrix.mul_t: the rows are not of the same length";
+  let n = a.cols in
+  let c = create a.rows b.rows in
+  for i = 0 to a.rows - 1 do
+    let arow = i * n in
+    for j = 0 to b.rows - 1 do
+      let brow = j * n in
+      let s0 = ref 0. and s1 = ref 0. and s2 = ref 0. and s3 = ref 0. in
+      let k = ref 0 in
+      while !k + 3 < n do
+        s0 := !s0 +. (a.data.(arow + !k) *. b.data.(brow + !k));
+        s1 := !s1 +. (a.data.(arow + !k + 1) *. b.data.(brow + !k + 1));
+        s2 := !s2 +. (a.data.(arow + !k + 2) *. b.data.(brow + !k + 2));
+        s3 := !s3 +. (a.data.(arow + !k + 3) *. b.data.(brow + !k + 3));
+        k := !k + 4
+      done;
+      while !k < n do
+        s0 := !s0 +. (a.data.(arow + !k) *. b.data.(brow + !k));
+        incr k
+      done;
+      c.data.((i * c.cols) + j) <- !s0 +. !s1 +. !s2 +. !s3
+    done
+  done;
+  c
+
+(* [add_scaled into at k from at' n]: n numbers of [from], times k,
+ * added in place to [into]: a row plus a multiple of another, which
+ * is all that sending slopes back through a product is *)
+let add_scaled (into : float array) (at : int) (k : float) (from : float array) (at' : int) (n : int) : unit =
+  for i = 0 to n - 1 do
+    into.(at + i) <- into.(at + i) +. (k *. from.(at' + i))
+  done

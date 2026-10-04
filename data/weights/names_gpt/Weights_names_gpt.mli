@@ -3,7 +3,7 @@
  *
  * Trained once by scripts/train/train_names_gpt -- 30,000 names, one a
  * step, from the 80% that [Corpus.split] gives to learn from, half a
- * minute -- to a loss of 2.218 on the names held out (the table
+ * minute -- to a loss of 2.21 on the names held out (the table
  * of letter pairs: 2.454; [Ngram_mlp] after eleven minutes: 2.328).
  * The file's own first lines say the same, with the seed and the
  * rate: they are its record, and a new training rewrites them. *)

@@ -57,6 +57,30 @@ let mul (a : t) (b : t) : t =
       pour a.d (Matrix.mul n.d (Matrix.transpose b.v));
       pour b.d (Matrix.mul (Matrix.transpose a.v) n.d))
 
+(* a times b transposed, the transpose never made. With [direct] off
+ * it is [mul a (transpose b)], the same numbers the long way: a copy
+ * of b turned, turned back inside the product, and two more products
+ * with two more copies on the way back. Directly, the slopes go back
+ * a row at a time: for each number g of the output's slope, at row i
+ * and column j, row i of a gets g times row j of b, and row j of b
+ * gets g times row i of a -- "each input's slope is the other input",
+ * once more *)
+let direct = ref true
+
+let mul_t (a : t) (b : t) : t =
+  if not !direct then mul a (make (Matrix.transpose b.v) [ b ] (fun n -> pour b.d (Matrix.transpose n.d)))
+  else
+    make (Matrix.mul_t a.v b.v) [ a; b ] (fun n ->
+        let wide = a.v.cols and outs = b.v.rows in
+        for i = 0 to a.v.rows - 1 do
+          for j = 0 to outs - 1 do
+            let g = n.d.data.((i * outs) + j) in
+            if g <> 0. then (
+              Matrix.add_scaled a.d.data (i * wide) g b.v.data (j * wide) wide;
+              Matrix.add_scaled b.d.data (j * wide) g a.v.data (i * wide) wide)
+          done
+        done)
+
 (* element by element *)
 let times (a : t) (b : t) : t =
   make (Matrix.times a.v b.v) [ a; b ] (fun n ->

@@ -122,3 +122,13 @@ val mul_fast : t -> t -> t
 
 (* true: use the faster product (the default) *)
 val fast : bool ref
+
+(* [mul_t a b]: a times the transpose of b, the transpose never made:
+ * each row of [a] against each row of [b]. What a layer computes of a
+ * row of inputs per example (X W^T), and what attention computes of
+ * queries and keys. *)
+val mul_t : t -> t -> t
+
+(* [add_scaled into at k from at' n]: [n] numbers of [from] starting
+ * at [at'], each times [k], added in place to [into] from [at] *)
+val add_scaled : float array -> int -> float -> float array -> int -> int -> unit

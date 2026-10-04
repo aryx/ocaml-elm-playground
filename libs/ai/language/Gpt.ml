@@ -170,7 +170,7 @@ let arrays_of (m : t) : arrays = List.map (fun (name, x) -> (name, Tensor.value 
 let text_loss_arrays (c : config) (g : arrays) (tokens : int list) : Tensor.t =
   let w name = List.assoc name g in
   (* [linear] on every row at once: X W^T *)
-  let linear name x = Tensor.mul x (Tensor.transpose (w name)) in
+  let linear name x = Tensor.mul_t x (w name) in
   let rmsnorm x = Tensor.scale_rows x (Tensor.pow (Tensor.shift 1e-5 (Tensor.row_mean (Tensor.times x x))) (-0.5)) in
   let tokens = Array.of_list tokens in
   let n = min c.block (Array.length tokens - 1) in
@@ -193,7 +193,7 @@ let text_loss_arrays (c : config) (g : arrays) (tokens : int list) : Tensor.t =
                let part m = Tensor.cols m (h * size) size in
                (* every query against every key: a square of scores,
                   of which each row keeps its part up to the diagonal *)
-               let scores = Tensor.scale (1. /. sqrt (float_of_int size)) (Tensor.mul (part q) (Tensor.transpose (part k))) in
+               let scores = Tensor.scale (1. /. sqrt (float_of_int size)) (Tensor.mul_t (part q) (part k)) in
                Tensor.mul (Tensor.softmax_rows ~causal:true scores) (part v))
          in
          x := Tensor.add (linear (name "o") (Tensor.join_cols heads)) before);

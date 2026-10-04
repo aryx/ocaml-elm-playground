@@ -321,7 +321,7 @@ again); they separate only with training. `examples/AiGpt.ml` (210
 lines, two golden frames) trains it two names a frame and draws its
 attention over a name. The GPT is `AiShannon`'s third opponent and its default:
 `scripts/train/train_names_gpt`, 30,000 names in half a minute on
-arrays (143 s on scalars), held-out loss 2.218 (`data/weights/names_gpt/`), against `Ngram_mlp`'s
+arrays (143 s on scalars), held-out loss 2.21 (`data/weights/names_gpt/`), against `Ngram_mlp`'s
 2.328 after eleven.
 
 ### Q3. `AiShannon`, the game (about 350 lines)
@@ -361,21 +361,21 @@ slopes as on `Grad` to ten decimals, `Gpt.on_arrays` choosing. Plain
 matrices, no third dimension: the Little Learner's extended operators
 are left as the exercise.
 
-What it bought, and what it did not: 5x on microgpt's sizes, 12x at
-800,000 numbers (190 ms for one name's gradient). So `Matrix`'s
-product runs at about 0.2 billion multiplications a second, not the
-billion D5 assumed, and D5's "a million parameters, ten megabytes, one
-night" is, as measured, a million parameters and **two megabytes**.
-Before Q5 and Q7, then, a phase the plan did not have:
+What it bought at first: 5x on microgpt's sizes, 12x at 800,000
+numbers, 190 ms for one name's gradient -- a fifth of the speed D5
+assumed. Hence:
 
-- **Q4b. `Matrix` made fast**: the product without the transposes
-  (`A B^T` and `A^T B` directly), the loops blocked and unrolled, the
-  slopes poured without a temporary; each step timed, the old loops
-  kept beside (`Matrix.fast` is already that switch). The target is
-  the billion; what is reached decides Q5's and Q7's sizes. In OCaml:
-  no BLAS, no C stub, here or anywhere in `libs/` (the README's "OCaml
-  all the way down": the libraries stay in the language the reader is
-  reading, and when one is slow the OCaml is made faster).
+- **Q4b. The product made direct. Done (2026-10-04).** A layer is
+  `X W^T`, and through `mul` and `transpose` it was six passes over
+  `W`. `Matrix.mul_t` and `Tensor.mul_t` (rows against rows, the
+  slopes sent back a row at a time; `Tensor.direct` off is the long
+  way): 0.41 ms on microgpt's sizes (10x over `Grad`), 44 ms at
+  800,000 numbers (47x), about 800 million multiplications a second.
+  D5's estimate stands again, near enough: a million parameters,
+  eight megabytes, one night. In OCaml: no BLAS, no C stub, here or
+  anywhere in `libs/` (the README's "OCaml all the way down").
+  Left to try when a model needs it: a blocked product, 32-bit
+  `Bigarray`s.
 
 **The order from here (decided 2026-10-04): the self-play line
 first** -- Q4b, then Q8, Q9, Q11, Q12 -- and the language line (Q5 to
