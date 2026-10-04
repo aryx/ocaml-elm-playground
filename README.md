@@ -71,6 +71,24 @@ pixels, how a PNG is decompressed, how a Moog filter gets its sound, or
 how a chess program picks its move, the answer is a few hundred lines
 you can open and read.
 
+**OCaml all the way down.** The libraries are written in OCaml, not
+bound from C, even where C would be faster: there is not one line of C
+in this repository, and what it borrows is the platform's own (SDL's
+window, Cairo and OpenGL on the backends that are theirs; the
+`software` backends draw with ours). In many languages the libraries
+that matter are written in another one: Python's numerical and AI
+libraries are C and Fortran underneath (NumPy), and whoever wants to
+know how they work has to change language to find out. Stroustrup made
+this a design rule of C++: *leave no room for a lower-level language
+below it*, so that its libraries could be written in it. OCaml is fast
+enough to keep that rule here for a long time -- a PNG decoder, a
+software rasterizer, a synthesizer, TLS 1.3, a GPT and its automatic
+differentiation are all plain OCaml -- and since the purpose is
+teaching, we keep it even when it costs speed: the OCaml is the more
+readable of the two, and the reader never has to leave the language.
+When something is slow we make the OCaml faster, and write down how
+([notes_opti_ocaml.md](docs/claude_notes/dev/notes_opti_ocaml.md)).
+
 The software that usually does this work is not like that. A graphics
 stack, a game engine, a codec library or a web browser is millions of
 lines, and nobody understands the whole of it. Here each subject is

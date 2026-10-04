@@ -372,7 +372,14 @@ Before Q5 and Q7, then, a phase the plan did not have:
   (`A B^T` and `A^T B` directly), the loops blocked and unrolled, the
   slopes poured without a temporary; each step timed, the old loops
   kept beside (`Matrix.fast` is already that switch). The target is
-  the billion; what is reached decides Q5's and Q7's sizes.
+  the billion; what is reached decides Q5's and Q7's sizes. In OCaml:
+  no BLAS, no C stub, here or anywhere in `libs/` (the README's "OCaml
+  all the way down": the libraries stay in the language the reader is
+  reading, and when one is slow the OCaml is made faster).
+
+**The order from here (decided 2026-10-04): the self-play line
+first** -- Q4b, then Q8, Q9, Q11, Q12 -- and the language line (Q5 to
+Q7, Q10) after.
 
 ### Q5. A GPT that writes tunes: `train_tunes`, `AiTunes` (about 300 lines)
 
