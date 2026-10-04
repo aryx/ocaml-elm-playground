@@ -97,7 +97,8 @@ let initial_model : model Lazy.t = lazy (fresh true true)
 (* Update *)
 (*****************************************************************************)
 
-let steps_a_frame = 2
+(* a step is under a millisecond on whole arrays (Tensor.mli) *)
+let steps_a_frame = 6
 let kept = 300
 
 (* the rate falls over the first 5,000 names, as microgpt's does over
@@ -128,9 +129,9 @@ let learn_a_frame (m : model) : model =
   in
   let (gpt, steps) = go m.gpt m.steps steps_a_frame in
   let m = { m with gpt; steps } in
-  (* the loss on 150 held-out names is 150 texts read: every 40 steps *)
+  (* the loss on 150 held-out names is 150 texts read: every 42 steps *)
   let m =
-    if steps mod 40 = 0 then { m with losses = List.filteri (fun i _ -> i < kept) (Gpt.loss gpt d.held :: m.losses) } else m
+    if steps mod 42 = 0 then { m with losses = List.filteri (fun i _ -> i < kept) (Gpt.loss gpt d.held :: m.losses) } else m
   in
   let m =
     if m.frame mod 20 = 1 then

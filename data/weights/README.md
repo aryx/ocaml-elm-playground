@@ -10,7 +10,7 @@ that library and never trains.
 
 | folder (library, module) | the network | made by | how long | result | used by |
 |---|---|---|---|---|---|
-| `names_gpt/` (`data_weights_names_gpt`, `Weights_names_gpt.bytes`) | [`Gpt`](../../libs/ai/language/Gpt.mli), microgpt's sizes: 16 wide, 4 heads, 1 layer, 4,192 numbers | [`scripts/train/train_names_gpt.ml`](../../scripts/train/train_names_gpt.ml) | 30,000 names, one a step, under three minutes | loss 2.219 on the names held out | [`AiShannon`](../../games/puzzle/AiShannon.ml) |
+| `names_gpt/` (`data_weights_names_gpt`, `Weights_names_gpt.bytes`) | [`Gpt`](../../libs/ai/language/Gpt.mli), microgpt's sizes: 16 wide, 4 heads, 1 layer, 4,192 numbers | [`scripts/train/train_names_gpt.ml`](../../scripts/train/train_names_gpt.ml) | 30,000 names, one a step, half a minute | loss 2.218 on the names held out | [`AiShannon`](../../games/puzzle/AiShannon.ml) |
 | `names_mlp/` (`data_weights_names_mlp`, `Weights_names_mlp.bytes`) | [`Ngram_mlp`](../../libs/ai/language/Ngram_mlp.mli), makemore's MLP: 3 letters back, 3,481 numbers | [`scripts/train/train_names.ml`](../../scripts/train/train_names.ml) | 60,000 batches of 32, eleven minutes | loss 2.328 on the names held out (the table of letter pairs: 2.454) | [`AiShannon`](../../games/puzzle/AiShannon.ml) |
 
 ## Making one again

@@ -716,8 +716,8 @@ let scripted : Golden_scene.scripted list =
      * the values in and the slopes not yet *)
     ("examples/software/AiGrad", "slopes", 20, "k:3");
     ("examples/software/AiGrad", "forward", 95, "");
-    (* claude: microgpt 190 names in: the loss falling towards the
-     * table of pairs' line, the first rows of attention no longer flat *)
+    (* claude: microgpt 570 names in: the loss just under the table of
+     * pairs' line, the first rows of attention no longer flat *)
     ("examples/software/AiGpt", "learning", 95, "");
     (* claude: JPEG from one coefficient a block, each its average: the
      * mosaic; PNG with no filter, its bytes as they are, bright; GIF's

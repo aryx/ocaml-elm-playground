@@ -73,11 +73,14 @@
  *     knowing nothing                                 3.296
  *     Bigram, one letter back                         2.454
  *     Ngram_mlp, 3 back, after 20,000 batches of 32   2.35      221 s
- *     this, after 1,000 names                         2.36        5 s
- *     this, after 5,000 names                         2.27       27 s
+ *     this, after  1,000 names                        2.36        1 s
+ *     this, after  5,000 names                        2.27        5 s
+ *     this, after 30,000 names                        2.22       31 s
  *
- * on names never learned from: in an eighth of the time and a fiftieth
- * of the examples, past the network that reads three letters. And
+ * on names never learned from: past the network that reads three
+ * letters in a fortieth of its time and a hundredth of its examples.
+ * (The times are on whole arrays, the default; a node per number, 27 s
+ * for the 5,000.) And
  * with each idea taken out, the same 5,000 steps ([config]'s two
  * switches; the table is scripts/train/measure_gpt's):
  *
@@ -96,10 +99,13 @@
  * other. An honest lesson of small models: the architecture's ideas
  * pay off with training and with longer texts, not at once.
  *
- * It is written on [Grad], a node per number, as microgpt is: the
- * version to read. Every piece below is a function of ten lines over
- * arrays of graph values, and the whole model is [read]. The version
- * on whole arrays is the same functions over another type.
+ * It is written twice. On [Grad], a node per number, as microgpt is:
+ * the version to read first, a token at a time, the whole model in
+ * [read], every piece a function of ten lines. And on [Tensor], the
+ * whole text at once, a row per token: the same arithmetic in forty
+ * nodes instead of thirty thousand, five times faster here and more
+ * as the model grows ([on_arrays], Tensor.mli's table). The two give
+ * the same loss and the same slopes to ten decimals (Unit_gpt).
  *
  * What is left out, as microgpt leaves it out: biases, dropout,
  * batches (a step is one name), a tokenizer beyond characters.
@@ -160,6 +166,12 @@ val step : ?rate:float -> t -> int list -> t * float
  * the model, the matrices' in their order, one after the other: what
  * [step] hands to Adam *)
 val gradient : t -> int list -> float array * float
+
+(* true (the default): [step], [gradient] and [loss] run on [Tensor],
+ * the whole text at once, a node per matrix operation; false: on
+ * [Grad], a token and a number at a time. The same losses and slopes
+ * either way; the times are in Tensor.mli. *)
+val on_arrays : bool ref
 
 (* the mean over the texts of each one's mean surprise, in nats *)
 val loss : t -> int list list -> float

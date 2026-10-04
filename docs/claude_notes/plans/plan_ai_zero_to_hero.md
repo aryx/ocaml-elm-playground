@@ -320,8 +320,8 @@ positions 2.285, one head 2.285, without either 2.475 (the bigram
 again); they separate only with training. `examples/AiGpt.ml` (210
 lines, two golden frames) trains it two names a frame and draws its
 attention over a name. The GPT is `AiShannon`'s third opponent and its default:
-`scripts/train/train_names_gpt`, 30,000 names in under three minutes,
-held-out loss 2.219 (`data/weights/names_gpt/`), against `Ngram_mlp`'s
+`scripts/train/train_names_gpt`, 30,000 names in half a minute on
+arrays (143 s on scalars), held-out loss 2.218 (`data/weights/names_gpt/`), against `Ngram_mlp`'s
 2.328 after eleven.
 
 ### Q3. `AiShannon`, the game (about 350 lines)
@@ -353,6 +353,26 @@ file.
   same gradients on the same seed; the timing in `Tensor.mli`, as
   `Grad.mli` has its own.
 - This is the phase everything bigger waits for.
+
+**Done (2026-10-04)**: `Tensor` (250 lines, about twenty operations,
+each checked against a nudge) and `Gpt` a second time on it (40
+lines), the whole text at once; the same loss and the same 4,192
+slopes as on `Grad` to ten decimals, `Gpt.on_arrays` choosing. Plain
+matrices, no third dimension: the Little Learner's extended operators
+are left as the exercise.
+
+What it bought, and what it did not: 5x on microgpt's sizes, 12x at
+800,000 numbers (190 ms for one name's gradient). So `Matrix`'s
+product runs at about 0.2 billion multiplications a second, not the
+billion D5 assumed, and D5's "a million parameters, ten megabytes, one
+night" is, as measured, a million parameters and **two megabytes**.
+Before Q5 and Q7, then, a phase the plan did not have:
+
+- **Q4b. `Matrix` made fast**: the product without the transposes
+  (`A B^T` and `A^T B` directly), the loops blocked and unrolled, the
+  slopes poured without a temporary; each step timed, the old loops
+  kept beside (`Matrix.fast` is already that switch). The target is
+  the billion; what is reached decides Q5's and Q7's sizes.
 
 ### Q5. A GPT that writes tunes: `train_tunes`, `AiTunes` (about 300 lines)
 

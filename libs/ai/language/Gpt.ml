@@ -154,19 +154,84 @@ let text_loss (c : config) (g : graph) (tokens : int list) : Grad.t =
   Grad.( /: ) (Grad.sum losses) (Grad.value (float_of_int (max 1 (List.length losses))))
 
 (*****************************************************************************)
+(* The same model, on whole arrays *)
+(*****************************************************************************)
+(* [read] above takes one token and keeps a memory of those before.
+ * Here the whole text goes through at once, a row per token: the
+ * memory is the rows above, and "only those before" is the softmax
+ * stopping at the diagonal ([Tensor.softmax_rows ~causal]). The same
+ * numbers come out (Unit_gpt checks the loss and every slope), from
+ * about forty nodes instead of thirty thousand. *)
+
+type arrays = (string * Tensor.t) list
+
+let arrays_of (m : t) : arrays = List.map (fun (name, x) -> (name, Tensor.value x)) m.matrices
+
+let text_loss_arrays (c : config) (g : arrays) (tokens : int list) : Tensor.t =
+  let w name = List.assoc name g in
+  (* [linear] on every row at once: X W^T *)
+  let linear name x = Tensor.mul x (Tensor.transpose (w name)) in
+  let rmsnorm x = Tensor.scale_rows x (Tensor.pow (Tensor.shift 1e-5 (Tensor.row_mean (Tensor.times x x))) (-0.5)) in
+  let tokens = Array.of_list tokens in
+  let n = min c.block (Array.length tokens - 1) in
+  if n <= 0 then Tensor.value (Matrix.create 1 1)
+  else
+    (* each token but the last is read; what follows it is its answer *)
+    let read = Array.sub tokens 0 n and answers = Array.sub tokens 1 n in
+    let x = Tensor.rows (w "wte") read in
+    let x = if c.positions then Tensor.add x (Tensor.rows (w "wpe") (Array.init n (fun i -> i))) else x in
+    let x = ref (rmsnorm x) in
+    for l = 0 to c.layers - 1 do
+      let name s = Printf.sprintf "%d.%s" l s in
+      (if c.attention then
+         let before = !x in
+         let normed = rmsnorm before in
+         let q = linear (name "q") normed and k = linear (name "k") normed and v = linear (name "v") normed in
+         let size = c.width / c.heads in
+         let heads =
+           List.init c.heads (fun h ->
+               let part m = Tensor.cols m (h * size) size in
+               (* every query against every key: a square of scores,
+                  of which each row keeps its part up to the diagonal *)
+               let scores = Tensor.scale (1. /. sqrt (float_of_int size)) (Tensor.mul (part q) (Tensor.transpose (part k))) in
+               Tensor.mul (Tensor.softmax_rows ~causal:true scores) (part v))
+         in
+         x := Tensor.add (linear (name "o") (Tensor.join_cols heads)) before);
+      let before = !x in
+      x := Tensor.add (linear (name "fc2") (Tensor.relu (linear (name "fc1") (rmsnorm before)))) before
+    done;
+    Tensor.cross_entropy (linear "head" !x) answers
+
+(*****************************************************************************)
 (* Using and training *)
 (*****************************************************************************)
 
+(* on whole arrays (the default), or a node per number: the same
+ * losses and the same slopes, to time one against the other *)
+let on_arrays = ref true
+
 let loss (m : t) (texts : int list list) : float =
-  let g = graph_of m in
-  List.fold_left (fun sum tokens -> sum +. Grad.of_ (text_loss m.config g tokens)) 0. texts
-  /. float_of_int (max 1 (List.length texts))
+  let one =
+    if !on_arrays then
+      let g = arrays_of m in
+      fun tokens -> Tensor.number (text_loss_arrays m.config g tokens)
+    else
+      let g = graph_of m in
+      fun tokens -> Grad.of_ (text_loss m.config g tokens)
+  in
+  List.fold_left (fun sum tokens -> sum +. one tokens) 0. texts /. float_of_int (max 1 (List.length texts))
 
 let gradient (m : t) (tokens : int list) : float array * float =
-  let g = graph_of m in
-  let l = text_loss m.config g tokens in
-  Grad.backward l;
-  (Array.concat (List.map (fun (_, rows) -> Array.map Grad.slope (Array.concat (Array.to_list rows))) g), Grad.of_ l)
+  if !on_arrays then (
+    let g = arrays_of m in
+    let l = text_loss_arrays m.config g tokens in
+    Tensor.backward l;
+    (Array.concat (List.map (fun (_, x) -> Array.copy (Tensor.slope x).data) g), Tensor.number l))
+  else
+    let g = graph_of m in
+    let l = text_loss m.config g tokens in
+    Grad.backward l;
+    (Array.concat (List.map (fun (_, rows) -> Array.map Grad.slope (Array.concat (Array.to_list rows))) g), Grad.of_ l)
 
 let step ?rate (m : t) (tokens : int list) : t * float =
   let (slopes, l) = gradient m tokens in

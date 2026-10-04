@@ -13,7 +13,7 @@
  *   dune exec scripts/train/train_names_gpt.exe -- data/weights/names_gpt/names_gpt.weights
  *   dune exec scripts/train/train_names_gpt.exe -- out.weights 2000    (fewer names)
  *
- * 30,000 names by default, one a step, about three minutes. The same
+ * 30,000 names by default, one a step, about half a minute. The same
  * seed gives the same file, byte for byte, on every OCaml (Lehmer).
  *
  * It learns from Corpus.split's first 80% of the names, in their

@@ -27,6 +27,7 @@ formula is one a reader can check with a pen.
 | `Train` (done) | batches, learning rate, train/test, the loop | §6 |
 | `Adam` (done) | descent with a memory: momentum, a scale per weight | §6 |
 | `Weights` (done) | what was learned, as a file a program embeds | §6 |
+| `Tensor` (done) | reverse mode on whole matrices: `Grad`, an array at a time | §15 |
 | `Qlearn` (done) | rewards, temporal difference, Q-learning | §8 |
 
 | module (`ai/language/`) | what | section |
@@ -359,7 +360,7 @@ learn.
   for x2). Click an input, change it, and everything follows; "u"
   nudges the weights along their slopes, which is learning.
 - `AiGpt.ml` (**written**) -- section 14 running: microgpt learning
-  the names two a frame, the names it makes up, its loss on names
+  the names six a frame, the names it makes up, its loss on names
   never read crossing the table of pairs' line, and a square showing
   where each letter of a name looks when it is read -- attention, flat
   at first, sharpening as it learns, a head at a time ("1" to "4").
@@ -718,7 +719,58 @@ this one included.
 
 It runs on `Grad`, a node per number, as microgpt does: about 5 ms a
 step, fast enough to train in a window. The same functions over whole
-arrays are the next module.
+arrays are the next section.
+
+## 15. Whole arrays: the same idea, a matrix at a time
+
+`Grad` makes a node of the graph for every number. A network of four
+thousand weights reading a six-letter name is thirty thousand nodes,
+each a record, a closure and a list, and that bookkeeping is where the
+time goes. Nothing in the idea says a node must be one number.
+
+`Tensor` is `Grad` with a matrix in each node and a matrix of slopes
+beside it. Each operation is its scalar twin with the loop moved
+inside, and the rule for a product is the one of section 5 with
+transposes so that the shapes fit:
+
+```
+Grad     y = a * b        a's slope += y's slope * b
+Tensor   Y = A B          A's slope += Y's slope * B^T
+                          B's slope += A^T * Y's slope
+```
+
+`backward` is the same walk, word for word. About twenty operations
+are enough for a GPT: the arithmetic, picking rows (the embedding
+lookup) and columns (a head's share of the numbers), a softmax along
+rows that stops at the diagonal (a token sees itself and those before:
+the *causal mask*), and softmax with the loss as one operation, whose
+slope is the share given minus the share deserved. Each is checked
+against a nudge (`Unit_tensor`).
+
+`Gpt` is then written a second time, the whole text at once, a row
+per token, in forty nodes; the two versions give the same loss and
+the same 4,192 slopes to ten decimals, and `Gpt.on_arrays` chooses.
+What it buys, on one name's gradient:
+
+```
+the model                numbers    on Grad      on Tensor
+microgpt's, 16 wide        4,192      4.1 ms       0.8 ms      5x
+32 wide                   14,528     20   ms       2.6 ms      8x
+64 wide, 2 layers        102,784    226   ms      19   ms     12x
+128 wide, 4 layers       795,392   2240   ms     190   ms     12x
+```
+
+Five to twelve times, and it stops there: what is left is `Matrix`'s
+own product, plain OCaml loops at about two hundred million
+multiplications a second. The graph is no longer the cost; the
+arithmetic is, and making *that* faster (no transposes, blocked loops)
+is ordinary optimisation, to do next. Meanwhile microgpt's 30,000
+names take half a minute where they took two and a half, and
+`AiGpt` reads six names a frame.
+
+This is what PyTorch is, with the loops on a GPU and a third
+dimension for batches. Here a matrix is all there is, and a batch is
+a loop over texts.
 
 ## Glossary
 

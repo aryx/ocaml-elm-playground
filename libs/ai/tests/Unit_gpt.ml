@@ -84,6 +84,37 @@ let test_gradient () =
   Printf.eprintf "Gpt, the graph's slopes against a nudge: furthest apart %.2g\n" !worst;
   Alcotest.(check bool) "the same slopes, to six decimals" true (!worst < 1e-6)
 
+(* the model on whole arrays against the model a number at a time:
+   the same loss and the same slope for every one of its 4,192
+   numbers, and what each costs. Tensor.mli's times come from here. *)
+let test_arrays () =
+  let (learn, _) = Lazy.force texts in
+  let m = Gpt.make ~seed:1 (Gpt.config 27) in
+  let both text =
+    Gpt.on_arrays := false;
+    let scalars = Gpt.gradient m text in
+    Gpt.on_arrays := true;
+    (scalars, Gpt.gradient m text)
+  in
+  List.iter
+    (fun text ->
+      let ((slopes, loss), (slopes', loss')) = both text in
+      Alcotest.(check (float 1e-10)) "the same loss" loss loss';
+      Array.iteri (fun i s -> Alcotest.(check (float 1e-10)) (Printf.sprintf "slope %d" i) s slopes'.(i)) slopes)
+    [ learn.(0); learn.(1); [ 0; 5; 13; 13; 1; 0 ] ];
+  let time arrays =
+    Gpt.on_arrays := arrays;
+    let t0 = Unix.gettimeofday () in
+    for i = 0 to 199 do
+      ignore (Gpt.gradient m learn.(i))
+    done;
+    Gpt.on_arrays := true;
+    1e3 *. (Unix.gettimeofday () -. t0) /. 200.
+  in
+  let (scalars, arrays) = (time false, time true) in
+  Printf.eprintf "Gpt, a step's gradient: %.2f ms a number at a time, %.2f ms on arrays (%.0fx)\n" scalars arrays (scalars /. arrays);
+  Alcotest.(check bool) "arrays are the fast way" true (arrays < scalars)
+
 let train (c : Gpt.config) (steps : int) : Gpt.t =
   let (learn, _) = Lazy.force texts in
   let m = ref (Gpt.make ~seed:1 c) in
@@ -128,6 +159,7 @@ let tests =
     t "Gpt, microgpt's sizes" test_sizes;
     t "Gpt, attention's shares" test_attention;
     t "Gpt, its gradient against a nudge" test_gradient;
+    t "Gpt, on arrays: the same slopes" test_arrays;
     t "Gpt, three hundred names" test_training;
     t "Gpt, written to a file and read back" test_weights;
   ]

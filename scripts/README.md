@@ -40,7 +40,7 @@ does, why, and how to use it; the techniques behind them are in
   in `data/weights/`, a small library each
   - `train_names.exe`: `Ngram_mlp` on makemore's names, ten minutes,
     for `data/weights/names_mlp/` (AiShannon's network)
-  - `train_names_gpt.exe`: `Gpt` on the same names, three minutes,
+  - `train_names_gpt.exe`: `Gpt` on the same names, half a minute,
     for `data/weights/names_gpt/` (AiShannon's GPT)
   - `measure_gpt.exe`: writes nothing; `Gpt.mli`'s table, the model
     with each of its ideas taken out

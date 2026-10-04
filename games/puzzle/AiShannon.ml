@@ -42,7 +42,7 @@
  * Corpus.split keeps out of all training, the trainer's included.
  *
  * The network and the GPT are not trained here: eleven minutes for
- * one, three for the other. Each was trained once by a program of
+ * one, half a minute for the other. Each was trained once by a program of
  * scripts/train (train_names, train_names_gpt), and what it learned is
  * a file of data/weights (Weights.mli), embedded at build time as
  * Weights_names_mlp and Weights_names_gpt; a file's first lines say
