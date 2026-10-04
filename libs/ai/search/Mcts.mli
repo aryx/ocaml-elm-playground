@@ -69,7 +69,11 @@
  *
  * so an unvisited move is no longer infinitely attractive; it is as
  * attractive as the policy says. On a board with 250 moves that is
- * the difference between a search and a lottery.
+ * the difference between a search and a lottery. A move never tried
+ * waits with no visit and the share of a game not played, a half: it
+ * gets its turn when the moves the policy liked better have
+ * disappointed, not before -- so the playouts go deep along what the
+ * policy likes rather than once over everything.
  *
  * [evaluate] is a value: it replaces the playout with an opinion, a
  * number between 0 (MIN wins) and 1 (MAX wins). A playout is one

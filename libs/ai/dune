@@ -11,5 +11,5 @@
  (public_name tiny_libs.ai)
  (wrapped false) ; claude: wrapped, dune would make it a module Ai, hiding the Playground's Ai
  (modules)
- (libraries ai_movement ai_decision ai_search ai_bots ai_learning ai_language)
+ (libraries ai_movement ai_decision ai_search ai_bots ai_learning ai_language ai_selfplay)
 )

@@ -288,6 +288,8 @@ let scenes : Golden_scene.scene list =
     ("examples/software/AiGrad", "", 3);
     (* the GPT before any training: flat attention, letters at random *)
     ("examples/software/AiGpt", "", 3);
+    (* the network knowing nothing: flat opinions of both boards *)
+    ("examples/software/AiSelfPlay", "", 3);
     (* claude: the image formats taken apart: JPEG from 6 coefficients
      * a block, PNG's filtered bytes, GIF's LZW 40 codes in *)
     ("examples/software/ImageJpeg", "", 3);
@@ -719,6 +721,10 @@ let scripted : Golden_scene.scripted list =
     (* claude: microgpt 570 names in: the loss just under the table of
      * pairs' line, the first rows of attention no longer flat *)
     ("examples/software/AiGpt", "learning", 95, "");
+    (* claude: forty games against itself in: the three curves rising,
+     * the centre beginning to light up on the board where only the
+     * centre draws *)
+    ("examples/software/AiSelfPlay", "learning", 60, "");
     (* claude: JPEG from one coefficient a block, each its average: the
      * mosaic; PNG with no filter, its bytes as they are, bright; GIF's
      * LZW a second into playing, the codes 8 bits wide *)

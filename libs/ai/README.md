@@ -21,6 +21,7 @@ of them, a library of its own:
 | `search/` (`ai_search`) | what will my opponent answer? | `Minimax` (the game tree, alpha-beta), `Deepening` (iterative deepening, move ordering, the transposition table), `Zobrist` (hashing a position), `Mcts` (Monte Carlo tree search) | §7-§10 |
 | `learning/` (`ai_learning`) | can it learn instead of being told? | `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad` (autodiff), `Tensor` (the same on whole matrices), `Train` (supervised learning), `Adam` (descent with a memory), `Weights` (what was learned, as a file); `Qlearn` (learning to play from rewards) | `notes_ai_learning.md` |
 | `language/` (`ai_language`) | what comes next? | `Tokenizer` (a text as numbers), `Corpus` (what is learned from, what is held out), `Sampling` (drawing the next token), `Bigram` (the table of letter pairs, counted, then learned), `Ngram_mlp` (embeddings, a network three letters back), `Gpt` (attention: a transformer, on scalars and on whole arrays); after Karpathy's makemore and microgpt, on their names (`data/names/`) | `notes_ai_learning.md` §11-§15 |
+| `selfplay/` (`ai_selfplay`) | can it teach itself? | `Policy_value` (a network with two heads: which moves, who is winning), `Selfplay` (games of the search against itself, kept as lessons), `Arena` (two players measured), `Tictactoe` (the game it is first worked on); after AlphaZero and AlphaZero.jl | `notes_ai_learning.md` §16 |
 
 The first three are the *real-time* half (a world at 60 frames a
 second: monsters, crowds, soldiers), `search/` the *turn-taking* half
@@ -31,7 +32,9 @@ The first five folders do not use one another: each module depends
 only on modules of its own folder (`Deepening` and `Mcts` on `Minimax`,
 `Train` on `Backprop` and `Net`, ...), so a folder can be read, and
 taught, on its own. `language/` is above `learning/`, which it is
-written with (`Grad`, `Adam`, `Matrix`). A new
+written with (`Grad`, `Tensor`, `Adam`, `Matrix`), and `selfplay/` above
+`search/` and `learning/`, which it joins: the network of one inside
+the search of the other. A new
 module goes where its question is; one that needs two folders (a
 network inside the search, `notes_ai_learning.md` §9) belongs to the
 game that joins them, or to a new folder above both.

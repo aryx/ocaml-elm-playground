@@ -464,9 +464,9 @@ when given, replaces the playout entirely. Measured on tic-tac-toe
 with a *perfect* value function standing in for a trained one
 (`Unit_mcts`, so that the hook is measured and not the network): at
 twelve playouts it finds the winning move in 12 of 12 won positions
-against 9 of 12 for random playouts, a pointed policy takes 93% of
-the visits where a flat one takes 78%, and over twenty games at forty
-playouts each the searcher with both wins 6 and loses 0 to the
+against 9 of 12 for random playouts, a pointed policy takes all of
+the visits where a flat one takes 75%, and over twenty games at forty
+playouts each the searcher with both wins 7 and loses 0 to the
 2006-style version of itself, the rest drawn. (With the stdlib's
 Random, before the search drew from `Lehmer`, the same on every
 OCaml: 10 of 12, 73%, 11-0.)
@@ -777,6 +777,76 @@ took two and a half minutes, and `AiGpt` reads six names a frame.
 This is what PyTorch is, with the loops on a GPU and a third
 dimension for batches. Here a matrix is all there is, and a batch is
 a loop over texts.
+
+## 16. Teaching itself: AlphaZero's loop
+
+Section 9 said where a network goes in the search -- a policy for
+which moves to look at, a value for who is winning -- and measured the
+two hooks with a perfect value function standing in. This is the other
+half: where the network comes from when nobody has one.
+
+**From its own games.** The search, guided by the network, is a better
+player than the network alone, because it looks ahead. So:
+
+```
+   +--> the search, guided by the network, plays itself   Selfplay.play
+   |      |
+   |      v   each position becomes a lesson:
+   |          "the search spent its visits like this;
+   |           the game ended like that"
+   |      |
+   |      v
+   +--- the network is taught the lessons                 Policy_value.step
+```
+
+The policy is taught the search's visits, the value the game's
+result. Taught, it guides a better search, whose visits are better
+lessons. Only the rules enter.
+
+**One network, two heads** (`Policy_value`): a body of two layers,
+then a score per move and one number between -1 and 1 for whoever is
+to play. The position is shown from the side of the player to move, so
+the same network plays both colours. Its loss is the two added: the
+policy's surprise at the visits' shares, the square of the value's
+error. It is the first network here written on `Tensor`, a row per
+position.
+
+**What makes it work** (`Selfplay.settings`): the first moves of a
+game drawn in proportion to their visits, or every game is the same
+game; and part of the root's policy left to chance, so that a move
+written off is still tried.
+
+**The measure is games, not the loss** (`Arena`). On tic-tac-toe the
+truth is known, so the opponent can be perfect (minimax to the end).
+A network of 6,026 numbers, 20 games against itself an iteration at 50
+playouts a move, then 200 steps (`Unit_selfplay`):
+
+```
+                    the search with it       it alone, no search
+iterations  time    perfect    random        perfect    random
+     0               0-5-5     36-4-0         0-0-2     14-6-20
+     6       5 s     0-10-0    38-2-0         0-1-1     28-7-5
+    20      17 s     0-10-0    37-3-0         0-2-0     34-6-0
+```
+
+Five seconds, and with the search it loses to nobody. The last two
+columns are the network's policy alone, no looking ahead: what *it*
+knows. `examples/AiSelfPlay.ml` shows all of it happen, with the
+network's opinion of a position where only one answer does not lose,
+that square lighting up as it learns.
+
+**What it asked of the search.** The first run did not learn: fifty
+playouts looked two moves ahead. `Mcts` tried every move of a position
+once before preferring any, policy or no policy, so the policy only
+began to matter after the whole width had been paid for. With a
+policy, a move never tried now competes with the children by the same
+rule (no visit yet, the share of a game not played): the playouts go
+deep along what the policy likes. That is what PUCT was supposed to
+mean all along, and section 9's numbers moved a little with it.
+
+Tic-tac-toe is the check, not the goal. The same loop, a board of
+seven columns, a trainer that runs for an hour, and a weights file:
+Connect 4, then Go, then chess (`plans/plan_ai_zero_to_hero.md`).
 
 ## Glossary
 

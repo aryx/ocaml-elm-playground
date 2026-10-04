@@ -67,7 +67,7 @@
         { at: 'def:remember', weight: 2 },
       ],
     },
-    'Mcts.mli': { digest: '06c65b1dd457',
+    'Mcts.mli': { digest: '6801e92f5442',
       summary: "Monte Carlo tree search: no evaluation, random games counted; AlphaGo's shape with a network.",
       capitals: [
         { at: 'def:search', say: 'select, expand, simulate, backup' },
@@ -80,7 +80,7 @@
         { at: 'def:think', say: 'anytime: grow it by some playouts a frame', weight: 2 },
       ],
     },
-    'Mcts.ml': { digest: '22a37e43ba15',
+    'Mcts.ml': { digest: '5acd938f8491',
       summary: 'The tree grown in place: mutable nodes of visits and wins, one path descended per playout.',
       important: [
         { at: 'type:node', say: 'visits, wins, untried moves: mutable', weight: 2 },

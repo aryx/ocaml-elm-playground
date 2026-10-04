@@ -196,6 +196,21 @@ let scale_rows (a : t) (s : t) : t =
         done
       done)
 
+(* a row, [b], added to every row of [a]: a layer's biases, one per
+ * neuron, the same for every example *)
+let add_row (a : t) (b : t) : t =
+  let cols = a.v.cols in
+  make
+    (Matrix.init a.v.rows cols (fun r c -> Matrix.get a.v r c +. b.v.data.(c)))
+    [ a; b ]
+    (fun n ->
+      pour a.d n.d;
+      for r = 0 to a.v.rows - 1 do
+        for c = 0 to cols - 1 do
+          b.d.data.(c) <- b.d.data.(c) +. n.d.data.((r * cols) + c)
+        done
+      done)
+
 (* a row's numbers, up to [upto], as shares summing to 1, the rest 0 *)
 let shares (scores : Matrix.t) (r : int) (upto : int) : float array =
   let top = ref neg_infinity in
@@ -245,6 +260,33 @@ let cross_entropy (scores : t) (answers : int array) : t =
         for c = 0 to cols - 1 do
           let deserved = if c = answers.(r) then 1. else 0. in
           scores.d.data.((r * cols) + c) <- scores.d.data.((r * cols) + c) +. (g *. (p.(r).(c) -. deserved))
+        done
+      done)
+
+(* the same against shares deserved instead of one answer: the mean
+ * over the rows of -sum_c deserved.(c) log (the softmax of the row).(c).
+ * Its slope is the same sentence: the share given minus the share
+ * deserved (when the deserved ones sum to 1) *)
+let cross_entropy_to (scores : t) (deserved : Matrix.t) : t =
+  let rows = scores.v.rows and cols = scores.v.cols in
+  let p = Array.init rows (fun r -> shares scores.v r cols) in
+  let loss = ref 0. in
+  for r = 0 to rows - 1 do
+    for c = 0 to cols - 1 do
+      let d = Matrix.get deserved r c in
+      if d > 0. then loss := !loss -. (d *. log p.(r).(c))
+    done
+  done;
+  make
+    (Matrix.of_lists [ [ !loss /. float_of_int rows ] ])
+    [ scores ]
+    (fun n ->
+      let g = n.d.data.(0) /. float_of_int rows in
+      for r = 0 to rows - 1 do
+        let total = Array.fold_left ( +. ) 0. (Matrix.row deserved r) in
+        for c = 0 to cols - 1 do
+          let i = (r * cols) + c in
+          scores.d.data.(i) <- scores.d.data.(i) +. (g *. ((total *. p.(r).(c)) -. deserved.data.(i)))
         done
       done)
 

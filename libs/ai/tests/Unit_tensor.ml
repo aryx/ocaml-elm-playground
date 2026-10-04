@@ -92,7 +92,15 @@ let test_operations () =
   against_a_nudge "scale_rows" [ a; column ] (two scale_rows);
   against_a_nudge "softmax_rows" [ a ] (one softmax_rows);
   against_a_nudge "softmax_rows, causal" [ square ] (one (softmax_rows ~causal:true));
-  against_a_nudge "cross_entropy" [ a ] (function [ x ] -> cross_entropy x [| 3; 0; 1 |] | _ -> assert false)
+  against_a_nudge "cross_entropy" [ a ] (function [ x ] -> cross_entropy x [| 3; 0; 1 |] | _ -> assert false);
+  against_a_nudge "add_row" [ a; Matrix.random ~seed:6 1 4 ] (two add_row);
+  let deserved = Matrix.of_lists [ [ 0.5; 0.5; 0.; 0. ]; [ 0.; 0.1; 0.2; 0.7 ]; [ 1.; 0.; 0.; 0. ] ] in
+  against_a_nudge "cross_entropy_to" [ a ] (function [ x ] -> cross_entropy_to x deserved | _ -> assert false);
+  (* all of the share on one answer: cross_entropy *)
+  let one_hot = Matrix.of_lists [ [ 0.; 0.; 0.; 1. ]; [ 1.; 0.; 0.; 0. ]; [ 0.; 1.; 0.; 0. ] ] in
+  Alcotest.(check (float 1e-12)) "one answer deserving everything"
+    (number (cross_entropy (value a) [| 3; 0; 1 |]))
+    (number (cross_entropy_to (value a) one_hot))
 
 (* softmax and the loss, with numbers one can check: Grad.mli's *)
 let test_shares () =

@@ -146,6 +146,10 @@ val row_mean : t -> t
  * column [s] *)
 val scale_rows : t -> t -> t
 
+(* [add_row a b]: the row [b] added to every row of [a] -- a layer's
+ * biases, one per neuron, the same for every example *)
+val add_row : t -> t -> t
+
 (* each row made shares summing to 1. [causal]: row r over its first
  * r + 1 numbers only, the others 0 -- in a square of every token
  * against every token, a token attends to itself and to those before
@@ -158,6 +162,13 @@ val softmax_rows : ?causal:bool -> t -> t
  * the slope of the two together is the simple one: the share given
  * minus the share deserved ([Grad.cross_entropy]). *)
 val cross_entropy : t -> int array -> t
+
+(* [cross_entropy_to scores deserved]: the same against shares deserved
+ * instead of one answer, a row of them per example: the mean of
+ * -sum_c deserved.(c) log (the softmax of the row).(c). What a policy
+ * is taught with when the lesson is "this much on each move"
+ * (Selfplay.mli). *)
+val cross_entropy_to : t -> Matrix.t -> t
 
 (*****************************************************************************)
 (* {1 Going backwards} *)

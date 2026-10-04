@@ -164,6 +164,7 @@ learning ([tiny_libs.ai_learning]); all five are [tiny_libs.ai]:
     Minimax Deepening Zobrist Mcts
     Matrix Neuron Net Backprop Grad Tensor Train Adam Weights Qlearn
     Tokenizer Corpus Sampling Bigram Ngram_mlp Gpt Makemore_names Weights_names_mlp Weights_names_gpt
+    Policy_value Selfplay Arena Tictactoe
 }
 
 {2:networking Networking}

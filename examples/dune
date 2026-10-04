@@ -8,7 +8,7 @@
     Flags HttpText
     PhysicsOrbit PhysicsBounce PhysicsMarbles PhysicsBoxes PhysicsPyramid PhysicsElastic PhysicsSolarSystem
     AudioTheremin AudioPiano AudioAliasing AudioSfx AudioSpace AudioSampler
-    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn AiNames AiGrad AiGpt
+    AiTictactoe AiPathfinding AiSteering AiFlock AiGhosts AiBots AiDebug AiPerceptron AiNeuralNet AiDigits AiQlearn AiNames AiGrad AiGpt AiSelfPlay
     ImageJpeg ImagePng ImageLzw
     JuiceCurves JuiceSquash
     LogoFractals KarelHarvest TeletypeHangman TextmodeSnake PovraySpheres PovrayWhitted PovrayCsg PovrayFib PovrayMarble PovrayCornell PovrayQuake

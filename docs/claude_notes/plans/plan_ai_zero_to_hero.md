@@ -51,6 +51,9 @@ Three programs are the destinations; every phase is a step to one:
 1. **`TinyChatGPT`**, simple: Q7, with Q10 behind it.
 2. **`AiGo` with a trained AlphaZero**, 9 by 9: Q11.
 3. **`AiChess` with a trained AlphaZero**: Q12.
+4. **A network that learns to play our own arcade games**, from the
+   score alone: DeepMind's Atari paper on `TinyBreakout` and `Pong`,
+   Q13 (added 2026-10-04).
 
 And in both games **the engine is a choice**, a flag and a key: the
 engine the game has today (`AiChess`' alpha-beta with its evaluation,
@@ -425,6 +428,26 @@ pieces.
   trains for a fixed small budget and then never loses to `Minimax` at
   full depth over every opening, and the example shows it happening.
 
+**Done (2026-10-04)**: `libs/ai/selfplay/` (`Policy_value` 130
+lines, on `Tensor`, which gained biases and a cross-entropy against
+shares; `Selfplay` 140; `Arena` 40; `Tictactoe` 50), 150 lines of
+tests, `examples/AiSelfPlay.ml` (210 lines, two golden frames). With
+the search it never loses to the perfect player after six iterations,
+five seconds; alone, its policy goes from 14 wins in 40 against a
+random player to 34, and to drawing the perfect one.
+
+D8 did not hold as written: `Mcts`' interface is unchanged, but its
+selection with a policy had to be made the real PUCT (a move never
+tried competes by its prior instead of every move being tried once
+first), or fifty playouts looked two moves ahead and nothing was
+learned. `Unit_mcts`' numbers moved with it (7 wins of 20 for 6, a
+pointed policy taking all the visits for 93%).
+
+Not as planned: the loop itself is in the test and the example (thirty
+lines each), not a function of the library; the trainer of Q9 is where
+it becomes one, with its memory and its arena. And the example is
+slow, fifteen frames a second: a game and ten steps a frame.
+
 ### Q9. AlphaZero on Connect 4: `kit_boards`, `train_connect4`, `AiConnect4 ai=network` (about 400 lines)
 
 - D6's move, then the trainer, each iteration printing AlphaZero.jl's
@@ -501,12 +524,63 @@ both, kept apart because only one of them is honest about facts.
   as the first AlphaGo was on human games), then self-play from
   there.
 
+### Q13. DQN on our own arcade games: `Dqn`, `TinyBreakout ai=network` (size after Q9)
+
+DeepMind's first famous result (Mnih et al., "Playing Atari with Deep
+Reinforcement Learning", 2013; "Human-level control through deep
+reinforcement learning", Nature, 2015): one network, given the screen
+and the score and nothing else, learning Breakout, Pong and Space
+Invaders -- and finding by itself that digging a tunnel up the side of
+the wall sends the ball behind it. The fit here is unusually good:
+the games exist, each is a pure `update : computer -> model -> model`
+with the keys in `computer`, so an agent plays by holding keys, a
+game can be stepped thousands of times a second with no window, and
+replayed exactly from a seed.
+
+What it is, in `Qlearn`'s terms (`notes_ai_learning.md` section 8):
+the table of "how good is this move here" replaced by a network that
+answers for positions it has never seen. Two additions keep it from
+diverging, and are the paper:
+
+- **experience replay**: every step lived is kept, and the network is
+  taught on steps drawn at random from that memory, not on the last
+  ones -- which are all alike and would undo what it knew;
+- **a target network**: the "what the next position is worth" in the
+  lesson comes from a copy of the network frozen for a while, or the
+  network chases its own moving answer.
+
+Two versions, the first cheap and soon, the second the paper's:
+
+- **From the game's own numbers** (after Q9, needs only `Tensor`):
+  the paddle's place, the ball's place and speed, perhaps the wall as
+  a row of counts. A small network, minutes to train, and trainable in
+  the window: `examples/AiBreakout.ml`, the paddle flailing, then
+  following the ball, then aiming. `libs/ai/learning/Dqn` (the memory,
+  the two networks, the step) beside `Qlearn`, with a worked example
+  small enough to check (`Qlearn`'s cliff, the table and the network
+  agreeing).
+- **From the pixels** (after Q11's `Conv`): the software rasterizer's
+  frame, greyed and shrunk to 84 by 84, the last four stacked so that
+  speed can be seen, through the paper's three convolutions. A
+  trainer of hours, a weights file, `TinyBreakout ai=network` and a
+  key to hand the paddle over; the measure the paper's own, the score
+  against a random player's and a person's. Whether the tunnel is
+  found is the result to report, either way.
+
+Open: how the agent reaches a game. A game is a program, not a
+library; its `update` has to be reachable by the trainer. Either the
+game's rules move to a kit (as D6 does for Connect 4), or the trainer
+is a mode of the game itself. To decide when the first version is
+written; `Pong` is the smaller place to start.
+
 ## Order, and what depends on what
 
 ```
 Q0 -- Q1 -- Q2 -- Q4 -- Q5 -- Q6 -- Q7 -- Q10    the language line
         \     \    \
          Q3 ---'    Q8 -- Q9 -- Q11 -- Q12       the self-play line
+                           \     \
+                            Q13a  Q13b           learning from the score
 ```
 
 Q0 to Q3 need no offline training and no decision but D1, D2 and
@@ -532,4 +606,4 @@ trainer's alone, D5.5); pretrained weights from elsewhere; a model
 that knows Wikipedia's facts (Q10 says why, and looks them up
 instead); convolutions beyond an exercise; diffusion and
 images; reinforcement learning past `Qlearn` and self-play (policy
-gradients, DQN: `plan_ai_remaining.md` section 4).
+gradients: `plan_ai_remaining.md` section 4; DQN is Q13).

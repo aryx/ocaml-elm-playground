@@ -104,7 +104,7 @@
         { at: 'def:backward', weight: 3 },
       ],
     },
-    'Tensor.mli': { digest: '63bab09adb2f',
+    'Tensor.mli': { digest: '56fe101675dc',
       summary: 'Reverse-mode autodiff on whole matrices: Grad, a node per matrix operation.',
       important: [
         { at: 'comment:"Nothing in the idea says a node has to be one number"', say: 'a matrix in each node', weight: 3 },
@@ -114,7 +114,7 @@
         { at: 'def:backward', weight: 2 },
       ],
     },
-    'Tensor.ml': { digest: 'b262c091ee77',
+    'Tensor.ml': { digest: '9789145ce9f2',
       summary: "Each operation its scalar twin with the loop inside; Grad's walk unchanged.",
       important: [
         { at: 'def:mul', weight: 3 },

@@ -92,35 +92,63 @@ let start ?exploration ?(seed = 0) ?(playout = random_playout) ?prior ?evaluate
     nodes = 1;
   }
 
+(* expand: [move], never tried at [n], becomes its new child *)
+let expand (t : ('state, 'move) thinking) (n : 'move node) (state : 'state) (path : 'move node list) (move : 'move)
+    (prior : float) : 'move node list * 'state =
+  n.untried <- List.filter (fun m -> m <> move) n.untried;
+  let child_state = t.game.play state move in
+  let child = node ~prior (Some move) (t.game.moves child_state) in
+  n.children <- child :: n.children;
+  t.nodes <- t.nodes + 1;
+  (child :: path, child_state)
+
 (* one iteration: select, expand, simulate, backup. The path taken is
  * returned so the result can be added to every node on it *)
 let rec descend (t : ('state, 'move) thinking) (n : 'move node) (state : 'state) (path : 'move node list) :
     'move node list * 'state =
-  if n.untried <> [] then (
-    (* expand: one of the moves never tried here *)
-    let i = Lehmer.int t.st (List.length n.untried) in
-    let move = List.nth n.untried i in
-    n.untried <- List.filteri (fun j _ -> j <> i) n.untried;
-    let child_state = t.game.play state move in
-    let prior =
-      match t.prior with
-      | None -> 1.
-      | Some policy -> ( match List.assoc_opt move (policy state) with Some p -> p | None -> 0.01)
-    in
-    let child = node ~prior (Some move) (t.game.moves child_state) in
-    n.children <- child :: n.children;
-    t.nodes <- t.nodes + 1;
-    (child :: path, child_state))
-  else
-    match n.children with
-    (* the game is over here: nothing to expand, nothing to choose *)
-    | [] -> (path, state)
-    | children ->
-        let maximizing = t.game.max_to_play state in
-        let policy = t.prior <> None in
-        let score c = ucb ~policy t.exploration maximizing n.visits c in
-        let best = List.fold_left (fun best c -> if score c > score best then c else best) (List.hd children) children in
-        descend t best (t.game.play state (Option.get best.move)) (best :: path)
+  let maximizing = t.game.max_to_play state in
+  let best_child (score : 'move node -> float) : 'move node option =
+    List.fold_left
+      (fun best c -> match best with Some b when score b >= score c -> best | _ -> Some c)
+      None n.children
+  in
+  match t.prior with
+  | None -> (
+      if n.untried <> [] then
+        (* every move is tried once before any is tried twice: one of
+         * those never tried here, at random *)
+        expand t n state path (List.nth n.untried (Lehmer.int t.st (List.length n.untried))) 1.
+      else
+        match best_child (ucb ~policy:false t.exploration maximizing n.visits) with
+        (* the game is over here: nothing to expand, nothing to choose *)
+        | None -> (path, state)
+        | Some best -> descend t best (t.game.play state (Option.get best.move)) (best :: path))
+  | Some policy -> (
+      (* with a policy the moves never tried compete with the children
+       * by the same rule, each with no visit yet and the share of a
+       * game not played, a half. So a move the policy thinks little of
+       * waits until the others have disappointed, and the playouts go
+       * deep along what the policy likes instead of wide over
+       * everything once: the first version tried every move of a
+       * position before choosing among them, and fifty playouts saw
+       * two moves ahead. *)
+      let score = ucb ~policy:true t.exploration maximizing (max 1 n.visits) in
+      let untried =
+        if n.untried = [] then None
+        else
+          let priors = policy state in
+          let prior m = match List.assoc_opt m priors with Some p -> p | None -> 0.01 in
+          let m =
+            List.fold_left (fun best m -> if prior m > prior best then m else best) (List.hd n.untried) n.untried
+          in
+          Some (m, prior m, score (node ~prior:(prior m) (Some m) []))
+      in
+      match (untried, best_child score) with
+      | (None, None) -> (path, state)
+      | (Some (m, p, fresh), child) when (match child with None -> true | Some c -> fresh > score c) ->
+          expand t n state path m p
+      | (_, Some best) -> descend t best (t.game.play state (Option.get best.move)) (best :: path)
+      | (Some (m, p, _), None) -> expand t n state path m p)
 
 let iterate (t : ('state, 'move) thinking) : unit =
   let (path, state) = descend t t.root t.root_state [ t.root ] in
