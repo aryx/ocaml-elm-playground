@@ -37,9 +37,9 @@ does, why, and how to use it; the techniques behind them are in
 - `train/`: the trainers (dune executables, in no package): networks
   that take longer to train than a program's window should, trained
   once, what they learned written to a weights file (`Weights.mli`)
-  beside the program that embeds it
+  in `data/weights/`, a small library each
   - `train_names.exe`: `Ngram_mlp` on makemore's names, ten minutes,
-    for `games/puzzle/AiShannon.weights`
+    for `data/weights/names_mlp/` (AiShannon's network)
 - `stats/`: numbers about the repository
   - `loc.py`: lines of OCaml (code, comments, blank) of the library,
     the games, the apps, the examples and the tests (`make loc`,

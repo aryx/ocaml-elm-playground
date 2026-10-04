@@ -3,7 +3,8 @@
 What a library needs that nobody here wrote: the datasets that
 `libs/ai/`'s models learn from
 (`docs/claude_notes/plans/plan_ai_zero_to_hero.md`, decision D5), a
-standard's table. `libs/` stays code.
+standard's table, what a network learned (`weights/`). `libs/`, `games/`
+and `apps/` stay code.
 
 Each is a folder: the file as it was taken, a `dune` file whose
 header says where it comes from and under what licence, and the few
@@ -13,6 +14,7 @@ a program carries it only if it names that library.
 | folder (library) | what | from | used by |
 |---|---|---|---|
 | `brotli_words/` (`compression_brotli_words`: `Brotli_words.bytes`) | Brotli's static dictionary, RFC 7932's Appendix A, 122,784 bytes | github.com/google/brotli (MIT) | `Brotli.decompress ~dictionary`, for who asks |
+| `weights/names_mlp/` (`data_weights_names_mlp`: `Weights_names_mlp.bytes`) | what `Ngram_mlp` learned of the names: 3,481 numbers, 14 KB, loss 2.328 held out | `scripts/train/train_names`, eleven minutes | `AiShannon` |
 | `names/` (`data_names`: `Makemore_names.text`) | 32,033 first names, one a line, 228 KB | Karpathy's makemore (MIT); the US Social Security Administration's names, public domain | `Bigram`, `Ngram_mlp`, their tests and examples |
 
 Rules:
@@ -22,5 +24,6 @@ Rules:
   one.
 - **Nothing here is needed to build anything but what names it.**
 - **What is large is not here**: a trainer downloads it
-  (`scripts/train/`), and only the weights it made are kept, beside
-  the program that uses them.
+  (`scripts/train/`), and only the weights it made are kept, in
+  `weights/` (its `README.md` says which trainer made each, and how to
+  make it again).

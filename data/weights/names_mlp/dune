@@ -1,0 +1,26 @@
+; claude: what Ngram_mlp learned of makemore's names: names_mlp.weights
+; (Weights.mli: a text header saying how it was made, then the
+; numbers), 14 KB, written by scripts/train/train_names in eleven
+; minutes (60,000 batches of 32; loss 2.328 on the names held out).
+; The network AiShannon plays with. A library of its own, as every
+; folder of data/ is: a program carries it only if it names it. In
+; the package tiny_libs, as tiny_libs.data_weights_names_mlp.
+(include_subdirs no)
+
+(library
+ (name data_weights_names_mlp)
+ (public_name tiny_libs.data_weights_names_mlp)
+ (wrapped false)
+)
+
+; the file embedded as a string. Escaped (files_to_string_ml.ml), not
+; between {| and |}: it is binary.
+(rule
+ (targets Weights_names_mlp.ml)
+ (deps names_mlp.weights %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml names_mlp.weights)
+    (echo "let bytes = names_mlp_weights\n")))))

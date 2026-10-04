@@ -10,7 +10,7 @@
 (* Trains Ngram_mlp on makemore's names and writes what it learned:
  * the network AiShannon plays with.
  *
- *   dune exec scripts/train/train_names.exe -- games/puzzle/AiShannon.weights
+ *   dune exec scripts/train/train_names.exe -- data/weights/names_mlp/names_mlp.weights
  *   dune exec scripts/train/train_names.exe -- out.weights 5000    (fewer steps)
  *
  * 60,000 batches of 32 by default, about eleven minutes. The same

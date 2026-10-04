@@ -154,9 +154,11 @@ All decided 2026-10-04, as proposed.
   beside `Grad`.
 - **D3. Weights are files, trained offline, committed, embedded.**
   `scripts/train/` holds OCaml programs (dune executables, in no opam
-  package) that train from a seed and write a weights file beside the
-  program that uses it (`games/puzzle/AiConnect4.weights`), embedded by
-  dune at build time, as a game's levels are (`games/README-tools.md`).
+  package) that train from a seed and write a weights file in
+  `data/weights/<name>/` (decided 2026-10-04: the source directories
+  stay clean of data), a small library each, embedded by dune at build
+  time; `data/weights/README.md` lists each with the trainer that made
+  it and the command to make it again.
   Format (`Weights`): a text header naming each matrix and its shape,
   then 32-bit floats, little endian; read by pure OCaml, so the web
   has it too. The header also records the seed, the trainer's
@@ -333,7 +335,7 @@ and want a second dataset): `games/puzzle/AiShannon.ml`, 280 lines.
 The score is guesses a letter, Shannon's own measure, the model's
 guesses being its probabilities in order; its loss in bits beside.
 With it, the first trainer and the first weights file (D3):
-`scripts/train/train_names`, `games/puzzle/AiShannon.weights`,
+`scripts/train/train_names`, `data/weights/names_mlp/`,
 `Ngram_mlp.to_weights` and `of_weights`, and `Corpus`, the split the
 trainer, the game and the tests share so that a hidden name is one no
 model saw. Not done: the test replaying a weights file's header

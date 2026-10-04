@@ -7,13 +7,14 @@
     TinySokobanEd TinyStoneAge TinyTetris TinyWitness)
   (modules AiChess AiConnect4 AiGo AiOthello AiShannon Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
-    TinySokobanEd TinyStoneAge TinyTetris TinyWitness Sokoban_levels Fez_xpm Shannon_weights)
+    TinySokobanEd TinyStoneAge TinyTetris TinyWitness Sokoban_levels Fez_xpm)
   (libraries
     unix ; Tetris's clock
     caps ; TinySokobanEd's authority to export its file
     elm_playground
     ai ; AiChess's and AiOthello's Minimax, AiShannon's Bigram and Ngram_mlp
     data_names ; AiShannon's hidden names, makemore's
+    data_weights_names_mlp ; and its network, trained by scripts/train/train_names
     random ; AiGo's playouts, Lehmer (Mcts's)
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
     kit_crush ; TinyCrush's levels and rules, Crush
@@ -38,19 +39,6 @@
     (echo "let xsb = {|")
     (cat %{deps})
     (echo "|}\n")))))
-
-; claude: AiShannon's network, trained once by
-; scripts/train/train_names (eleven minutes) and kept: AiShannon.weights
-; (Weights.mli: a text header saying how it was made, then the numbers)
-; becomes Shannon_weights.aishannon_weights, a string, at build time.
-; Escaped (files_to_string_ml.ml), not between {| and |}: it is binary.
-(rule
- (targets Shannon_weights.ml)
- (deps AiShannon.weights %{project_root}/scripts/build/files_to_string_ml.ml)
- (action
-  (with-stdout-to
-   %{targets}
-   (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml AiShannon.weights))))
 
 ; claude: TinyFez's pixel art -- the brick and grass faces, Gomez's two
 ; poses, the cube bit -- drawn as XPM files, embedded as strings:

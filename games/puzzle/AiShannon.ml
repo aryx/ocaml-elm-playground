@@ -41,12 +41,13 @@
  *
  * The network is not trained here: 60,000 batches take eleven
  * minutes. It was trained once by scripts/train/train_names, and what
- * it learned is the file AiShannon.weights beside this one, embedded
- * at build time (Weights.mli); the file's first lines say how it was
- * made and how well it did.
+ * it learned is a file, names_mlp.weights in data/weights (Weights.mli),
+ * embedded at build time as Weights_names_mlp; the file's first lines
+ * say how it was made and how well it did.
  *
  * What it uses: ai's language folder (Tokenizer, Corpus, Bigram,
- * Ngram_mlp) and Weights; Scene2d (the keys pressed). Not Mcts or
+ * Ngram_mlp) and Weights; the names and the weights of data/; Scene2d
+ * (the keys pressed). Not Mcts or
  * Minimax: there is no opponent's move to foresee, both players face
  * the same hidden name.
  *
@@ -79,9 +80,9 @@ let data : data Lazy.t =
         never had, and "impossible" would be a rank among ties *)
      let pairs = Bigram.probabilities ~smoothing:1. (Bigram.counts tokens corpus.learn) in
      let net =
-       match Result.bind (Weights.of_string Shannon_weights.aishannon_weights) Ngram_mlp.of_weights with
+       match Result.bind (Weights.of_string Weights_names_mlp.bytes) Ngram_mlp.of_weights with
        | Ok net -> net
-       | Error why -> failwith ("AiShannon.weights: " ^ why)
+       | Error why -> failwith ("names_mlp.weights: " ^ why)
      in
      { tokens; pairs; net; hidden = Array.of_list corpus.held })
 

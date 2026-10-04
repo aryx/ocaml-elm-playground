@@ -653,12 +653,13 @@ tenth).
 It is also the first program here whose network is **not trained when
 it runs**. Sixty thousand batches are ten minutes, so
 `scripts/train/train_names` did them once and wrote
-`AiShannon.weights` (`Weights`): a text header saying the model, the
-data, the seed, the steps and the loss reached, then the 3,481
-numbers. The game embeds the file at build time. Every larger model
+`data/weights/names_mlp/names_mlp.weights` (`Weights`): a text header
+saying the model, the data, the seed, the steps and the loss reached,
+then the 3,481 numbers. The game embeds the file at build time. Every larger model
 from here on (the GPT, the networks that play Connect 4, Go and
-chess) is made this way: a trainer, a weights file beside the
-program, and the header as its record.
+chess) is made this way: a trainer in `scripts/train/`, a weights file
+in `data/weights/` (its `README.md` lists them with their trainers),
+and the header as its record. The source directories hold code only.
 
 ## 14. Attention: a GPT in one module
 
