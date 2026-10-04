@@ -74,7 +74,11 @@ let max_difference ?idct ?upsampling (name : string) : int =
 (* Decoders may differ by a level or two: the inverse transform's
  * rounding (libjpeg's is in integers), the upsampling's *)
 let test_libjpeg () =
-  [ "q75_444"; "q75_422"; "q75_420"; "gray"; "restart" ]
+  [ "q75_444"; "q75_422"; "q75_420"; "gray"; "restart";
+    (* claude: the same picture in scans (Jpeg_progressive) *)
+    "progressive"; "progressive_444"; "progressive_gray"; "progressive_restart";
+    (* claude: 33 by 17: a scan of one component has fewer blocks than the MCUs do *)
+    "progressive_odd" ]
   |> List.iter (fun name ->
          let d = max_difference name in
          if d > 2 then Alcotest.failf "%s: %d levels from libjpeg" name d;
@@ -112,8 +116,7 @@ let test_refused () =
       match Jpeg.decode s with
       | _ -> Alcotest.failf "%s: decoded" msg
       | exception Failure m -> print_endline (msg ^ ": " ^ m))
-    [ ("progressive", jpeg "progressive");
-      ("CMYK", jpeg "cmyk");
+    [ ("CMYK", jpeg "cmyk");
       ("not a JPEG", "\x89PNG\r\n\x1a\n");
       ("cut in the header", String.sub (jpeg "q75_420") 0 100) ]
 
@@ -126,5 +129,5 @@ let tests =
       t "our JPEGs, the pixels libjpeg decodes" test_libjpeg;
       t "box and triangle upsampling" test_upsampling;
       t "keeping the first coefficient only: flat blocks" test_keep;
-      t "progressive, CMYK, corrupt: refused" test_refused;
+      t "CMYK, corrupt: refused" test_refused;
     ]

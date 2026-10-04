@@ -70,8 +70,8 @@
   read for the code map
 
 ** libs/ (new areas)
-- images, our own readers and writers: PNG, GIF, JPEG (baseline, and a
-  writer), XPM, IFF ILBM, SVG; imaging (TinyPhotoshop's filters)
+- images, our own readers and writers: PNG, GIF, JPEG (baseline and
+  progressive, and a writer), XPM, IFF ILBM, SVG; imaging (TinyPhotoshop's filters)
 - videos: MPEG-1 (decoded I/P/B, and encoded), MPEG system streams, AVI
   (Motion JPEG), FLI/FLC, Y4M; audio formats: MP2, MP3, Ogg Vorbis
   (decoded: tiny_libs.audio_vorbis; mini-chrome has a copy, a WebM's sound), MOD,

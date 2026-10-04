@@ -20,6 +20,11 @@ im.save('q75_420.jpg', quality=75, subsampling=2)
 im.convert('L').save('gray.jpg', quality=75)
 im.save('restart.jpg', quality=90, subsampling=2, optimize=True, restart_marker_blocks=3)
 im.save('progressive.jpg', quality=75, progressive=True)
+im.save('progressive_444.jpg', quality=90, subsampling=0, progressive=True)
+im.convert('L').save('progressive_gray.jpg', quality=75, progressive=True)
+im.save('progressive_restart.jpg', quality=75, subsampling=2, progressive=True, restart_marker_blocks=2)
+im.resize((33, 17)).save('progressive_odd.jpg', quality=85, subsampling=2, progressive=True)
 im.convert('CMYK').save('cmyk.jpg', quality=75)
-for f in ['q75_444', 'q75_422', 'q75_420', 'gray', 'restart']:
+for f in ['q75_444', 'q75_422', 'q75_420', 'gray', 'restart',
+          'progressive', 'progressive_444', 'progressive_gray', 'progressive_restart', 'progressive_odd']:
     Image.open(f + '.jpg').convert('RGBA').save(f + '.expected.png')

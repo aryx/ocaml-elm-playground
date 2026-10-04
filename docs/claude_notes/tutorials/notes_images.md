@@ -555,7 +555,7 @@ size 2 covers -3, -2, 2, 3 as `00`, `01`, `10`, `11`:
 | `FF E0` APP0 | JFIF (other `APPn`: Exif, ICC profiles; skipped) |
 | `FF DB` DQT | quantization tables |
 | `FF C0` SOF0 | baseline frame: size, components, sampling factors |
-| `FF C2` SOF2 | progressive: refused here (§11) |
+| `FF C2` SOF2 | progressive: the blocks in several scans (`Jpeg_progressive`) |
 | `FF C4` DHT | Huffman tables: 16 counts per length, then symbols (§3) |
 | `FF DD` DRI | a restart every *n* MCUs |
 | `FF DA` SOS | start of scan: the entropy-coded data follows |
@@ -605,10 +605,13 @@ these numbers, and why.
 
 Not read here, with how far each is:
 
-- **Progressive JPEG** (SOF2): the coefficients sent in several scans,
-  low frequencies first, then refinements bit by bit -- a web
-  favorite. Another ~300 lines on top of baseline: the best next
-  exercise.
+- **Progressive JPEG** (SOF2) is read since October 2026: the
+  coefficients sent in several scans, low frequencies first, then
+  refinements bit by bit -- a web favorite. 90 lines in a module of
+  its own (`Jpeg_progressive`: a block's part of a scan, four kinds)
+  and 40 in `Jpeg` (the coefficients kept, the pixels made at the
+  end). What is left as an exercise: the picture shown as each scan
+  comes.
 - **Arithmetic-coded JPEG**: in the standard, patent-encumbered until
   the 2000s, so nobody wrote it; libjpeg reads it now. Arithmetic
   coding itself (a symbol costs a fraction of a bit) is worth a module

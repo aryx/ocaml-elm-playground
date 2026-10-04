@@ -78,9 +78,10 @@
 
    Read here: baseline and extended sequential Huffman JPEGs (SOF0,
    SOF1) of 8-bit samples, gray or YCbCr, any sampling factors, any
-   number of scans, restart intervals. Refused, with a message saying
-   so: progressive JPEGs (SOF2, a common one on the web: the next
-   exercise, notes_images.md section 11), lossless, hierarchical and
+   number of scans, restart intervals; and progressive ones (SOF2,
+   most of the web's photographs): the same blocks sent a part at a
+   time, which Jpeg_progressive.mli tells -- read it after this one.
+   Refused, with a message saying so: lossless, hierarchical and
    arithmetic-coded ones, 12-bit samples, CMYK (4 components). Adobe's
    RGB JPEGs (APP14) are read as YCbCr, as the rare files they are.
 

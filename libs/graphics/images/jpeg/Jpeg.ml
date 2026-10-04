@@ -33,6 +33,9 @@ type component = {
   (* the samples that are in the picture, the rest is padding *)
   cw : int;
   ch : int;
+  (* claude: a progressive frame's: every block's 64 coefficients, in
+   * zigzag order, kept from scan to scan (Jpeg_progressive); else none *)
+  coefs : int array;
 }
 
 type frame = {
@@ -43,6 +46,7 @@ type frame = {
   vmax : int;
   mcux : int;
   mcuy : int;
+  progressive : bool;
 }
 
 (*****************************************************************************)
@@ -226,7 +230,7 @@ let to_rgba (upsampling : [ `Box | `Triangle ]) (f : frame) : Rgba_image.t =
 
 let u16 (s : string) (i : int) : int = (Char.code s.[i] lsl 8) lor Char.code s.[i + 1]
 
-let parse_frame (seg : string) : frame =
+let parse_frame ?(progressive = false) (seg : string) : frame =
   let byte i = Char.code seg.[i] in
   if byte 0 <> 8 then failwith (Printf.sprintf "JPEG: %d-bit samples, not supported" (byte 0));
   let height = u16 seg 1 and width = u16 seg 3 and n = byte 5 in
@@ -243,20 +247,34 @@ let parse_frame (seg : string) : frame =
         if h < 1 || h > 4 || v < 1 || v > 4 || tq > 3 then failwith "JPEG: bad sampling factors or table";
         let pw = mcux * h * 8 and ph = mcuy * v * 8 in
         { id; h; v; tq; td = 0; ta = 0; pred = 0; plane = Bytes.make (pw * ph) '\000'; pw; ph;
-          cw = ((width * h) + hmax - 1) / hmax; ch = ((height * v) + vmax - 1) / vmax })
+          cw = ((width * h) + hmax - 1) / hmax; ch = ((height * v) + vmax - 1) / vmax;
+          coefs = (if progressive then Array.make (pw / 8 * (ph / 8) * 64) 0 else [||]) })
       specs
   in
-  { width; height; comps; hmax; vmax; mcux; mcuy }
+  { width; height; comps; hmax; vmax; mcux; mcuy; progressive }
 
 (* the scan starting at [pos], just after its header: returns where its
  * data ends, the next marker *)
-let decode_scan (s : string) (pos : int) (f : frame) (scomps : component list) ~dc ~ac ~qt ~restart_interval ~idct ~keep
+let decode_scan ?progressive (s : string) (pos : int) (f : frame) (scomps : component list) ~dc ~ac ~qt ~restart_interval ~idct ~keep
     : int =
   let r = { s; pos; buf = 0; cnt = 0; marker = false } in
   let table (tables : Huffman.t option array) i =
     match tables.(i) with Some t -> t | None -> failwith "JPEG: a Huffman table used but not defined"
   in
+  (* claude: a progressive scan: a part of each block's coefficients,
+   * kept in the component (Jpeg_progressive); its pixels at the end
+   * ([reconstruct]) *)
+  let run = ref 0 in
+  let partial (sc : Jpeg_progressive.scan) comp ~bx ~by =
+    let pred = ref comp.pred in
+    Jpeg_progressive.block sc ~bit:(fun () -> bit r) ~receive:(receive r) ~dc:(fun () -> table dc comp.td) ~ac:(fun () -> table ac comp.ta)
+      ~pred ~run comp.coefs (((by * (comp.pw / 8)) + bx) * 64);
+    comp.pred <- !pred
+  in
   let block comp ~bx ~by =
+    match progressive with
+    | Some sc -> partial sc comp ~bx ~by
+    | None ->
     let q = match qt.(comp.tq) with Some q -> q | None -> failwith "JPEG: a quantization table used but not defined" in
     let coefs = decode_block r ~dc:(table dc comp.td) ~ac:(table ac comp.ta) ~q comp in
     (* only the first [keep], in zigzag order: the lowest frequencies *)
@@ -287,6 +305,7 @@ let decode_scan (s : string) (pos : int) (f : frame) (scomps : component list) ~
   for n = 0 to total - 1 do
     if restart_interval > 0 && n > 0 && n mod restart_interval = 0 then begin
       restart r;
+      run := 0;
       List.iter (fun c -> c.pred <- 0) scomps
     end;
     unit (n mod units_across) (n / units_across)
@@ -300,6 +319,26 @@ let decode_scan (s : string) (pos : int) (f : frame) (scomps : component list) ~
     else next (p + 1)
   in
   next r.pos
+
+(* claude: a progressive frame's pixels, once its scans are all read:
+ * each block's coefficients multiplied back and transformed, as
+ * [decode_scan] does for a baseline block as it reads it *)
+let reconstruct (f : frame) ~qt ~idct ~keep : unit =
+  Array.iter
+    (fun comp ->
+      let q = match qt.(comp.tq) with Some q -> q | None -> failwith "JPEG: a quantization table used but not defined" in
+      let across = comp.pw / 8 in
+      for by = 0 to (comp.ph / 8) - 1 do
+        for bx = 0 to across - 1 do
+          let at = ((by * across) + bx) * 64 in
+          let coefs = Array.make 64 0. in
+          for k = 0 to min 63 (keep - 1) do
+            coefs.(zigzag.(k)) <- float (comp.coefs.(at + k) * q.(k))
+          done;
+          put_block comp ~bx ~by (idct coefs)
+        done
+      done)
+    f.comps
 
 (*****************************************************************************)
 (* Entry point *)
@@ -354,7 +393,10 @@ let decode ?(idct = Dct.idct_aan) ?(upsampling = `Triangle) ?(keep = 64) (s : st
         | 0xC0 | 0xC1 ->
             frame := Some (parse_frame seg);
             loop after
-        | 0xC2 | 0xC6 | 0xCA | 0xCE -> failwith "JPEG: progressive, not supported"
+        | 0xC2 ->
+            frame := Some (parse_frame ~progressive:true seg);
+            loop after
+        | 0xC6 | 0xCA | 0xCE -> failwith "JPEG: progressive, differential or arithmetic-coded: not supported"
         | 0xC3 | 0xC7 | 0xCB | 0xCF -> failwith "JPEG: lossless, not supported"
         | 0xC5 | 0xC9 | 0xCD -> failwith "JPEG: hierarchical or arithmetic-coded, not supported"
         | 0xDD ->
@@ -374,7 +416,12 @@ let decode ?(idct = Dct.idct_aan) ?(upsampling = `Triangle) ?(keep = 64) (s : st
                   | None -> failwith "JPEG: a scan of an unknown component")
             in
             incr scans;
-            loop (decode_scan s after f scomps ~dc ~ac ~qt ~restart_interval:!restart_interval ~idct ~keep)
+            (* claude: a progressive scan's band and bits, after its components *)
+            let progressive =
+              if f.progressive then Some { Jpeg_progressive.ss = byte (1 + (2 * n)); se = byte (2 + (2 * n)); ah = byte (3 + (2 * n)) lsr 4; al = byte (3 + (2 * n)) land 15 }
+              else None
+            in
+            loop (decode_scan ?progressive s after f scomps ~dc ~ac ~qt ~restart_interval:!restart_interval ~idct ~keep)
         | _ -> loop after (* APPn, COM, ...: skipped *)
       end
   in
@@ -382,4 +429,6 @@ let decode ?(idct = Dct.idct_aan) ?(upsampling = `Triangle) ?(keep = 64) (s : st
   match !frame with
   | None -> failwith "JPEG: no frame (SOF)"
   | Some _ when !scans = 0 -> failwith "JPEG: no scan, no pixels"
-  | Some f -> to_rgba upsampling f
+  | Some f ->
+      if f.progressive then reconstruct f ~qt ~idct ~keep;
+      to_rgba upsampling f
