@@ -114,6 +114,18 @@ val step : ?rate:float -> t -> example array -> t
 (* a word written a token at a time ([Sampling]) *)
 val sample : ?longest:int -> ?temperature:float -> Lehmer.state -> Tokenizer.t -> t -> string
 
+(*****************************************************************************)
+(* {1 As a file} *)
+(*****************************************************************************)
+
+(* what it learned, to be written by a trainer ([Weights]); [notes]
+ * say how it was made. The optimizer's memory is not kept: a network
+ * read back is for using, or for training afresh. *)
+val to_weights : ?notes:(string * string) list -> t -> Weights.t
+
+(* refused if a matrix is missing or their sizes do not fit *)
+val of_weights : Weights.t -> (t, string) result
+
 (* a neuron's weighted sum as one node of the graph (the default), or
  * as its products and additions: the same numbers, to time the two *)
 val fused : bool ref

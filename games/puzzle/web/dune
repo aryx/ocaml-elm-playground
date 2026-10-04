@@ -3,17 +3,18 @@
 (copy_files ../*.ml)
 
 (executables
-  (names AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
+  (names AiChess AiConnect4 AiGo AiOthello AiShannon Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
     TinySokobanEd TinyStoneAge TinyTetris TinyWitness)
-  (modules AiChess AiConnect4 AiGo AiOthello Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
+  (modules AiChess AiConnect4 AiGo AiOthello AiShannon Tetris TinyBabaIsYou TinyCrush TinyFez TinyIncredibleMachine
     TinyLemmings TinyPortal2D TinyPuzzleBobble TinySlingshot TinySokoban
-    TinySokobanEd TinyStoneAge TinyTetris TinyWitness Sokoban_levels Fez_xpm)
+    TinySokobanEd TinyStoneAge TinyTetris TinyWitness Sokoban_levels Fez_xpm Shannon_weights)
   (libraries
     unix
     caps
     elm_playground
     ai
+    data_names
     kit_puzzle
     kit_crush
     kit_platformer

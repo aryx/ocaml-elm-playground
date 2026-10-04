@@ -32,9 +32,11 @@ formula is one a reader can check with a pen.
 | module (`ai/language/`) | what | section |
 |---|---|---|
 | `Tokenizer` (done) | a text as numbers, the boundary token | §11 |
+| `Corpus` (done) | the words shuffled and cut: learn, held out, test | §12 |
 | `Sampling` (done) | drawing the next token, temperature | §11 |
 | `Bigram` (done) | the table of pairs, counted, then learned | §11 |
 | `Ngram_mlp` (done) | embeddings, a network three letters back | §12 |
+| `Gpt` (done) | attention, positions, residuals: microgpt | §14 |
 
 Sections 1 to 7 are supervised learning (here are the answers, find the
 rule); 8 and 9 are learning to *play*, where nobody knows the answers
@@ -356,6 +358,12 @@ learn.
   slopes are his blackboard's (1.0 for w1, 0 for w2, -1.5 for x1, 0.5
   for x2). Click an input, change it, and everything follows; "u"
   nudges the weights along their slopes, which is learning.
+- `AiGpt.ml` (**written**) -- section 14 running: microgpt learning
+  the names two a frame, the names it makes up, its loss on names
+  never read crossing the table of pairs' line, and a square showing
+  where each letter of a name looks when it is read -- attention, flat
+  at first, sharpening as it learns, a head at a time ("1" to "4").
+  "a" and "p" train it again without attention, without positions.
 - `AiNames.ml` (**written**) -- names made up three ways, sections 11
   and 12: the table of letter pairs counted ("c"), the same table
   forgotten and learned again until it is the counted one ("g"), and a
@@ -618,6 +626,7 @@ the table of pairs                    2.454
 Ngram_mlp, after  2,000 steps         2.49       22 s
            after 10,000               2.40      110 s
            after 20,000               2.35      221 s
+           after 60,000               2.33      (the trainer's, section 13)
 makemore's, the same sizes            about 2.3, after 200,000 steps
 ```
 
@@ -627,6 +636,88 @@ heap with room for a step's graph, to 12 (`notes_opti_ocaml.md`,
 section 20). Reverse mode over whole arrays, one node per matrix
 product, is the module that comes next, and the same network on it is
 where a GPT becomes affordable.
+
+## 13. The loss as a game, and a network kept in a file
+
+`games/puzzle/AiShannon.ml` is section 11's loss made playable, and it
+is Shannon's own experiment (1951): a name is hidden, you guess its
+next letter until you are right, then the next, to the end. The model
+plays the same names by the same rule, and its guesses are its
+probabilities in order, so the guesses a letter costs it is that
+letter's *rank* in its opinion. Fewer guesses a letter wins; the
+model's loss on the same letters, in bits, is shown beside. Against
+the table of pairs ("1") or the network ("2"), on the same eight
+names, none of which either was ever shown (`Corpus.split`'s held-out
+tenth).
+
+It is also the first program here whose network is **not trained when
+it runs**. Sixty thousand batches are ten minutes, so
+`scripts/train/train_names` did them once and wrote
+`AiShannon.weights` (`Weights`): a text header saying the model, the
+data, the seed, the steps and the loss reached, then the 3,481
+numbers. The game embeds the file at build time. Every larger model
+from here on (the GPT, the networks that play Connect 4, Go and
+chess) is made this way: a trainer, a weights file beside the
+program, and the header as its record.
+
+## 14. Attention: a GPT in one module
+
+`Ngram_mlp` reads three tokens, each at its own place in the input. To
+read four it needs a wider layer, and what it learned about a letter
+in the second place it learns again for the third. A transformer
+(`Gpt`, after Karpathy's microgpt, its sizes and its names) reads as
+many as there are with one set of weights, by one new operation.
+
+**Attention.** Each token, when read, leaves behind a *key* (what it
+is about) and a *value* (what it has to say). The token being read
+makes a *query*. Query against each key so far, a softmax over those
+scores, and it receives the values mixed in those shares: a lookup in
+a table whose rows are the text so far, made soft so that it has a
+slope. The three are each a learned matrix times the token's numbers;
+nobody says what to look for. Four *heads* do it side by side on a
+quarter of the numbers each.
+
+**Positions.** A mix has no order, so "ma" and "am" would look alike:
+a learned place per position is added to each token at the start.
+
+**Residuals and norms.** Attention and the MLP after it each *add* to
+the token's numbers rather than replace them, and the numbers are
+brought back to a standard length before each: the gradient has a
+straight road back, and each part learns a correction.
+
+That is the whole model: 4,192 numbers, and `Gpt.read` is forty
+lines. On the names, one name a step:
+
+```
+the table of pairs                               2.454
+Ngram_mlp, after 20,000 batches of 32            2.35      221 s
+Gpt, after 1,000 names                           2.36        5 s
+Gpt, after 5,000 names                           2.27       27 s
+```
+
+And with each idea taken out, the same 5,000 steps
+(`scripts/train/measure_gpt`):
+
+```
+all of it                     2.269
+one head instead of four      2.285
+without positions             2.285
+without attention             2.307
+without either                2.475     the table of pairs again
+```
+
+Read the last line first: with neither, a token knows only itself,
+and the model is the bigram squeezed through 16 numbers. Either idea
+alone recovers most of the rest -- on names this short, knowing where
+you are says nearly as much as seeing what came before -- and at
+1,000 steps the first four are within 0.01 of one another. The ideas
+of the architecture pay with training and with longer texts, which is
+worth knowing before believing any small experiment about them,
+this one included.
+
+It runs on `Grad`, a node per number, as microgpt does: about 5 ms a
+step, fast enough to train in a window. The same functions over whole
+arrays are the next module.
 
 ## Glossary
 

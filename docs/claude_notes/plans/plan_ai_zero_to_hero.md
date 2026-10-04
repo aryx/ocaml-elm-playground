@@ -308,12 +308,37 @@ step's graph from 45 to 12. A GPT on scalars needs both.
   model; a fixed seed's loss after a hundred steps; a model with
   attention beating the bigram on held-out names.
 
+**Done (2026-10-04)**: `Gpt` (220 lines), microgpt's
+sizes and 4,192 numbers, on `Grad` with `Grad.dot`; its gradient
+agrees with a nudge to 6e-10. About 5 ms a step, so it trains live.
+Held-out loss 2.36 after 1,000 names, 2.27 after 5,000 (27 s), past
+`Ngram_mlp`'s 2.35 after 221 s. The switches measured
+(`scripts/train/measure_gpt`): without attention 2.307, without
+positions 2.285, one head 2.285, without either 2.475 (the bigram
+again); they separate only with training. `examples/AiGpt.ml` (210
+lines, two golden frames) trains it two names a frame and draws its
+attention over a name. Left: the GPT as `AiShannon`'s third opponent
+(a trainer of thirty seconds and a second weights file).
+
 ### Q3. `AiShannon`, the game (about 350 lines)
 
 The player and a model guess the same letters; the game keeps both
 scores in bits. It needs only Q1 to exist (bigram and MLP as
 opponents) and gains the GPT from Q2. Its sentences: a decision, a
 toy text of our own.
+
+**Done (2026-10-04), before Q2**, on names rather than sentences (the
+models are trained on names; sentences are the game's first exercise,
+and want a second dataset): `games/puzzle/AiShannon.ml`, 280 lines.
+The score is guesses a letter, Shannon's own measure, the model's
+guesses being its probabilities in order; its loss in bits beside.
+With it, the first trainer and the first weights file (D3):
+`scripts/train/train_names`, `games/puzzle/AiShannon.weights`,
+`Ngram_mlp.to_weights` and `of_weights`, and `Corpus`, the split the
+trainer, the game and the tests share so that a hidden name is one no
+model saw. Not done: the test replaying a weights file's header
+(Verification), which wants a place where a test can read a game's
+file. To add when the GPT exists: it as a third opponent.
 
 ### Q4. `Tensor`: the same on arrays (about 450 lines)
 

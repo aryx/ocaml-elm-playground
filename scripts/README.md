@@ -34,6 +34,12 @@ does, why, and how to use it; the techniques behind them are in
     section 11)
 - `input/`: driving a real window
   - `xdrive.py`: mouse moves, clicks, keys, through X11's XTEST
+- `train/`: the trainers (dune executables, in no package): networks
+  that take longer to train than a program's window should, trained
+  once, what they learned written to a weights file (`Weights.mli`)
+  beside the program that embeds it
+  - `train_names.exe`: `Ngram_mlp` on makemore's names, ten minutes,
+    for `games/puzzle/AiShannon.weights`
 - `stats/`: numbers about the repository
   - `loc.py`: lines of OCaml (code, comments, blank) of the library,
     the games, the apps, the examples and the tests (`make loc`,

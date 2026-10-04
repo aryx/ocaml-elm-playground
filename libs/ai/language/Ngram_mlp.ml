@@ -48,6 +48,37 @@ let make ~(seed : int) ?(context = 3) ?(dim = 2) ?(hidden = 100) ?(rate = 0.01) 
   { m with adam = Adam.make ~rate (parameters m) }
 
 (*****************************************************************************)
+(* As a file *)
+(*****************************************************************************)
+
+let names = [ "embedding"; "hidden.w"; "hidden.b"; "out.w"; "out.b" ]
+
+let to_weights ?(notes = []) (m : t) : Weights.t =
+  { notes = ("context", string_of_int m.context) :: notes; matrices = List.combine names (matrices m) }
+
+let of_weights (w : Weights.t) : (t, string) result =
+  let find name = match Weights.matrix w name with Some m -> Ok m | None -> Error ("no matrix " ^ name) in
+  let ( let* ) = Result.bind in
+  let* embedding = find "embedding" in
+  let* hidden_w = find "hidden.w" in
+  let* hidden_b = find "hidden.b" in
+  let* out_w = find "out.w" in
+  let* out_b = find "out.b" in
+  let* context =
+    match Option.bind (Weights.note w "context") int_of_string_opt with
+    | Some c -> Ok c
+    | None -> Error "no note saying the context"
+  in
+  (* the shapes have to chain, or the first forward pass would read
+   * outside an array *)
+  if hidden_w.cols <> context * embedding.cols || out_w.cols <> hidden_w.rows || out_w.rows <> embedding.rows
+     || hidden_b.rows <> hidden_w.rows || out_b.rows <> out_w.rows
+  then Error "the matrices' sizes do not fit one another"
+  else
+    let m = { context; embedding; hidden_w; hidden_b; out_w; out_b; adam = Adam.make 0 } in
+    Ok { m with adam = Adam.make (parameters m) }
+
+(*****************************************************************************)
 (* The examples *)
 (*****************************************************************************)
 

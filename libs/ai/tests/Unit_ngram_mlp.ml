@@ -13,21 +13,12 @@
 let t = Testo.create
 let tokens = lazy (Tokenizer.of_text Makemore_names.text)
 
-(* the names shuffled from a seed, the first 80% to learn from and the
-   next 10% held out *)
+(* what it learns from, and names held out (Corpus) *)
 let split =
   lazy
-    (let words = Array.of_list (Tokenizer.words Makemore_names.text) in
-     let state = Lehmer.make 42 in
-     for i = Array.length words - 1 downto 1 do
-       let j = Lehmer.int state (i + 1) in
-       let x = words.(i) in
-       words.(i) <- words.(j);
-       words.(j) <- x
-     done;
-     let n = Array.length words in
-     let part a b = Ngram_mlp.examples (Lazy.force tokens) ~context:3 (Array.to_list (Array.sub words a (b - a))) in
-     (part 0 (n * 8 / 10), part (n * 8 / 10) (n * 9 / 10)))
+    (let c = Corpus.split (Tokenizer.words Makemore_names.text) in
+     let part words = Ngram_mlp.examples (Lazy.force tokens) ~context:3 words in
+     (part c.learn, part c.held))
 
 let test_examples () =
   let ex = Ngram_mlp.examples (Lazy.force tokens) ~context:3 [ "emma" ] in
@@ -105,8 +96,42 @@ let test_cost () =
   Printf.eprintf "Ngram_mlp, a step of 32: %.0f ms with a node per product, %.0f ms with Grad.dot\n" apart one;
   Alcotest.(check bool) "fewer nodes, less time" true (one < apart)
 
+(* the split every program shares: the trainer's 80% and the game's
+   hidden names must be cut at the same places *)
+let test_corpus () =
+  let words = Tokenizer.words Makemore_names.text in
+  let c = Corpus.split words in
+  Alcotest.(check (triple int int int)) "80%, 10%, 10%" (25626, 3203, 3204) (Corpus.sizes c);
+  Alcotest.(check (list string)) "every name once" (List.sort compare words) (List.sort compare (c.learn @ c.held @ c.test));
+  Alcotest.(check bool) "the same cut twice" true (Corpus.split words = c);
+  Alcotest.(check bool) "another seed, another cut" true (Corpus.split ~seed:7 words <> c);
+  (* shuffled: the file has the commonest names first *)
+  Alcotest.(check bool) "no longer starting with emma" true (List.hd c.learn <> "emma")
+
+(* a network written and read back answers the same, to the seven
+   digits a 32-bit number keeps *)
+let test_weights () =
+  let m = Ngram_mlp.make ~seed:1 ~hidden:12 27 in
+  let w = Ngram_mlp.to_weights ~notes:[ ("seed", "1") ] m in
+  let back =
+    match Result.bind (Weights.of_string (Weights.to_string w)) Ngram_mlp.of_weights with
+    | Ok back -> back
+    | Error why -> Alcotest.fail why
+  in
+  Alcotest.(check int) "its context, from a note" 3 back.context;
+  Alcotest.(check (array (float 1e-6))) "the same opinion" (Ngram_mlp.probabilities m [| 0; 5; 13 |])
+    (Ngram_mlp.probabilities back [| 0; 5; 13 |]);
+  (* matrices that do not fit one another are refused, not read
+     outside their bounds later *)
+  let cut : Weights.t = { w with matrices = List.map (fun (n, x) -> if n = "out.w" then (n, Matrix.create 27 5) else (n, x)) w.matrices } in
+  Alcotest.(check bool) "sizes that do not chain" true (Result.is_error (Ngram_mlp.of_weights cut));
+  let less : Weights.t = { w with matrices = List.tl w.matrices } in
+  Alcotest.(check bool) "a matrix missing" true (Result.is_error (Ngram_mlp.of_weights less))
+
 let tests =
   [
+    t "Corpus, the split every program shares" test_corpus;
+    t "Ngram_mlp, written to a file and read back" test_weights;
     t "Ngram_mlp, a word's examples" test_examples;
     t "Ngram_mlp, makemore's sizes" test_shape;
     t "Ngram_mlp, a step goes down" test_step_goes_down;

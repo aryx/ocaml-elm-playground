@@ -20,7 +20,7 @@ of them, a library of its own:
 | `bots/` (`ai_bots`) | how do I play as a player does? | `Sense` (what a bot may know: sight, hearing, memory), `Bot` (the loop and the handicaps: reaction time, aim error; through the player's own keys) | end of §6 |
 | `search/` (`ai_search`) | what will my opponent answer? | `Minimax` (the game tree, alpha-beta), `Deepening` (iterative deepening, move ordering, the transposition table), `Zobrist` (hashing a position), `Mcts` (Monte Carlo tree search) | §7-§10 |
 | `learning/` (`ai_learning`) | can it learn instead of being told? | `Matrix`, `Neuron`, `Net`, `Backprop`, `Grad` (autodiff), `Train` (supervised learning), `Adam` (descent with a memory), `Weights` (what was learned, as a file); `Qlearn` (learning to play from rewards) | `notes_ai_learning.md` |
-| `language/` (`ai_language`) | what comes next? | `Tokenizer` (a text as numbers), `Sampling` (drawing the next token), `Bigram` (the table of letter pairs, counted, then learned), `Ngram_mlp` (embeddings, a network three letters back); after Karpathy's makemore, on its names (`data/names/`) | `notes_ai_learning.md` §11-§12 |
+| `language/` (`ai_language`) | what comes next? | `Tokenizer` (a text as numbers), `Corpus` (what is learned from, what is held out), `Sampling` (drawing the next token), `Bigram` (the table of letter pairs, counted, then learned), `Ngram_mlp` (embeddings, a network three letters back), `Gpt` (attention: a transformer on scalars); after Karpathy's makemore and microgpt, on their names (`data/names/`) | `notes_ai_learning.md` §11-§14 |
 
 The first three are the *real-time* half (a world at 60 frames a
 second: monsters, crowds, soldiers), `search/` the *turn-taking* half

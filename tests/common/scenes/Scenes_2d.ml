@@ -286,6 +286,8 @@ let scenes : Golden_scene.scene list =
     ("examples/software/AiNames", "", 3);
     (* the neuron's graph before the walk: the boxes, no number yet *)
     ("examples/software/AiGrad", "", 3);
+    (* the GPT before any training: flat attention, letters at random *)
+    ("examples/software/AiGpt", "", 3);
     (* claude: the image formats taken apart: JPEG from 6 coefficients
      * a block, PNG's filtered bytes, GIF's LZW 40 codes in *)
     ("examples/software/ImageJpeg", "", 3);
@@ -299,6 +301,8 @@ let scenes : Golden_scene.scene list =
     ("examples/software/JuiceSquash", "", 75);
     ("games/puzzle/software/AiConnect4", "", 3);
     ("games/puzzle/software/AiGo", "", 3);
+    (* claude: the first name hidden, nothing guessed yet *)
+    ("games/puzzle/software/AiShannon", "", 3);
     ("games/puzzle/software/AiOthello", "", 3);
     ("games/puzzle/software/AiChess", "", 3);
     ("games/strategy/software/TinyTowerDefense", "", 5);
@@ -712,6 +716,9 @@ let scripted : Golden_scene.scripted list =
      * the values in and the slopes not yet *)
     ("examples/software/AiGrad", "slopes", 20, "k:3");
     ("examples/software/AiGrad", "forward", 95, "");
+    (* claude: microgpt 190 names in: the loss falling towards the
+     * table of pairs' line, the first rows of attention no longer flat *)
+    ("examples/software/AiGpt", "learning", 95, "");
     (* claude: JPEG from one coefficient a block, each its average: the
      * mosaic; PNG with no filter, its bytes as they are, bright; GIF's
      * LZW a second into playing, the codes 8 bits wide *)
@@ -931,6 +938,10 @@ let scripted : Golden_scene.scripted list =
      * a thousand random games -- played out over the frames, not in one
      * of them (Mcts.mli: anytime) *)
     ("games/puzzle/software/AiGo", "reply", 92, "space:2");
+    (* claude: a few letters guessed, some wrong: the name so far, the
+     * guesses each letter cost the player and the network, and what the
+     * network expected of the last one *)
+    ("games/puzzle/software/AiShannon", "guessing", 60, "a:5,e:10,s:15,m:20,l:25,n:30,r:35,i:40,o:45,k:50");
     (* claude: the knight on g1 clicked, its two squares shown *)
     ("games/puzzle/software/AiChess", "selected", 10, "at(250;-350):1-10,click:3");
     (* claude: e2-e4 in two clicks, and the computer's answer *)

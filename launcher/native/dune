@@ -64,7 +64,7 @@
  (library_flags (-linkall))
  (libraries
    tinybox_collect ; first: Program.collect () before any program's main
-   ai appkit_astronomy appkit_blocks appkit_browser appkit_cad
+   ai data_names appkit_astronomy appkit_blocks appkit_browser appkit_cad
    appkit_document appkit_draw appkit_draw_view appkit_editor
    appkit_embed appkit_file_menu appkit_indexed appkit_modeler
    appkit_diagram appkit_money appkit_nls appkit_paint appkit_pim appkit_pushpull appkit_richtext appkit_sheet

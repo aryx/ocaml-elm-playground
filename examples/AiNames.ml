@@ -57,26 +57,13 @@ type data = {
 (* read once, when first needed: nothing of it at the program's top *)
 let data : data Lazy.t =
   lazy
-    (let words = Array.of_list (Tokenizer.words Makemore_names.text) in
+    (let words = Tokenizer.words Makemore_names.text in
      let tokens = Tokenizer.of_text Makemore_names.text in
-     let counts = Bigram.counts tokens (Array.to_list words) in
+     let counts = Bigram.counts tokens words in
      (* shuffled from a seed: the names come most frequent first *)
-     let state = Lehmer.make 42 in
-     for i = Array.length words - 1 downto 1 do
-       let j = Lehmer.int state (i + 1) in
-       let x = words.(i) in
-       words.(i) <- words.(j);
-       words.(j) <- x
-     done;
-     let n = Array.length words in
-     let part a b = Ngram_mlp.examples tokens ~context:3 (Array.to_list (Array.sub words a (b - a))) in
-     {
-       tokens;
-       counts;
-       counted = Bigram.probabilities counts;
-       train = part 0 (n * 8 / 10);
-       held = Array.sub (part (n * 8 / 10) (n * 9 / 10)) 0 1500;
-     })
+     let corpus = Corpus.split words in
+     let part words = Ngram_mlp.examples tokens ~context:3 words in
+     { tokens; counts; counted = Bigram.probabilities counts; train = part corpus.learn; held = Array.sub (part corpus.held) 0 1500 })
 
 (*****************************************************************************)
 (* The model *)

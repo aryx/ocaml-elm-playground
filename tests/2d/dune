@@ -131,6 +131,7 @@
    %{project_root}/examples/software/AiQlearn.exe
    %{project_root}/examples/software/AiNames.exe
    %{project_root}/examples/software/AiGrad.exe
+   %{project_root}/examples/software/AiGpt.exe
    %{project_root}/examples/software/ImageJpeg.exe
    %{project_root}/examples/software/ImagePng.exe
    %{project_root}/examples/software/ImageLzw.exe
@@ -181,6 +182,7 @@
    %{project_root}/examples/software/PuzzleScriptBoulders.exe
    %{project_root}/games/puzzle/software/AiConnect4.exe
    %{project_root}/games/puzzle/software/AiGo.exe
+   %{project_root}/games/puzzle/software/AiShannon.exe
    %{project_root}/games/puzzle/software/AiOthello.exe
    %{project_root}/games/puzzle/software/AiChess.exe
    %{project_root}/games/strategy/software/TinyTowerDefense.exe
