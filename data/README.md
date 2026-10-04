@@ -14,6 +14,7 @@ a program carries it only if it names that library.
 | folder (library) | what | from | used by |
 |---|---|---|---|
 | `brotli_words/` (`compression_brotli_words`: `Brotli_words.bytes`) | Brotli's static dictionary, RFC 7932's Appendix A, 122,784 bytes | github.com/google/brotli (MIT) | `Brotli.decompress ~dictionary`, for who asks |
+| `weights/names_gpt/` (`data_weights_names_gpt`: `Weights_names_gpt.bytes`) | what `Gpt` learned of the names: 4,192 numbers, 17 KB, loss 2.219 held out | `scripts/train/train_names_gpt`, three minutes | `AiShannon` |
 | `weights/names_mlp/` (`data_weights_names_mlp`: `Weights_names_mlp.bytes`) | what `Ngram_mlp` learned of the names: 3,481 numbers, 14 KB, loss 2.328 held out | `scripts/train/train_names`, eleven minutes | `AiShannon` |
 | `names/` (`data_names`: `Makemore_names.text`) | 32,033 first names, one a line, 228 KB | Karpathy's makemore (MIT); the US Social Security Administration's names, public domain | `Bigram`, `Ngram_mlp`, their tests and examples |
 

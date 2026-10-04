@@ -40,6 +40,10 @@ does, why, and how to use it; the techniques behind them are in
   in `data/weights/`, a small library each
   - `train_names.exe`: `Ngram_mlp` on makemore's names, ten minutes,
     for `data/weights/names_mlp/` (AiShannon's network)
+  - `train_names_gpt.exe`: `Gpt` on the same names, three minutes,
+    for `data/weights/names_gpt/` (AiShannon's GPT)
+  - `measure_gpt.exe`: writes nothing; `Gpt.mli`'s table, the model
+    with each of its ideas taken out
 - `stats/`: numbers about the repository
   - `loc.py`: lines of OCaml (code, comments, blank) of the library,
     the games, the apps, the examples and the tests (`make loc`,

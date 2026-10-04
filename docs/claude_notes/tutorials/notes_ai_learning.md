@@ -646,8 +646,8 @@ plays the same names by the same rule, and its guesses are its
 probabilities in order, so the guesses a letter costs it is that
 letter's *rank* in its opinion. Fewer guesses a letter wins; the
 model's loss on the same letters, in bits, is shown beside. Against
-the table of pairs ("1") or the network ("2"), on the same eight
-names, none of which either was ever shown (`Corpus.split`'s held-out
+the table of pairs ("1"), the network ("2") or the GPT ("3": losses
+2.45, 2.33 and 2.22 on names never seen), on the same eight names, none of which either was ever shown (`Corpus.split`'s held-out
 tenth).
 
 It is also the first program here whose network is **not trained when

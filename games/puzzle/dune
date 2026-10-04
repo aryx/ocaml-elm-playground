@@ -15,6 +15,7 @@
     ai ; AiChess's and AiOthello's Minimax, AiShannon's Bigram and Ngram_mlp
     data_names ; AiShannon's hidden names, makemore's
     data_weights_names_mlp ; and its network, trained by scripts/train/train_names
+    data_weights_names_gpt ; and its GPT, by train_names_gpt
     random ; AiGo's playouts, Lehmer (Mcts's)
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
     kit_crush ; TinyCrush's levels and rules, Crush

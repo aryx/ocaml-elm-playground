@@ -1,0 +1,26 @@
+; claude: what Gpt learned of makemore's names: names_gpt.weights
+; (Weights.mli: a text header saying how it was made, then the
+; numbers), 17 KB, written by scripts/train/train_names_gpt in under
+; three minutes (30,000 names, one a step; loss 2.219 on the names held
+; out). AiShannon's strongest opponent. A library of its own, as every
+; folder of data/ is: a program carries it only if it names it. In
+; the package tiny_libs, as tiny_libs.data_weights_names_gpt.
+(include_subdirs no)
+
+(library
+ (name data_weights_names_gpt)
+ (public_name tiny_libs.data_weights_names_gpt)
+ (wrapped false)
+)
+
+; the file embedded as a string. Escaped (files_to_string_ml.ml), not
+; between {| and |}: it is binary.
+(rule
+ (targets Weights_names_gpt.ml)
+ (deps names_gpt.weights %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml names_gpt.weights)
+    (echo "let bytes = names_gpt_weights\n")))))

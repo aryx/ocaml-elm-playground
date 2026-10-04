@@ -942,6 +942,9 @@ let scripted : Golden_scene.scripted list =
      * guesses each letter cost the player and the network, and what the
      * network expected of the last one *)
     ("games/puzzle/software/AiShannon", "guessing", 60, "a:5,e:10,s:15,m:20,l:25,n:30,r:35,i:40,o:45,k:50");
+    (* the same letters against the table of pairs ("1"): another
+     * opinion of the same first letter *)
+    ("games/puzzle/software/AiShannon", "pairs", 60, "1:2,a:5,e:10,s:15,m:20,l:25,n:30,r:35,i:40,o:45,k:50");
     (* claude: the knight on g1 clicked, its two squares shown *)
     ("games/puzzle/software/AiChess", "selected", 10, "at(250;-350):1-10,click:3");
     (* claude: e2-e4 in two clicks, and the computer's answer *)

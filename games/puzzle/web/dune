@@ -16,6 +16,7 @@
     ai
     data_names
     data_weights_names_mlp
+    data_weights_names_gpt
     kit_puzzle
     kit_crush
     kit_platformer

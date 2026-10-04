@@ -21,8 +21,10 @@
  * after each letter the game shows the opinion it had. "1" plays
  * against the table of letter pairs (Bigram.mli: it knows the letter
  * before, nothing else), "2" against the network that reads three
- * letters back (Ngram_mlp.mli), the default. The same eight names
- * either way, so the two can be compared, and you with both.
+ * letters back (Ngram_mlp.mli), "3" against the GPT, which reads the
+ * whole name so far (Gpt.mli), the default and the strongest: their
+ * losses on names never seen are 2.45, 2.33 and 2.22. The same eight
+ * names for all three, so they can be compared, and you with each.
  *
  * The game is Claude Shannon's, of 1951: he had people guess English
  * a letter at a time to measure how much of it is already known
@@ -39,14 +41,16 @@
  * was ever shown to either model: they come from the tenth that
  * Corpus.split keeps out of all training, the trainer's included.
  *
- * The network is not trained here: 60,000 batches take eleven
- * minutes. It was trained once by scripts/train/train_names, and what
- * it learned is a file, names_mlp.weights in data/weights (Weights.mli),
- * embedded at build time as Weights_names_mlp; the file's first lines
- * say how it was made and how well it did.
+ * The network and the GPT are not trained here: eleven minutes for
+ * one, three for the other. Each was trained once by a program of
+ * scripts/train (train_names, train_names_gpt), and what it learned is
+ * a file of data/weights (Weights.mli), embedded at build time as
+ * Weights_names_mlp and Weights_names_gpt; a file's first lines say
+ * how it was made and how well it did, and data/weights/README.md how
+ * to make it again.
  *
  * What it uses: ai's language folder (Tokenizer, Corpus, Bigram,
- * Ngram_mlp) and Weights; the names and the weights of data/; Scene2d
+ * Ngram_mlp, Gpt) and Weights; the names and the weights of data/; Scene2d
  * (the keys pressed). Not Mcts or
  * Minimax: there is no opponent's move to foresee, both players face
  * the same hidden name.
@@ -62,12 +66,13 @@ open Playground
 (* The names and the two models *)
 (*****************************************************************************)
 
-type opponent = Pairs | Network
+type opponent = Pairs | Network | Transformer
 
 type data = {
   tokens : Tokenizer.t;
   pairs : Matrix.t; (* the table's probabilities, a row per letter before *)
   net : Ngram_mlp.t;
+  gpt : Gpt.t;
   hidden : string array; (* names neither model was shown *)
 }
 
@@ -84,7 +89,12 @@ let data : data Lazy.t =
        | Ok net -> net
        | Error why -> failwith ("names_mlp.weights: " ^ why)
      in
-     { tokens; pairs; net; hidden = Array.of_list corpus.held })
+     let gpt =
+       match Result.bind (Weights.of_string Weights_names_gpt.bytes) Gpt.of_weights with
+       | Ok gpt -> gpt
+       | Error why -> failwith ("names_gpt.weights: " ^ why)
+     in
+     { tokens; pairs; net; gpt; hidden = Array.of_list corpus.held })
 
 (* what a model thinks comes after the first [at] letters of [name] *)
 let opinion (o : opponent) (name : string) (at : int) : float array =
@@ -94,6 +104,8 @@ let opinion (o : opponent) (name : string) (at : int) : float array =
   match o with
   | Pairs -> Matrix.row d.pairs (back 1)
   | Network -> Ngram_mlp.probabilities d.net [| back 3; back 2; back 1 |]
+  (* the whole name so far, from the boundary it starts at *)
+  | Transformer -> fst (Gpt.next d.gpt (Tokenizer.boundary :: Array.to_list before))
 
 (* the token that really comes at [at]: a letter, or the boundary
  * after the last *)
@@ -135,7 +147,7 @@ let start (opponent : opponent) (series : int) : model =
   { opponent; series; nth = 0; at = 0; tried = []; mine = []; theirs = []; letters = 0; my_guesses = 0;
     their_guesses = 0; their_bits = 0.; last = None; stage = Guessing }
 
-let initial_model : model = start Network 0
+let initial_model : model = start Transformer 0
 
 (* the hidden names in an order of their own, far apart in the list *)
 let name (m : model) : string =
@@ -186,6 +198,7 @@ let update (computer : computer) (s : model Scene2d.t) : model Scene2d.t =
   let space = Scene2d.pressed (fun k -> k.kspace) scenes || Scene2d.pressed (fun k -> k.kenter) scenes in
   let m = if key "1" then start Pairs m.series else m in
   let m = if key "2" then start Network m.series else m in
+  let m = if key "3" then start Transformer m.series else m in
   let m =
     match m.stage with
     | Shown -> if space then next m else m
@@ -219,7 +232,8 @@ let text (color : color) (size : number) (s : string) : shape = words color s |>
 let grey = rgb 150 155 175
 let gold = rgb 240 210 120
 let green = rgb 140 220 160
-let who (o : opponent) : string = match o with Pairs -> "the table of pairs" | Network -> "the network"
+let who (o : opponent) : string =
+  match o with Pairs -> "the table of pairs" | Network -> "the network" | Transformer -> "the GPT"
 
 (* the name so far, a letter a cell, the guesses each cost under it:
  * yours in green, the model's in gold *)
@@ -297,7 +311,7 @@ let view (computer : computer) (s : model Scene2d.t) : shape list =
         (if m.letters = 0 then ""
          else Printf.sprintf "its loss on these letters: %.2f bits each" (m.their_bits /. float_of_int m.letters))
       |> move (-250.) (-90.);
-      text grey 1.3 "1: against the table of pairs    2: against the network    the same names either way" |> move_y (-410.) ]
+      text grey 1.3 "against  1: the table of pairs    2: the network    3: the GPT        the same names for all" |> move_y (-410.) ]
 
 (*****************************************************************************)
 (* Entry point *)

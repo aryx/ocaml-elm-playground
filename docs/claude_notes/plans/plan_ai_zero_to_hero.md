@@ -319,8 +319,10 @@ Held-out loss 2.36 after 1,000 names, 2.27 after 5,000 (27 s), past
 positions 2.285, one head 2.285, without either 2.475 (the bigram
 again); they separate only with training. `examples/AiGpt.ml` (210
 lines, two golden frames) trains it two names a frame and draws its
-attention over a name. Left: the GPT as `AiShannon`'s third opponent
-(a trainer of thirty seconds and a second weights file).
+attention over a name. The GPT is `AiShannon`'s third opponent and its default:
+`scripts/train/train_names_gpt`, 30,000 names in under three minutes,
+held-out loss 2.219 (`data/weights/names_gpt/`), against `Ngram_mlp`'s
+2.328 after eleven.
 
 ### Q3. `AiShannon`, the game (about 350 lines)
 
@@ -340,7 +342,7 @@ With it, the first trainer and the first weights file (D3):
 trainer, the game and the tests share so that a hidden name is one no
 model saw. Not done: the test replaying a weights file's header
 (Verification), which wants a place where a test can read a game's
-file. To add when the GPT exists: it as a third opponent.
+file.
 
 ### Q4. `Tensor`: the same on arrays (about 450 lines)
 
