@@ -73,9 +73,12 @@ you can open and read.
 
 **OCaml all the way down.** The libraries are written in OCaml, not
 bound from C, even where C would be faster: there is not one line of C
-in this repository, and what it borrows is the platform's own (SDL's
-window, Cairo and OpenGL on the backends that are theirs; the
-`software` backends draw with ours). In many languages the libraries
+in this repository. The one exception is drawing, and it is only half
+of one: the default backends draw with Cairo and OpenGL, which are C,
+for their speed; but the `software` backends draw the same programs
+with our own 2D and 3D rasterizers, so there is an OCaml-only path
+from a game down to its pixels, there to be read. In many languages
+the libraries
 that matter are written in another one: Python's numerical and AI
 libraries are C and Fortran underneath (NumPy), and whoever wants to
 know how they work has to change language to find out. Stroustrup made
