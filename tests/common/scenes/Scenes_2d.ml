@@ -284,6 +284,8 @@ let scenes : Golden_scene.scene list =
     ("examples/software/AiQlearn", "", 3);
     (* claude: makemore's table of letter pairs, counted *)
     ("examples/software/AiNames", "", 3);
+    (* the neuron's graph before the walk: the boxes, no number yet *)
+    ("examples/software/AiGrad", "", 3);
     (* claude: the image formats taken apart: JPEG from 6 coefficients
      * a block, PNG's filtered bytes, GIF's LZW 40 codes in *)
     ("examples/software/ImageJpeg", "", 3);
@@ -704,6 +706,12 @@ let scripted : Golden_scene.scripted list =
      * vowels already drifting to one side *)
     ("examples/software/AiNames", "learned", 95, "g:3");
     ("examples/software/AiNames", "network", 65, "m:3");
+    (* claude: micrograd's neuron with Karpathy's numbers ("k"), every
+     * value and every slope in: 1.0 for w1, 0 for w2, -1.5 for x1,
+     * 0.5 for x2, his blackboard's; and half way through the walk,
+     * the values in and the slopes not yet *)
+    ("examples/software/AiGrad", "slopes", 20, "k:3");
+    ("examples/software/AiGrad", "forward", 95, "");
     (* claude: JPEG from one coefficient a block, each its average: the
      * mosaic; PNG with no filter, its bytes as they are, bright; GIF's
      * LZW a second into playing, the codes 8 bits wide *)

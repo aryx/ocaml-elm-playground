@@ -130,6 +130,7 @@
    %{project_root}/examples/software/AiDigits.exe
    %{project_root}/examples/software/AiQlearn.exe
    %{project_root}/examples/software/AiNames.exe
+   %{project_root}/examples/software/AiGrad.exe
    %{project_root}/examples/software/ImageJpeg.exe
    %{project_root}/examples/software/ImagePng.exe
    %{project_root}/examples/software/ImageLzw.exe

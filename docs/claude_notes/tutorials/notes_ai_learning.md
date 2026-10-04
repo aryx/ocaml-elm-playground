@@ -348,6 +348,14 @@ learn.
   the network. The instructive failure is built in: it does fine on
   digits that look like its font and worse on yours, which is what "the
   training distribution" means, concretely.
+- `AiGrad.ml` (**written**) -- section 5 as a picture: one neuron,
+  `tanh (x1 w1 + x2 w2 + b)`, as the graph `Grad` builds of it, the
+  values going forward a box at a time and the slopes coming back,
+  each box saying the one rule by which it hands its slope on. It is
+  the neuron of Karpathy's micrograd lecture with his numbers, so the
+  slopes are his blackboard's (1.0 for w1, 0 for w2, -1.5 for x1, 0.5
+  for x2). Click an input, change it, and everything follows; "u"
+  nudges the weights along their slopes, which is learning.
 - `AiNames.ml` (**written**) -- names made up three ways, sections 11
   and 12: the table of letter pairs counted ("c"), the same table
   forgotten and learned again until it is the counted one ("g"), and a

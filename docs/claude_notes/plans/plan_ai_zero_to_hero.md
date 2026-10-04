@@ -273,7 +273,8 @@ teaches nothing. `Grad.backward` on 16,000 nodes went from 314 ms to
   of context.
 - The two examples. Dataset decision D5.1 needed here.
 
-**Done (2026-10-04), but for `AiGrad`**, the next thing to write.
+**Done (2026-10-04)**, `AiGrad` included (240 lines, three golden
+frames: micrograd's neuron with Karpathy's numbers, his slopes).
 `libs/ai/language/` (`Tokenizer`, `Sampling`, `Bigram`, `Ngram_mlp`:
 340 lines), `data/names/`, `examples/AiNames.ml` (270 lines, three
 golden frames), 245 lines of tests. On makemore's names:
