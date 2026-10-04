@@ -675,6 +675,8 @@
    kit_platformer
    kit_brawler
    kit_puzzle
+   kit_boards
+   data_weights_connect4
    kit_rhythm
    kit_sports
    ai ; AiOthello's Minimax, TinyDungeonMaster's Pathfind

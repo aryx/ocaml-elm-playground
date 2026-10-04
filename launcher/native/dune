@@ -64,7 +64,7 @@
  (library_flags (-linkall))
  (libraries
    tinybox_collect ; first: Program.collect () before any program's main
-   ai data_names data_weights_names_mlp data_weights_names_gpt appkit_astronomy appkit_blocks appkit_browser appkit_cad
+   ai data_names data_weights_names_mlp data_weights_names_gpt data_weights_connect4 appkit_astronomy appkit_blocks appkit_browser appkit_cad
    appkit_document appkit_draw appkit_draw_view appkit_editor
    appkit_embed appkit_file_menu appkit_indexed appkit_modeler
    appkit_diagram appkit_money appkit_nls appkit_paint appkit_pim appkit_pushpull appkit_richtext appkit_sheet
@@ -75,7 +75,7 @@
    graphics_raytrace graphics_rgba gui hypertalk internet_mail
    internet_media internet_site kit_adventure kit_brawler kit_brawler3d
    kit_cards kit_crush kit_heightmap kit_isometric kit_lightcycles
-   kit_maze kit_platformer kit_puzzle kit_racing kit_racing3d
+   kit_maze kit_platformer kit_puzzle kit_boards kit_racing kit_racing3d
    kit_rhythm kit_rts kit_sectors kit_segments kit_shmup kit_sports
    media_player music_voices music_parts myst networking networking_mail photos
    physics_2d physics_3d postscript random scheme scratch sexpr smalltalk unix lang_html lang_css browser_layout

@@ -495,6 +495,29 @@ both, kept apart because only one of them is honest about facts.
   first ten megabytes after one night, against `Deflate`'s. That
   number says how far to go.
 
+**Mostly done (2026-10-04), the training still running**:
+`gamekits/boards/Connect4` (D6: the rules, the evaluation and the
+search's hints moved as they were, `AiConnect4.ml` including it),
+`Selfplay.iterate` and `learn` (the loop as a function),
+`scripts/train/train_connect4`, `data/weights/connect4/`, and
+`AiConnect4` with `ai=classic|network|policy`, "a" changing engine in
+play, the network's policy and the search's visits shown under the
+board.
+
+What it took, each in `notes_ai_dark_arts.md`: the network's opinion
+by a plain pass and the policy asked once a node (a search of 100
+playouts from 19 ms to 8); the games of an iteration in 48 processes
+and each lesson mirrored (480 games an iteration where there were 40);
+and a measure from two random opening moves, the first one having
+counted two games as twenty.
+
+At iteration 45, twelve minutes, over 20 games each: 15-0-5 against
+the search without a network, 15-0-5 against alpha-beta at depth 3,
+11-0-9 at depth 5, and 10-0-10 at depth 7, the game's own computer;
+from 5-0-15, 3-0-17, 0-0-20 and 0-0-20 knowing nothing. The final
+figures, and whether `ai=network` becomes the default, when the run
+ends.
+
 ### Q11. AlphaZero on 9 by 9 Go: `Conv`, `train_go`, `AiGo ai=network` (size after Q9)
 
 - A convolutional layer on `Tensor` (`Conv`: 3 by 3, the same weights
@@ -572,6 +595,15 @@ library; its `update` has to be reachable by the trainer. Either the
 game's rules move to a kit (as D6 does for Connect 4), or the trainer
 is a mode of the game itself. To decide when the first version is
 written; `Pong` is the smaller place to start.
+
+## What went wrong on the way
+
+Kept as a document of its own, `tutorials/notes_ai_dark_arts.md`, at
+the author's request (2026-10-04): each failure, how it showed, and
+what it taught -- the dark arts of machine learning, the refinements
+no paper has. To be added to as the later phases fail in their own ways;
+a phase's status here says what happened, the notes say what was
+learned.
 
 ## Order, and what depends on what
 

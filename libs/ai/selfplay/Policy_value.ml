@@ -81,7 +81,24 @@ let softmax (scores : float array) : float array =
   let total = Array.fold_left ( +. ) 0. es in
   Array.map (fun e -> e /. total) es
 
+(* the same network on plain numbers, one position, no graph: what the
+ * search calls a hundred times a move, where a graph's slopes would
+ * be so much memory cleared for nothing. The first version went
+ * through [heads], and a search of a hundred playouts of Connect 4
+ * took 19 ms; this way, and the policy asked once a node (Mcts), 8 (Unit_selfplay checks the two give the same opinion) *)
 let opinion (n : t) (input : float array) : float array * float =
+  let layer (name : string) (x : float array) : float array =
+    let (w : Matrix.t) = List.assoc (name ^ ".w") n.matrices and (b : Matrix.t) = List.assoc (name ^ ".b") n.matrices in
+    (* the input as a matrix of one row, against each row of weights *)
+    let out = Matrix.mul_t { rows = 1; cols = Array.length x; data = x } w in
+    Array.mapi (fun r v -> v +. b.data.(r)) out.data
+  in
+  let relu = Array.map (fun v -> if v > 0. then v else 0.) in
+  let body = relu (layer "body2" (relu (layer "body1" input))) in
+  (softmax (layer "policy" body), tanh (layer "value" body).(0))
+
+(* the opinion through the graph, as [step] computes it *)
+let opinion_by_graph (n : t) (input : float array) : float array * float =
   let (scores, values) = heads (graph_of n) (Tensor.value (rows_of [| input |])) in
   (softmax (Tensor.of_ scores).data, Tensor.number values)
 

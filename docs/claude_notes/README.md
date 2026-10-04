@@ -82,7 +82,9 @@ A reading order, from the simplest:
 6. `notes_ai.md`: deciding -- a way through a maze, a flock, a
    ghost's mind, an opponent's search (`ai/`);
    `notes_ai_learning.md`, the same when nobody writes the rules:
-   neural networks, from one neuron to self-play.
+   neural networks, from one neuron to a GPT and to self-play; and
+   `notes_ai_dark_arts.md`, what went wrong on the way and what each
+   failure taught.
 7. `notes_inspect.md`: seeing all of the above while it runs -- an
    engine drawing its own thinking, and a run you can rewind
    (`playground/Inspect`).

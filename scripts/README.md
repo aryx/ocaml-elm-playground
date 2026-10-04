@@ -42,6 +42,10 @@ does, why, and how to use it; the techniques behind them are in
     for `data/weights/names_mlp/` (AiShannon's network)
   - `train_names_gpt.exe`: `Gpt` on the same names, half a minute,
     for `data/weights/names_gpt/` (AiShannon's GPT)
+  - `train_connect4.exe`: a network taught Connect 4 by playing
+    itself (AlphaZero's loop), half an hour, measured as it goes
+    against the search without it and against alpha-beta, for
+    `data/weights/connect4/` (AiConnect4's `ai=network`)
   - `measure_gpt.exe`: writes nothing; `Gpt.mli`'s table, the model
     with each of its ideas taken out
 - `stats/`: numbers about the repository

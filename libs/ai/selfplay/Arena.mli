@@ -9,7 +9,18 @@
  *
  * The players take turns starting, since in most games moving first
  * is worth something, and each game has its own seed, so that two
- * players who draw from chance do not replay one game twenty times. *)
+ * players who draw from chance do not replay one game twenty times.
+ *
+ * Two players who draw *nothing* from chance are another matter, and
+ * a trap: a search guided by a network against alpha-beta is the same
+ * game every time, so ten games each way are two results counted ten
+ * times, and the scores come out 10-0-0, 5-0-5 or 0-0-10 and nothing
+ * between -- which is how to recognise it. The cure is the caller's:
+ * start each game from a few moves made at random
+ * (scripts/train/train_connect4's [opening]). Measured there on a
+ * network that knew nothing: 5-0-5 against alpha-beta at depth 3
+ * became 3-0-17, the true figure
+ * (notes_ai_dark_arts.md). *)
 
 (* a player: the move it makes in a position where there is one *)
 type ('state, 'move) player = seed:int -> 'state -> 'move

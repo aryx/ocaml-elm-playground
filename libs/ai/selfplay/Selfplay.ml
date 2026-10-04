@@ -152,3 +152,50 @@ let play ?(settings = default) ~(seed : int) (b : ('state, 'move) board) (net : 
       met
   in
   (lessons, share)
+
+(*****************************************************************************)
+(* The loop *)
+(*****************************************************************************)
+
+type schedule = {
+  games : int; (* against itself, an iteration *)
+  steps : int; (* downhill, after them *)
+  batch : int; (* lessons a step *)
+  remembered : int; (* the newest lessons kept *)
+}
+
+let usual : schedule = { games = 20; steps = 200; batch = 32; remembered = 3000 }
+
+type learner = {
+  net : Policy_value.t;
+  lessons : Policy_value.lesson array; (* newest first *)
+  iteration : int;
+  draws : Lehmer.state; (* the batches' dice *)
+}
+
+let learner ~(seed : int) (net : Policy_value.t) : learner = { net; lessons = [||]; iteration = 0; draws = Lehmer.make seed }
+
+(* the second half of an iteration: these lessons remembered, then
+ * steps on lessons drawn from all it remembers, not only the newest:
+ * games of one evening are all alike, and learning only from them
+ * forgets the rest *)
+let learn ?(schedule = usual) (l : learner) (fresh : Policy_value.lesson list) : learner * float =
+  let all = Array.append (Array.of_list fresh) l.lessons in
+  let lessons = Array.sub all 0 (min schedule.remembered (Array.length all)) in
+  let rec steps (net : Policy_value.t) (loss : float) (n : int) : Policy_value.t * float =
+    if n = 0 then (net, loss)
+    else
+      let batch = Array.init schedule.batch (fun _ -> lessons.(Lehmer.int l.draws (Array.length lessons))) in
+      let (net, loss) = Policy_value.step net batch in
+      steps net loss (n - 1)
+  in
+  let (net, loss) = steps l.net 0. schedule.steps in
+  ({ l with net; lessons; iteration = l.iteration + 1 }, loss)
+
+let iterate ?(settings = default) ?(schedule = usual) (b : ('state, 'move) board) (l : learner) : learner * float =
+  let iteration = l.iteration + 1 in
+  (* games against itself, by the network as it is now *)
+  let fresh =
+    List.concat (List.init schedule.games (fun g -> fst (play ~settings ~seed:((iteration * 1000) + g) b l.net)))
+  in
+  learn ~schedule l fresh

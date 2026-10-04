@@ -22,10 +22,13 @@ type 'move node = {
   mutable children : 'move node list;
   mutable untried : 'move list;
   prior : float; (* what a policy thought of this move, 1 with none *)
+  (* what the policy thinks of the moves from here, asked once, when
+   * the node is made: empty with no policy *)
+  priors : ('move * float) list;
 }
 
-let node ?(prior = 1.) (move : 'move option) (moves : 'move list) : 'move node =
-  { move; visits = 0; wins = 0.; children = []; untried = moves; prior }
+let node ?(prior = 1.) ?(priors = []) (move : 'move option) (moves : 'move list) : 'move node =
+  { move; visits = 0; wins = 0.; children = []; untried = moves; prior; priors }
 
 (* a finished game, as MAX's share: 1 won, 0 lost, 1/2 drawn *)
 let outcome (game : ('state, 'move) Minimax.game) (state : 'state) : float =
@@ -83,7 +86,7 @@ let start ?exploration ?(seed = 0) ?(playout = random_playout) ?prior ?evaluate
     (* PUCT wants a larger constant than UCB1: its exploring term
      * falls off as 1/(1+N) rather than sqrt(log N / N) *)
     exploration = (match exploration with Some e -> e | None -> if prior = None then sqrt 2. else 1.5);
-    root = node None (game.moves state);
+    root = node ?priors:(Option.map (fun policy -> policy state) prior) None (game.moves state);
     playout;
     prior;
     evaluate;
@@ -97,7 +100,12 @@ let expand (t : ('state, 'move) thinking) (n : 'move node) (state : 'state) (pat
     (prior : float) : 'move node list * 'state =
   n.untried <- List.filter (fun m -> m <> move) n.untried;
   let child_state = t.game.play state move in
-  let child = node ~prior (Some move) (t.game.moves child_state) in
+  let moves = t.game.moves child_state in
+  (* the policy is asked about the new position now, once, and its
+   * answer kept in the node: asking at every visit was one more
+   * evaluation of the network for each level of each playout *)
+  let priors = match t.prior with Some policy when moves <> [] -> policy child_state | _ -> [] in
+  let child = node ~prior ~priors (Some move) moves in
   n.children <- child :: n.children;
   t.nodes <- t.nodes + 1;
   (child :: path, child_state)
@@ -123,7 +131,7 @@ let rec descend (t : ('state, 'move) thinking) (n : 'move node) (state : 'state)
         (* the game is over here: nothing to expand, nothing to choose *)
         | None -> (path, state)
         | Some best -> descend t best (t.game.play state (Option.get best.move)) (best :: path))
-  | Some policy -> (
+  | Some _ -> (
       (* with a policy the moves never tried compete with the children
        * by the same rule, each with no visit yet and the share of a
        * game not played, a half. So a move the policy thinks little of
@@ -136,8 +144,7 @@ let rec descend (t : ('state, 'move) thinking) (n : 'move node) (state : 'state)
       let untried =
         if n.untried = [] then None
         else
-          let priors = policy state in
-          let prior m = match List.assoc_opt m priors with Some p -> p | None -> 0.01 in
+          let prior m = match List.assoc_opt m n.priors with Some p -> p | None -> 0.01 in
           let m =
             List.fold_left (fun best m -> if prior m > prior best then m else best) (List.hd n.untried) n.untried
           in

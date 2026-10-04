@@ -163,7 +163,7 @@ learning ([tiny_libs.ai_learning]); all five are [tiny_libs.ai]:
     Sense Bot
     Minimax Deepening Zobrist Mcts
     Matrix Neuron Net Backprop Grad Tensor Train Adam Weights Qlearn
-    Tokenizer Corpus Sampling Bigram Ngram_mlp Gpt Makemore_names Weights_names_mlp Weights_names_gpt
+    Tokenizer Corpus Sampling Bigram Ngram_mlp Gpt Makemore_names Weights_names_mlp Weights_names_gpt Weights_connect4
     Policy_value Selfplay Arena Tictactoe
 }
 

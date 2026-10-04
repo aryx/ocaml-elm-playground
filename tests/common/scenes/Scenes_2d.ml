@@ -1919,6 +1919,10 @@ let flagged : Golden_scene.flagged list =
  * hand, with juice=engine (Juice.mode) at the moment of a hit *)
 let scripted_flagged : Golden_scene.scripted_flagged list =
   [
+    (* claude: AiConnect4 against the network that taught itself
+     * (ai=network): a piece dropped in the middle, its answer, and under
+     * the board its policy at a glance and where the search then went *)
+    ("games/puzzle/software/AiConnect4", "network", 60, "space:2", [ "ai=network" ]);
     (* claude: TinyInteractivePhysics drawn with the mouse: the Disk tool,
      * a disk dragged to a radius of 50, the Rope tool, a rope from a
      * point of the background to it, Run -- and it swings over the

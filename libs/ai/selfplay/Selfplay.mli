@@ -40,7 +40,7 @@
  * and examples/AiSelfPlay.ml shows it happen). A network of 6,026
  * numbers that starts knowing nothing; an iteration is 20 games
  * against itself at 50 playouts a move, then 200 steps on batches of
- * 32 drawn from the last 3,000 lessons. Against a perfect player
+ * 32 drawn from the last 3,000 lessons ([iterate], below). Against a perfect player
  * ([Minimax] to the end), and against one playing at random:
  *
  *                              the search with it      it alone, no search
@@ -117,3 +117,39 @@ val default : settings
  * won, 0 lost, a half drawn) *)
 val play :
   ?settings:settings -> seed:int -> ('state, 'move) board -> Policy_value.t -> Policy_value.lesson list * float
+
+(*****************************************************************************)
+(* {1 The loop} *)
+(*****************************************************************************)
+(* An iteration is so many games against itself, then so many steps on
+ * lessons drawn from the newest it remembers -- not only the last
+ * games', which are all alike: taught on those alone it forgets the
+ * rest (the same reason as DQN's replay memory). *)
+
+type schedule = {
+  games : int; (* against itself, an iteration: 20 *)
+  steps : int; (* downhill, after them: 200 *)
+  batch : int; (* lessons a step: 32 *)
+  remembered : int; (* the newest lessons kept: 3000 *)
+}
+
+val usual : schedule
+
+type learner = {
+  net : Policy_value.t;
+  lessons : Policy_value.lesson array; (* newest first *)
+  iteration : int;
+  draws : Lehmer.state; (* the batches' dice *)
+}
+
+(* before the first game: [seed] is the batches' *)
+val learner : seed:int -> Policy_value.t -> learner
+
+(* the second half of an iteration alone, for a trainer that gets its
+ * games elsewhere (several processes playing at once): these lessons
+ * remembered, [steps] taken, the iteration counted; the loss of the
+ * last step *)
+val learn : ?schedule:schedule -> learner -> Policy_value.lesson list -> learner * float
+
+(* one iteration, and the loss of its last step *)
+val iterate : ?settings:settings -> ?schedule:schedule -> ('state, 'move) board -> learner -> learner * float

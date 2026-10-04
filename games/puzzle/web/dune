@@ -17,7 +17,9 @@
     data_names
     data_weights_names_mlp
     data_weights_names_gpt
+    data_weights_connect4
     kit_puzzle
+    kit_boards
     kit_crush
     kit_platformer
     elm_playground_web ; implem of virtual elm_playground

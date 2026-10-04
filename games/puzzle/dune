@@ -16,8 +16,10 @@
     data_names ; AiShannon's hidden names, makemore's
     data_weights_names_mlp ; and its network, trained by scripts/train/train_names
     data_weights_names_gpt ; and its GPT, by train_names_gpt
+    data_weights_connect4 ; AiConnect4's network, by train_connect4
     random ; AiGo's playouts, Lehmer (Mcts's)
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
+    kit_boards ; AiConnect4's rules, Connect4, shared with its trainer
     kit_crush ; TinyCrush's levels and rules, Crush
     kit_platformer ; TinyFez's running and jumping, Tile_move
     elm_playground_native ; implem of virtual elm_playground

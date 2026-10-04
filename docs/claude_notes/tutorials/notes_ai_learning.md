@@ -844,9 +844,20 @@ rule (no visit yet, the share of a game not played): the playouts go
 deep along what the policy likes. That is what PUCT was supposed to
 mean all along, and section 9's numbers moved a little with it.
 
+(`notes_ai_dark_arts.md` has this failure and the others, each with
+what it taught.)
+
 Tic-tac-toe is the check, not the goal. The same loop, a board of
 seven columns, a trainer that runs for an hour, and a weights file:
 Connect 4, then Go, then chess (`plans/plan_ai_zero_to_hero.md`).
+
+## 17. The dark arts
+
+Sections 11 to 16 read as if each thing worked the first time. None
+did. What went wrong, how it showed and what each failure taught is a
+document of its own, [`notes_ai_dark_arts.md`](notes_ai_dark_arts.md):
+the part of machine learning that is in no paper, and most of the
+work.
 
 ## Glossary
 

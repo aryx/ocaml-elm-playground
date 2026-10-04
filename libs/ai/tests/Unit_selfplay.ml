@@ -46,6 +46,9 @@ let test_network () =
   let (p, v) = Policy_value.opinion net (Tictactoe.encode Tictactoe.start) in
   Alcotest.(check (float 1e-9)) "a share per move" 1. (Array.fold_left ( +. ) 0. p);
   Alcotest.(check bool) "a value between -1 and 1" true (v > -1. && v < 1.);
+  let (p', v') = Policy_value.opinion_by_graph net (Tictactoe.encode Tictactoe.start) in
+  Alcotest.(check (array (float 1e-12))) "the plain pass and the graph: the same policy" p' p;
+  Alcotest.(check (float 1e-12)) "and the same value" v' v;
   (* the search's two guesses made of it: the legal moves only *)
   let (prior, evaluate) = Selfplay.guides board net in
   let position = Tictactoe.of_string "xx.oo...." in
@@ -88,7 +91,6 @@ let test_a_game () =
 (* the loop: games against itself, then lessons, again. The numbers of
    Selfplay.mli come from here *)
 let test_the_loop () =
-  let draws = Lehmer.make 5 in
   let measure (name : string) (net : Policy_value.t) =
     let searching : (Tictactoe.position, int) Arena.player = fun ~seed s -> Option.get (Selfplay.choose ~seed board net s) in
     let alone : (Tictactoe.position, int) Arena.player = fun ~seed:_ s -> Option.get (Selfplay.instinct board net s) in
@@ -98,21 +100,13 @@ let test_the_loop () =
       (shown sr) (shown ap) (shown ar);
     scores
   in
-  let net = ref (Policy_value.make ~seed:1 ~rate:0.01 ~inputs:18 ~moves:9 ()) in
-  let (_, _, _, alone_before) = measure "knowing nothing" !net in
-  let memory = ref [||] in
+  let start = Policy_value.make ~seed:1 ~rate:0.01 ~inputs:18 ~moves:9 () in
+  let (_, _, _, alone_before) = measure "knowing nothing" start in
   let t0 = Unix.gettimeofday () in
-  for iteration = 1 to 6 do
-    let fresh =
-      List.concat (List.init 20 (fun g -> fst (Selfplay.play ~seed:((iteration * 1000) + g) board !net)))
-    in
-    let all = Array.append (Array.of_list fresh) !memory in
-    memory := Array.sub all 0 (min 3000 (Array.length all));
-    for _ = 1 to 200 do
-      let batch = Array.init 32 (fun _ -> !memory.(Lehmer.int draws (Array.length !memory))) in
-      net := fst (Policy_value.step !net batch)
-    done
-  done;
+  let rec iterations (l : Selfplay.learner) (n : int) : Selfplay.learner =
+    if n = 0 then l else iterations (fst (Selfplay.iterate board l)) (n - 1)
+  in
+  let net = ref (iterations (Selfplay.learner ~seed:5 start) 6).net in
   Printf.eprintf "selfplay: six iterations, %.1f s\n" (Unix.gettimeofday () -. t0);
   let (perfect_score, random_score, _, alone_after) = measure "after six iterations" !net in
   Alcotest.(check int) "with the search, it never loses to the perfect player" 0 perfect_score.lost;

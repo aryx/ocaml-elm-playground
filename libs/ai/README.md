@@ -5,8 +5,10 @@ references; independent of the Playground (`Ai.ml`, in
 `playground/apis/`, is the Evan-style API over it, `Ai_debug.ml` draws
 what it thinks).
 Pure OCaml, so every backend, the web included, has it. The tutorials
-are `docs/claude_notes/tutorials/notes_ai.md` (the classic game AI)
-and `notes_ai_learning.md` (neural networks and learning to play).
+are `docs/claude_notes/tutorials/notes_ai.md` (the classic game AI),
+`notes_ai_learning.md` (neural networks, language models and learning
+to play) and `notes_ai_dark_arts.md` (what went wrong while writing
+the latter, and what each failure taught).
 
 ## The folders
 

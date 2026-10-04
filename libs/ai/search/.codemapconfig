@@ -80,7 +80,7 @@
         { at: 'def:think', say: 'anytime: grow it by some playouts a frame', weight: 2 },
       ],
     },
-    'Mcts.ml': { digest: '5acd938f8491',
+    'Mcts.ml': { digest: 'c1fc668713d5',
       summary: 'The tree grown in place: mutable nodes of visits and wins, one path descended per playout.',
       important: [
         { at: 'type:node', say: 'visits, wins, untried moves: mutable', weight: 2 },

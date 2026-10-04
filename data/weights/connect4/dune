@@ -1,0 +1,27 @@
+; claude: what a network learned of Connect 4 by playing itself:
+; connect4.weights (Weights.mli: a text header saying how it was made
+; and how it then did against the search without it and against
+; alpha-beta, then the numbers), written by
+; scripts/train/train_connect4. AiConnect4's network (ai=network). A
+; library of its own, as every folder of data/ is: a program carries
+; it only if it names it. In the package tiny_libs, as
+; tiny_libs.data_weights_connect4.
+(include_subdirs no)
+
+(library
+ (name data_weights_connect4)
+ (public_name tiny_libs.data_weights_connect4)
+ (wrapped false)
+)
+
+; the file embedded as a string. Escaped (files_to_string_ml.ml), not
+; between {| and |}: it is binary.
+(rule
+ (targets Weights_connect4.ml)
+ (deps connect4.weights %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml connect4.weights)
+    (echo "let bytes = connect4_weights\n")))))

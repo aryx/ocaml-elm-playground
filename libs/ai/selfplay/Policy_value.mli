@@ -56,6 +56,10 @@ val parameters : t -> int
  * the value, between -1 and 1, for whoever is to play *)
 val opinion : t -> float array -> float array * float
 
+(* the same, through the graph that [step] builds: for the test that
+ * the two agree *)
+val opinion_by_graph : t -> float array -> float array * float
+
 (*****************************************************************************)
 (* {1 Learning} *)
 (*****************************************************************************)

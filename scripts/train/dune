@@ -6,5 +6,5 @@
 ; it prints the table of Gpt.mli. In no opam package.
 ; scripts/README.md, plan_ai_zero_to_hero.md (decision D3).
 (executables
- (names train_names train_names_gpt measure_gpt)
- (libraries ai_language ai_learning data_names random unix))
+ (names train_names train_names_gpt measure_gpt train_connect4)
+ (libraries ai_language ai_learning ai_search ai_selfplay kit_boards data_names random unix))

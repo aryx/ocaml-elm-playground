@@ -42,9 +42,18 @@
  * searches 7 moves ahead, where solving needs 42 -- but it plays the
  * middle first, which is the one thing everybody knows.
  *
- * What it uses: ai/'s Minimax (the game's rules as a [game] record),
- * Deepening (the search) and Zobrist (the keys and the table), Scene2d
- * (the keys pressed). Not the puzzle kit: nothing is pushed.
+ * A second computer plays on "a", or with the flag ai=network: one
+ * that was told the rules only and taught itself by playing itself,
+ * AlphaZero's way (its own section below, and Selfplay.mli). And
+ * ai=policy is that network with no search at all, to see what it
+ * learned by itself.
+ *
+ * What it uses: the boards kit's Connect4 (the rules, the evaluation,
+ * the keys: shared with the program that trains the network); ai/'s
+ * Minimax, Deepening (the search) and Zobrist (the table); Mcts,
+ * Selfplay and Policy_value for the second computer, whose weights are
+ * data/weights/connect4; Scene2d (the keys pressed). Not the puzzle
+ * kit: nothing is pushed.
  *
  * Exercises: the endgame searched to the end (with a dozen squares
  * left it is quick); killer moves (a move that cut elsewhere, tried
@@ -58,95 +67,16 @@ open Basics (* float arithmetics *)
 (* The rules *)
 (*****************************************************************************)
 
-let columns = 7
-let rows = 6
-
-type piece = Empty | You | Machine
-
-(* the board, column by column, bottom first; [turn] is whose it is *)
-type position = { board : piece array; turn : piece }
-
-let start : position = { board = Array.make (columns *.. rows) Empty; turn = You }
-let at (b : piece array) (c : int) (r : int) : piece = if c < 0 || c >= columns || r < 0 || r >= rows then Empty else b.((c *.. rows) +.. r)
-
-(* the row a piece dropped in [c] would land on, if any *)
-let landing (b : piece array) (c : int) : int option =
-  List.find_opt (fun r -> at b c r = Empty) (List.init rows Fun.id)
-
-let moves (p : position) : int list = List.filter (fun c -> landing p.board c <> None) (List.init columns Fun.id)
-
-let play (p : position) (c : int) : position =
-  let board = Array.copy p.board in
-  (match landing board c with Some r -> board.((c *.. rows) +.. r) <- p.turn | None -> ());
-  { board; turn = (if p.turn = You then Machine else You) }
-
-(* every line of four squares on the board: 69 of them *)
-let lines : (int * int) list list =
-  let line (c, r) (dc, dr) = List.init 4 (fun i -> (c +.. (i *.. dc), r +.. (i *.. dr))) in
-  List.concat_map
-    (fun c ->
-      List.concat_map
-        (fun r ->
-          List.filter_map
-            (fun (dc, dr) ->
-              let l = line (c, r) (dc, dr) in
-              if List.for_all (fun (c, r) -> c >= 0 && c < columns && r >= 0 && r < rows) l then Some l else None)
-            [ (1, 0); (0, 1); (1, 1); (1, -1) ])
-        (List.init rows Fun.id))
-    (List.init columns Fun.id)
-
-let four (b : piece array) (who : piece) : bool =
-  List.exists (fun l -> List.for_all (fun (c, r) -> at b c r = who) l) lines
-
-let over (p : position) : bool = four p.board You || four p.board Machine || moves p = []
-
-(*****************************************************************************)
-(* What a position is worth *)
-(*****************************************************************************)
-
-(* a line with pieces of one colour only is worth more the more of them
- * there are; a win is worth more than any number of lines *)
-let win = 100000.
-
-let score (p : position) : number =
-  if four p.board Machine then win
-  else if four p.board You then -.win
-  else
-    let line_value l =
-      let mine = List.length (List.filter (fun (c, r) -> at p.board c r = Machine) l)
-      and yours = List.length (List.filter (fun (c, r) -> at p.board c r = You) l) in
-      let worth n = match n with 1 -> 1. | 2 -> 10. | 3 -> 100. | _ -> 0. in
-      if yours = 0 then worth mine else if mine = 0 then -.(worth yours) else 0.
-    in
-    let middle =
-      List.init rows Fun.id
-      |> List.fold_left (fun n r -> match at p.board 3 r with Machine -> n + 3. | You -> n - 3. | Empty -> n) 0.
-    in
-    List.fold_left (fun n l -> n + line_value l) middle lines
-
-let connect4 : (position, int) Minimax.game =
-  { moves = (fun p -> if over p then [] else moves p); play; score; max_to_play = (fun p -> p.turn = Machine) }
+(* the rules, what a position is worth, the middle columns first and
+ * the keys: the boards kit's Connect4, shared with the program that
+ * trains a network to play (scripts/train/train_connect4) *)
+include Connect4
 
 (*****************************************************************************)
 (* The computer *)
 (*****************************************************************************)
 
 let depth = 7
-
-(* the game's own hint: the middle columns first (see the top) *)
-let middle_first (_ : position) (moves : int list) : int list =
-  List.sort (fun a b -> compare (Float.abs (float_of_int a - 3.)) (Float.abs (float_of_int b - 3.))) moves
-
-(* the keys: one number per (piece, square), and one for the turn *)
-let zobrist = Zobrist.make ~pieces:2 ~squares:(columns *.. rows) ~seed:4
-
-let key (p : position) : int64 =
-  let pieces =
-    List.filter_map
-      (fun i -> match p.board.(i) with Empty -> None | You -> Some (0, i) | Machine -> Some (1, i))
-      (List.init (columns *.. rows) Fun.id)
-  in
-  Int64.logxor (Zobrist.of_board zobrist pieces) (if p.turn = Machine then Zobrist.side zobrist else 0L)
 
 (* the same rules, with the moves listed middle first: ordering is
  * nothing more than that, and this is how it is measured against the
@@ -173,6 +103,63 @@ let think (p : position) : int option * number list * counts =
   (tabled.best, values, { plain = plain.nodes; tricks = tabled.nodes })
 
 (*****************************************************************************)
+(* The other computer: a network that taught itself (ai=network) *)
+(*****************************************************************************)
+(* Everything above was told to the computer: what a position is
+ * worth, which columns to try first. This one was told the rules and
+ * nothing else, and learned by playing against itself
+ * (Selfplay.mli, notes_ai_learning.md section 16). Its network gives
+ * two guesses about a position, which columns look good and who is
+ * winning, and the search (Mcts) is guided by both instead of by an
+ * evaluation.
+ *
+ * The network was not trained here: scripts/train/train_connect4 did
+ * it, and what it learned is a file of data/weights, whose first
+ * lines say how long it trained and how it then did against this
+ * game's own alpha-beta.
+ *
+ * "a" changes who you play, and the flag ai= who you start with:
+ * classic (the computer above), network (the search guided by the
+ * network), policy (the network alone, its first idea, no looking
+ * ahead: what it has learned and nothing more). *)
+
+type engine = Classic | Network | Policy
+
+let engine_of (flags : (string * string) list) : engine =
+  match List.assoc_opt "ai" flags with Some "network" -> Network | Some "policy" -> Policy | _ -> Classic
+
+let name (e : engine) : string =
+  match e with Classic -> "alpha-beta, told what a position is worth" | Network -> "a network that taught itself, and a search" | Policy -> "the network alone, no search"
+
+let net : Policy_value.t Lazy.t =
+  lazy
+    (match Result.bind (Weights.of_string Weights_connect4.bytes) Policy_value.of_weights with
+    | Ok net -> net
+    | Error why -> failwith ("connect4.weights: " ^ why))
+
+let playouts = 400
+
+(* what the network thought of each column before any search, and
+ * where the search then spent its playouts: two shares a column *)
+type opinion = { before : number list; after : number list }
+
+let think_network (e : engine) (p : position) (seed : int) : int option * opinion =
+  let net = Lazy.force net in
+  let (prior, _) = Selfplay.guides Connect4.board net in
+  let shares = prior p in
+  let before = List.init columns (fun c -> match List.assoc_opt c shares with Some s -> s | None -> Float.nan) in
+  match e with
+  | Policy -> (Selfplay.instinct Connect4.board net p, { before; after = [] })
+  | Classic | Network ->
+      let tried = Selfplay.visits ~seed ~playouts Connect4.board net p in
+      let total = float_of_int (List.fold_left (fun n (_, k) -> n +.. k) 0 tried) in
+      let after =
+        List.init columns (fun c -> match List.assoc_opt c tried with Some k -> float_of_int k / total | None -> Float.nan)
+      in
+      let best = List.fold_left (fun b (c, k) -> match b with Some (_, n) when n >= k -> b | _ -> Some (c, k)) None tried in
+      (Option.map fst best, { before; after })
+
+(*****************************************************************************)
 (* The game *)
 (*****************************************************************************)
 
@@ -184,12 +171,16 @@ type game = {
   counts : counts option;
   values : number list option;
   show_values : bool;
+  engine : engine option; (* who plays red; None until the flags are seen *)
+  opinion : opinion option; (* the network's, of its last position *)
+  moves_played : int;
 }
 
 type model = game Scene2d.t
 
 let new_game () : game =
-  { position = start; cursor = 3; last = None; wait = 0; counts = None; values = None; show_values = false }
+  { position = start; cursor = 3; last = None; wait = 0; counts = None; values = None; show_values = false;
+    engine = None; opinion = None; moves_played = 0 }
 
 let initial_model : model = Scene2d.start (new_game ())
 
@@ -206,18 +197,33 @@ let column_at (x : number) : int option =
 
 let drop (g : game) (c : int) : game =
   if landing g.position.board c = None || over g.position then g
-  else { g with position = play g.position c; last = Some c; wait = 20; counts = None; values = None }
+  else
+    { g with position = play g.position c; last = Some c; wait = 20; counts = None; values = None;
+      moves_played = g.moves_played +.. 1 }
 
 let update_game (computer : computer) (scenes : model) (g : game) : game =
   let m = computer.mouse in
-  if over g.position then if Scene2d.pressed (fun k -> k.kspace) scenes then new_game () else g
+  let engine = match g.engine with Some e -> e | None -> engine_of computer.flags in
+  let g = { g with engine = Some engine } in
+  if over g.position then
+    if Scene2d.pressed (fun k -> k.kspace) scenes then { (new_game ()) with engine = Some engine } else g
   else if g.position.turn = Machine then
     if g.wait > 0 then { g with wait = g.wait -.. 1 }
     else
-      let (best, values, counts) = think g.position in
-      let g = { g with counts = Some counts; values = Some values } in
-      (match best with Some c -> { (drop g c) with counts = Some counts; values = Some values } | None -> g)
+      match engine with
+      | Classic ->
+          let (best, values, counts) = think g.position in
+          let g = { g with counts = Some counts; values = Some values; opinion = None } in
+          (match best with Some c -> { (drop g c) with counts = Some counts; values = Some values } | None -> g)
+      | Network | Policy ->
+          let (best, opinion) = think_network engine g.position g.moves_played in
+          (match best with Some c -> { (drop g c) with opinion = Some opinion } | None -> g)
   else
+    let g =
+      if Scene2d.pressed (fun k -> Set_.mem "a" k.keys) scenes then
+        { g with engine = Some (match engine with Classic -> Network | Network -> Policy | Policy -> Classic); opinion = None }
+      else g
+    in
     let g = if Scene2d.pressed (fun k -> Set_.mem "v" k.keys) scenes then { g with show_values = not g.show_values } else g in
     let cursor =
       if Scene2d.pressed (fun k -> k.kleft) scenes then max 0 (g.cursor -.. 1)
@@ -274,6 +280,26 @@ let view (computer : computer) (s : model) : shape list =
                    text (if v < 0. then rgb 120 230 140 else rgb 230 130 120) 1.6 (Printf.sprintf "%.0f" v)
                    |> move x (bottom - 30.))
   in
+  (* the network's two rows under the board: its first idea of each
+   * column, and where the search went *)
+  let opinion =
+    match g.opinion with
+    | None -> []
+    | Some o ->
+        let row (shares : number list) (y : number) (color : color) : shape list =
+          List.mapi
+            (fun c s ->
+              if Float.is_nan s then group []
+              else text color 1.5 (Printf.sprintf "%.0f%%" (100. * s)) |> move (fst (center c 0)) y)
+            shares
+        in
+        row o.before (bottom - 22.) (rgb 150 160 200)
+        @ row o.after (bottom - 47.) (rgb 240 210 120)
+        @ [ text (rgb 170 170 190) 1.4
+              (if o.after = [] then "its policy: what it thinks of each column, at a glance"
+               else Printf.sprintf "its policy at a glance, and under it where %d playouts then went" playouts)
+            |> move_y (-402.) ]
+  in
   let told =
     match g.counts with
     | None -> []
@@ -297,9 +323,12 @@ let view (computer : computer) (s : model) : shape list =
   @ (if g.position.turn = You && not (over g.position) then
        [ view_piece You |> move (fst (center g.cursor rows)) (bottom + (float_of_int rows * cell) + 40.) |> fade 0.6 ]
      else [])
-  @ hint @ told @ over_text
+  @ hint @ opinion @ told @ over_text
   @ [ text white 2.5 "CONNECT 4" |> move_y 440.;
-      text (rgb 150 150 170) 1.6 "click a column, or the arrows and space;  v: what it thinks of yours" |> move_y (-450.) ]
+      text (rgb 150 150 170) 1.3
+        ("red is " ^ name (match g.engine with Some e -> e | None -> engine_of computer.flags) ^ "   (a: another)")
+      |> move_y (-427.);
+      text (rgb 150 150 170) 1.6 "click a column, or the arrows and space;  v: what it thinks of yours" |> move_y (-455.) ]
 
 let app = game view update initial_model
-let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

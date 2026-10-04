@@ -1,0 +1,13 @@
+; claude: the boards kit: a board game's rules where both the game and
+; the program that trains a network to play it can reach them --
+; Connect4 (the rules, what a position is worth, the hints a search is
+; given, and the position as a network reads it). Used by AiConnect4
+; and scripts/train/train_connect4. No drawing: it is on the libraries
+; only. In the package elm_playground_gamekits, as
+; elm_playground_gamekits.kit_boards.
+(library
+ (name kit_boards)
+ (public_name elm_playground_gamekits.kit_boards)
+ (wrapped false)
+ (libraries elm_core ai_search ai_selfplay)
+)
