@@ -73,6 +73,41 @@ let test_network () =
   | Ok back ->
       Alcotest.(check (array (float 1e-5))) "the same opinion, from a file" p (fst (Policy_value.opinion back lesson.input))
 
+(* the same game, the network reading the board as a board: three by
+   three, two planes (mine, the other's), convolutions *)
+let test_board_network () =
+  let board : Policy_value.board = { planes = 2; height = 3; width = 3; channels = 8; layers = 2 } in
+  let net = Policy_value.make ~seed:1 ~board ~inputs:18 ~moves:9 () in
+  let position = Tictactoe.of_string "xx.oo...." in
+  let input = Tictactoe.encode position in
+  let (p, v) = Policy_value.opinion net input and (p', v') = Policy_value.opinion_by_graph net input in
+  Alcotest.(check (float 1e-9)) "a share per move" 1. (Array.fold_left ( +. ) 0. p);
+  Alcotest.(check (array (float 1e-12))) "the plain pass and the graph: the same policy" p' p;
+  Alcotest.(check (float 1e-12)) "and the same value" v' v;
+  (* a lesson repeated: both heads come to say it, through the
+     convolutions' slopes *)
+  let lesson : Policy_value.lesson = { input; policy = Array.init 9 (fun i -> if i = 2 then 1. else 0.); value = 1. } in
+  let rec learn net n = if n = 0 then net else learn (fst (Policy_value.step ~rate:0.01 net [| lesson; lesson |])) (n - 1) in
+  let taught = learn net 150 in
+  let (p, v) = Policy_value.opinion taught input in
+  Alcotest.(check bool) "the move it was shown" true (p.(2) > 0.9);
+  Alcotest.(check bool) "and that it wins" true (v > 0.9);
+  (* written and read back, its shape in a note *)
+  (match Result.bind (Weights.of_string (Weights.to_string (Policy_value.to_weights taught))) Policy_value.of_weights with
+  | Error why -> Alcotest.fail why
+  | Ok back ->
+      Alcotest.(check bool) "its shape" true (back.shape = Policy_value.Board board);
+      Alcotest.(check (array (float 1e-5))) "the same opinion, from a file" p (fst (Policy_value.opinion back input)));
+  (* what it knows of a corner it knows of every corner before any
+     training: the same weights at every square. An empty board gives
+     the four corners the same numbers going into the heads -- checked
+     through the value, which a board turned upside down must not
+     change by more than the heads' own weights allow; here, simply,
+     that sizes that do not fit are refused *)
+  Alcotest.check_raises "planes and squares that are not the inputs"
+    (Invalid_argument "Policy_value.make: the board's planes and squares are not the inputs") (fun () ->
+      ignore (Policy_value.make ~seed:1 ~board ~inputs:20 ~moves:9 ()))
+
 let test_a_game () =
   let net = Policy_value.make ~seed:1 ~inputs:18 ~moves:9 () in
   let (lessons, share) = Selfplay.play ~seed:3 board net in
@@ -118,6 +153,7 @@ let tests =
   [
     t "Tictactoe, the rules and the truth" test_tictactoe;
     t "Policy_value, two heads and a lesson" test_network;
+    t "Policy_value, the board read as a board" test_board_network;
     t "Selfplay, a game and what it teaches" test_a_game;
     t "Selfplay, the loop: it stops losing" test_the_loop;
   ]

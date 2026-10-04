@@ -164,6 +164,33 @@ let join_cols (parts : t list) : t =
           at := !at + p.v.cols)
         parts)
 
+(* the squares of a board, each with its 3 by 3 neighbourhood
+ * ([Matrix.patches]); the slopes go back from each neighbourhood to
+ * the squares it was copied from, a square hearing from the nine
+ * neighbourhoods it is in *)
+let patches (a : t) ~(height : int) ~(width : int) : t =
+  let c = a.v.cols in
+  make (Matrix.patches a.v ~height ~width) [ a ] (fun n ->
+      for y = 0 to height - 1 do
+        for x = 0 to width - 1 do
+          let square = (y * width) + x in
+          for dy = -1 to 1 do
+            for dx = -1 to 1 do
+              let ny = y + dy and nx = x + dx in
+              if ny >= 0 && ny < height && nx >= 0 && nx < width then
+                Matrix.add_scaled a.d.data (((ny * width) + nx) * c) 1. n.d.data
+                  ((square * 9 * c) + ((((dy + 1) * 3) + dx + 1) * c))
+                  c
+            done
+          done
+        done
+      done)
+
+(* the same numbers in another shape, row after row *)
+let reshape (a : t) (rows : int) (cols : int) : t =
+  if rows * cols <> Array.length a.v.data then invalid_arg "Tensor.reshape: not the same count of numbers";
+  make { rows; cols; data = Array.copy a.v.data } [ a ] (fun n -> pour a.d n.d)
+
 (*****************************************************************************)
 (* A row at a time *)
 (*****************************************************************************)

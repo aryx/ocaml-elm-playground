@@ -146,3 +146,25 @@ let add_scaled (into : float array) (at : int) (k : float) (from : float array) 
   for i = 0 to n - 1 do
     into.(at + i) <- into.(at + i) +. (k *. from.(at' + i))
   done
+
+(* a board's squares and what is around each. [x] has a row per square
+ * of a board [height] by [width] (row after row) and a column per
+ * channel; the result has a row per square too, and nine times the
+ * columns: the square's 3 by 3 neighbourhood, channel by channel,
+ * zeros where the neighbourhood leaves the board *)
+let patches (x : t) ~(height : int) ~(width : int) : t =
+  let c = x.cols in
+  let out = create x.rows (9 * c) in
+  for y = 0 to height - 1 do
+    for xx = 0 to width - 1 do
+      let square = (y * width) + xx in
+      for dy = -1 to 1 do
+        for dx = -1 to 1 do
+          let ny = y + dy and nx = xx + dx in
+          if ny >= 0 && ny < height && nx >= 0 && nx < width then
+            Array.blit x.data (((ny * width) + nx) * c) out.data ((square * 9 * c) + ((((dy + 1) * 3) + dx + 1) * c)) c
+        done
+      done
+    done
+  done;
+  out

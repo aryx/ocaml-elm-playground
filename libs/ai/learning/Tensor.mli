@@ -136,6 +136,39 @@ val cols : t -> int -> int -> t
 val join_cols : t list -> t
 
 (*****************************************************************************)
+(* {1 A board} *)
+(*****************************************************************************)
+(* A network that reads a board as a list of unrelated numbers has to
+ * learn that three in a row on the left is three in a row on the
+ * right. A *convolution* does not: it is one small layer, looking at
+ * a square and its eight neighbours, applied at every square with the
+ * same weights. What it learns about a shape it knows everywhere.
+ *
+ * With the board as a matrix, a row per square and a column per
+ * channel (a channel is one kind of thing a square can hold: my
+ * pieces, the other's, then whatever the layers before made of them),
+ * it is two operations already here:
+ *
+ *     patches            each square's row becomes its neighbourhood's:
+ *                        9 squares, channel by channel, zeros off the board
+ *     mul_t  . weights   a layer on every row: a row of weights per new
+ *                        channel, 9 times the old channels long
+ *
+ * so the product that a layer is ([mul_t]) is the product a
+ * convolution is, and nothing new has a slope to get wrong but the
+ * copying. (LeCun et al., 1989, for digits; the same idea is every
+ * board network since AlphaGo.) *)
+
+(* [patches a ~height ~width]: [a] a row per square of a board, row
+ * after row, a column per channel; each square with its 3 by 3
+ * neighbourhood, nine times the columns *)
+val patches : t -> height:int -> width:int -> t
+
+(* the same numbers in another shape, row after row: a board's squares
+ * laid end to end for a layer that reads them all *)
+val reshape : t -> int -> int -> t
+
+(*****************************************************************************)
 (* {1 A row at a time} *)
 (*****************************************************************************)
 

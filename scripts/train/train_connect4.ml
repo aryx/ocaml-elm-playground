@@ -14,12 +14,20 @@
  *   dune exec scripts/train/train_connect4.exe -- out.weights 10               (iterations)
  *   dune exec scripts/train/train_connect4.exe -- out.weights 10 out.weights   (go on from a file)
  *   WORKERS=8 dune exec ...                                                    (processes playing at once)
+ *   NET=board dune exec ...                                                    (convolutions: the board as a board)
  *
  * An iteration is 480 games against itself at 100 playouts a move,
  * then 600 steps on batches of 64 drawn from the last 100,000
  * lessons. The file is written after every iteration, so the training
  * can be stopped at any time and gone on with from the file (the
  * lessons remembered are not kept: it plays new ones).
+ *
+ * With NET=board the network reads the board as a board (two
+ * convolutions of 16 channels, Policy_value.mli) and its steps are
+ * taken another way, each of 32 processes its own 300, their networks
+ * averaged ([learn_apart] below): 85 minutes for 100 iterations. The
+ * weights in data/weights/connect4 are the flat network's; the board
+ * network's result is in notes_ai_learning.md, section 16.
  *
  * Two things a trainer adds to the loop of Selfplay.mli, and both are
  * about getting more games out of the same hour:
@@ -111,6 +119,58 @@ let games (net : Policy_value.t) (iteration : int) : Policy_value.lesson list =
   let lessons = List.concat played in
   lessons @ List.map mirrored lessons
 
+(* the steps of an iteration, for the board network, whose steps are
+ * the trainer's time and not its games: [learners] processes each
+ * take the network as it is and their own [steps] on their own
+ * batches, apart; then the networks they arrive at are averaged,
+ * number by number. A few hundred steps from the same start do not
+ * go far, and the middle of where thirty-two of them went is a better
+ * place than where any one did (McMahan et al., 2017). Better, not
+ * further: averaging thirty-two learners takes the noise out of
+ * their steps, it does not make them thirty-two times as many.
+ *
+ * One fork a learner an iteration. The first version forked sixteen
+ * processes at every *step*, to share one large batch: a step took
+ * 0.3 s, most of it the forks (notes_ai_dark_arts.md) *)
+let learners = 32
+
+let learn_apart ~(steps : int) ~(batch : int) (l : Selfplay.learner) (fresh : Policy_value.lesson list) :
+    Selfplay.learner * float =
+  let all = Array.append (Array.of_list fresh) l.lessons in
+  let lessons = Array.sub all 0 (min schedule.remembered (Array.length all)) in
+  let arrived =
+    together
+      (List.init learners (fun w () ->
+           let draws = Lehmer.make ((l.iteration * 100) + w) in
+           let rec go (net : Policy_value.t) (loss : float) (n : int) : Policy_value.t * float =
+             if n = 0 then (net, loss)
+             else
+               let (net, loss) =
+                 Policy_value.step net (Array.init batch (fun _ -> lessons.(Lehmer.int draws (Array.length lessons))))
+               in
+               go net loss (n - 1)
+           in
+           go l.net 0. steps))
+  in
+  let (first, _) = List.hd arrived in
+  let matrices =
+    List.map
+      (fun (name, (x : Matrix.t)) ->
+        let data = Array.make (Array.length x.data) 0. in
+        List.iter
+          (fun ((net : Policy_value.t), _) ->
+            let (m : Matrix.t) = List.assoc name net.matrices in
+            Array.iteri (fun i v -> data.(i) <- data.(i) +. (v /. float_of_int learners)) m.data)
+          arrived;
+        (name, { x with data }))
+      first.matrices
+  in
+  let loss = List.fold_left (fun sum (_, loss) -> sum +. loss) 0. arrived /. float_of_int learners in
+  (* the first learner's memory of its slopes (Adam's) is kept with the
+   * averaged numbers: near enough, the learners having gone the same
+   * way *)
+  ({ l with net = { first with matrices }; lessons; iteration = l.iteration + 1 }, loss)
+
 (*****************************************************************************)
 (* Measuring *)
 (*****************************************************************************)
@@ -156,6 +216,11 @@ let () =
     if Array.length Sys.argv > 1 then Sys.argv.(1) else failwith "usage: train_connect4 <out.weights> [iterations] [from.weights]"
   in
   let iterations = if Array.length Sys.argv > 2 then int_of_string Sys.argv.(2) else 60 in
+  (* room in the minor heap for a step's graph, which dies at its end
+   * (notes_opti_ocaml.md, section 20). Not more room than that: every
+   * process forked gets this heap to write in, and copies what it
+   * writes *)
+  Gc.set { (Gc.get ()) with minor_heap_size = 4 * 1024 * 1024 };
   let seed = 1 in
   let (net, done_before) =
     if Array.length Sys.argv > 3 then
@@ -165,7 +230,16 @@ let () =
           match Policy_value.of_weights w with
           | Error why -> failwith why
           | Ok net -> (net, Option.value ~default:0 (Option.bind (Weights.note w "iterations") int_of_string_opt)))
-    else (Policy_value.make ~seed ~hidden:128 ~rate:0.003 ~inputs:board.inputs ~moves:board.moves (), 0)
+    else
+      ( (match Sys.getenv_opt "NET" with
+        | Some "board" ->
+            (* the board as a board: 7 columns of 6, two planes *)
+            let shape : Policy_value.board =
+              { planes = 2; height = Connect4.columns; width = Connect4.rows; channels = 16; layers = 2 }
+            in
+            Policy_value.make ~seed ~rate:0.003 ~board:shape ~inputs:board.inputs ~moves:board.moves ()
+        | _ -> Policy_value.make ~seed ~hidden:128 ~rate:0.003 ~inputs:board.inputs ~moves:board.moves ()),
+        0 )
   in
   Printf.printf "%d numbers; from iteration %d; %d processes\n%!" (Policy_value.parameters net) done_before workers;
   let t0 = Unix.gettimeofday () in
@@ -173,11 +247,19 @@ let () =
   let measured = ref (measure net) in
   Printf.printf "before: %s\n%!" !measured;
   for _ = 1 to iterations do
+    let began = Unix.gettimeofday () in
     let fresh = games !learner.net (!learner.iteration + 1) in
-    let (l, loss) = Selfplay.learn ~schedule !learner fresh in
+    let played = Unix.gettimeofday () in
+    let (l, loss) =
+      match !learner.net.shape with
+      | Flat -> Selfplay.learn ~schedule !learner fresh
+      | Board _ -> learn_apart ~steps:300 ~batch:64 !learner fresh
+    in
     learner := l;
-    Printf.printf "iteration %3d  %5.0f s  loss %.3f  %d lessons\n%!" l.iteration (Unix.gettimeofday () -. t0) loss
-      (Array.length l.lessons);
+    Printf.printf "iteration %3d  %5.0f s  (its games %.0f s, its steps %.0f s)  loss %.3f  %d lessons\n%!" l.iteration
+      (Unix.gettimeofday () -. t0) (played -. began)
+      (Unix.gettimeofday () -. played)
+      loss (Array.length l.lessons);
     if l.iteration mod 5 = 0 then (
       measured := measure l.net;
       Printf.printf "  %s\n%!" !measured);

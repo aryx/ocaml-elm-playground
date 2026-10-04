@@ -879,8 +879,31 @@ search one move deep. What it has is a good guess, and a guess is
 worth what a search makes of it -- which is the whole design, but
 also a limit: this network reads the board as 84 unrelated numbers,
 and has to learn separately that three in a row on the left is three
-in a row on the right. A network that sees the board as a board is
-the next step, with Go (`plans/plan_ai_zero_to_hero.md`).
+in a row on the right.
+
+**The board as a board.** A *convolution* is a small layer looking at
+a square and its eight neighbours, applied at every square with the
+same weights: what it learns of a shape it knows everywhere. On
+`Tensor` it is two operations, `patches` (each square's row becomes
+its neighbourhood's) and the `mul_t` a layer already was; and
+`Policy_value` has a second shape of body, `Board`, made of them. The
+same loop, the same budget of games, a network of 6,087 numbers in
+place of 28,424, against alpha-beta at depth 7 over 40 games:
+
+```
+playouts a move        100        400       1,600
+flat, 28,424         18-0-22    20-2-18    26-1-13
+board, 6,087         20-0-20    25-0-15    32-0-8
+```
+
+a quarter of the numbers, and better against the game's computer at
+every budget. (And worse against the flat network itself, 14-0-26 at
+400 playouts: strength is not one number, `notes_ai_dark_arts.md`.)
+It costs: a step is fifteen times a flat one's, and the trainer had to
+learn to take its steps in many processes too -- learners apart, their
+networks averaged -- before the comparison could be made at all. Go,
+where the board is 81 squares and there is no flat network to fall
+back on, is next (`plans/plan_ai_zero_to_hero.md`).
 
 ## 17. The dark arts
 

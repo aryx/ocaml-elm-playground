@@ -148,8 +148,14 @@ val learner : seed:int -> Policy_value.t -> learner
 (* the second half of an iteration alone, for a trainer that gets its
  * games elsewhere (several processes playing at once): these lessons
  * remembered, [steps] taken, the iteration counted; the loss of the
- * last step *)
-val learn : ?schedule:schedule -> learner -> Policy_value.lesson list -> learner * float
+ * last step. [step] is [Policy_value.step] unless the trainer has a
+ * faster way to take one. *)
+val learn :
+  ?schedule:schedule ->
+  ?step:(Policy_value.t -> Policy_value.lesson array -> Policy_value.t * float) ->
+  learner ->
+  Policy_value.lesson list ->
+  learner * float
 
 (* one iteration, and the loss of its last step *)
 val iterate : ?settings:settings -> ?schedule:schedule -> ('state, 'move) board -> learner -> learner * float

@@ -528,6 +528,32 @@ the games it learns from.
 
 ### Q11. AlphaZero on 9 by 9 Go: `Conv`, `train_go`, `AiGo ai=network` (size after Q9)
 
+**The first half done (2026-10-04): the convolution, tried on Connect
+4 before Go**, where the flat network's score was there to compare
+with. `Matrix.patches`, `Tensor.patches` and `reshape` (a convolution
+is `patches` then the `mul_t` a layer already was: no module `Conv`),
+`Policy_value`'s second shape `Board` (convolutions with residuals,
+the two heads over the board laid end to end), `Policy_value.gradient`
+and `apply`, `Selfplay.learn ?step`, and in the trainer `NET=board`,
+the learners apart and averaged, the time of each phase printed.
+
+The result, 100 iterations, 85 minutes, 6,087 numbers against the
+flat network's 28,424: against alpha-beta at depth 7 over 40 games,
+20-0-20, 25-0-15 and 32-0-8 at 100, 400 and 1,600 playouts (flat:
+18-0-22, 20-2-18, 26-1-13); against the flat network directly,
+13-1-26, 14-0-26, 18-0-22. Better against the one, worse against the
+other. The flat network stays `AiConnect4`'s; the board network's
+weights are not kept.
+
+Four entries in `notes_ai_dark_arts.md` came out of it (the old
+program run twice, the bottleneck guessed wrong, a process per step,
+two changes at once), and a fifth for the result.
+
+For Go, then: two or three layers of 16 to 32 channels is what an
+hour buys on 42 squares; 81 squares are twice that. And the plateau
+both networks share on Connect 4 says to raise the playouts of the
+games they learn from before anything else.
+
 - A convolutional layer on `Tensor` (`Conv`: 3 by 3, the same weights
   at every point of the board, which is what a board is), a few of
   them with residuals, the two heads on top. The board as planes:

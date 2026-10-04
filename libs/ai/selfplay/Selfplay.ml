@@ -179,14 +179,15 @@ let learner ~(seed : int) (net : Policy_value.t) : learner = { net; lessons = [|
  * steps on lessons drawn from all it remembers, not only the newest:
  * games of one evening are all alike, and learning only from them
  * forgets the rest *)
-let learn ?(schedule = usual) (l : learner) (fresh : Policy_value.lesson list) : learner * float =
+let learn ?(schedule = usual) ?(step = fun net batch -> Policy_value.step net batch) (l : learner)
+    (fresh : Policy_value.lesson list) : learner * float =
   let all = Array.append (Array.of_list fresh) l.lessons in
   let lessons = Array.sub all 0 (min schedule.remembered (Array.length all)) in
   let rec steps (net : Policy_value.t) (loss : float) (n : int) : Policy_value.t * float =
     if n = 0 then (net, loss)
     else
       let batch = Array.init schedule.batch (fun _ -> lessons.(Lehmer.int l.draws (Array.length lessons))) in
-      let (net, loss) = Policy_value.step net batch in
+      let (net, loss) = step net batch in
       steps net loss (n - 1)
   in
   let (net, loss) = steps l.net 0. schedule.steps in

@@ -129,6 +129,14 @@ val fast : bool ref
  * queries and keys. *)
 val mul_t : t -> t -> t
 
+(* [patches x ~height ~width]: a board's squares, and what is around
+ * each. [x] has a row per square of a board [height] by [width], row
+ * after row, and a column per channel; the result has a row per
+ * square too and nine times the columns: the square's 3 by 3
+ * neighbourhood, channel by channel, zeros where it leaves the board.
+ * A layer applied to those rows is a convolution (Tensor.mli). *)
+val patches : t -> height:int -> width:int -> t
+
 (* [add_scaled into at k from at' n]: [n] numbers of [from] starting
  * at [at'], each times [k], added in place to [into] from [at] *)
 val add_scaled : float array -> int -> float -> float array -> int -> int -> unit

@@ -94,6 +94,10 @@ let test_operations () =
   against_a_nudge "softmax_rows, causal" [ square ] (one (softmax_rows ~causal:true));
   against_a_nudge "cross_entropy" [ a ] (function [ x ] -> cross_entropy x [| 3; 0; 1 |] | _ -> assert false);
   against_a_nudge "add_row" [ a; Matrix.random ~seed:6 1 4 ] (two add_row);
+  (* a board of 2 by 3 squares, 2 channels *)
+  let squares = Matrix.random ~seed:7 6 2 in
+  against_a_nudge "patches" [ squares ] (one (patches ~height:2 ~width:3));
+  against_a_nudge "reshape" [ a ] (one (fun x -> reshape x 2 6));
   let deserved = Matrix.of_lists [ [ 0.5; 0.5; 0.; 0. ]; [ 0.; 0.1; 0.2; 0.7 ]; [ 1.; 0.; 0.; 0. ] ] in
   against_a_nudge "cross_entropy_to" [ a ] (function [ x ] -> cross_entropy_to x deserved | _ -> assert false);
   (* all of the share on one answer: cross_entropy *)
@@ -118,8 +122,28 @@ let test_shares () =
   let by_grad answer = Grad.of_ (Grad.cross_entropy [ Grad.value 1.; Grad.value 2.; Grad.value 3. ] answer) in
   Alcotest.(check (float 1e-12)) "Grad's" ((by_grad 2 +. by_grad 0) /. 2.) (number (cross_entropy scores [| 2; 0 |]))
 
+(* a square and what is around it: the board
+
+       1 2 3
+       4 5 6
+
+   one channel. The middle of the top row, 2, sees nothing above it,
+   1 and 3 beside it, 4 5 6 below *)
+let test_patches () =
+  let board = Matrix.of_lists [ [ 1. ]; [ 2. ]; [ 3. ]; [ 4. ]; [ 5. ]; [ 6. ] ] in
+  let p = Matrix.patches board ~height:2 ~width:3 in
+  Alcotest.(check (pair int int)) "a row per square, nine columns" (6, 9) (p.rows, p.cols);
+  Alcotest.(check (array (float 0.))) "around the 2" [| 0.; 0.; 0.; 1.; 2.; 3.; 4.; 5.; 6. |] (Matrix.row p 1);
+  Alcotest.(check (array (float 0.))) "around the 4, a corner" [| 0.; 1.; 2.; 0.; 4.; 5.; 0.; 0.; 0. |] (Matrix.row p 3);
+  (* a convolution: one new channel that adds a square and its right
+     neighbour, the same weights at every square *)
+  let weights = Matrix.of_lists [ [ 0.; 0.; 0.; 0.; 1.; 1.; 0.; 0.; 0. ] ] in
+  Alcotest.check lists "each square plus the one to its right" [ [ 3. ]; [ 5. ]; [ 3. ]; [ 9. ]; [ 11. ]; [ 6. ] ]
+    (Matrix.to_lists (Matrix.mul_t p weights))
+
 let tests =
   [
+    t "Tensor, a board's neighbourhoods and a convolution" test_patches;
     t "Tensor, a layer and its slopes" test_example;
     t "Tensor, every operation against a nudge" test_operations;
     t "Tensor, softmax and cross-entropy" test_shares;
