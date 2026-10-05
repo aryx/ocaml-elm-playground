@@ -1923,6 +1923,10 @@ let scripted_flagged : Golden_scene.scripted_flagged list =
      * (ai=network): a piece dropped in the middle, its answer, and under
      * the board its policy at a glance and where the search then went *)
     ("games/puzzle/software/AiConnect4", "network", 60, "space:2", [ "ai=network" ]);
+    (* claude: AiGo against its network (ai=network): a stone in the
+     * middle, its answer after six hundred positions judged, and on the
+     * board its first idea of each point *)
+    ("games/puzzle/software/AiGo", "network", 110, "space:2", [ "ai=network" ]);
     (* claude: TinyInteractivePhysics drawn with the mouse: the Disk tool,
      * a disk dragged to a radius of 50, the Rope tool, a rope from a
      * point of the background to it, Run -- and it swings over the

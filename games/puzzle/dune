@@ -17,6 +17,7 @@
     data_weights_names_mlp ; and its network, trained by scripts/train/train_names
     data_weights_names_gpt ; and its GPT, by train_names_gpt
     data_weights_connect4 ; AiConnect4's network, by train_connect4
+    data_weights_go9 ; AiGo's network, by train_go
     random ; AiGo's playouts, Lehmer (Mcts's)
     kit_puzzle ; TinySokoban's and TinyBabaIsYou's Push and Undo, Sokoban's rules
     kit_boards ; AiConnect4's rules, Connect4, shared with its trainer

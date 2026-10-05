@@ -554,6 +554,23 @@ hour buys on 42 squares; 81 squares are twice that. And the plateau
 both networks share on Connect 4 says to raise the playouts of the
 games they learn from before anything else.
 
+**The second half built (2026-10-05), its network training**:
+`gamekits/boards/Go9` (the rules, the counting and the playout moved
+as they were out of `AiGo.ml`, which includes it; the position as
+three planes, the board's eight symmetries, a game capped at so many
+moves for self-play), `scripts/train/Selfplay_trainer` (what
+`train_connect4` and `train_go` share: the loop, the processes, the
+learners apart, the file), `scripts/train/train_go`,
+`data/weights/go9/`, and `AiGo` with `ai=classic|network|policy`, "a"
+changing engine, the same anytime search with the network's two
+guesses in the place of the random games, its first idea of each point
+drawn on the board.
+
+Knowing nothing: 12-0-8 against a random player, 3-0-17 against the
+search with 100 random playouts, 0-0-20 against 1,000 (AiGo's own).
+The run: 100 iterations of 192 games, about three hours; the weights
+committed are a checkpoint until it ends.
+
 - A convolutional layer on `Tensor` (`Conv`: 3 by 3, the same weights
   at every point of the board, which is what a board is), a few of
   them with residuals, the two heads on top. The board as planes:

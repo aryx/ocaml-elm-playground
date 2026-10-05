@@ -14,6 +14,7 @@ a program carries it only if it names that library.
 | folder (library) | what | from | used by |
 |---|---|---|---|
 | `brotli_words/` (`compression_brotli_words`: `Brotli_words.bytes`) | Brotli's static dictionary, RFC 7932's Appendix A, 122,784 bytes | github.com/google/brotli (MIT) | `Brotli.decompress ~dictionary`, for who asks |
+| `weights/go9/` (`data_weights_go9`: `Weights_go9.bytes`) | what a network learned of Go on 9 by 9 by playing itself: 21,498 numbers, 87 KB | `scripts/train/train_go`, self-play in 48 processes | `AiGo` (`ai=network`) |
 | `weights/connect4/` (`data_weights_connect4`: `Weights_connect4.bytes`) | what a network learned of Connect 4 by playing itself: 28,424 numbers, 114 KB | `scripts/train/train_connect4`, self-play in 48 processes | `AiConnect4` (`ai=network`) |
 | `weights/names_gpt/` (`data_weights_names_gpt`: `Weights_names_gpt.bytes`) | what `Gpt` learned of the names: 4,192 numbers, 17 KB, loss 2.21 held out | `scripts/train/train_names_gpt`, half a minute | `AiShannon` |
 | `weights/names_mlp/` (`data_weights_names_mlp`: `Weights_names_mlp.bytes`) | what `Ngram_mlp` learned of the names: 3,481 numbers, 14 KB, loss 2.328 held out | `scripts/train/train_names`, eleven minutes | `AiShannon` |

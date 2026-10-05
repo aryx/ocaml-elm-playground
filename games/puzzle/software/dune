@@ -18,6 +18,7 @@
     data_weights_names_mlp
     data_weights_names_gpt
     data_weights_connect4
+    data_weights_go9
     kit_puzzle
     kit_boards
     kit_crush

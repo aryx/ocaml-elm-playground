@@ -43,9 +43,17 @@
  * years later was AlphaGo replacing the random playouts and the win
  * counts with a neural network (notes_ai_learning.md section 9).
  *
- * What it uses: ai/'s Mcts (the search) and Minimax (the [game] record
- * it takes), Scene2d (the keys pressed). Not Deepening or Zobrist:
- * there is no depth to deepen and no value to remember.
+ * That network is here too, in miniature: "a" changes who plays white,
+ * or the flag ai=network, to a search guided by a network that taught
+ * itself by playing itself (its own section below, Selfplay.mli), and
+ * ai=policy to that network alone.
+ *
+ * What it uses: the boards kit's Go9 (the rules, the counting, the
+ * playout: shared with the program that trains the network); ai/'s
+ * Mcts (the search) and Minimax (the [game] record it takes);
+ * Selfplay and Policy_value for the second computer, whose weights are
+ * data/weights/go9; Scene2d (the keys pressed). Not Deepening or
+ * Zobrist: there is no depth to deepen and no value to remember.
  *
  * Exercises: the ko rule in full (this is the simple one: a move may
  * not take back the single stone that just took); playouts that answer
@@ -57,202 +65,63 @@ open Playground
 open Basics (* float arithmetics *)
 
 (*****************************************************************************)
-(* The board *)
+(* The board, and the rules as ai/ wants them *)
 (*****************************************************************************)
 
-let size = 9
-let points = size *.. size
-let komi = 6.5
+(* the board, the groups and their liberties, captures, the ko, the
+ * counting, and the playout with its one rule about eyes: the boards
+ * kit's Go9, shared with the program that trains a network to play
+ * (scripts/train/train_go) *)
+include Go9
 
-type stone = Empty | Black | White
-
-type position = {
-  board : stone array;
-  turn : stone;
-  ko : int option; (* the point a stone may not be put back on *)
-  passes : int; (* in a row *)
-}
-
-type move = Put of int | Pass
-
-let start : position = { board = Array.make points Empty; turn = Black; ko = None; passes = 0 }
-let other (s : stone) : stone = match s with Black -> White | White -> Black | Empty -> Empty
-let xy (i : int) : int * int = (i mod size, i /.. size)
-
-let neighbours (i : int) : int list =
-  let (x, y) = xy i in
-  List.filter_map
-    (fun (dx, dy) ->
-      let (nx, ny) = (x +.. dx, y +.. dy) in
-      if nx < 0 || nx >= size || ny < 0 || ny >= size then None else Some ((ny *.. size) +.. nx))
-    [ (1, 0); (-1, 0); (0, 1); (0, -1) ]
-
-(* the same neighbours, worked out once: a playout asks for them tens
- * of thousands of times, and a fresh list each time is most of what a
- * playout costs *)
-let around : int array array = Array.init points (fun i -> Array.of_list (neighbours i))
-
-let any_around (i : int) (f : int -> bool) : bool = Array.exists f around.(i)
-let all_around (i : int) (f : int -> bool) : bool = Array.for_all f around.(i)
-let each_around (i : int) (f : int -> unit) : unit = Array.iter f around.(i)
-
-(* the group of stones [i] belongs to, and how many liberties it has:
- * the flood fill every Go program starts with.
+(*****************************************************************************)
+(* The other computer: a network that taught itself (ai=network) *)
+(*****************************************************************************)
+(* The computer below judges a position by playing it out at random,
+ * a thousand times. This one has a network instead, which was told
+ * the same rules and the same one hint (not to fill its own eyes) and
+ * learned the rest by playing against itself (Selfplay.mli,
+ * notes_ai_learning.md section 16): a guess at which points matter,
+ * and a guess at who is winning, in place of the random games. It is
+ * what happened to Go in 2016, in miniature -- the header says how
+ * small.
  *
- * The points already seen are stamped in one array kept between calls,
- * rather than a fresh array of flags for each -- this is called tens of
- * thousands of times in a playout, and that array was most of what the
- * playout cost (15 seconds a move became 1.6 with this and the
- * neighbour table above) *)
-let seen_by : int array = Array.make points 0
-let visit = ref 0
-
-let group (board : stone array) (i : int) : int list * int =
-  let colour = board.(i) in
-  incr visit;
-  let liberties = ref 0 and stones = ref [] in
-  let rec fill i =
-    if seen_by.(i) <> !visit then begin
-      seen_by.(i) <- !visit;
-      if board.(i) = colour then begin
-        stones := i :: !stones;
-        each_around i fill
-      end
-      else if board.(i) = Empty then incr liberties
-    end
-  in
-  fill i;
-  (!stones, !liberties)
-
-(* a stone put down: the captures taken off, and whether it was legal
- * at all (a move that takes its own group's last liberty is not) *)
-let put (p : position) (i : int) : position option =
-  if p.board.(i) <> Empty || p.ko = Some i then None
-  else begin
-    let board = Array.copy p.board in
-    board.(i) <- p.turn;
-    let taken = ref [] in
-    each_around i (fun n ->
-        if board.(n) = other p.turn then
-          let (stones, liberties) = group board n in
-          if liberties = 0 then taken := stones @ !taken);
-    let taken = !taken in
-    List.iter (fun j -> board.(j) <- Empty) taken;
-    let (_, mine) = group board i in
-    if mine = 0 then None (* suicide *)
-    else
-      (* the simple ko: a single stone taken by a stone that is itself
-       * alone and has that one point for its only liberty -- the shape
-       * where taking back would repeat the position for ever *)
-      let ko =
-        match taken with
-        | [ j ] when (match group board i with ([ _ ], 1) -> true | _ -> false) -> Some j
-        | _ -> None
-      in
-      Some { board; turn = other p.turn; ko; passes = 0 }
-  end
-
-(* the legal points. A point with an empty neighbour is legal without
- * further ado -- the stone put there has that liberty, so it cannot be
- * suicide -- and only the points hemmed in need the full test, which
- * costs a board and a flood fill or two. Late in a game those are most
- * of the board; early, almost none *)
-let legal (p : position) : int list =
-  List.filter
-    (fun i ->
-      p.board.(i) = Empty && p.ko <> Some i
-      && (any_around i (fun n -> p.board.(n) = Empty) || put p i <> None))
-    (List.init points Fun.id)
-
-let play (p : position) (m : move) : position =
-  match m with
-  | Pass -> { p with turn = other p.turn; ko = None; passes = p.passes +.. 1 }
-  | Put i -> ( match put p i with Some p' -> p' | None -> p)
-
-let over (p : position) : bool = p.passes >= 2
-
-(* Chinese scoring: your stones, plus the empty points that touch only
- * your colour *)
-let area (p : position) (who : stone) : number =
-  let seen = Array.make points false in
-  let stones = ref 0 and territory = ref 0 in
-  Array.iteri (fun i s -> if s = who then incr stones else ignore i) p.board;
-  Array.iteri
-    (fun i s ->
-      if s = Empty && not seen.(i) then begin
-        (* the empty region [i] is in, and the colours around it *)
-        let region = ref [] and touches = ref [] in
-        let rec fill j =
-          if not seen.(j) then begin
-            seen.(j) <- true;
-            if p.board.(j) = Empty then begin
-              region := j :: !region;
-              each_around j fill
-            end
-            else if not (List.mem p.board.(j) !touches) then touches := p.board.(j) :: !touches
-          end
-        in
-        (* a neighbour of another colour is seen, not filled: undo that
-         * so another region can see it too *)
-        fill i;
-        List.iter (fun j -> each_around j (fun n -> if p.board.(n) <> Empty then seen.(n) <- false)) !region;
-        if !touches = [ who ] then territory := !territory +.. List.length !region
-      end)
-    p.board;
-  float_of_int (!stones +.. !territory)
-
-let final_score (p : position) : number = area p Black - area p White - komi
-
-(*****************************************************************************)
-(* The rules, as ai/ wants them *)
-(*****************************************************************************)
-
-(* MAX is white, the computer; the score is only ever asked for at the
- * end of a playout, and only its sign is used (Mcts.mli) *)
-let go : (position, move) Minimax.game =
-  {
-    moves = (fun p -> if over p then [] else Pass :: List.map (fun i -> Put i) (legal p));
-    play;
-    score = (fun p -> -.final_score p);
-    max_to_play = (fun p -> p.turn = White);
-  }
-
-(* the one piece of Go knowledge in the whole file: a point surrounded
- * by your own stones is an eye, and filling it is how a random player
- * kills its own group *)
-let own_eye (p : position) (i : int) : bool = p.board.(i) = Empty && all_around i (fun n -> p.board.(n) = p.turn)
-
-(* a playout: random legal moves that are not own eyes, until neither
- * side has one; then both pass and the board is counted.
+ * The network was not trained here: scripts/train/train_go did it,
+ * for hours, and what it learned is a file of data/weights, whose
+ * first lines say how it then did against the computer below.
  *
- * The candidates are tried in a random order and the first legal one
- * is played, rather than [legal] being computed and one of those
- * picked: legality costs a board and two flood fills a point, and a
- * playout asks for it at every step of every one of a thousand games.
- * A first version did it the plain way and took 15 seconds a move
- * where this takes a fifth of one. *)
-let playout (st : Lehmer.state) (_ : (position, move) Minimax.game) (p : position) : position =
-  let rec go p steps =
-    if over p || steps > 300 then p
-    else begin
-      let candidates =
-        Array.of_list (List.filter (fun i -> p.board.(i) = Empty && not (own_eye p i)) (List.init points Fun.id))
-      in
-      let n = Array.length candidates in
-      (* Fisher-Yates, as far as the first legal one *)
-      let rec try_from k =
-        if k >= n then go (play p Pass) (steps +.. 1)
-        else begin
-          let j = k +.. Lehmer.int st (n -.. k) in
-          let i = candidates.(j) in
-          candidates.(j) <- candidates.(k);
-          match put p i with Some p' -> go p' (steps +.. 1) | None -> try_from (k +.. 1)
-        end
-      in
-      try_from 0
-    end
-  in
-  go p 0
+ * "a" changes who plays white, and the flag ai= who starts: classic
+ * (random playouts), network (the search guided by the network),
+ * policy (the network alone, its first idea, no search). With the
+ * network playing, the board shows its first idea of the position it
+ * last moved from: a mark on each point, the larger the more it
+ * thought of it at a glance. *)
+
+type engine = Classic | Network | Policy
+
+let engine_of (flags : (string * string) list) : engine =
+  match List.assoc_opt "ai" flags with Some "network" -> Network | Some "policy" -> Policy | _ -> Classic
+
+let name (e : engine) : string =
+  match e with
+  | Classic -> "random games played out, no knowledge"
+  | Network -> "a network that taught itself, and a search"
+  | Policy -> "the network alone, no search"
+
+let net : Policy_value.t Lazy.t =
+  lazy
+    (match Result.bind (Weights.of_string Weights_go9.bytes) Policy_value.of_weights with
+    | Ok net -> net
+    | Error why -> failwith ("go9.weights: " ^ why))
+
+(* a search guided by the network costs a pass through it a playout,
+ * about as much as a random game played out *)
+let network_playouts = 600
+
+(* the network's policy over the points of a position, at a glance *)
+let glance_at (p : position) : (int * number) list =
+  let (prior, _) = Selfplay.guides Go9.board (Lazy.force net) in
+  List.filter_map (fun (m, share) -> match m with Put i -> Some (i, share) | Pass -> None) (prior p)
 
 (*****************************************************************************)
 (* The game *)
@@ -277,12 +146,17 @@ type game = {
   thought : int; (* playouts into this move *)
   said : (int * int * float) option; (* playouts, tree nodes, its win rate *)
   moves_played : int;
+  engine : engine option; (* who plays white; None until the flags are seen *)
+  (* the network's first idea of each point of the position it last
+   * moved from: its policy, before any search *)
+  glance : (int * number) list;
 }
 
 type model = game Scene2d.t
 
 let new_game () : game =
-  { position = start; cursor = (4 *.. size) +.. 4; last = None; mind = None; thought = 0; said = None; moves_played = 0 }
+  { position = start; cursor = (4 *.. size) +.. 4; last = None; mind = None; thought = 0; said = None; moves_played = 0;
+    engine = None; glance = [] }
 let initial_model : model = Scene2d.start (new_game ())
 
 (*****************************************************************************)
@@ -300,15 +174,34 @@ let point_at (x : number) (y : number) : int option =
 
 (* a frame's worth of thinking; when it has had enough, it plays the
  * move its tree believes in *)
-let machine_thinks (g : game) : game =
+let machine_thinks (engine : engine) (g : game) : game =
   let t =
     match g.mind with
     | Some t -> t
-    | None -> Mcts.start ~seed:g.moves_played ~playout go g.position
+    | None -> (
+        match engine with
+        | Classic -> Mcts.start ~seed:g.moves_played ~playout go g.position
+        | Network | Policy ->
+            (* the same search, the network's two guesses in the
+               place of the random games *)
+            let (prior, evaluate) = Selfplay.guides Go9.board (Lazy.force net) in
+            Mcts.start ~seed:g.moves_played ~prior ~evaluate Go9.sensible g.position)
   in
-  let t = Mcts.think ~playouts:playouts_a_frame t in
+  let enough = match engine with Classic -> playouts_a_move | Network -> network_playouts | Policy -> 0 in
+  let t = if engine = Policy then t else Mcts.think ~playouts:playouts_a_frame t in
   let thought = g.thought +.. playouts_a_frame in
-  if thought < playouts_a_move then { g with mind = Some t; thought }
+  if thought < enough then { g with mind = Some t; thought }
+  else if engine = Policy then
+    (* no search: the point its policy likes best *)
+    let move = match Selfplay.instinct Go9.board (Lazy.force net) g.position with Some m -> m | None -> Pass in
+    { g with
+      position = play g.position move;
+      last = (match move with Put i -> Some i | Pass -> None);
+      mind = None;
+      thought = 0;
+      said = None;
+      glance = glance_at g.position;
+      moves_played = g.moves_played +.. 1 }
   else
     let r = Mcts.plan t in
     let rate =
@@ -323,12 +216,18 @@ let machine_thinks (g : game) : game =
       mind = None;
       thought = 0;
       said = Some (r.playouts, r.nodes, rate);
+      glance = (if engine = Classic then [] else glance_at g.position);
       moves_played = g.moves_played +.. 1 }
 
 let update_game (computer : computer) (scenes : model) (g : game) : game =
   let m = computer.mouse in
-  if over g.position then if Scene2d.pressed (fun k -> k.kspace) scenes then new_game () else g
-  else if g.position.turn = White then machine_thinks g
+  let engine = match g.engine with Some e -> e | None -> engine_of computer.flags in
+  let g = { g with engine = Some engine } in
+  if over g.position then
+    if Scene2d.pressed (fun k -> k.kspace) scenes then { (new_game ()) with engine = Some engine } else g
+  else if g.position.turn = White then machine_thinks engine g
+  else if Scene2d.pressed (fun k -> Set_.mem "a" k.keys) scenes then
+    { g with engine = Some (match engine with Classic -> Network | Network -> Policy | Policy -> Classic); glance = []; said = None }
   else if Scene2d.pressed (fun k -> Set_.mem "p" k.keys) scenes then
     { g with position = play g.position Pass; last = None; moves_played = g.moves_played +.. 1 }
   else if Scene2d.pressed (fun k -> k.kleft || k.kright || k.kup || k.kdown) scenes then begin
@@ -388,12 +287,29 @@ let view (computer : computer) (s : model) : shape list =
       let (x, y) = centre g.cursor in
       [ circle (rgb 20 20 25) (cell * 0.45) |> fade 0.35 |> move x y ]
   in
+  let engine = match g.engine with Some e -> e | None -> engine_of computer.flags in
   let said =
     match g.said with
     | None -> []
     | Some (playouts, nodes, rate) ->
-        [ text (rgb 170 170 190) 1.5 (Printf.sprintf "%d random games, a tree of %d positions" playouts nodes) |> move_y (-425.);
-          text (rgb 170 170 190) 1.5 (Printf.sprintf "it expects to win %.0f%% of them" (100. * rate)) |> move_y (-455.) ]
+        [ text (rgb 170 170 190) 1.5
+            (Printf.sprintf (if engine = Classic then "%d random games, a tree of %d positions" else "%d positions judged by the network, a tree of %d") playouts nodes)
+          |> move_y (-425.);
+          text (rgb 170 170 190) 1.5
+            (Printf.sprintf (if engine = Classic then "it expects to win %.0f%% of them" else "it thinks it wins %.0f%% of the time") (100. * rate))
+          |> move_y (-455.) ]
+  in
+  (* the network's glance: a square on each point it thought of, the
+     larger the more *)
+  let glance =
+    List.filter_map
+      (fun (i, share) ->
+        if g.position.board.(i) <> Empty || share < 0.01 then None
+        else
+          let (x, y) = centre i in
+          let side = 6. + (cell * 0.6 * sqrt share) in
+          Some (rectangle (rgb 60 110 200) side side |> fade 0.55 |> move x y))
+      g.glance
   in
   let ended =
     if not (over g.position) then []
@@ -404,13 +320,15 @@ let view (computer : computer) (s : model) : shape list =
   in
   [ rectangle (rgb 25 28 45) screen.width screen.height;
     rectangle (rgb 200 160 90) (board + cell) (board + cell) ]
-  @ grid @ stones @ cursor @ last @ said @ ended
+  @ grid @ glance @ stones @ cursor @ last @ said @ ended
   @ [ text white 2.2 "GO  9x9" |> move_y 460.;
+      text (rgb 150 150 170) 1.2 ("white is " ^ name engine ^ "   (a: another)") |> move_y 395.;
       text (rgb 150 150 170) 1.5
         (if over g.position then "space: play again"
          else if g.position.turn = Black then "click a point, or the arrows and space;  p: pass"
-         else Printf.sprintf "white is playing out random games... %d" g.thought)
+         else if engine = Classic then Printf.sprintf "white is playing out random games... %d" g.thought
+         else Printf.sprintf "white is thinking... %d" g.thought)
       |> move_y (-390.) ]
 
 let app = game view update initial_model
-let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

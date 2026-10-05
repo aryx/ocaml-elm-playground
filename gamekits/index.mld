@@ -60,10 +60,10 @@ Pushing on a grid, going back, Sokoban's rules, levels and solver
 {2:boards Board games}
 
 A board game's rules where both the game and the program that trains a
-network to play it can reach them: Connect 4
+network to play it can reach them: Connect 4, and Go on 9 by 9
 ([elm_playground_gamekits.kit_boards]):
 
-{!modules: Connect4}
+{!modules: Connect4 Go9}
 
 {2:cards Cards}
 

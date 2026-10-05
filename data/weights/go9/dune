@@ -1,0 +1,26 @@
+; claude: what a network learned of Go on 9 by 9 by playing itself:
+; go9.weights (Weights.mli: a text header saying how it was made and
+; how it then did against the search without it, then the numbers),
+; written by scripts/train/train_go. AiGo's network (ai=network). A
+; library of its own, as every folder of data/ is: a program carries
+; it only if it names it. In the package tiny_libs, as
+; tiny_libs.data_weights_go9.
+(include_subdirs no)
+
+(library
+ (name data_weights_go9)
+ (public_name tiny_libs.data_weights_go9)
+ (wrapped false)
+)
+
+; the file embedded as a string. Escaped (files_to_string_ml.ml), not
+; between {| and |}: it is binary.
+(rule
+ (targets Weights_go9.ml)
+ (deps go9.weights %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml go9.weights)
+    (echo "let bytes = go9_weights\n")))))
