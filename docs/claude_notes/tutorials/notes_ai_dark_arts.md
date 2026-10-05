@@ -230,6 +230,43 @@ What it did not: the plateau. Neither shape passed alpha-beta at depth
 else -- the hundred playouts of the games they learn from are the
 next suspect.
 
+**A run of four hours ended by one process of forty-eight** (the Go
+trainer). At its ninety-seventh iteration of a hundred the trainer
+stopped on `End_of_file`: one of the processes playing that
+iteration's games had sent nothing back. The weights of the
+ninety-sixth were on disk, as they are after every iteration, so the
+run was not lost; but nothing said which process, or why.
+
+The saved network being exactly the one that iteration started from,
+and the games' seeds depending only on the iteration, the iteration
+could be played again: it went through. So no game of it raises; the
+process was killed from outside, by what was never found (the second
+such death in this work, the first having taken a whole run at its
+sixteenth iteration).
+
+Two changes, both late. A process now sends back its result *or why
+it has none*, so that an exception in a game would be read and not
+guessed at. And a process lost is some games fewer, said on the
+output, not the end of the run: an iteration with 188 games is as
+good as one with 192. *The more processes and the more hours, the
+more certain that one of them dies; a long run is built for that from
+the start, not after the first time.* (And being able to play an
+iteration again exactly, from a file and a number, is what turned "it
+crashed" into "it was killed": seeds are a debugging tool before they
+are a scientific one.)
+
+**The same method, a far better result** (Go against Connect 4). On
+Connect 4 the trained network came level with the game's own computer
+and no further; on Go it beat the game's own computer four games in
+five with a tenth of the playouts, and two in three with no search at
+all. Nothing in the method had improved. The opponents differ:
+Connect 4's was told what a position is worth and searches exactly,
+Go's was told nothing and plays games out at random. A result is the
+method *and what it was measured against*, and "it beats the program
+we had" says as much about the program we had. The honest comparison
+across the two games is not the scores but this: what was the
+opponent told?
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and

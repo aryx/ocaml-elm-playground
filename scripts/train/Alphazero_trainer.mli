@@ -14,8 +14,16 @@ val workers : int
 (* [together jobs]: each in a process of its own, their results in
  * order (a fork and a pipe a job, the result marshalled back). The
  * jobs do not depend on each other, and a job that changes something
- * changes it in its own copy. *)
+ * changes it in its own copy. A job that raises, or whose process is
+ * killed, fails the whole with which one and why. *)
 val together : (unit -> 'a) list -> 'a list
+
+(* [those_that_finish what jobs]: the same for jobs a run can do
+ * without one of (an iteration's games, its learners): the results of
+ * those that finished, the others said on the output, with [what]
+ * they were, and left out. A run of hours should not end because one
+ * process of forty-eight did. *)
+val those_that_finish : string -> (unit -> 'a) list -> 'a list
 
 (* [score ~games play]: [play n] is the first player's share of game
  * number [n] (1 won, 0 lost, a half drawn), each game in a process of

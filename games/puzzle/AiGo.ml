@@ -87,8 +87,14 @@ include Go9
  * small.
  *
  * The network was not trained here: scripts/train/train_go did it,
- * for hours, and what it learned is a file of data/weights, whose
- * first lines say how it then did against the computer below.
+ * 18,400 games against itself in four hours, and what it learned is
+ * a file of data/weights (its README has the figures). Against the
+ * computer below, over forty games, it won 33 with a tenth of the
+ * playouts -- and 24 with none: its first idea of where to play,
+ * with no looking ahead at all, beats a thousand random games a move.
+ * That is the 2016 result at the size of this repository: what a
+ * position is worth can be *learned*, and nobody had been able to
+ * write it.
  *
  * "a" changes who plays white, and the flag ai= who starts: classic
  * (random playouts), network (the search guided by the network),
@@ -115,7 +121,9 @@ let net : Policy_value.t Lazy.t =
     | Error why -> failwith ("go9.weights: " ^ why))
 
 (* a search guided by the network costs a pass through it a playout,
- * about as much as a random game played out *)
+ * about as much as a random game played out; 600 is under a second.
+ * (Against the thousand random playouts: 33-0-7 with 100, 29-0-11
+ * with 400, 35-0-5 with 1,600) *)
 let network_playouts = 600
 
 (* the network's policy over the points of a position, at a glance *)

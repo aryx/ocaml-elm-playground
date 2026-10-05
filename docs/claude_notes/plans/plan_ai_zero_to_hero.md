@@ -568,8 +568,23 @@ drawn on the board.
 
 Knowing nothing: 12-0-8 against a random player, 3-0-17 against the
 search with 100 random playouts, 0-0-20 against 1,000 (AiGo's own).
-The run: 100 iterations of 192 games, about three hours; the weights
-committed are a checkpoint until it ends.
+
+**Done (2026-10-05).** The run: 96 iterations of 192 games, 18,400
+games, 4 hours 15 minutes (of 100: a process died in the 97th, and
+the trainer with it; `Alphazero_trainer.together` now says which and
+why). Against AiGo's own computer, 1,000 random playouts a move, over
+40 games: **33-0-7 with 100 playouts, 29-0-11 with 400, 35-0-5 with
+1,600, and 24-0-16 with no search at all**. The first of this plan's
+networks to beat the program it was added to at a smaller budget, and
+by its policy alone. `ai=classic` is still the default, the game
+being about what a computer without knowledge does; the author's to
+decide (the plan's rule says the stronger).
+
+Why Go and not Connect 4: Connect 4's computer was told what a
+position is worth, and searches seven moves exactly; Go's was told
+nothing and plays out at random, which is the weakness a network
+replaces. The network had the same budget of numbers and of games in
+both.
 
 - A convolutional layer on `Tensor` (`Conv`: 3 by 3, the same weights
   at every point of the board, which is what a board is), a few of

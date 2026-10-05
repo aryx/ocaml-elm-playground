@@ -901,9 +901,47 @@ every budget. (And worse against the flat network itself, 14-0-26 at
 400 playouts: strength is not one number, `notes_ai_dark_arts.md`.)
 It costs: a step is fifteen times a flat one's, and the trainer had to
 learn to take its steps in many processes too -- learners apart, their
-networks averaged -- before the comparison could be made at all. Go,
-where the board is 81 squares and there is no flat network to fall
-back on, is next (`plans/plan_ai_zero_to_hero.md`).
+networks averaged -- before the comparison could be made at all.
+
+**Go, 9 by 9.** The same loop once more (`scripts/train/train_go`,
+over `Alphazero_trainer`, which it shares with Connect 4's), the
+rules from the kit the game shares (`gamekits/boards/Go9`), a board
+network of 21,498 numbers reading three planes -- my stones, the
+other's, the ko -- and three things Go asks for: games that must end
+(two players who know nothing never pass: 150 moves at most), each
+lesson learned also under three of the board's eight symmetries, and
+the one hint the random playouts were given too, not to fill an eye
+of one's own. 96 iterations, 18,400 games, a little over four hours.
+Against `AiGo`'s own computer, a search of a thousand random games a
+move, over 40 games from random openings:
+
+```
+knowing nothing, 100 playouts a move       0-0-20
+trained,         100                      33-0-7
+                 400                      29-0-11
+               1,600                      35-0-5
+trained, no search at all                 24-0-16
+```
+
+With a tenth of the playouts it wins four games in five. And the last
+line is the one to read twice: the network's first idea of where to
+play, one pass through it and no looking ahead, beats a thousand
+random games a move. On Connect 4 the network alone lost to a search
+of one move.
+
+The difference is in what each was up against. Connect 4's computer
+was *told* what a position is worth, a line of three so many points,
+and searches exactly; a network had to learn as much as that
+evaluation knew before it could add anything. Go's computer was told
+nothing, because nobody has ever known what to tell it (the header of
+`AiGo.ml`): it guesses a position's worth by playing it out at
+random. That guess is what a network replaces, and it is the easier
+thing to beat. It is, at the size of this repository, what happened
+in 2016: what a position is worth could not be written, and it could
+be learned.
+
+`AiGo`'s "a" key plays it, and draws on the board the network's
+first idea of each point.
 
 ## 17. The dark arts
 

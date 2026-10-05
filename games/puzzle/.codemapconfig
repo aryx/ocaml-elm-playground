@@ -37,7 +37,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:engine_of', say: 'ai=classic, network or policy', weight: 1 },
       ],
     },
-    'AiGo.ml': { digest: 'aa7e01bee482',
+    'AiGo.ml': { digest: '63e9efc37132',
       summary: 'Go on 9x9, as the Monte Carlo programs of 2006: no evaluation, positions played out at random; or a network that taught itself.',
       capitals: [{ at: 'def:machine_thinks', say: 'anytime: the search thinks while the game draws' }],
       important: [

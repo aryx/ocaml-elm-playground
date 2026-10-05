@@ -1,7 +1,10 @@
 ; claude: what a network learned of Go on 9 by 9 by playing itself:
 ; go9.weights (Weights.mli: a text header saying how it was made and
 ; how it then did against the search without it, then the numbers),
-; written by scripts/train/train_go. AiGo's network (ai=network). A
+; written by scripts/train/train_go in four hours: 96 iterations,
+; 18,400 games against itself. Against AiGo's own computer (1,000
+; random playouts a move) over 40 games: 33-0-7 with 100 playouts,
+; 24-0-16 with no search at all. AiGo's network (ai=network). A
 ; library of its own, as every folder of data/ is: a program carries
 ; it only if it names it. In the package tiny_libs, as
 ; tiny_libs.data_weights_go9.
