@@ -1,5 +1,5 @@
 (* What a [Policy_value] network learned of Go on 9 by 9 by playing
- * against itself ([Selfplay]), as the bytes of a weights file: read
+ * against itself ([Alphazero]), as the bytes of a weights file: read
  * with [Weights.of_string], then [Policy_value.of_weights].
  *
  * Trained by scripts/train/train_go. The file's own first lines are

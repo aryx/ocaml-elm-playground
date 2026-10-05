@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* Teaches a network Connect 4 by self-play (Selfplay.mli), and writes
+(* Teaches a network Connect 4 by self-play (Alphazero.mli), and writes
  * what it learned: AiConnect4's network.
  *
  *   dune exec scripts/train/train_connect4.exe -- data/weights/connect4/connect4.weights 150
@@ -20,7 +20,7 @@
  * each lesson learned also as in a mirror (a board turned left to
  * right is as good a lesson, with the policy turned too), then 600
  * steps on batches of 64 drawn from the last 100,000 lessons. The
- * loop, its processes and its file are Selfplay_trainer's.
+ * loop, its processes and its file are Alphazero_trainer's.
  *
  * With NET=board the network reads the board as a board (two
  * convolutions of 16 channels, Policy_value.mli) and its steps are
@@ -71,11 +71,11 @@ let plain_mcts : (Connect4.position, int) Arena.player =
  fun ~seed p -> Option.get (Mcts.search ~seed Connect4.connect4 ~playouts p).best
 
 let measure (net : Policy_value.t) : string =
-  let searching : (Connect4.position, int) Arena.player = fun ~seed p -> Option.get (Selfplay.choose ~playouts ~seed board net p) in
-  let alone : (Connect4.position, int) Arena.player = fun ~seed:_ p -> Option.get (Selfplay.instinct board net p) in
+  let searching : (Connect4.position, int) Arena.player = fun ~seed p -> Option.get (Alphazero.choose ~playouts ~seed board net p) in
+  let alone : (Connect4.position, int) Arena.player = fun ~seed:_ p -> Option.get (Alphazero.instinct board net p) in
   let against a b () = shown (Arena.play Connect4.connect4 Connect4.start ~a:(opening a) ~b:(opening b) ~games:20) in
   match
-    Selfplay_trainer.together
+    Alphazero_trainer.together
       [ against searching plain_mcts; against searching (Connect4.alphabeta ~depth:1);
         against searching (Connect4.alphabeta ~depth:3); against searching (Connect4.alphabeta ~depth:5);
         against searching (Connect4.alphabeta ~depth:7); against alone plain_mcts;
@@ -103,10 +103,10 @@ let () =
       Policy_value.make ~seed ~rate:0.003 ~board:shape ~inputs:board.inputs ~moves:board.moves ()
     else Policy_value.make ~seed ~hidden:128 ~rate:0.003 ~inputs:board.inputs ~moves:board.moves ()
   in
-  Selfplay_trainer.run ~fresh ~out ~iterations ~from
+  Alphazero_trainer.run ~fresh ~out ~iterations ~from
     {
       board;
-      settings = { Selfplay.default with playouts; exploring = 8 };
+      settings = { Alphazero.default with playouts; exploring = 8 };
       games = 480;
       remembered = 100_000;
       also = (fun l -> [ mirrored l ]);

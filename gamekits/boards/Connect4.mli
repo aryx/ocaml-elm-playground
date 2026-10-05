@@ -77,6 +77,6 @@ val alphabeta : depth:int -> (position, int) Arena.player
  * other's, so that either side's view of a situation is one input *)
 val encode : position -> float array
 
-(* the game as [Selfplay] needs it: 84 inputs, 7 moves, a column its
+(* the game as [Alphazero] needs it: 84 inputs, 7 moves, a column its
  * own index *)
-val board : (position, int) Selfplay.board
+val board : (position, int) Alphazero.board

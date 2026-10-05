@@ -3,7 +3,7 @@
 ; file (Weights.mli) in data/weights/, a small library each. Run by hand,
 ; from the repository's root, never by a build or a test; each one's
 ; header says how, and how long it takes. measure_gpt writes nothing:
-; it prints the table of Gpt.mli. Selfplay_trainer is what the trainers
+; it prints the table of Gpt.mli. Alphazero_trainer is what the trainers
 ; of the networks that play share (train_connect4, train_go): the
 ; loop, its processes, its file. In no opam package.
 ; scripts/README.md, plan_ai_zero_to_hero.md (decision D3).

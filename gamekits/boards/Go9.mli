@@ -90,14 +90,14 @@ val encode : position -> float array
  * number, the pass last *)
 val index : move -> int
 
-(* the game as [Selfplay] needs it, over [sensible] *)
-val board : (position, move) Selfplay.board
+(* the game as [Alphazero] needs it, over [sensible] *)
+val board : (position, move) Alphazero.board
 
 (* the same for games that must end, as those of a network against
  * itself: a position with the moves played so far, and none left
  * after [longest]. Two players who know nothing do not pass, and
  * would capture each other for ever. *)
-val capped : longest:int -> (position * int, move) Selfplay.board
+val capped : longest:int -> (position * int, move) Alphazero.board
 
 (* [turned s i]: where point [i] goes under the symmetry [s] of the
  * board, 0 to 7 (0 leaves it), the square's four turns and their

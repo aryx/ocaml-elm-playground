@@ -45,13 +45,13 @@
  *
  * That network is here too, in miniature: "a" changes who plays white,
  * or the flag ai=network, to a search guided by a network that taught
- * itself by playing itself (its own section below, Selfplay.mli), and
+ * itself by playing itself (its own section below, Alphazero.mli), and
  * ai=policy to that network alone.
  *
  * What it uses: the boards kit's Go9 (the rules, the counting, the
  * playout: shared with the program that trains the network); ai/'s
  * Mcts (the search) and Minimax (the [game] record it takes);
- * Selfplay and Policy_value for the second computer, whose weights are
+ * Alphazero and Policy_value for the second computer, whose weights are
  * data/weights/go9; Scene2d (the keys pressed). Not Deepening or
  * Zobrist: there is no depth to deepen and no value to remember.
  *
@@ -80,7 +80,7 @@ include Go9
 (* The computer below judges a position by playing it out at random,
  * a thousand times. This one has a network instead, which was told
  * the same rules and the same one hint (not to fill its own eyes) and
- * learned the rest by playing against itself (Selfplay.mli,
+ * learned the rest by playing against itself (Alphazero.mli,
  * notes_ai_learning.md section 16): a guess at which points matter,
  * and a guess at who is winning, in place of the random games. It is
  * what happened to Go in 2016, in miniature -- the header says how
@@ -120,7 +120,7 @@ let network_playouts = 600
 
 (* the network's policy over the points of a position, at a glance *)
 let glance_at (p : position) : (int * number) list =
-  let (prior, _) = Selfplay.guides Go9.board (Lazy.force net) in
+  let (prior, _) = Alphazero.guides Go9.board (Lazy.force net) in
   List.filter_map (fun (m, share) -> match m with Put i -> Some (i, share) | Pass -> None) (prior p)
 
 (*****************************************************************************)
@@ -184,7 +184,7 @@ let machine_thinks (engine : engine) (g : game) : game =
         | Network | Policy ->
             (* the same search, the network's two guesses in the
                place of the random games *)
-            let (prior, evaluate) = Selfplay.guides Go9.board (Lazy.force net) in
+            let (prior, evaluate) = Alphazero.guides Go9.board (Lazy.force net) in
             Mcts.start ~seed:g.moves_played ~prior ~evaluate Go9.sensible g.position)
   in
   let enough = match engine with Classic -> playouts_a_move | Network -> network_playouts | Policy -> 0 in
@@ -193,7 +193,7 @@ let machine_thinks (engine : engine) (g : game) : game =
   if thought < enough then { g with mind = Some t; thought }
   else if engine = Policy then
     (* no search: the point its policy likes best *)
-    let move = match Selfplay.instinct Go9.board (Lazy.force net) g.position with Some m -> m | None -> Pass in
+    let move = match Alphazero.instinct Go9.board (Lazy.force net) g.position with Some m -> m | None -> Pass in
     { g with
       position = play g.position move;
       last = (match move with Put i -> Some i | Pass -> None);

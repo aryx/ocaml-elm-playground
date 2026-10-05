@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* See Selfplay_trainer.mli *)
+(* See Alphazero_trainer.mli *)
 
 let workers : int =
   match Option.bind (Sys.getenv_opt "WORKERS") int_of_string_opt with Some n when n > 0 -> n | _ -> 48
@@ -51,8 +51,8 @@ let score ~(games : int) (play : int -> float) : string =
 (*****************************************************************************)
 
 type ('state, 'move) setup = {
-  board : ('state, 'move) Selfplay.board;
-  settings : Selfplay.settings;
+  board : ('state, 'move) Alphazero.board;
+  settings : Alphazero.settings;
   games : int;
   remembered : int;
   also : Policy_value.lesson -> Policy_value.lesson list;
@@ -73,7 +73,7 @@ let games (s : ('state, 'move) setup) (net : Policy_value.t) (iteration : int) :
       (List.init workers (fun w () ->
            List.concat
              (List.init each (fun g ->
-                  fst (Selfplay.play ~settings:s.settings ~seed:((iteration * 100_000) + (w * 1000) + g) s.board net)))))
+                  fst (Alphazero.play ~settings:s.settings ~seed:((iteration * 100_000) + (w * 1000) + g) s.board net)))))
   in
   let lessons = List.concat played in
   lessons @ List.concat_map s.also lessons
@@ -90,8 +90,8 @@ let games (s : ('state, 'move) setup) (net : Policy_value.t) (iteration : int) :
  * One fork a learner an iteration. The first version forked sixteen
  * processes at every *step*, to share one large batch: a step took
  * 0.3 s, most of it the forks (notes_ai_dark_arts.md) *)
-let learn_apart (s : ('state, 'move) setup) (l : Selfplay.learner) (fresh : Policy_value.lesson list) :
-    Selfplay.learner * float =
+let learn_apart (s : ('state, 'move) setup) (l : Alphazero.learner) (fresh : Policy_value.lesson list) :
+    Alphazero.learner * float =
   let all = Array.append (Array.of_list fresh) l.lessons in
   let lessons = Array.sub all 0 (min s.remembered (Array.length all)) in
   let arrived =
@@ -158,7 +158,7 @@ let run (s : ('state, 'move) setup) ~(fresh : unit -> Policy_value.t) ~(out : st
   in
   Printf.printf "%d numbers; from iteration %d; %d processes\n%!" (Policy_value.parameters net) done_before workers;
   let t0 = Unix.gettimeofday () in
-  let learner = ref { (Selfplay.learner ~seed:5 net) with iteration = done_before } in
+  let learner = ref { (Alphazero.learner ~seed:5 net) with iteration = done_before } in
   let measured = ref (s.measure net) in
   Printf.printf "before: %s\n%!" !measured;
   for _ = 1 to iterations do
@@ -168,7 +168,7 @@ let run (s : ('state, 'move) setup) ~(fresh : unit -> Policy_value.t) ~(out : st
     let (l, loss) =
       if s.learners > 1 then learn_apart s !learner fresh
       else
-        Selfplay.learn
+        Alphazero.learn
           ~schedule:{ games = s.games; steps = s.steps; batch = s.batch; remembered = s.remembered }
           !learner fresh
     in

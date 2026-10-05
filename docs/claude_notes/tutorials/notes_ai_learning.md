@@ -789,7 +789,7 @@ half: where the network comes from when nobody has one.
 player than the network alone, because it looks ahead. So:
 
 ```
-   +--> the search, guided by the network, plays itself   Selfplay.play
+   +--> the search, guided by the network, plays itself   Alphazero.play
    |      |
    |      v   each position becomes a lesson:
    |          "the search spent its visits like this;
@@ -811,7 +811,7 @@ policy's surprise at the visits' shares, the square of the value's
 error. It is the first network here written on `Tensor`, a row per
 position.
 
-**What makes it work** (`Selfplay.settings`): the first moves of a
+**What makes it work** (`Alphazero.settings`): the first moves of a
 game drawn in proportion to their visits, or every game is the same
 game; and part of the root's policy left to chance, so that a move
 written off is still tried.

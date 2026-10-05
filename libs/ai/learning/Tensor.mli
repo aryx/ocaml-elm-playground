@@ -200,7 +200,7 @@ val cross_entropy : t -> int array -> t
  * instead of one answer, a row of them per example: the mean of
  * -sum_c deserved.(c) log (the softmax of the row).(c). What a policy
  * is taught with when the lesson is "this much on each move"
- * (Selfplay.mli). *)
+ * (Alphazero.mli). *)
 val cross_entropy_to : t -> Matrix.t -> t
 
 (*****************************************************************************)

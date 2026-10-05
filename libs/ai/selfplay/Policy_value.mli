@@ -22,7 +22,7 @@
  *
  * A [lesson] is a position with what both heads should have said
  * about it, and it comes from a game the search played against itself
- * (Selfplay.mli): the policy's target is the share of visits the
+ * (Alphazero.mli): the policy's target is the share of visits the
  * search gave each move -- the search having looked further than the
  * network alone could -- and the value's is how the game ended. The
  * loss is the two added: the policy's surprise at those shares
@@ -98,7 +98,7 @@ val make : seed:int -> ?hidden:int -> ?rate:float -> ?board:board -> inputs:int 
 val parameters : t -> int
 
 (* [opinion n input]: a share per move, summing to 1 over all of them,
- * legal or not (the caller knows the rules: [Selfplay.guides]); and
+ * legal or not (the caller knows the rules: [Alphazero.guides]); and
  * the value, between -1 and 1, for whoever is to play *)
 val opinion : t -> float array -> float array * float
 

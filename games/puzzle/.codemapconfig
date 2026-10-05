@@ -27,7 +27,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:othello', weight: 3 },
       ],
     },
-    'AiConnect4.ml': { digest: '3c0bff999e3c',
+    'AiConnect4.ml': { digest: '8850200dd83c',
       summary: 'Connect Four (1974, solved 1988): iterative deepening, ordering, Zobrist keys, and what each saved; or a network that taught itself.',
       capitals: [{ at: 'def:think', say: 'the search, deepening, the nodes counted' }],
       important: [
@@ -37,7 +37,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:engine_of', say: 'ai=classic, network or policy', weight: 1 },
       ],
     },
-    'AiGo.ml': { digest: 'ddfe4f722611',
+    'AiGo.ml': { digest: 'aa7e01bee482',
       summary: 'Go on 9x9, as the Monte Carlo programs of 2006: no evaluation, positions played out at random; or a network that taught itself.',
       capitals: [{ at: 'def:machine_thinks', say: 'anytime: the search thinks while the game draws' }],
       important: [

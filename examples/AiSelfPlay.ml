@@ -9,7 +9,7 @@
  *)
 (* A network teaching itself tic-tac-toe by playing against itself,
  * while you watch: AlphaZero's loop on the smallest game there is
- * (Selfplay.mli, Policy_value.mli, notes_ai_learning.md section 16).
+ * (Alphazero.mli, Policy_value.mli, notes_ai_learning.md section 16).
  * Nobody tells it anything but the rules.
  *
  * Every frame it either plays a game against itself, the search
@@ -35,7 +35,7 @@
  *
  * Space pauses, "r" starts again from a network that knows nothing.
  *
- * What it uses: Selfplay, Policy_value, Arena and Tictactoe (ai's
+ * What it uses: Alphazero, Policy_value, Arena and Tictactoe (ai's
  * selfplay folder), Minimax for the perfect player, Scene2d (the
  * keys).
  *
@@ -47,7 +47,7 @@ open Playground
 (* The game, and its two fixed opponents *)
 (*****************************************************************************)
 
-let board : (Tictactoe.position, int) Selfplay.board =
+let board : (Tictactoe.position, int) Alphazero.board =
   { game = Tictactoe.game; start = Tictactoe.start; inputs = 18; moves = 9; encode = Tictactoe.encode; index = (fun m -> m) }
 
 (* the truth, by search to the end of the game; each position's answer
@@ -115,7 +115,7 @@ let kept = 300
 
 (* a game against itself, its lessons added, ten steps taken *)
 let learn (m : model) : model =
-  let (lessons, _) = Selfplay.play ~seed:(1000 + m.games) board m.net in
+  let (lessons, _) = Alphazero.play ~seed:(1000 + m.games) board m.net in
   let all = Array.append (Array.of_list lessons) m.memory in
   let memory = Array.sub all 0 (min remembered (Array.length all)) in
   let rec steps net loss n =
@@ -132,8 +132,8 @@ let learn (m : model) : model =
  * first every other time *)
 let measure (m : model) : model =
   let which = match m.measured mod 3 with 0 -> Perfect | 1 -> Random | _ -> Alone in
-  let searching : (Tictactoe.position, int) Arena.player = fun ~seed s -> Option.get (Selfplay.choose ~seed board m.net s) in
-  let alone : (Tictactoe.position, int) Arena.player = fun ~seed:_ s -> Option.get (Selfplay.instinct board m.net s) in
+  let searching : (Tictactoe.position, int) Arena.player = fun ~seed s -> Option.get (Alphazero.choose ~seed board m.net s) in
+  let alone : (Tictactoe.position, int) Arena.player = fun ~seed:_ s -> Option.get (Alphazero.instinct board m.net s) in
   let (player, opponent) = match which with Perfect -> (searching, perfect) | Random -> (searching, random) | Alone -> (alone, random) in
   let first = m.measured / 3 mod 2 = 0 in
   let share =
@@ -181,7 +181,7 @@ let blue = rgb 120 180 250
  * empty square the share of the policy, lit accordingly *)
 let opinion_board (m : model) (position : Tictactoe.position) (cx : number) (cy : number) (title : string) : shape list =
   let cell = 100. in
-  let (prior, _) = Selfplay.guides board m.net in
+  let (prior, _) = Alphazero.guides board m.net in
   let shares = prior position in
   let (_, value) = Policy_value.opinion m.net (Tictactoe.encode position) in
   List.concat

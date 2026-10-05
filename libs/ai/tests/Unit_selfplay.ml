@@ -13,7 +13,7 @@
 
 let t = Testo.create
 
-let board : (Tictactoe.position, int) Selfplay.board =
+let board : (Tictactoe.position, int) Alphazero.board =
   { game = Tictactoe.game; start = Tictactoe.start; inputs = 18; moves = 9; encode = Tictactoe.encode; index = (fun m -> m) }
 
 (* the truth: minimax to the end of the game *)
@@ -50,7 +50,7 @@ let test_network () =
   Alcotest.(check (array (float 1e-12))) "the plain pass and the graph: the same policy" p' p;
   Alcotest.(check (float 1e-12)) "and the same value" v' v;
   (* the search's two guesses made of it: the legal moves only *)
-  let (prior, evaluate) = Selfplay.guides board net in
+  let (prior, evaluate) = Alphazero.guides board net in
   let position = Tictactoe.of_string "xx.oo...." in
   let shares = prior position in
   Alcotest.(check (list int)) "a share for each legal move" [ 2; 5; 6; 7; 8 ] (List.map fst shares);
@@ -110,7 +110,7 @@ let test_board_network () =
 
 let test_a_game () =
   let net = Policy_value.make ~seed:1 ~inputs:18 ~moves:9 () in
-  let (lessons, share) = Selfplay.play ~seed:3 board net in
+  let (lessons, share) = Alphazero.play ~seed:3 board net in
   Alcotest.(check bool) "a game of five to nine moves" true (List.length lessons >= 5 && List.length lessons <= 9);
   Alcotest.(check bool) "won, lost or drawn" true (List.mem share [ 0.; 0.5; 1. ]);
   List.iteri
@@ -121,14 +121,14 @@ let test_a_game () =
       Alcotest.(check (float 0.)) "the result, for whoever was to play" (if i mod 2 = 0 then for_x else -.for_x) l.value)
     lessons;
   (* the same seed, the same game *)
-  Alcotest.(check bool) "repeatable" true (Selfplay.play ~seed:3 board net = (lessons, share))
+  Alcotest.(check bool) "repeatable" true (Alphazero.play ~seed:3 board net = (lessons, share))
 
 (* the loop: games against itself, then lessons, again. The numbers of
-   Selfplay.mli come from here *)
+   Alphazero.mli come from here *)
 let test_the_loop () =
   let measure (name : string) (net : Policy_value.t) =
-    let searching : (Tictactoe.position, int) Arena.player = fun ~seed s -> Option.get (Selfplay.choose ~seed board net s) in
-    let alone : (Tictactoe.position, int) Arena.player = fun ~seed:_ s -> Option.get (Selfplay.instinct board net s) in
+    let searching : (Tictactoe.position, int) Arena.player = fun ~seed s -> Option.get (Alphazero.choose ~seed board net s) in
+    let alone : (Tictactoe.position, int) Arena.player = fun ~seed:_ s -> Option.get (Alphazero.instinct board net s) in
     let scores = (against searching perfect 10, against searching random 40, against alone perfect 2, against alone random 40) in
     let (sp, sr, ap, ar) = scores in
     Printf.eprintf "selfplay, %s: with the search, perfect %s random %s; alone, perfect %s random %s\n" name (shown sp)
@@ -138,10 +138,10 @@ let test_the_loop () =
   let start = Policy_value.make ~seed:1 ~rate:0.01 ~inputs:18 ~moves:9 () in
   let (_, _, _, alone_before) = measure "knowing nothing" start in
   let t0 = Unix.gettimeofday () in
-  let rec iterations (l : Selfplay.learner) (n : int) : Selfplay.learner =
-    if n = 0 then l else iterations (fst (Selfplay.iterate board l)) (n - 1)
+  let rec iterations (l : Alphazero.learner) (n : int) : Alphazero.learner =
+    if n = 0 then l else iterations (fst (Alphazero.iterate board l)) (n - 1)
   in
-  let net = ref (iterations (Selfplay.learner ~seed:5 start) 6).net in
+  let net = ref (iterations (Alphazero.learner ~seed:5 start) 6).net in
   Printf.eprintf "selfplay: six iterations, %.1f s\n" (Unix.gettimeofday () -. t0);
   let (perfect_score, random_score, _, alone_after) = measure "after six iterations" !net in
   Alcotest.(check int) "with the search, it never loses to the perfect player" 0 perfect_score.lost;
@@ -154,6 +154,6 @@ let tests =
     t "Tictactoe, the rules and the truth" test_tictactoe;
     t "Policy_value, two heads and a lesson" test_network;
     t "Policy_value, the board read as a board" test_board_network;
-    t "Selfplay, a game and what it teaches" test_a_game;
-    t "Selfplay, the loop: it stops losing" test_the_loop;
+    t "Alphazero, a game and what it teaches" test_a_game;
+    t "Alphazero, the loop: it stops losing" test_the_loop;
   ]

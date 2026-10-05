@@ -237,14 +237,14 @@ let encode (p : position) : float array =
 (* a point its own number, the pass after them all *)
 let index (m : move) : int = match m with Put i -> i | Pass -> points
 
-let board : (position, move) Selfplay.board =
+let board : (position, move) Alphazero.board =
   { game = sensible; start; inputs = 3 *.. points; moves = points +.. 1; encode; index }
 
 (* the same, for games that must end: a position with the moves played
  * so far, and no move left after [longest] of them. Two players who
  * know nothing do not pass, and would go on capturing each other for
  * ever *)
-let capped ~(longest : int) : (position * int, move) Selfplay.board =
+let capped ~(longest : int) : (position * int, move) Alphazero.board =
   {
     game =
       {

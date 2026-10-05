@@ -44,14 +44,14 @@
  *
  * A second computer plays on "a", or with the flag ai=network: one
  * that was told the rules only and taught itself by playing itself,
- * AlphaZero's way (its own section below, and Selfplay.mli). And
+ * AlphaZero's way (its own section below, and Alphazero.mli). And
  * ai=policy is that network with no search at all, to see what it
  * learned by itself.
  *
  * What it uses: the boards kit's Connect4 (the rules, the evaluation,
  * the keys: shared with the program that trains the network); ai/'s
  * Minimax, Deepening (the search) and Zobrist (the table); Mcts,
- * Selfplay and Policy_value for the second computer, whose weights are
+ * Alphazero and Policy_value for the second computer, whose weights are
  * data/weights/connect4; Scene2d (the keys pressed). Not the puzzle
  * kit: nothing is pushed.
  *
@@ -108,7 +108,7 @@ let think (p : position) : int option * number list * counts =
 (* Everything above was told to the computer: what a position is
  * worth, which columns to try first. This one was told the rules and
  * nothing else, and learned by playing against itself
- * (Selfplay.mli, notes_ai_learning.md section 16). Its network gives
+ * (Alphazero.mli, notes_ai_learning.md section 16). Its network gives
  * two guesses about a position, which columns look good and who is
  * winning, and the search (Mcts) is guided by both instead of by an
  * evaluation.
@@ -156,13 +156,13 @@ type opinion = { before : number list; after : number list }
 
 let think_network (e : engine) (p : position) (seed : int) : int option * opinion =
   let net = Lazy.force net in
-  let (prior, _) = Selfplay.guides Connect4.board net in
+  let (prior, _) = Alphazero.guides Connect4.board net in
   let shares = prior p in
   let before = List.init columns (fun c -> match List.assoc_opt c shares with Some s -> s | None -> Float.nan) in
   match e with
-  | Policy -> (Selfplay.instinct Connect4.board net p, { before; after = [] })
+  | Policy -> (Alphazero.instinct Connect4.board net p, { before; after = [] })
   | Classic | Network ->
-      let tried = Selfplay.visits ~seed ~playouts Connect4.board net p in
+      let tried = Alphazero.visits ~seed ~playouts Connect4.board net p in
       let total = float_of_int (List.fold_left (fun n (_, k) -> n +.. k) 0 tried) in
       let after =
         List.init columns (fun c -> match List.assoc_opt c tried with Some k -> float_of_int k / total | None -> Float.nan)

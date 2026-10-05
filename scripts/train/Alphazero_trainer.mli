@@ -1,5 +1,5 @@
 (* What the trainers of the networks that play share: the loop of
- * Selfplay.mli, run with the two things that get more out of an hour
+ * Alphazero.mli, run with the two things that get more out of an hour
  * -- the games of an iteration played by many processes at once, and
  * its steps taken by several learners apart, their networks averaged
  * -- measuring as it goes and writing the weights after every
@@ -23,8 +23,8 @@ val together : (unit -> 'a) list -> 'a list
 val score : games:int -> (int -> float) -> string
 
 type ('state, 'move) setup = {
-  board : ('state, 'move) Selfplay.board;
-  settings : Selfplay.settings; (* a game against itself *)
+  board : ('state, 'move) Alphazero.board;
+  settings : Alphazero.settings; (* a game against itself *)
   games : int; (* an iteration's, shared among the processes *)
   remembered : int; (* the newest lessons kept *)
   (* the other ways a lesson is as good a lesson: a board in a mirror,
@@ -33,7 +33,7 @@ type ('state, 'move) setup = {
   steps : int; (* a learner's, an iteration *)
   batch : int;
   (* how many learn apart, their networks averaged; 1: one learner, in
-   * this process, as [Selfplay.learn] *)
+   * this process, as [Alphazero.learn] *)
   learners : int;
   (* how it does, as a line of text; asked before the first iteration
    * and every [every] after, and kept in the file's notes *)

@@ -7,7 +7,7 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* Teaches a network Go on 9 by 9 by self-play (Selfplay.mli), and
+(* Teaches a network Go on 9 by 9 by self-play (Alphazero.mli), and
  * writes what it learned: AiGo's network.
  *
  *   dune exec scripts/train/train_go.exe -- data/weights/go9/go9.weights 100
@@ -23,7 +23,7 @@
  * capture each other for ever), each lesson learned also under three
  * of the board's eight symmetries; then the steps of 32 learners
  * apart, 300 each, their networks averaged. The loop, its processes
- * and its file are Selfplay_trainer's.
+ * and its file are Alphazero_trainer's.
  *
  * It is told what the random playouts of AiGo are told and no more:
  * the rules, and not to fill an eye of its own.
@@ -64,10 +64,10 @@ let versus (mine : (state, Go9.move) Arena.player) (other : (state, Go9.move) Ar
   if n mod 2 = 0 then 1. -. game ~max:(opening other) ~min:(opening mine) else game ~max:(opening mine) ~min:(opening other)
 
 let measure (net : Policy_value.t) : string =
-  let searching : (state, Go9.move) Arena.player = fun ~seed s -> Option.get (Selfplay.choose ~playouts ~seed board net s) in
-  let alone : (state, Go9.move) Arena.player = fun ~seed:_ s -> Option.get (Selfplay.instinct board net s) in
+  let searching : (state, Go9.move) Arena.player = fun ~seed s -> Option.get (Alphazero.choose ~playouts ~seed board net s) in
+  let alone : (state, Go9.move) Arena.player = fun ~seed:_ s -> Option.get (Alphazero.instinct board net s) in
   let random = Arena.random board.game in
-  let score mine other = Selfplay_trainer.score ~games:20 (versus mine other) in
+  let score mine other = Alphazero_trainer.score ~games:20 (versus mine other) in
   Printf.sprintf "with the search: random %s, mcts %d %s, mcts 1000 %s; alone: random %s, mcts %d %s" (score searching random)
     playouts
     (score searching (plain_mcts playouts))
@@ -81,11 +81,11 @@ let () =
   let from = if Array.length Sys.argv > 3 then Some Sys.argv.(3) else None in
   let seed = 1 in
   let shape : Policy_value.board = { planes = 3; height = Go9.size; width = Go9.size; channels = 16; layers = 2 } in
-  Selfplay_trainer.run ~out ~iterations ~from
+  Alphazero_trainer.run ~out ~iterations ~from
     ~fresh:(fun () -> Policy_value.make ~seed ~rate:0.003 ~board:shape ~inputs:board.inputs ~moves:board.moves ())
     {
       board;
-      settings = { Selfplay.default with playouts; exploring = 16 };
+      settings = { Alphazero.default with playouts; exploring = 16 };
       games = 192;
       remembered = 300_000;
       also = (fun l -> [ Go9.lesson_turned 1 l; Go9.lesson_turned 2 l; Go9.lesson_turned 4 l ]);

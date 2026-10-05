@@ -48,7 +48,7 @@ does, why, and how to use it; the techniques behind them are in
     `data/weights/connect4/` (AiConnect4's `ai=network`)
   - `train_go.exe`: the same loop on Go, 9 by 9, the network reading
     the board through convolutions, hours, for `data/weights/go9/`
-    (AiGo's `ai=network`); `Selfplay_trainer` is what the two share
+    (AiGo's `ai=network`); `Alphazero_trainer` is what the two share
   - `measure_gpt.exe`: writes nothing; `Gpt.mli`'s table, the model
     with each of its ideas taken out
 - `stats/`: numbers about the repository

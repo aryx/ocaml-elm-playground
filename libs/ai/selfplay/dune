@@ -1,6 +1,6 @@
 ; claude: self-play: can it teach itself? A network with two heads, a
 ; policy and a value (Policy_value), games played by the search against
-; itself and kept as lessons (Selfplay), two players measured against
+; itself and kept as lessons (Alphazero), two players measured against
 ; each other (Arena), and the game they are first worked on
 ; (Tictactoe); notes_ai_learning.md section 16,
 ; plan_ai_zero_to_hero.md. After AlphaZero, and Jonathan Laurent's

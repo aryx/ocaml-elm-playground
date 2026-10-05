@@ -116,7 +116,7 @@ let encode (p : position) : float array =
   Array.init (2 *.. squares) (fun i ->
       if i < squares then if p.board.(i) = p.turn then 1. else 0. else if p.board.(i -.. squares) = other then 1. else 0.)
 
-let board : (position, int) Selfplay.board =
+let board : (position, int) Alphazero.board =
   { game = connect4; start; inputs = 2 *.. columns *.. rows; moves = columns; encode; index = (fun c -> c) }
 
 (*****************************************************************************)

@@ -148,7 +148,7 @@ All decided 2026-10-04, as proposed.
     then BPE), `Gpt`, `Sample`.
   - `libs/ai/selfplay/` (`ai_selfplay`, on `ai_search` and
     `ai_learning`), the question "can it teach itself?": `Policy_value`,
-    `Selfplay`, `Arena`.
+    `Alphazero`, `Arena`.
 - **D2. Scalars first, arrays second, both kept.** `Gpt` is written on
   `Grad` first, as microgpt is, because that is the version one can
   read in a sitting; then again on `Tensor`, the same function names,
@@ -221,7 +221,7 @@ All decided 2026-10-04, as proposed.
   `?prior` (noise mixed in when the state is the root), temperature a
   draw among `result.tried`'s visit counts, and the one forward pass
   for both heads a one-entry cache in the closure that makes `prior`
-  and `evaluate`. All three live in `Selfplay`.
+  and `evaluate`. All three live in `Alphazero`.
 
 ## The programs
 
@@ -412,12 +412,12 @@ pieces.
 - Exercises: quantising the weights to 8 bits; a key-value cache for
   generation; a larger context.
 
-### Q8. AlphaZero on tic-tac-toe: `Policy_value`, `Selfplay`, `Arena`, `AiSelfPlay` (about 600 lines)
+### Q8. AlphaZero on tic-tac-toe: `Policy_value`, `Alphazero`, `Arena`, `AiSelfPlay` (about 600 lines)
 
 - `Policy_value`: a small network on `Tensor`, a shared body, a policy
   head (softmax over the moves, the illegal ones masked) and a value
   head (tanh); its loss the two added, as in the 2017 paper.
-- `Selfplay`: a game played by MCTS against itself; each position
+- `Alphazero`: a game played by MCTS against itself; each position
   kept with the visit counts as the policy's target and the final
   result as the value's; root noise and temperature (D8); the memory
   of the last games.
@@ -430,7 +430,7 @@ pieces.
 
 **Done (2026-10-04)**: `libs/ai/selfplay/` (`Policy_value` 130
 lines, on `Tensor`, which gained biases and a cross-entropy against
-shares; `Selfplay` 140; `Arena` 40; `Tictactoe` 50), 150 lines of
+shares; `Alphazero` 140; `Arena` 40; `Tictactoe` 50), 150 lines of
 tests, `examples/AiSelfPlay.ml` (210 lines, two golden frames). With
 the search it never loses to the perfect player after six iterations,
 five seconds; alone, its policy goes from 14 wins in 40 against a
@@ -497,7 +497,7 @@ both, kept apart because only one of them is honest about facts.
 
 **Done (2026-10-04)**: `gamekits/boards/Connect4` (D6: the rules, the
 evaluation and the search's hints moved as they were, `AiConnect4.ml`
-including it), `Selfplay.iterate` and `learn` (the loop as a
+including it), `Alphazero.iterate` and `learn` (the loop as a
 function), `scripts/train/train_connect4`, `data/weights/connect4/`,
 and `AiConnect4` with `ai=classic|network|policy`, "a" changing engine
 in play, the network's policy and the search's visits shown under the
@@ -534,7 +534,7 @@ with. `Matrix.patches`, `Tensor.patches` and `reshape` (a convolution
 is `patches` then the `mul_t` a layer already was: no module `Conv`),
 `Policy_value`'s second shape `Board` (convolutions with residuals,
 the two heads over the board laid end to end), `Policy_value.gradient`
-and `apply`, `Selfplay.learn ?step`, and in the trainer `NET=board`,
+and `apply`, `Alphazero.learn ?step`, and in the trainer `NET=board`,
 the learners apart and averaged, the time of each phase printed.
 
 The result, 100 iterations, 85 minutes, 6,087 numbers against the
@@ -558,7 +558,7 @@ games they learn from before anything else.
 `gamekits/boards/Go9` (the rules, the counting and the playout moved
 as they were out of `AiGo.ml`, which includes it; the position as
 three planes, the board's eight symmetries, a game capped at so many
-moves for self-play), `scripts/train/Selfplay_trainer` (what
+moves for self-play), `scripts/train/Alphazero_trainer` (what
 `train_connect4` and `train_go` share: the loop, the processes, the
 learners apart, the file), `scripts/train/train_go`,
 `data/weights/go9/`, and `AiGo` with `ai=classic|network|policy`, "a"

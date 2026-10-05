@@ -1,5 +1,5 @@
 (* What a [Policy_value] network learned of Connect 4 by playing
- * against itself ([Selfplay]), as the bytes of a weights file: read
+ * against itself ([Alphazero]), as the bytes of a weights file: read
  * with [Weights.of_string], then [Policy_value.of_weights].
  *
  * Trained by scripts/train/train_connect4: 150 iterations of 480
