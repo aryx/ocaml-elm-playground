@@ -85,10 +85,10 @@ let numbers (steps : int) : unit =
  *   - [actors] processes each playing [lived_each] steps with the
  *     network as it is, some of their moves left to chance, and
  *     sending back what they lived;
- *   - [learners] processes each taking [steps_each] steps of learning
- *     on batches drawn from everything remembered, apart, their
- *     networks then averaged; the copy they all take as the target is
- *     the network the iteration started with.
+ *   - [steps_each] steps of learning, each on a batch drawn from
+ *     everything remembered, its slopes worked out by [slicers]
+ *     processes at once, a few steps lived each; the copy taken as
+ *     the target is the network the iteration started with.
  *
  * A screen is 4,096 bytes and a state four of them, so a step lived
  * is kept as the screens themselves, shared between the steps that
@@ -172,8 +172,10 @@ let game_of (net : Dqn.t) (seed : int) : int =
 
 let actors = 48
 let lived_each = 200
-let learners = 16
-let steps_each = 150
+(* a step's batch is [slicers] slices of [slice] steps lived *)
+let slicers = 16
+let slice = 2
+let steps_each = 800
 let remembered = 400_000
 
 let read (path : string) : string =
@@ -198,7 +200,7 @@ let pixels ?(follow = false) ~(iterations : int) ~(out : string) ~(from : string
         | Error why -> failwith why
         | Ok (net, w) -> (net, Option.value ~default:0 (Option.bind (Weights.note w "iterations") int_of_string_opt)))
   in
-  Printf.printf "%d numbers; from iteration %d; %d actors, %d learners\n%!" (Dqn.parameters start) done_before actors learners;
+  Printf.printf "%d numbers; from iteration %d; %d actors, %d steps an iteration on batches of %d\n%!" (Dqn.parameters start) done_before actors steps_each (slicers * slice);
   let net = ref start in
   let memory : lived option array = Array.make remembered None in
   let next = ref 0 and count = ref 0 in
@@ -222,41 +224,33 @@ let pixels ?(follow = false) ~(iterations : int) ~(out : string) ~(from : string
       lived;
     let played = Unix.gettimeofday () in
     let points = List.fold_left (fun sum (l : lived) -> sum +. l.reward) 0. lived in
-    (* the learners, apart, the network of this iteration's start their
-       target *)
-    let arrived =
-      Processes.those_that_finish "learners"
-        (List.init learners (fun w () ->
-             let draws = Lehmer.make ((iteration * 100) + w) in
-             let rec go (n : Dqn.t) (loss : float) (k : int) : Dqn.t * float =
-               if k = 0 then (n, loss)
-               else
-                 let batch =
-                   Array.init 32 (fun _ ->
-                       let l = Option.get memory.(Lehmer.int draws !count) in
-                       ({ state = numbers_of l.before; action = l.action; reward = l.reward; next = after_of l } : Dqn.lived))
-                 in
-                 let (n, loss) = Dqn.step ~target:now n batch in
-                 go n loss (k - 1)
-             in
-             go now 0. steps_each))
+    (* the steps: one network, each step's batch shared among helpers
+       that stay for the whole iteration. Each is sent the network's
+       numbers, works out the slopes of a few steps lived that it
+       draws itself, and sends them back; their mean is the step. The
+       target is the network this iteration started with *)
+    let helpers =
+      Processes.helpers slicers (fun number ->
+          let draws = Lehmer.make ((iteration * 100) + number) in
+          fun (numbers : float array) ->
+            let batch =
+              Array.init slice (fun _ ->
+                  let l = Option.get memory.(Lehmer.int draws !count) in
+                  ({ state = numbers_of l.before; action = l.action; reward = l.reward; next = after_of l } : Dqn.lived))
+            in
+            Dqn.gradient ~target:now (Dqn.with_numbers now numbers) batch)
     in
-    let (first, _) = List.hd arrived in
-    let share = 1. /. float_of_int (List.length arrived) in
-    let matrices =
-      List.map
-        (fun (name, (x : Matrix.t)) ->
-          let data = Array.make (Array.length x.data) 0. in
-          List.iter
-            (fun ((n : Dqn.t), _) ->
-              let (m : Matrix.t) = List.assoc name n.matrices in
-              Array.iteri (fun i v -> data.(i) <- data.(i) +. (v *. share)) m.data)
-            arrived;
-          (name, { x with data }))
-        first.matrices
-    in
-    net := { first with matrices };
-    let loss = List.fold_left (fun sum (_, l) -> sum +. l) 0. arrived *. share in
+    let share = 1. /. float_of_int slicers in
+    let last = ref 0. in
+    for _ = 1 to steps_each do
+      let parts = Processes.ask_all helpers (Dqn.numbers_of !net) in
+      let slopes = Array.make (Dqn.parameters !net) 0. in
+      List.iter (fun (part, _) -> Array.iteri (fun i g -> slopes.(i) <- slopes.(i) +. (g *. share)) part) parts;
+      last := List.fold_left (fun sum (_, l) -> sum +. l) 0. parts *. share;
+      net := Dqn.apply !net slopes
+    done;
+    Processes.dismiss helpers;
+    let loss = !last in
     Printf.printf "iteration %3d  %5.0f s  (playing %.0f s, learning %.0f s)  chance %.2f  %.0f bricks in %d steps lived  loss %.4f\n%!"
       iteration (Unix.gettimeofday () -. t0) (played -. began)
       (Unix.gettimeofday () -. played)

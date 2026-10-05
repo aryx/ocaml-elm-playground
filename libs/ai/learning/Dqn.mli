@@ -135,6 +135,12 @@ val step : ?discount:float -> ?rate:float -> target:t -> t -> lived array -> t *
 val gradient : ?discount:float -> target:t -> t -> lived array -> float array * float
 val apply : ?rate:float -> t -> float array -> t
 
+(* every number of the network, its matrices' one after the other, and
+ * the network with those numbers in their place: what is sent to a
+ * process that is to work out slopes, and what it makes of it *)
+val numbers_of : t -> float array
+val with_numbers : t -> float array -> t
+
 (*****************************************************************************)
 (* {1 What it has lived} *)
 (*****************************************************************************)

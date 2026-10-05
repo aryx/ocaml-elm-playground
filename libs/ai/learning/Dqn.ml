@@ -193,9 +193,9 @@ let gradient ?(discount = 0.99) ~(target : t) (n : t) (lived : lived array) : fl
   Tensor.backward l;
   (Array.concat (List.map (fun (_, x) -> (Tensor.slope x).data) g), Tensor.number l)
 
-let apply ?rate (n : t) (slopes : float array) : t =
-  let weights = Array.concat (List.map (fun (_, (x : Matrix.t)) -> x.data) n.matrices) in
-  let (adam, weights) = Adam.step ?rate n.adam weights slopes in
+let numbers_of (n : t) : float array = Array.concat (List.map (fun (_, (x : Matrix.t)) -> x.data) n.matrices)
+
+let with_numbers (n : t) (weights : float array) : t =
   let at = ref 0 in
   let matrices =
     List.map
@@ -206,7 +206,11 @@ let apply ?rate (n : t) (slopes : float array) : t =
         (name, { x with data }))
       n.matrices
   in
-  { n with matrices; adam }
+  { n with matrices }
+
+let apply ?rate (n : t) (slopes : float array) : t =
+  let (adam, weights) = Adam.step ?rate n.adam (numbers_of n) slopes in
+  { (with_numbers n weights) with adam }
 
 let step ?discount ?rate ~(target : t) (n : t) (lived : lived array) : t * float =
   let (slopes, l) = gradient ?discount ~target n lived in

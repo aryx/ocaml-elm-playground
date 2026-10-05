@@ -64,3 +64,59 @@ let those_that_finish (what : string) (jobs : (unit -> 'a) list) : 'a list =
              Printf.printf "  one of the %s was lost (process %d): %s\n%!" what number why;
              [])
        (attempts jobs))
+
+(*****************************************************************************)
+(* Processes that stay *)
+(*****************************************************************************)
+
+type ('question, 'answer) helper = { pid : int; ask : out_channel; told : in_channel }
+
+let helpers (n : int) (answer : int -> 'question -> 'answer) : ('question, 'answer) helper list =
+  List.init n (fun number ->
+      let (question_in, question_out) = Unix.pipe () and (answer_in, answer_out) = Unix.pipe () in
+      match Unix.fork () with
+      | 0 ->
+          Unix.close question_out;
+          Unix.close answer_in;
+          let ic = Unix.in_channel_of_descr question_in and oc = Unix.out_channel_of_descr answer_out in
+          (* what it keeps from one question to the next (its dice) is
+           * made once *)
+          let answer = answer number in
+          (* until told there are no more: None. Not until its pipe is
+           * closed: the helpers forked after it hold that pipe open
+           * too, and it would wait for ever *)
+          let rec serve () =
+            match (Marshal.from_channel ic : 'question option) with
+            | None -> ()
+            | Some question ->
+                Marshal.to_channel oc (answer question) [ Marshal.No_sharing ];
+                flush oc;
+                serve ()
+          in
+          serve ();
+          exit 0
+      | pid ->
+          Unix.close question_in;
+          Unix.close answer_out;
+          { pid; ask = Unix.out_channel_of_descr question_out; told = Unix.in_channel_of_descr answer_in })
+
+let ask_all (hs : ('question, 'answer) helper list) (question : 'question) : 'answer list =
+  List.iter
+    (fun h ->
+      Marshal.to_channel h.ask (Some question) [ Marshal.No_sharing ];
+      flush h.ask)
+    hs;
+  List.map (fun h -> (Marshal.from_channel h.told : 'answer)) hs
+
+let dismiss (hs : ('question, 'answer) helper list) : unit =
+  List.iter
+    (fun h ->
+      Marshal.to_channel h.ask None [];
+      flush h.ask)
+    hs;
+  List.iter
+    (fun h ->
+      ignore (Unix.waitpid [] h.pid);
+      close_out h.ask;
+      close_in h.told)
+    hs

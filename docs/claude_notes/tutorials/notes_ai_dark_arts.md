@@ -321,6 +321,35 @@ the learner an easier question about the same input.* If it cannot
 answer the easy one, the long run would have told you nothing; if it
 can, you know which half is hard.
 
+**The same mistake, a second time, with the lesson written down**
+(DQN from the screen, again). With a readable screen the second run
+did 14,000 steps of learning in a hundred minutes and scored a random
+player's 3 to 7 points. The check on six numbers had needed 40,000
+steps before its score left the ground. Nothing was wrong but the
+count: sixteen learners each took 150 steps apart and were averaged,
+and sixteen learners averaged are 150 steps, not 2,400 -- the entry
+above about Connect 4 says exactly this, and the scheme had been
+carried over from the board games without asking whether it still
+fitted. There, a step was cheap next to a game, and noise was the
+enemy. Here every step counts and there are too few.
+
+What the cores can give a learner that needs *steps*: the slopes of
+one batch worked out by several processes, a slice each, and one step
+taken with their mean. The processes have to stay, a fork a step
+being what it is (above): each is forked once an iteration, and then
+asked, down a pipe, "the slopes for these numbers?" eight hundred
+times. Fourteen steps a second where there were three.
+
+(And the first version of that hung at its first iteration. A helper
+was to stop when its pipe closed; but every helper forked after it
+had inherited that pipe, open, so closing it in the parent closed
+nothing. They are now *told* to stop. A pipe is closed when its last
+holder closes it, and after a fork there are more holders than one
+thinks.)
+
+*A scheme that worked is a scheme that worked there.* Before reusing
+one, ask what was scarce where it was made, and what is scarce here.
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and
