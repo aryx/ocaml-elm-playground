@@ -7,6 +7,38 @@
 ; of the networks that play share (train_connect4, train_go): the
 ; loop, its processes, its file. In no opam package.
 ; scripts/README.md, plan_ai_zero_to_hero.md (decision D3).
+; what the trainers share to run many processes at once
+(library
+ (name train_processes)
+ (wrapped false)
+ (modules Processes)
+ (libraries unix))
+
 (executables
  (names train_names train_names_gpt measure_gpt train_connect4 train_go)
- (libraries ai_language ai_learning ai_search ai_selfplay kit_boards data_names random unix))
+ (modules :standard \ Processes train_breakout Breakout_env TinyBreakout)
+ (libraries train_processes ai_language ai_learning ai_search ai_selfplay kit_boards data_names random unix))
+
+; claude: the trainer of a network that plays one of the games: the
+; game's own source, copied here as the games' tests copy theirs (its
+; main made a function, so that nothing starts), stepped without a
+; window (Breakout_env), on a platform because the Playground is a
+; virtual library and something has to implement it
+(rule
+ (target TinyBreakout.ml)
+ (deps (:src %{project_root}/games/arcade/TinyBreakout.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(executables
+ (names train_breakout)
+ (modules train_breakout Breakout_env TinyBreakout)
+ (libraries
+  train_processes
+  ai_learning
+  random
+  unix
+  elm_core
+  graphics_core ; Framebuffer, what the game is drawn into
+  elm_playground
+  elm_playground_software ; an implem of virtual elm_playground
+ ))

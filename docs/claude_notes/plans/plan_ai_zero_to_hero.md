@@ -677,6 +677,26 @@ that library (the OpenGL backend already compiles a copy of it as
 `Hud_render`), so it can be a small library of its own -- a change to
 `playground/platforms/`, hence the author's to approve.
 
+**The check passed, the screen's run started (2026-10-05).**
+`scripts/train/train_breakout` with `Breakout_env`: TinyBreakout's own
+source copied by dune as the games' tests copy theirs, stepped without
+a window, four frames a step, the serve pressed for the learner.
+`numbers`, the check: from six numbers of the game, 4.7 points a game
+at random to 498 after 100,000 steps, 3 minutes 18 (a wall is 448):
+the learner works. `pixels`: the last four screens, each drawn by the
+software rasterizer six times as fine and averaged down to 42 by 42
+greys (the paper's 84 was 82 s an iteration: 9,000 steps of learning
+in an afternoon), 48 actors, 16 learners apart and averaged, the best
+network seen kept beside the last.
+
+On the game's side, decided by the author (2026-10-05): the assistant
+on the native platforms only, as little changed as can be for it, and
+the network made to bear another renderer's pixels rather than the
+platforms made to give it the same ones -- hence the averaging down
+and a zoom that changes from run to run. What is left to add when a
+network is worth it: one function of the platform giving the window's
+pixels as a `Framebuffer`.
+
 Open: how the agent reaches a game. A game is a program, not a
 library; its `update` has to be reachable by the trainer. Either the
 game's rules move to a kit (as D6 does for Connect 4), or the trainer

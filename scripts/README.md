@@ -49,6 +49,11 @@ does, why, and how to use it; the techniques behind them are in
   - `train_go.exe`: the same loop on Go, 9 by 9, the network reading
     the board through convolutions, hours, for `data/weights/go9/`
     (AiGo's `ai=network`); `Alphazero_trainer` is what the two share
+  - `train_breakout.exe`: DeepMind's DQN on our own TinyBreakout, the
+    game's source stepped without a window (`Breakout_env`): `numbers`,
+    the check from six numbers of the game, three minutes; `pixels`,
+    from the screen, hours. `Processes` is what the trainers share to
+    run many processes at once
   - `measure_gpt.exe`: writes nothing; `Gpt.mli`'s table, the model
     with each of its ideas taken out
 - `stats/`: numbers about the repository
