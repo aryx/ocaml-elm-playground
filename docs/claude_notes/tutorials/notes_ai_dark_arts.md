@@ -289,6 +289,38 @@ function called inside a loop that built a matrix. Found by the
 arithmetic not adding up: thirty-two small passes cannot take a
 millisecond.
 
+**Eighty minutes of nothing, and what looking would have shown in
+one** (DQN on TinyBreakout from the screen). The learner had passed
+its check on six numbers of the game: 4.7 points a game at random,
+498 after three minutes. Given the screen instead, 86 iterations and
+13,000 steps later it scored 3 to 5 points, a random player's. Its
+loss was small and falling, which said nothing: with a brick hit once
+in fifty steps, a network that answers "nothing happens" is nearly
+right.
+
+The first thing done then should have been the first thing done at
+all: *look at what it is given*. Three screens written out as
+pictures showed it in a minute. At 42 by 42 the ball was two thirds
+of a pixel, a dim dot; and the game's own effects (it shakes the
+screen and flashes it when a brick breaks: "juice") moved or tinted
+everything else between one frame and the next. The learner was being
+asked to find a grey speck by comparing frames that differed
+everywhere.
+
+Then a check made for the question. Is it the picture, or is it
+learning from a reward that comes late? Pay the same network, on the
+same screens, a point for each move *towards the ball*, nothing to
+wait for: no longer learning the game, only reading the screen. With
+the effects off and 64 by 64, it went from choosing right a third of
+the time to three quarters in fifteen minutes, and scored 30 points a
+game as a side effect. The picture was readable; what was left was
+the hard part, and time.
+
+*Before a long run, look at one input with your own eyes, and give
+the learner an easier question about the same input.* If it cannot
+answer the easy one, the long run would have told you nothing; if it
+can, you know which half is hard.
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and
@@ -316,6 +348,8 @@ should have been:
 
 ## When a learner does not learn: what to try, in this order
 
+0. **Have you looked at what it is given?** One input, as a picture or
+   printed, before anything else.
 1. **Is the number to beat known?** Knowing nothing, the simplest
    model, a published figure. Without one, stop and find one.
 2. **Does one example learn?** One lesson, repeated: the loss should

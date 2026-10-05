@@ -1,7 +1,7 @@
 (* TinyBreakout played without a window, a key at a time: the game as
  * a learner meets it (Dqn.mli). The game itself is the one of
  * games/arcade, its source copied here by dune: the same rules, the
- * same frames.
+ * same frames, with its effects off (juice=off: the dry game).
  *
  * A step is four frames with the same key held, as in the Atari
  * paper: at 60 frames a second nothing needs deciding more often, and
@@ -36,10 +36,9 @@ val numbers : t -> float array
 (* what is on the screen *)
 val view : t -> Playground.shape list
 
-(* the screen as the learner is given it: 42 by 42 greys, a byte
- * each, row after row (the paper's is 84 by 84; a quarter of the
- * pixels is a quarter of the time). The game drawn by the software
- * rasterizer six times as fine and [shrink]'d. [zoom] (1) draws it a little
+(* the screen as the learner is given it: 64 by 64 greys, a byte
+ * each, row after row (the paper's is 84 by 84). The game drawn by
+ * the software rasterizer four times as fine and [shrink]'d. [zoom] (1) draws it a little
  * larger or smaller: the learner should not come to depend on where
  * exactly a pixel falls. *)
 val side : int

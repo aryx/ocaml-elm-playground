@@ -19,8 +19,15 @@ let actions = 3
 let start () : t = { model = TinyBreakout.initial_model; frame = 0 }
 
 (* the computer at a frame, with the keys held *)
+(* the dry game (juice=off): the original's, no effect shaking the
+ * screen or flashing it. A learner comparing one frame with the next
+ * to find a ball of one pixel has no use for either *)
 let computer (frame : int) (keyboard : keyboard) : computer =
-  { initial_computer with keyboard; time = Time (float_of_int frame /. 60.); screen = to_screen 1000. 1000. }
+  { initial_computer with
+    keyboard;
+    time = Time (float_of_int frame /. 60.);
+    screen = to_screen 1000. 1000.;
+    flags = [ ("juice", "off") ] }
 
 let game (e : t) : TinyBreakout.game option =
   match e.model.scenes.scene with TinyBreakout.Playing g -> Some g | Title | Game_over _ -> None
@@ -58,8 +65,9 @@ let view (e : t) : shape list = TinyBreakout.view (computer e.frame initial_comp
 (* The screen *)
 (*****************************************************************************)
 
-(* half the paper's 84: a quarter of the pixels, and of the time *)
-let side = 42
+(* the paper's is 84; at 64 the ball is one pixel, at 42 it was two
+ * thirds of one, a dim dot *)
+let side = 64
 
 (* any picture brought down to [side] by [side] greys, a byte each:
  * every pixel of the small one the *average* of the square of the
@@ -86,8 +94,8 @@ let shrink (fb : Framebuffer.t) : Bytes.t =
   done;
   out
 
-(* drawn six times as fine as it will be read, then shrunk *)
-let fine = 6
+(* drawn four times as fine as it will be read, then shrunk *)
+let fine = 4
 
 let screen ?(zoom = 1.) (e : t) : Bytes.t =
   let n = side * fine in

@@ -689,6 +689,16 @@ greys (the paper's 84 was 82 s an iteration: 9,000 steps of learning
 in an afternoon), 48 actors, 16 learners apart and averaged, the best
 network seen kept beside the last.
 
+The first run from the screen, 42 by 42 with the game's effects on,
+learned nothing in 86 iterations and 80 minutes (3 to 5 points a
+game). Looked at, its screens had the ball as two thirds of a pixel
+and the effects shaking and flashing the rest. Now: the dry game
+(juice=off), 64 by 64, a network of 82,467 numbers; and a check,
+`train_breakout follow`, paying the same network on the same screens
+for moving towards the ball: right three times in four after fifteen
+minutes, 30 points a game. The screen can be read; the run on the
+score alone is going again.
+
 On the game's side, decided by the author (2026-10-05): the assistant
 on the native platforms only, as little changed as can be for it, and
 the network made to bear another renderer's pixels rather than the

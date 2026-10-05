@@ -12,6 +12,8 @@
  *   dune exec scripts/train/train_breakout.exe -- numbers 100000                 (steps: the check, three minutes)
  *   dune exec scripts/train/train_breakout.exe -- pixels 150 out.weights          (iterations: from the screen)
  *   dune exec scripts/train/train_breakout.exe -- pixels 50 out.weights out.weights   (go on from a file)
+ *   dune exec scripts/train/train_breakout.exe -- screen 40 seen.pgm               (what it sees, after 40 steps)
+ *   dune exec scripts/train/train_breakout.exe -- follow 20 out.weights            (can it see the ball? a check)
  *
  * [numbers]: the check of the learner before it is given the screen.
  * The game is six numbers (Breakout_env.numbers), the network small,
@@ -75,8 +77,8 @@ let numbers (steps : int) : unit =
 (*****************************************************************************)
 (* From the screen *)
 (*****************************************************************************)
-(* What the paper did: the learner is given the last four screens (42
- * by 42 greys each here, 84 in the paper) and the score. The loop is the one above, spread
+(* What the paper did: the learner is given the last four screens (64
+ * by 64 greys each here, 84 in the paper) and the score. The loop is the one above, spread
  * over processes as the trainers of the board games are
  * (Alphazero_trainer): an iteration is
  *
@@ -88,7 +90,7 @@ let numbers (steps : int) : unit =
  *     networks then averaged; the copy they all take as the target is
  *     the network the iteration started with.
  *
- * A screen is 1,764 bytes and a state four of them, so a step lived
+ * A screen is 4,096 bytes and a state four of them, so a step lived
  * is kept as the screens themselves, shared between the steps that
  * have them in common, and made into numbers only when drawn. *)
 
@@ -106,17 +108,28 @@ let numbers_of (screens : Bytes.t array) : float array =
 let after_of (l : lived) : float array option =
   Option.map (fun s -> numbers_of [| l.before.(1); l.before.(2); l.before.(3); s |]) l.after
 
-(* the paper's network at half its screen: 42 by 42, windows of 4
- * every 2 (20 by 20, 16 channels), again (9 by 9, 16 channels), a
- * layer of 128. About 170,000 numbers where the paper's has 680,000,
- * and a third of its arithmetic *)
+(* the paper's network on a smaller screen: 64 by 64, windows of 8
+ * every 4 (15 by 15, 16 channels), of 4 every 2 (6 by 6, 16
+ * channels), a layer of 128. About 82,000 numbers where the paper's
+ * has 680,000, and a third of its arithmetic *)
 let shape : Dqn.screen =
-  { width = Breakout_env.side; height = Breakout_env.side; frames = 4; first = (4, 2, 16); second = (4, 2, 16); hidden = 128 }
+  { width = Breakout_env.side; height = Breakout_env.side; frames = 4; first = (8, 4, 16); second = (4, 2, 16); hidden = 128 }
 
 (* [steps] of the game played by [net] with [chance] of a random move,
  * from the title: what was lived. The game drawn a little larger or
  * smaller each time, by [zoom] *)
-let act (net : Dqn.t) ~(seed : int) ~(chance : float) ~(steps : int) : lived list =
+(* the move that takes the paddle towards the ball: for [follow],
+ * the check below *)
+let towards_the_ball (e : Breakout_env.t) : int =
+  let n = Breakout_env.numbers e in
+  if n.(5) = 0. then 1 else if n.(1) < n.(0) -. 0.06 then 0 else if n.(1) > n.(0) +. 0.06 then 2 else 1
+
+(* [follow]: instead of the score, a point for each move towards the
+ * ball, and nothing after it to wait for. Not learning the game: a
+ * check that the screen says where the ball and the paddle are, and
+ * that this network can read it, apart from the harder question of
+ * learning from rewards that come late *)
+let act ?(follow = false) (net : Dqn.t) ~(seed : int) ~(chance : float) ~(steps : int) : lived list =
   let draws = Lehmer.make seed in
   let zoom = 0.97 +. Lehmer.float draws 0.06 in
   let fresh () =
@@ -128,9 +141,13 @@ let act (net : Dqn.t) ~(seed : int) ~(chance : float) ~(steps : int) : lived lis
     if n = 0 then lived
     else
       let action = if Lehmer.float draws 1. < chance then Lehmer.int draws Breakout_env.actions else Dqn.best net (numbers_of before) in
+      let wanted = towards_the_ball e in
       let (e, points, lost) = Breakout_env.step e action in
       let s = Breakout_env.screen ~zoom e in
-      let l = { before; action; reward = (if points > 0 then 1. else 0.); after = (if lost then None else Some s) } in
+      let l =
+        if follow then { before; action; reward = (if action = wanted then 1. else 0.); after = None }
+        else { before; action; reward = (if points > 0 then 1. else 0.); after = (if lost then None else Some s) }
+      in
       if Breakout_env.over e then
         let (e, before) = fresh () in
         go e before (n - 1) (l :: lived)
@@ -170,7 +187,7 @@ let write (path : string) (net : Dqn.t) (notes : (string * string) list) : unit 
   output_string oc (Weights.to_string (Dqn.to_weights ~notes net));
   close_out oc
 
-let pixels ~(iterations : int) ~(out : string) ~(from : string option) : unit =
+let pixels ?(follow = false) ~(iterations : int) ~(out : string) ~(from : string option) () : unit =
   Gc.set { (Gc.get ()) with minor_heap_size = 4 * 1024 * 1024 };
   Printexc.record_backtrace true;
   let (start, done_before) =
@@ -190,12 +207,12 @@ let pixels ~(iterations : int) ~(out : string) ~(from : string option) : unit =
   for iteration = done_before + 1 to done_before + iterations do
     let began = Unix.gettimeofday () in
     (* all chance at first, one move in ten from the sixtieth iteration *)
-    let chance = Float.max 0.1 (1. -. (float_of_int iteration /. 60.)) in
+    let chance = if follow then 0.5 else Float.max 0.1 (1. -. (float_of_int iteration /. 60.)) in
     let now = !net in
     let lived =
       List.concat
         (Processes.those_that_finish "actors"
-           (List.init actors (fun a () -> act now ~seed:((iteration * 1000) + a) ~chance ~steps:lived_each)))
+           (List.init actors (fun a () -> act ~follow now ~seed:((iteration * 1000) + a) ~chance ~steps:lived_each)))
     in
     List.iter
       (fun l ->
@@ -245,8 +262,8 @@ let pixels ~(iterations : int) ~(out : string) ~(from : string option) : unit =
       (Unix.gettimeofday () -. played)
       chance points (List.length lived) loss;
     let notes score =
-      [ ("model", "Dqn, the Atari paper's at half its screen: the last 4 screens of 42 by 42 greys, windows of 4 every 2 (16), again (16), 128, 3 actions");
-        ("game", "TinyBreakout (games/arcade), four frames a step, juice on");
+      [ ("model", "Dqn, the Atari paper's at half its screen: the last 4 screens of 64 by 64 greys, windows of 8 every 4 (16), of 4 every 2 (16), 128, 3 actions");
+        ("game", "TinyBreakout (games/arcade), four frames a step, juice off");
         ("trainer", "scripts/train/train_breakout pixels");
         ("iterations", string_of_int iteration);
         ("measured", score) ]
@@ -264,11 +281,30 @@ let pixels ~(iterations : int) ~(out : string) ~(from : string option) : unit =
         write (out ^ ".best") now (notes (Printf.sprintf "%.1f points a game, the mean of 12" score))))
   done
 
+(* what the learner sees, to look at: the screen after so many steps
+ * of a player moving at random, as a PGM picture (greys, any viewer
+ * opens it) *)
+let screen_to (path : string) (steps : int) : unit =
+  let draws = Lehmer.make 3 in
+  let rec go (e : Breakout_env.t) (n : int) : Breakout_env.t =
+    if n = 0 then e
+    else
+      let (e, _, _) = Breakout_env.step e (Lehmer.int draws Breakout_env.actions) in
+      go e (n - 1)
+  in
+  let s = Breakout_env.screen (go (Breakout_env.start ()) steps) in
+  let oc = open_out_bin path in
+  Printf.fprintf oc "P5\n%d %d\n255\n" Breakout_env.side Breakout_env.side;
+  output_bytes oc s;
+  close_out oc
+
 let () =
   (* no one is listening *)
   Audio.silently (fun () ->
       match Array.to_list Sys.argv with
       | [ _; "numbers"; steps ] -> numbers (int_of_string steps)
-      | [ _; "pixels"; iterations; out ] -> pixels ~iterations:(int_of_string iterations) ~out ~from:None
-      | [ _; "pixels"; iterations; out; from ] -> pixels ~iterations:(int_of_string iterations) ~out ~from:(Some from)
+      | [ _; "screen"; steps; out ] -> screen_to out (int_of_string steps)
+      | [ _; "pixels"; iterations; out ] -> pixels ~iterations:(int_of_string iterations) ~out ~from:None ()
+      | [ _; "pixels"; iterations; out; from ] -> pixels ~iterations:(int_of_string iterations) ~out ~from:(Some from) ()
+      | [ _; "follow"; iterations; out ] -> pixels ~follow:true ~iterations:(int_of_string iterations) ~out ~from:None ()
       | _ -> prerr_endline "usage: train_breakout numbers <steps> | pixels <iterations> <out.weights> [from.weights]")
