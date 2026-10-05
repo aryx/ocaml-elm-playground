@@ -7,13 +7,20 @@
  * (LGPL) as published by the Free Software Foundation; either version
  * 2 of the License, or (at your option) any later version.
  *)
-(* Go on a 9x9 board, against a computer that knows nothing about Go
- * (Mcts.mli). You are black, it is white: click a point to put a
- * stone down (or move the cursor with the arrows and press space),
- * "p" to pass; two passes in a row end the game, and the
- * score is counted Chinese style -- your stones plus the empty points
- * only you surround, white's plus komi, 6.5 points for playing second.
- * Space plays again.
+(* Go on a 9x9 board, against two computers and the ten years between
+ * them. You are black, it is white: click a point to put a stone down
+ * (or move the cursor with the arrows and press space), "p" to pass;
+ * two passes in a row end the game, and the score is counted Chinese
+ * style -- your stones plus the empty points only you surround,
+ * white's plus komi, 6.5 points for playing second. Space plays
+ * again.
+ *
+ * "a" changes who plays white. The one you meet first is the stronger,
+ * a network that taught itself the game (2016's idea; its section
+ * below). The other, which the rest of this header is about, is the
+ * computer that knows nothing about Go (2006's; Mcts.mli): play it
+ * first, with "a" or the flag ai=classic, to see what the network
+ * replaced.
  *
  * The point of this game in this repository is what the computer does
  * *not* have. Every other searching game here leans on an evaluation
@@ -43,10 +50,10 @@
  * years later was AlphaGo replacing the random playouts and the win
  * counts with a neural network (notes_ai_learning.md section 9).
  *
- * That network is here too, in miniature: "a" changes who plays white,
- * or the flag ai=network, to a search guided by a network that taught
- * itself by playing itself (its own section below, Alphazero.mli), and
- * ai=policy to that network alone.
+ * That network is here too, in miniature, and is who plays white
+ * unless asked otherwise: a search guided by a network that taught
+ * itself by playing itself (its own section below, Alphazero.mli);
+ * ai=policy is that network alone, ai=classic the computer of 2006.
  *
  * What it uses: the boards kit's Go9 (the rules, the counting, the
  * playout: shared with the program that trains the network); ai/'s
@@ -96,17 +103,20 @@ include Go9
  * position is worth can be *learned*, and nobody had been able to
  * write it.
  *
- * "a" changes who plays white, and the flag ai= who starts: classic
- * (random playouts), network (the search guided by the network),
- * policy (the network alone, its first idea, no search). With the
+ * "a" changes who plays white, and the flag ai= who starts: network
+ * (the search guided by the network, the default), policy (the
+ * network alone, its first idea, no search), classic (random
+ * playouts). With the
  * network playing, the board shows its first idea of the position it
  * last moved from: a mark on each point, the larger the more it
  * thought of it at a glance. *)
 
 type engine = Classic | Network | Policy
 
+(* the network unless asked otherwise: it is the stronger, 33-0-7
+ * against the other over forty games *)
 let engine_of (flags : (string * string) list) : engine =
-  match List.assoc_opt "ai" flags with Some "network" -> Network | Some "policy" -> Policy | _ -> Classic
+  match List.assoc_opt "ai" flags with Some "classic" -> Classic | Some "policy" -> Policy | _ -> Network
 
 let name (e : engine) : string =
   match e with

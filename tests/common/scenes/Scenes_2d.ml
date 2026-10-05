@@ -940,9 +940,10 @@ let scripted : Golden_scene.scripted list =
     (* claude: you drop in the middle, it answers in the middle too, and
      * says what the tricks saved it *)
     ("games/puzzle/software/AiConnect4", "reply", 90, "space:2");
-    (* claude: you put a stone on the middle point, and it answers after
-     * a thousand random games -- played out over the frames, not in one
-     * of them (Mcts.mli: anytime) *)
+    (* claude: you put a stone on the middle point, and the network
+     * answers after six hundred positions judged -- over the frames,
+     * not in one of them (Mcts.mli: anytime) -- its first idea of each
+     * point drawn on the board *)
     ("games/puzzle/software/AiGo", "reply", 92, "space:2");
     (* claude: a few letters guessed, some wrong: the name so far, the
      * guesses each letter cost the player and the network, and what the
@@ -1923,10 +1924,9 @@ let scripted_flagged : Golden_scene.scripted_flagged list =
      * (ai=network): a piece dropped in the middle, its answer, and under
      * the board its policy at a glance and where the search then went *)
     ("games/puzzle/software/AiConnect4", "network", 60, "space:2", [ "ai=network" ]);
-    (* claude: AiGo against its network (ai=network): a stone in the
-     * middle, its answer after six hundred positions judged, and on the
-     * board its first idea of each point *)
-    ("games/puzzle/software/AiGo", "network", 110, "space:2", [ "ai=network" ]);
+    (* claude: AiGo against the computer of 2006 (ai=classic): a stone
+     * in the middle, its answer after a thousand random games *)
+    ("games/puzzle/software/AiGo", "classic", 92, "space:2", [ "ai=classic" ]);
     (* claude: TinyInteractivePhysics drawn with the mouse: the Disk tool,
      * a disk dragged to a radius of 50, the Rope tool, a rope from a
      * point of the background to it, Run -- and it swings over the

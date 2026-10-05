@@ -576,9 +576,9 @@ why). Against AiGo's own computer, 1,000 random playouts a move, over
 40 games: **33-0-7 with 100 playouts, 29-0-11 with 400, 35-0-5 with
 1,600, and 24-0-16 with no search at all**. The first of this plan's
 networks to beat the program it was added to at a smaller budget, and
-by its policy alone. `ai=classic` is still the default, the game
-being about what a computer without knowledge does; the author's to
-decide (the plan's rule says the stronger).
+by its policy alone. **The network is AiGo's default** (decided
+2026-10-05, the plan's rule: the stronger); `ai=classic` and "a" give
+the computer of 2006.
 
 Why Go and not Connect 4: Connect 4's computer was told what a
 position is worth, and searches seven moves exactly; Go's was told
