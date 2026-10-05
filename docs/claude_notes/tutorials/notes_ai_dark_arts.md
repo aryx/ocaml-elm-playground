@@ -350,6 +350,39 @@ thinks.)
 *A scheme that worked is a scheme that worked there.* Before reusing
 one, ask what was scarce where it was made, and what is scarce here.
 
+**A reward that was mostly not about the player** (DQN on
+TinyBreakout from the screen, the run that learned). With fourteen
+steps a second the third run passed 50,000 steps, where the check on
+six numbers had long since taken off, and still scored a random
+player's 3 to 5 points. So it was not only the count.
+
+What does a beginner's score in this game say about its paddle?
+Almost nothing. The serve sends the ball up, it breaks a brick, it
+comes down, and it is missed: a point, earned by nobody. A player
+moving at random gets nearly all its points that way. The part of the
+score that depends on where the paddle is, the second brick, is rare,
+and comes a second and a half after the move that deserved it. The
+paper's learner dug that out of ten million frames. Ours had a ball
+of one pixel and an afternoon.
+
+One line changed: a ball lost costs a point, said at the step it
+happens. The same network on the same screens then left the ground at
+its fortieth iteration and reached 23 points a game at its ninetieth
+(a random player: 4.7), the best of its games 42.
+
+It is a departure from the paper, where a lost life only ends the
+episode, and it is written wherever the result is: the learner is no
+longer told the score alone. But the general thing is worth more than
+the scruple. *Ask of a reward what share of it the learner's own
+choices explain.* If the answer is "little", no architecture and no
+count of steps is the fix; the signal is. The check that paid for
+moving towards the ball had said as much two runs earlier, by
+learning in minutes what the score could not teach in hours.
+
+And the curve, once it rose, did what the cliff's did: 23 points at
+iteration 90, 10 to 20 for the fifty after. The best network was
+kept as it went, which is the only reason there is one to show.
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and

@@ -12,6 +12,7 @@
  *   dune exec scripts/train/train_breakout.exe -- numbers 100000                 (steps: the check, three minutes)
  *   dune exec scripts/train/train_breakout.exe -- pixels 150 out.weights          (iterations: from the screen)
  *   dune exec scripts/train/train_breakout.exe -- pixels 50 out.weights out.weights   (go on from a file)
+ *   RATE=0.0003 dune exec ... pixels 300 more.weights out.weights.best            (with smaller steps)
  *   dune exec scripts/train/train_breakout.exe -- screen 40 seen.pgm               (what it sees, after 40 steps)
  *   dune exec scripts/train/train_breakout.exe -- follow 20 out.weights            (can it see the ball? a check)
  *
@@ -90,6 +91,14 @@ let numbers (steps : int) : unit =
  *     processes at once, a few steps lived each; the copy taken as
  *     the target is the network the iteration started with.
  *
+ * One thing is not the paper's: a ball lost costs a point. In the
+ * paper it only ends the episode. In this game nearly every point a
+ * beginner scores comes from the serve, whatever the paddle does, so
+ * the part of the score that says anything about the paddle is small
+ * and arrives a second late; three runs learned nothing from it. A
+ * miss, said when it happens, is the same signal made plain. It asks
+ * nothing that is not on the screen (the balls left are drawn there).
+ *
  * A screen is 4,096 bytes and a state four of them, so a step lived
  * is kept as the screens themselves, shared between the steps that
  * have them in common, and made into numbers only when drawn. *)
@@ -146,7 +155,14 @@ let act ?(follow = false) (net : Dqn.t) ~(seed : int) ~(chance : float) ~(steps 
       let s = Breakout_env.screen ~zoom e in
       let l =
         if follow then { before; action; reward = (if action = wanted then 1. else 0.); after = None }
-        else { before; action; reward = (if points > 0 then 1. else 0.); after = (if lost then None else Some s) }
+        else
+          (* a brick is a point, whatever its colour; a ball lost
+             takes one away. The paper's learner is told only that
+             the episode ended there, and has to find out by itself
+             that this is bad, from the points that then do not come:
+             with millions of frames it does. Here the miss is said,
+             at the step it happens (see the header) *)
+          { before; action; reward = (if lost then -1. else if points > 0 then 1. else 0.); after = (if lost then None else Some s) }
       in
       if Breakout_env.over e then
         let (e, before) = fresh () in
@@ -201,6 +217,9 @@ let pixels ?(follow = false) ~(iterations : int) ~(out : string) ~(from : string
         | Ok (net, w) -> (net, Option.value ~default:0 (Option.bind (Weights.note w "iterations") int_of_string_opt)))
   in
   Printf.printf "%d numbers; from iteration %d; %d actors, %d steps an iteration on batches of %d\n%!" (Dqn.parameters start) done_before actors steps_each (slicers * slice);
+  (* RATE: a smaller step than the network was made with, for going on
+     from a file where the first run's would undo what it found *)
+  let rate = Option.bind (Sys.getenv_opt "RATE") float_of_string_opt in
   let net = ref start in
   let memory : lived option array = Array.make remembered None in
   let next = ref 0 and count = ref 0 in
@@ -247,7 +266,7 @@ let pixels ?(follow = false) ~(iterations : int) ~(out : string) ~(from : string
       let slopes = Array.make (Dqn.parameters !net) 0. in
       List.iter (fun (part, _) -> Array.iteri (fun i g -> slopes.(i) <- slopes.(i) +. (g *. share)) part) parts;
       last := List.fold_left (fun sum (_, l) -> sum +. l) 0. parts *. share;
-      net := Dqn.apply !net slopes
+      net := Dqn.apply ?rate !net slopes
     done;
     Processes.dismiss helpers;
     let loss = !last in

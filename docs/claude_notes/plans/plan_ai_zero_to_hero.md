@@ -699,6 +699,16 @@ for moving towards the ball: right three times in four after fifteen
 minutes, 30 points a game. The screen can be read; the run on the
 score alone is going again.
 
+Two more runs on the score alone learned nothing, the second with
+five times the steps (a step's slopes by processes that stay, 50,000
+steps in 80 minutes). The fourth, with a point taken for a ball lost,
+learned: 150 iterations, 3 hours 25, from a random player's 4.7
+points a game to 23 at its best (iteration 90), 10 to 20 after. Not
+the paper's learner any more in that one respect, and said so in the
+trainer. A paddle that meets the ball a few times, not one that
+clears a wall: going on from the best network, with smaller steps, is
+next, and the assistant waits for a network worth showing.
+
 On the game's side, decided by the author (2026-10-05): the assistant
 on the native platforms only, as little changed as can be for it, and
 the network made to bear another renderer's pixels rather than the
