@@ -656,6 +656,27 @@ Two versions, the first cheap and soon, the second the paper's:
   against a random player's and a person's. Whether the tunnel is
   found is the result to report, either way.
 
+**Started (2026-10-05).** `Dqn` (the network in two shapes, numbers
+and screen; the step, its two halves; the memory), `Matrix.windows`
+and `Tensor.windows` (convolutions that step, the paper's), and the
+rule checked on `Qlearn`'s cliff: the table's way found in 51
+episodes -- and lost again later, which is DQN's nature and an entry
+of `notes_ai_dark_arts.md`.
+
+Decided by the author (2026-10-05): from the pixels only, as the
+paper; and in the game, the network as an *assistant*, a key that
+hands it the paddle. The run on the game's own numbers stays what it
+was planned as, a check of the algorithm before the pixels, not a
+result.
+
+To settle before the game's side: the assistant has to draw the
+frame it reads, on every platform, and what draws shapes into pixels
+(`Shape_render_software`) is inside the software platform's library,
+which a game on Cairo or in a browser cannot link. It uses nothing of
+that library (the OpenGL backend already compiles a copy of it as
+`Hud_render`), so it can be a small library of its own -- a change to
+`playground/platforms/`, hence the author's to approve.
+
 Open: how the agent reaches a game. A game is a program, not a
 library; its `update` has to be reachable by the trainer. Either the
 game's rules move to a kit (as D6 does for Connect 4), or the trainer

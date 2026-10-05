@@ -140,3 +140,13 @@ val patches : t -> height:int -> width:int -> t
 (* [add_scaled into at k from at' n]: [n] numbers of [from] starting
  * at [at'], each times [k], added in place to [into] from [at] *)
 val add_scaled : float array -> int -> float -> float array -> int -> int -> unit
+
+(* [windows x ~height ~width ~size ~stride]: a picture cut into
+ * windows. [x] has a row per pixel of a picture [height] by [width],
+ * row after row, and a column per channel; the result has a row per
+ * window of [size] by [size] pixels, taken every [stride] pixels
+ * across and down (none hanging over the edge), and a column per
+ * pixel of the window and channel. [patches] is the windows of 3 at
+ * every pixel, the edge padded with zeros; these step, so the picture
+ * shrinks: 84 by 84 in windows of 8 every 4 is 20 by 20. *)
+val windows : t -> height:int -> width:int -> size:int -> stride:int -> t

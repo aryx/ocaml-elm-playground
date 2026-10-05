@@ -168,3 +168,28 @@ let patches (x : t) ~(height : int) ~(width : int) : t =
     done
   done;
   out
+
+(* a picture cut into windows. [x] has a row per pixel of a picture
+ * [height] by [width] (row after row) and a column per channel; the
+ * result has a row per window of [size] by [size] pixels, taken every
+ * [stride] pixels across and down, none hanging over the edge, and a
+ * column per pixel of the window and channel *)
+let windows (x : t) ~(height : int) ~(width : int) ~(size : int) ~(stride : int) : t =
+  let c = x.cols in
+  let down = ((height - size) / stride) + 1 and across = ((width - size) / stride) + 1 in
+  let out = create (down * across) (size * size * c) in
+  for wy = 0 to down - 1 do
+    for wx = 0 to across - 1 do
+      let window = (wy * across) + wx in
+      for dy = 0 to size - 1 do
+        (* a row of the window is [size] pixels side by side in the
+         * picture: copied in one piece *)
+        Array.blit x.data
+          (((((wy * stride) + dy) * width) + (wx * stride)) * c)
+          out.data
+          ((window * size * size * c) + (dy * size * c))
+          (size * c)
+      done
+    done
+  done;
+  out

@@ -98,6 +98,11 @@ let test_operations () =
   let squares = Matrix.random ~seed:7 6 2 in
   against_a_nudge "patches" [ squares ] (one (patches ~height:2 ~width:3));
   against_a_nudge "reshape" [ a ] (one (fun x -> reshape x 2 6));
+  (* a picture of 4 by 5 pixels, 2 channels, in windows of 2 every 2
+     (no overlap) and of 3 every 1 (pixels shared) *)
+  let picture = Matrix.random ~seed:8 20 2 in
+  against_a_nudge "windows, apart" [ picture ] (one (windows ~height:4 ~width:5 ~size:2 ~stride:2));
+  against_a_nudge "windows, overlapping" [ picture ] (one (windows ~height:4 ~width:5 ~size:3 ~stride:1));
   let deserved = Matrix.of_lists [ [ 0.5; 0.5; 0.; 0. ]; [ 0.; 0.1; 0.2; 0.7 ]; [ 1.; 0.; 0.; 0. ] ] in
   against_a_nudge "cross_entropy_to" [ a ] (function [ x ] -> cross_entropy_to x deserved | _ -> assert false);
   (* all of the share on one answer: cross_entropy *)
@@ -141,8 +146,30 @@ let test_patches () =
   Alcotest.check lists "each square plus the one to its right" [ [ 3. ]; [ 5. ]; [ 3. ]; [ 9. ]; [ 11. ]; [ 6. ] ]
     (Matrix.to_lists (Matrix.mul_t p weights))
 
+(* a picture cut into windows that step: the picture
+
+       1  2  3  4
+       5  6  7  8
+       9 10 11 12
+      13 14 15 16
+
+   in windows of 2 every 2 is four windows, each a quarter *)
+let test_windows () =
+  let picture = Matrix.init 16 1 (fun r _ -> float_of_int (r + 1)) in
+  let w = Matrix.windows picture ~height:4 ~width:4 ~size:2 ~stride:2 in
+  Alcotest.check lists "the four quarters" [ [ 1.; 2.; 5.; 6. ]; [ 3.; 4.; 7.; 8. ]; [ 9.; 10.; 13.; 14. ]; [ 11.; 12.; 15.; 16. ] ]
+    (Matrix.to_lists w);
+  (* of 3 every 1: the four windows that fit, overlapping *)
+  let w = Matrix.windows picture ~height:4 ~width:4 ~size:3 ~stride:1 in
+  Alcotest.(check (pair int int)) "two by two windows of nine" (4, 9) (w.rows, w.cols);
+  Alcotest.(check (array (float 0.))) "the last" [| 6.; 7.; 8.; 10.; 11.; 12.; 14.; 15.; 16. |] (Matrix.row w 3);
+  (* the paper's first layer: 84 by 84 in windows of 8 every 4 *)
+  let w = Matrix.windows (Matrix.create (84 * 84) 4) ~height:84 ~width:84 ~size:8 ~stride:4 in
+  Alcotest.(check (pair int int)) "20 by 20 windows, of 8 by 8 pixels of 4 frames" (400, 256) (w.rows, w.cols)
+
 let tests =
   [
+    t "Tensor, a picture's windows" test_windows;
     t "Tensor, a board's neighbourhoods and a convolution" test_patches;
     t "Tensor, a layer and its slopes" test_example;
     t "Tensor, every operation against a nudge" test_operations;

@@ -186,6 +186,26 @@ let patches (a : t) ~(height : int) ~(width : int) : t =
         done
       done)
 
+(* a picture cut into windows ([Matrix.windows]); the slopes go back
+ * from each window to the pixels it was copied from, a pixel hearing
+ * from every window it is in *)
+let windows (a : t) ~(height : int) ~(width : int) ~(size : int) ~(stride : int) : t =
+  let c = a.v.cols in
+  let down = ((height - size) / stride) + 1 and across = ((width - size) / stride) + 1 in
+  make (Matrix.windows a.v ~height ~width ~size ~stride) [ a ] (fun n ->
+      for wy = 0 to down - 1 do
+        for wx = 0 to across - 1 do
+          let window = (wy * across) + wx in
+          for dy = 0 to size - 1 do
+            Matrix.add_scaled a.d.data
+              (((((wy * stride) + dy) * width) + (wx * stride)) * c)
+              1. n.d.data
+              ((window * size * size * c) + (dy * size * c))
+              (size * c)
+          done
+        done
+      done)
+
 (* the same numbers in another shape, row after row *)
 let reshape (a : t) (rows : int) (cols : int) : t =
   if rows * cols <> Array.length a.v.data then invalid_arg "Tensor.reshape: not the same count of numbers";

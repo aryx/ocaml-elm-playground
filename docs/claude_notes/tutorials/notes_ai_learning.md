@@ -29,6 +29,7 @@ formula is one a reader can check with a pen.
 | `Weights` (done) | what was learned, as a file a program embeds | §6 |
 | `Tensor` (done) | reverse mode on whole matrices: `Grad`, an array at a time | §15 |
 | `Qlearn` (done) | rewards, temporal difference, Q-learning | §8 |
+| `Dqn` (done) | Q-learning with a network for the table: replay, a frozen target | §18 |
 
 | module (`ai/language/`) | what | section |
 |---|---|---|
@@ -950,6 +951,44 @@ did. What went wrong, how it showed and what each failure taught is a
 document of its own, [`notes_ai_dark_arts.md`](notes_ai_dark_arts.md):
 the part of machine learning that is in no paper, and most of the
 work.
+
+## 18. Learning from the score: DQN
+
+Section 8's `Qlearn` keeps a number per state and action, and moves
+it, each step lived, towards the reward plus the best number of the
+state that followed. A table. It has to have *been* in a state to
+know anything of it, and a screen is in a different state at every
+frame.
+
+DeepMind's Atari paper (Mnih et al., 2013; Nature, 2015) is that rule
+with a network for the table (`Dqn`): given a state, a value per
+action, for states never seen as for the others. Written just like
+that it diverges. Two things make it work, and they are the paper:
+
+- **Replay.** Steps lived one after the other are all alike, and a
+  network taught on a thousand alike forgets the rest. Every step is
+  kept in a memory of the last so many, and the network is taught on
+  steps drawn from it at random. (`Alphazero.learn` draws its lessons
+  from a memory for the same reason.)
+- **A target that holds still.** The rule's right-hand side is the
+  network's own answer, so each step moves the target with the thing
+  chasing it. It is asked of a *copy* instead, frozen for a while,
+  then brought up to date.
+
+`Dqn` has two shapes. `Numbers`, the state as a few numbers through
+two layers, is for checking the rule: on `Qlearn`'s own cliff the
+network finds the table's way, thirteen steps along the edge, in 51
+episodes (`Unit_dqn`). `Screen` is the paper's: the last four frames
+of a screen, through two convolutions that *step* (`Tensor.windows`:
+windows of 8 pixels every 4, then of 4 every 2), each shrinking the
+picture, then a layer reading what is left; 676,915 numbers at the
+paper's sizes. It is given the screen and the score, and nothing
+else.
+
+The games to learn are here already, and each is a function from the
+keys to the next frame, which can be stepped without a window
+thousands of times a second: `TinyBreakout` is next
+(`plans/plan_ai_zero_to_hero.md`, Q13).
 
 ## Glossary
 

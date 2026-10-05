@@ -164,6 +164,13 @@ val join_cols : t list -> t
  * neighbourhood, nine times the columns *)
 val patches : t -> height:int -> width:int -> t
 
+(* [windows a ~height ~width ~size ~stride]: a picture cut into
+ * windows of [size] by [size] pixels, taken every [stride]
+ * ([Matrix.windows]). A layer on those rows is a convolution that
+ * *steps*, and shrinks the picture as it reads it: what a network
+ * that looks at a screen starts with (Dqn.mli) *)
+val windows : t -> height:int -> width:int -> size:int -> stride:int -> t
+
 (* the same numbers in another shape, row after row: a board's squares
  * laid end to end for a layer that reads them all *)
 val reshape : t -> int -> int -> t

@@ -162,7 +162,7 @@ learning ([tiny_libs.ai_learning]); all five are [tiny_libs.ai]:
     Fsm Behavior Utility
     Sense Bot
     Minimax Deepening Zobrist Mcts
-    Matrix Neuron Net Backprop Grad Tensor Train Adam Weights Qlearn
+    Matrix Neuron Net Backprop Grad Tensor Train Adam Weights Qlearn Dqn
     Tokenizer Corpus Sampling Bigram Ngram_mlp Gpt Makemore_names Weights_names_mlp Weights_names_gpt Weights_connect4 Weights_go9
     Policy_value Alphazero Arena Tictactoe
 }

@@ -267,6 +267,28 @@ we had" says as much about the program we had. The honest comparison
 across the two games is not the scores but this: what was the
 opponent told?
 
+**Found, then lost** (`Dqn` on the cliff). The table of `Qlearn`
+finds the shortest way along the cliff and keeps it. The network
+found it at its 51st episode, and at its 300th was walking into a
+wall. Nothing had broken. A table's answer for one cell is that
+cell's alone; a network's answers share their weights, so teaching it
+about one cell moves what it says of its neighbours, and a policy
+that reads "the best of four numbers" flips when two of them cross.
+Replay and the frozen target make this survivable, not absent, and
+the published curves of DQN are as jagged as this for the same
+reason. *In reinforcement learning the last network is not the best
+one: keep the best seen, by a measure taken as it goes* -- which the
+trainers of this repository already did for another reason. (The test
+stops at the first time the way is right, and says so.)
+
+And a small one from the same hour: the first `Dqn.step` took 2.7 ms
+for a network of five thousand numbers. The target network was being
+asked what the next state is worth once per *action* of each step
+lived instead of once per step, four times the work, hidden in a
+function called inside a loop that built a matrix. Found by the
+arithmetic not adding up: thirty-two small passes cannot take a
+millisecond.
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and
