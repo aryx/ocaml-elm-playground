@@ -60,6 +60,11 @@ let utc_offset (Playground.Time t) : int = Native_loop_2d.utc_offset t
 let ratio = ref 1.
 let pixel_ratio () : float = !ratio
 
+(* claude: see Playground_platform.mli: the pixels Cairo draws on, the
+ * window's own, set by [run_app] when its surface is made *)
+let shown : Native_loop_2d.pixels option ref = ref None
+let framebuffer () : Framebuffer.t option = Option.map Framebuffer.of_pixels !shown
+
 (* claude: see Playground_platform.mli *)
 let clipboard () : string = match Tsdl.Sdl.get_clipboard_text () with Ok s -> s | Error _ -> ""
 let set_clipboard (s : string) : unit = ignore (Tsdl.Sdl.set_clipboard_text s)
@@ -117,6 +122,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
    * window changes size (the pixels are then new) *)
   let make_surface (pixels : Native_loop_2d.pixels) =
     let w = Bigarray.Array2.dim2 pixels and h = Bigarray.Array2.dim1 pixels in
+    shown := Some pixels;
     let sdl_surface = Cairo.Image.create_for_data32 ~w ~h pixels in
     let cr = Cairo.create sdl_surface in
     Cairo.identity_matrix cr;

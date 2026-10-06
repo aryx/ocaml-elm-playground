@@ -56,6 +56,9 @@
    ; under Textmode.ml (private, pure OCaml, this same package), see
    ; docs/claude_notes/plans/plan_terminal.md
    terminal
+   ; claude: Framebuffer, the type of Playground_platform.framebuffer's
+   ; picture (pure OCaml, tiny_libs)
+   graphics_core
    ; claude: the ray tracer under the Povray way (private, pure OCaml,
    ; this same package), and the 3D geometry it is made of, see
    ; docs/claude_notes/plans/plan_raytracing_teaching.md

@@ -46,7 +46,7 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:turn_back', weight: 2 },
       ],
     },
-    'TinyBreakout.ml': { digest: '298a5a4f830a',
+    'TinyBreakout.ml': { digest: 'f425c0e76a9e',
       summary: 'Breakout (Atari, 1976): Pong on its side and played alone, a wall of bricks broken a hit at a time.',
       capitals: [{ at: 'def:move_ball', say: 'the ball, one axis at a time: walls, bricks, paddle' }],
       important: [
@@ -55,6 +55,8 @@ local skeletons = import '../../skeletons.libsonnet';
         { at: 'def:paddle_bounce', say: 'where it lands on the paddle decides where it goes', weight: 3 },
         { at: 'def:bricks_under', say: "the ball's four corners: at most four bricks", weight: 2 },
         { at: 'def:speed', say: 'never more than a brick a tick: no tunneling', weight: 1 },
+        { at: 'def:assisted', say: 'a network holds the keys, from the window alone', weight: 2 },
+        { at: 'def:screen_of', say: 'the window averaged down to 64 by 64 greys', weight: 1 },
       ],
       related: ['web/TinyBreakout.html', '../../tests/2d/golden/TinyBreakout.png'],
     },

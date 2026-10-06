@@ -49,7 +49,8 @@ val view : t -> Playground.shape list
 val side : int
 val screen : ?zoom:float -> t -> Bytes.t
 
-(* any picture brought down to [side] by [side] greys by averaging the
- * square of it each one covers: the game's own window, at whatever
- * size, read the same way *)
+(* the game's own [TinyBreakout.screen_of]: any picture brought down
+ * to [side] by [side] greys by averaging the square of it each one
+ * covers, so that the game's window, at whatever size, is read the
+ * way the learner was taught *)
 val shrink : Framebuffer.t -> Bytes.t

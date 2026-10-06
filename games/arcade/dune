@@ -14,6 +14,8 @@
   (libraries
     unix ; Pong's clock
     elm_playground
+    graphics_core ; TinyBreakout's assistant reads the window, a Framebuffer
+    data_weights_breakout ; and what it learned
     ai ; TinyPacman's ghosts (ai=engine)
     kit_maze ; TinyPacman's and TinyBomberman's Grid_move and Chase
     kit_lightcycles ; TinyTron's rules

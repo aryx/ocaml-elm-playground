@@ -67,34 +67,9 @@ let view (e : t) : shape list = TinyBreakout.view (computer e.frame initial_comp
 (* The screen *)
 (*****************************************************************************)
 
-(* the paper's is 84; at 64 the ball is one pixel, at 42 it was two
- * thirds of one, a dim dot *)
-let side = 64
-
-(* any picture brought down to [side] by [side] greys, a byte each:
- * every pixel of the small one the *average* of the square of the
- * large one it covers, not one pixel picked out of it. A ball of a
- * pixel and a half then leaves its share of grey wherever it is, and
- * the same scene drawn at another size, or by another renderer with
- * its own way of smoothing edges, comes out nearly the same *)
-let shrink (fb : Framebuffer.t) : Bytes.t =
-  let out = Bytes.create (side * side) in
-  for y = 0 to side - 1 do
-    let y0 = y * fb.height / side and y1 = max ((y * fb.height / side) + 1) ((y + 1) * fb.height / side) in
-    for x = 0 to side - 1 do
-      let x0 = x * fb.width / side and x1 = max ((x * fb.width / side) + 1) ((x + 1) * fb.width / side) in
-      let sum = ref 0 in
-      for sy = y0 to y1 - 1 do
-        for sx = x0 to x1 - 1 do
-          let rgb = Framebuffer.get_rgb fb ~x:sx ~y:sy in
-          (* how bright the eye finds it: green most, blue least *)
-          sum := !sum + ((299 * ((rgb lsr 16) land 255)) + (587 * ((rgb lsr 8) land 255)) + (114 * (rgb land 255)))
-        done
-      done;
-      Bytes.set_uint8 out ((y * side) + x) (!sum / (1000 * (y1 - y0) * (x1 - x0)))
-    done
-  done;
-  out
+(* the game's own, so that what is learned on is what is played on *)
+let side = TinyBreakout.side
+let shrink = TinyBreakout.screen_of
 
 (* drawn four times as fine as it will be read, then shrunk *)
 let fine = 4

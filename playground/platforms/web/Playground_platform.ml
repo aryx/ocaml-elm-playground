@@ -152,6 +152,9 @@ let flags () : Playground.flags =
  * devicePixelRatio and the page's scaling would say more) *)
 let pixel_ratio () : float = 1.
 
+(* claude: see Playground_platform.mli; the page is SVG: no pixels here *)
+let framebuffer () : Framebuffer.t option = None
+
 (* claude: see Playground_platform.mli; written through
  * navigator.clipboard, where the browser has it; read back from what
  * was written here *)

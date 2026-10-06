@@ -12,6 +12,8 @@
   (libraries
     unix
     elm_playground
+    graphics_core ; TinyBreakout's assistant reads the window, a Framebuffer
+    data_weights_breakout ; and what it learned
     ai
     kit_maze
     kit_lightcycles

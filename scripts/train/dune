@@ -39,6 +39,7 @@
   unix
   elm_core
   graphics_core ; Framebuffer, what the game is drawn into
+  data_weights_breakout ; the game's assistant's, which the game's source names
   elm_playground
   elm_playground_software ; an implem of virtual elm_playground
  ))

@@ -72,7 +72,9 @@
  * tiles, "Rr": the map draws it, says which brick a point is in, and a
  * brick broken is its 2 tiles set to ' '), Scene2d (title, play, game
  * over), Audio (a pitch per row, like the original's beeps), Juice
- * (tween, squash, stretch, shake, flash, burst, follow). Not
+ * (tween, squash, stretch, shake, flash, burst, follow), and for the
+ * assistant Dqn (ai's learning), Framebuffer and a file of
+ * data/weights. Not
  * Physics: the ball's motion is 2 additions, and its bounces are rules
  * (the paddle's above, a wall's or brick's plain reversal); nor
  * Tilemap.hits, which says whether a box hits a tile, where Breakout
@@ -85,6 +87,10 @@
  * stuck in a loop between unbreakable bricks, which Arkanoid breaks by
  * nudging its angle. The rest of the talk's juice: a trail behind the
  * ball, a mouth that smiles at each brick, music.
+ *
+ * And "a" hands the paddle to a network that learned the game from
+ * its screen alone, DeepMind's experiment of 2013 (its section below).
+ *
  * Hitstop (Juice.freeze), a few frames' pause at each brick, is left
  * out on purpose: it is the one effect that changes *when* things
  * happen, and the golden test's scripted game, keys pressed at given
@@ -164,9 +170,20 @@ type game = {
 
 type scene = Title | Playing of game | Game_over of int
 
+(* the assistant, a network that plays from the screen (its section
+ * below) *)
+type assistant = {
+  playing : bool; (* it holds the paddle *)
+  a_down : bool; (* the "a" key at the last frame: a press is down after up *)
+  seen : Bytes.t array; (* the last four screens it was shown, oldest first *)
+  action : int; (* what it is doing: 0 left, 1 nothing, 2 right *)
+  frames : int; (* since it took the paddle *)
+}
+
 type model = {
   scenes : scene Scene2d.t;
   hi_score : int;
+  assistant : assistant;
   (* the juice: the effects, when the wall appeared (its bricks pop
    * in), when the ball last bounced off the paddle (both squash),
    * where the paddle's eyes look (across, up) *)
@@ -181,7 +198,9 @@ let new_game (mouse_x : number) : game =
     hits = 0; reached_orange = false; reached_red = false; shrunk = false; second_wall = false }
 
 let initial_model : model =
-  { scenes = Scene2d.start Title; hi_score = 0; fx = Juice.none ~seed:1; wall_shown = Time 0.; bounced = Time (-10.);
+  { scenes = Scene2d.start Title; hi_score = 0;
+    assistant = { playing = false; a_down = false; seen = [||]; action = 1; frames = 0 };
+    fx = Juice.none ~seed:1; wall_shown = Time 0.; bounced = Time (-10.);
     look = (Juice.follow ~frequency:3. ~damping:0.5 0., Juice.follow ~frequency:3. ~damping:0.5 1.) }
 
 let paddle_width (g : game) : number = if g.shrunk then 50. else 100.
@@ -428,7 +447,104 @@ let look_at_ball (model : model) : model =
   let lx, ly = model.look in
   { model with look = (Juice.toward tx model.fx lx, Juice.toward ty model.fx ly) }
 
+(*****************************************************************************)
+(* The assistant: a network that plays from the screen (the "a" key) *)
+(*****************************************************************************)
+(* Press "a" and a network takes the paddle; press it again and you
+ * have it back. It is DeepMind's experiment of 2013 on this game
+ * (Dqn.mli, notes_ai_learning.md section 18): the network is given
+ * the screen and was given the score, and nothing else. It does not
+ * know where the ball is. Every fourth frame it is shown the window,
+ * as you see it, shrunk to 64 by 64 greys, with the three screens
+ * before so that it can tell which way the ball is going, and it
+ * answers left, right or nothing; it holds that for four frames.
+ *
+ * It was not taught here: scripts/train/train_breakout did it, hours
+ * of games played without a window, and what it learned is a file of
+ * data/weights (its README says how well it plays: tens of points a
+ * game, not a cleared wall). It learned on the dry game (juice=off)
+ * and plays this one as well: shrinking the screen takes most of the
+ * effects out of it.
+ *
+ * It needs the window's pixels (Playground_platform.framebuffer),
+ * which a browser's page does not have: there, the key does nothing. *)
+
+let side = 64
+
+(* any picture brought down to [side] by [side] greys, a byte each:
+ * every pixel of the small one the *average* of the square of the
+ * large one it covers, not one pixel picked out of it. A ball of a
+ * pixel and a half then leaves its share of grey wherever it is, and
+ * the same scene at another size, or drawn by another renderer with
+ * its own way of smoothing edges, comes out nearly the same. Of a
+ * window that is not square, the square in its middle, where the
+ * game is drawn *)
+let screen_of (fb : Framebuffer.t) : Bytes.t =
+  let span = min fb.width fb.height in
+  let left = (fb.width -.. span) /.. 2 and top = (fb.height -.. span) /.. 2 in
+  let out = Bytes.create (side *.. side) in
+  for y = 0 to side -.. 1 do
+    let y0 = y *.. span /.. side and y1 = max ((y *.. span /.. side) +.. 1) ((y +.. 1) *.. span /.. side) in
+    for x = 0 to side -.. 1 do
+      let x0 = x *.. span /.. side and x1 = max ((x *.. span /.. side) +.. 1) ((x +.. 1) *.. span /.. side) in
+      let sum = ref 0 in
+      for sy = y0 to y1 -.. 1 do
+        for sx = x0 to x1 -.. 1 do
+          let rgb = Framebuffer.get_rgb fb ~x:(left +.. sx) ~y:(top +.. sy) in
+          (* how bright the eye finds it: green most, blue least *)
+          sum := !sum +.. ((299 *.. ((rgb lsr 16) land 255)) +.. (587 *.. ((rgb lsr 8) land 255)) +.. (114 *.. (rgb land 255)))
+        done
+      done;
+      Bytes.set_uint8 out ((y *.. side) +.. x) (!sum /.. (1000 *.. (y1 -.. y0) *.. (x1 -.. x0)))
+    done
+  done;
+  out
+
+(* four screens as the network's input: one after the other, each
+ * grey between 0 and 1 *)
+let seen_as_numbers (screens : Bytes.t array) : float array =
+  let pixels = side *.. side in
+  Array.init (4 *.. pixels) (fun i -> float_of_int (Bytes.get_uint8 screens.(i /.. pixels) (i mod pixels)) / 255.)
+
+let network : Dqn.t Lazy.t =
+  lazy
+    (match Result.bind (Weights.of_string Weights_breakout.bytes) Dqn.of_weights with
+    | Ok net -> net
+    | Error why -> failwith ("breakout.weights: " ^ why))
+
+(* the "a" key hands the paddle over, or takes it back *)
+let toggled (computer : computer) (model : model) : model =
+  let a = model.assistant and down = Set_.mem "a" computer.keyboard.keys in
+  let pressed = down && not a.a_down in
+  let a = { a with a_down = down } in
+  { model with assistant = (if pressed then { a with playing = not a.playing; seen = [||]; action = 1; frames = 0 } else a) }
+
+(* while it plays: every fourth frame it is shown the window and
+ * chooses; and its keys are held in the place of yours. The serve is
+ * pressed for it: it was never asked to learn that *)
+let assisted (computer : computer) (model : model) : computer * model =
+  let a = model.assistant in
+  if not a.playing then (computer, model)
+  else
+    let a =
+      if a.frames mod 4 <> 0 then a
+      else
+        match Playground_platform.framebuffer () with
+        (* no pixels to be had (a browser): the paddle is yours *)
+        | None -> { a with playing = false }
+        | Some fb ->
+            let now = screen_of fb in
+            let seen = if a.seen = [||] then [| now; now; now; now |] else [| a.seen.(1); a.seen.(2); a.seen.(3); now |] in
+            { a with seen; action = Dqn.best (Lazy.force network) (seen_as_numbers seen) }
+    in
+    let waiting = match model.scenes.scene with Playing g -> g.ball = None | Title | Game_over _ -> true in
+    let keyboard =
+      { computer.keyboard with kleft = a.action = 0; kright = a.action = 2; kspace = waiting && a.frames mod 2 = 0 }
+    in
+    ({ computer with keyboard }, { model with assistant = { a with frames = a.frames +.. 1 } })
+
 let update (computer : computer) (model : model) : model =
+  let (computer, model) = assisted computer (toggled computer model) in
   let model = { model with fx = Juice.step computer model.fx } in
   look_at_ball (juiced model.scenes.scene (update_rules computer model))
 
@@ -505,6 +621,7 @@ let view_title (scenes : scene Scene2d.t) : shape list =
              text white 3. (Printf.sprintf "= %d POINT%s" (points c) (if points c = 1 then "" else "S")) |> move 60. y ])
          [ 'R'; 'O'; 'G'; 'Y' ])
   @ Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-250.) ]
+  @ [ text (rgb 120 120 120) 1.6 "A: A NETWORK PLAYS, FROM THE SCREEN ALONE" |> move_y (-330.) ]
 
 let view (computer : computer) (model : model) : shape list =
   let screen = computer.screen in
@@ -519,6 +636,7 @@ let view (computer : computer) (model : model) : shape list =
            header model score
            @ [ text white 6. (if score >= 896 then "YOU WIN" else "GAME OVER") ]
            @ Scene2d.blink 1. scenes [ text white 3. "PRESS SPACE" |> move_y (-150.) ])
+  @ (if model.assistant.playing then [ text (rgb 120 120 120) 1.4 "THE NETWORK PLAYS (A)" |> move_y (-490.) ] else [])
 
 let app = game view update initial_model
 let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

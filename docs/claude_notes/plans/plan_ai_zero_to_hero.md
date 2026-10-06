@@ -718,6 +718,17 @@ steps: 250 iterations, six hours, to 69 points a game (the mean of
 the game with its effects, which it never saw: 66.7 over 40. It
 generalizes; the assistant can play the game as it is.
 
+**The assistant (2026-10-06, to be reviewed).** One function added to
+the platform, `Playground_platform.framebuffer`: what the window
+shows, as a `Framebuffer`, or nothing in a browser. `TinyBreakout`'s
+`a` key hands the paddle to the network: every fourth frame it reads
+the window, shrinks it by averaging to 64 by 64 greys
+(`TinyBreakout.screen_of`, which the trainer now uses too, so there
+is one reading of the screen), and holds left, right or nothing. No
+library split, nothing else of the platforms changed. Fifty-five more
+iterations gave the network shipped (`data/weights/breakout/`): 69.1
+points a game over 40 dry, 65.0 with the effects.
+
 On the game's side, decided by the author (2026-10-05): the assistant
 on the native platforms only, as little changed as can be for it, and
 the network made to bear another renderer's pixels rather than the

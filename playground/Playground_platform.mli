@@ -75,6 +75,22 @@ val utc_offset: Playground.time -> int
  * the screen's size (1.); the web says 1. for now. *)
 val pixel_ratio: unit -> float
 
+(* claude: [framebuffer ()]: what the window shows, the last frame drawn, as a
+ * framebuffer (Framebuffer.mli: its width, its height, its pixels as
+ * 0xRRGGBB); None before the first frame, and where the platform has no
+ * pixels of its own to give (the web draws with SVG).
+ *
+ * For a program that wants to *see* its own screen rather than know what
+ * it drew: TinyBreakout's assistant, a network taught to play from the
+ * screen alone (Dqn.mli), is given this and nothing else.
+ *
+ * The whole window, as it is: the program's screen scaled to fit and
+ * centred, and whatever bars are round it. Not a copy: it is the window's
+ * own memory, drawn over at the next frame, so read it now and keep what
+ * you make of it, not the framebuffer. Natively (Cairo, and the software
+ * platform) the window's surface; on the web, None. *)
+val framebuffer: unit -> Framebuffer.t option
+
 (*****************************************************************************)
 (* {1 The mouse's cursor} *)
 (*****************************************************************************)

@@ -153,6 +153,11 @@ let utc_offset (Playground.Time t) : int = Native_loop_2d.utc_offset t
  * screen's size, a unit a pixel *)
 let pixel_ratio () : float = 1.
 
+(* claude: see Playground_platform.mli: the framebuffer the rasterizer
+ * draws into, which is the window, set by [run_app] *)
+let shown : Framebuffer.t option ref = ref None
+let framebuffer () : Framebuffer.t option = !shown
+
 (* claude: see Playground_platform.mli *)
 let clipboard () : string = match Tsdl.Sdl.get_clipboard_text () with Ok s -> s | Error _ -> ""
 let set_clipboard (s : string) : unit = ignore (Tsdl.Sdl.set_clipboard_text s)
@@ -206,6 +211,7 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
    * again when the window changes size (SDL gives it a new surface), and
    * the window's size in points *)
   let current = ref (pixels0, Framebuffer.of_pixels pixels0) in
+  shown := Some (snd !current);
   let window = ref (sx, sy) in
 
   (* show something right away while images download *)
@@ -250,7 +256,8 @@ let run_app ?(rendering = Playground.default_rendering) ?(flags = []) ?network ?
         (fun w h ->
           window := (w, h);
           let pixels = Native_loop_2d.window_pixels sdl_window in
-          current := (pixels, Framebuffer.of_pixels pixels))
+          current := (pixels, Framebuffer.of_pixels pixels);
+          shown := Some (snd !current))
     else None
   in
   Native_loop_2d.run ~platform_keys ~follow_window:screen_follows_window ~skip_same_view ~on_resize ~threads ~sdl_window ~sx ~sy ~draw ~on_key_press
