@@ -416,6 +416,85 @@ taken out most of what the effects add, which is what it was for.
 explanation was plausible, and would have cost a second training for
 nothing.
 
+**The last layer was the network** (AlphaZero on chess). Go's
+network given chess's sizes: 17 planes in, 4,096 moves out (a square
+left, a square reached). The first iteration took sixteen minutes,
+where Go's took two and a half; a hundred would have been a day. The
+count of numbers said why before any profiler: 556,132, of which
+524,288 were one matrix, the policy head's last layer, from the 128
+numbers the board is squeezed into to the 4,096 scores. The
+convolutions, the part that reads chess, were a twentieth of it. For
+Go that layer is 162 to 82 and nobody notices it.
+
+The paper's network has no such layer: its policy is a board of
+answers, so many scores a square, by a layer applied at each square.
+With that (`Policy_value`'s `per_square`) the network is about ten
+thousand numbers, a pass through it is a millisecond instead of four,
+a lesson's slopes three instead of fifteen.
+
+*Count the numbers, matrix by matrix, before training a network in a
+new size.* A head that was a detail at one size can be the whole cost
+at another, and it learns nothing the body could not have told it.
+
+**Its memory was mostly zeros** (the same run, an hour later). With
+the small network an iteration was five minutes, and at the fourth
+the log began to say "one of the games' processes was lost: it ended
+without a word (killed?)", six at a time. The machine had 92 GB of
+its 125 in use. A lesson is a position and a policy, kept as the
+network reads them: 1,088 numbers and 4,096, 41 KB, of which about
+thirty pieces and thirty moves are not zero. Sixty-six thousand
+lessons after three iterations were 2.7 GB in the trainer, the forty
+processes forked from it each had them to themselves as soon as their
+collector walked over them, and the kernel killed what it had to. The
+300,000 lessons asked for would have been 12 GB before any fork. Go's
+lesson is 243 numbers and 82: the same code, a hundred times the
+memory.
+
+Now the trainer remembers a lesson as its numbers that are not zero,
+each with its place, and makes it whole again only for the batch it
+is drawn into (`Alphazero_trainer`'s `kept`).
+
+*What was said of the last layer, said again of the data: at a new
+size, work out what one item weighs and multiply by how many are
+kept, and by how many processes hold them.* And the message that
+named the cause was written two failures ago, for a run that died in
+silence: it paid for itself here in a minute.
+
+**It taught itself to be worse than nothing** (the same run, at
+last running). The loss went down for twenty iterations, 5.9 to under
+4. The measure, every ten: against a player moving at random, 14-4-2
+before any training, then 3-5-12, then 3-3-14. Two hours of self-play
+had made a player that loses to dice.
+
+Asked directly, the network said: every position is worth 0.00, with
+or without a queen; with a queen to take for nothing, it pushed a
+pawn (g2-g4, a fifth of its policy; the capture under a twentieth);
+and of twelve games against itself, eleven were draws at the 160th
+half-move.
+
+The loop of Alphazero.mli needs games that somebody wins. Tic-tac-toe
+and Connect 4 end by themselves and Go is counted: two players who
+know nothing still produce a winner. Two players of chess who know
+nothing do not mate each other, and are rarely a knight apart at the
+end. So nearly every lesson's value was "a draw", the value head
+learned to say so always, and the search, told every move leads to a
+draw, spent its visits where the policy already pointed. Those visits
+are what the policy is then taught: it learned its own habits, harder
+each iteration. That is what the falling loss was measuring. The
+untrained search had at least seen the end of the game coming, in its
+last moves; the trained policy drowned that out.
+
+DeepMind's AlphaZero got out of this by scale, millions of games in
+which enough ended by accident. Here the network is first taught by
+AiChess's own alpha-beta, as the first AlphaGo was by human games
+(`train_chess teach`), and plays itself from there.
+
+*A falling loss says the network agrees with its teacher; when the
+teacher is itself, that is no news at all.* It was Arena.mli's first
+sentence already. And self-play needs a result: before a long run,
+play a dozen games with the untrained network and count the decisive
+ones.
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and

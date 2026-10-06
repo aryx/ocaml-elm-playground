@@ -34,6 +34,10 @@ type ('state, 'move) setup = {
   board : ('state, 'move) Alphazero.board;
   settings : Alphazero.settings; (* a game against itself *)
   games : int; (* an iteration's, shared among the processes *)
+  (* where a game's lessons come from, if not from the network playing
+   * itself: a teacher's game, say, each move a lesson (train_chess).
+   * None: [Alphazero.play] *)
+  source : (seed:int -> Policy_value.t -> Policy_value.lesson list) option;
   remembered : int; (* the newest lessons kept *)
   (* the other ways a lesson is as good a lesson: a board in a mirror,
    * turned. Learned beside it. *)

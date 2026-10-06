@@ -48,7 +48,7 @@ open Playground
 (*****************************************************************************)
 
 let board : (Tictactoe.position, int) Alphazero.board =
-  { game = Tictactoe.game; start = Tictactoe.start; inputs = 18; moves = 9; encode = Tictactoe.encode; index = (fun m -> m) }
+  { game = Tictactoe.game; start = Tictactoe.start; inputs = 18; moves = 9; encode = Tictactoe.encode; index = (fun _ m -> m) }
 
 (* the truth, by search to the end of the game; each position's answer
  * kept, the empty board's being half a million positions to visit *)

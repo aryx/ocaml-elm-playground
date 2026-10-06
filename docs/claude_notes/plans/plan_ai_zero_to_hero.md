@@ -613,6 +613,56 @@ both.
   as the first AlphaGo was on human games), then self-play from
   there.
 
+**Started (2026-10-06).** The rules and the computer of `AiChess`
+are the boards kit's `Chess`, the game including them as `AiGo` does
+`Go9`. As a network reads it: 17 planes of 8 by 8 from the side of
+whoever is to play (black sees the board turned), a move the pair of
+its squares seen from that side, 4,096 places; a promotion is a
+queen's. For that, `Alphazero.board`'s `index` is given the position
+the move is made in. A game is stopped at 160 half-moves and given to
+whoever is a knight ahead: the one thing told beyond the rules.
+`train_chess`: 192 games an iteration at 100 playouts, measured
+against a random player and alpha-beta at depths 1, 2 and 3.
+
+Two false starts the same day, both in `notes_ai_dark_arts.md`. Go's
+kind of policy head made a network of 556,132 numbers, 524,288 of
+them its last layer, and an iteration of sixteen minutes: now
+`Policy_value`'s `per_square`, the policy read off the squares as the
+paper's is, four convolutions of 16 channels, 14,754 numbers. Then
+the lessons, remembered whole (41 KB each), took the machine's memory
+at the fourth iteration: now `Alphazero_trainer` remembers only their
+numbers that are not zero.
+
+The third run ran, and made the network worse: after twenty
+iterations, two hours, 3-3-14 against a random player it had beaten
+14-4-2 knowing nothing; a value of 0 everywhere, a queen left
+hanging, eleven games in twelve drawn. Self-play needs games that
+somebody wins, and two players of chess who know nothing draw.
+
+So the cheaper start above became the first stage: `train_chess
+teach`, lessons from the games of alpha-beta three half-moves ahead
+against itself (its move, its score), an iteration's lessons from a
+`source` other than self-play in `Alphazero_trainer`; then
+`train_chess play` from that file.
+
+**Paused here (2026-10-06), on the author's word, the machine being
+needed.** The teaching run was stopped after 2 iterations of 30
+(eight minutes each on 40 processes, fifteen on 16), before its first
+measure. To go on:
+
+    WORKERS=16 dune exec scripts/train/train_chess.exe -- teach data/weights/chess/chess.weights 28 data/weights/chess/chess.weights
+
+and what is not known yet: whether the taught network beats a random
+player and alpha-beta at depth 1 (measured every fifth iteration),
+then whether `play` from it improves on it or drifts as the third run
+did. If it drifts: a lower bar than a knight for a stopped game, and
+the teacher's lessons kept among the self-play ones.
+
+`AiChess` has the engine switch (`a`, `ai=network|policy`, classic the
+default), the network's search spread over frames as AiGo's; its
+weights are `data/weights/chess/`, for now the checkpoint of those 2
+iterations, there so that the game builds.
+
 ### Q13. DQN on our own arcade games: `Dqn`, `TinyBreakout ai=network` (size after Q9)
 
 DeepMind's first famous result (Mnih et al., "Playing Atari with Deep

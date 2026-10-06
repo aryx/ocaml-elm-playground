@@ -60,6 +60,31 @@
  * A matrix is then one board, not a batch: a batch of lessons is as
  * many graphs, their losses added.
  *
+ * {1 A policy read off the squares}
+ *
+ * The policy head above ends with a layer from the whole board to a
+ * score per move: for Go, 162 numbers to 82 scores. For chess, where
+ * a move is a square left and a square reached, it would be 128
+ * numbers to 4,096 scores, half a million weights, twenty times the
+ * rest of the network; an iteration of train_chess took sixteen
+ * minutes with it (notes_ai_dark_arts.md).
+ *
+ * With [per_square] the head is one layer on each square alone, the
+ * same weights at every square, giving that square's scores: for
+ * chess 64 a square, "from here to there" for each there.
+ *
+ *     conv, relu ...             the body, as above
+ *       |
+ *     [per_square] numbers a     no layer over the whole board:
+ *     square                     the scores are these, a square
+ *       |                        after the other
+ *     a score per move
+ *
+ * It is how the paper's network gives its policy (there 73 a square,
+ * a direction and a distance each): a board of answers for a board of
+ * questions, and what it learns of a rook's move on one square it
+ * knows on all.
+ *
  * References: David Silver et al., "Mastering the game of Go without
  * human knowledge", 2017 (the two heads on one body, and this loss),
  * and "A general reinforcement learning algorithm that masters chess,
@@ -73,6 +98,10 @@ type board = {
   width : int;
   channels : int; (* what each layer makes of a square *)
   layers : int; (* convolutions, one after the other *)
+  (* 0: the policy head above, a layer over the whole board. Or so
+   * many scores a square, [moves] being that times the squares: see
+   * below *)
+  per_square : int;
 }
 
 type shape =

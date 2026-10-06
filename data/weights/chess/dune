@@ -1,0 +1,25 @@
+; claude: what a network learned of chess by playing against itself:
+; chess.weights (Weights.mli: a text header saying how it was made,
+; then the numbers), written by scripts/train/train_chess. AiChess's
+; other computer (ai=network). A library of its own, as every folder
+; of data/ is: a program carries it only if it names it. In the
+; package tiny_libs, as tiny_libs.data_weights_chess.
+(include_subdirs no)
+
+(library
+ (name data_weights_chess)
+ (public_name tiny_libs.data_weights_chess)
+ (wrapped false)
+)
+
+; the file embedded as a string. Escaped (files_to_string_ml.ml), not
+; between {| and |}: it is binary.
+(rule
+ (targets Weights_chess.ml)
+ (deps chess.weights %{project_root}/scripts/build/files_to_string_ml.ml)
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (run ocaml %{project_root}/scripts/build/files_to_string_ml.ml chess.weights)
+    (echo "let bytes = chess_weights\n")))))

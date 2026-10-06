@@ -32,6 +32,7 @@ type ('state, 'move) setup = {
   board : ('state, 'move) Alphazero.board;
   settings : Alphazero.settings;
   games : int;
+  source : (seed:int -> Policy_value.t -> Policy_value.lesson list) option;
   remembered : int;
   also : Policy_value.lesson -> Policy_value.lesson list;
   steps : int;
@@ -42,20 +43,46 @@ type ('state, 'move) setup = {
   notes : (string * string) list;
 }
 
+(* A lesson as it is remembered: of its numbers, only those that are
+ * not zero, each with its place. A position of chess is 1,088 numbers
+ * and a policy 4,096, of which some thirty pieces and some thirty
+ * moves are not zero: remembered whole, the lessons of three
+ * iterations were 2.7 GB, every process forked had them, and the
+ * machine ran out of memory at the fourth (notes_ai_dark_arts.md) *)
+type sparse = { size : int; at : int array; is : float array }
+type kept = { input : sparse; policy : sparse; value : float }
+
+let sparse (a : float array) : sparse =
+  let at = List.filter (fun i -> a.(i) <> 0.) (List.init (Array.length a) Fun.id) |> Array.of_list in
+  { size = Array.length a; at; is = Array.map (fun i -> a.(i)) at }
+
+let whole (s : sparse) : float array =
+  let a = Array.make s.size 0. in
+  Array.iteri (fun k i -> a.(i) <- s.is.(k)) s.at;
+  a
+
+let keep (l : Policy_value.lesson) : kept = { input = sparse l.input; policy = sparse l.policy; value = l.value }
+let lesson (k : kept) : Policy_value.lesson = { input = whole k.input; policy = whole k.policy; value = k.value }
+
 (* an iteration's games, shared out among the processes, and each
  * lesson with the other ways it is a lesson *)
-let games (s : ('state, 'move) setup) (net : Policy_value.t) (iteration : int) : Policy_value.lesson list =
+let games (s : ('state, 'move) setup) (net : Policy_value.t) (iteration : int) : kept list =
   let each = max 1 (s.games / workers) in
   (* a process lost is some games fewer, not the end of the run *)
   let played =
     those_that_finish "games' processes"
       (List.init workers (fun w () ->
-           List.concat
-             (List.init each (fun g ->
-                  fst (Alphazero.play ~settings:s.settings ~seed:((iteration * 100_000) + (w * 1000) + g) s.board net)))))
+           let lessons =
+             List.concat
+               (List.init each (fun g ->
+                    let seed = (iteration * 100_000) + (w * 1000) + g in
+                    match s.source with
+                    | Some lessons -> lessons ~seed net
+                    | None -> fst (Alphazero.play ~settings:s.settings ~seed s.board net)))
+           in
+           List.map keep (lessons @ List.concat_map s.also lessons)))
   in
-  let lessons = List.concat played in
-  lessons @ List.concat_map s.also lessons
+  List.concat played
 
 (* the steps of an iteration by [learners] processes: each takes the
  * network as it is and its own [steps] on its own batches, apart;
@@ -69,19 +96,18 @@ let games (s : ('state, 'move) setup) (net : Policy_value.t) (iteration : int) :
  * One fork a learner an iteration. The first version forked sixteen
  * processes at every *step*, to share one large batch: a step took
  * 0.3 s, most of it the forks (notes_ai_dark_arts.md) *)
-let learn_apart (s : ('state, 'move) setup) (l : Alphazero.learner) (fresh : Policy_value.lesson list) :
-    Alphazero.learner * float =
-  let all = Array.append (Array.of_list fresh) l.lessons in
-  let lessons = Array.sub all 0 (min s.remembered (Array.length all)) in
+let learn_apart (s : ('state, 'move) setup) (l : Alphazero.learner) (lessons : kept array) : Alphazero.learner * float =
   let arrived =
     those_that_finish "learners"
-      (List.init s.learners (fun w () ->
+      (* no more of them than the processes allowed (WORKERS) *)
+      (List.init (min s.learners workers) (fun w () ->
            let draws = Lehmer.make ((l.iteration * 100) + w) in
            let rec go (net : Policy_value.t) (loss : float) (n : int) : Policy_value.t * float =
              if n = 0 then (net, loss)
              else
                let (net, loss) =
-                 Policy_value.step net (Array.init s.batch (fun _ -> lessons.(Lehmer.int draws (Array.length lessons))))
+                 Policy_value.step net
+                   (Array.init s.batch (fun _ -> lesson lessons.(Lehmer.int draws (Array.length lessons))))
                in
                go net loss (n - 1)
            in
@@ -105,7 +131,7 @@ let learn_apart (s : ('state, 'move) setup) (l : Alphazero.learner) (fresh : Pol
   (* the first learner's memory of its slopes (Adam's) is kept with the
    * averaged numbers: near enough, the learners having gone the same
    * way *)
-  ({ l with net = { first with matrices }; lessons; iteration = l.iteration + 1 }, loss)
+  ({ l with net = { first with matrices }; iteration = l.iteration + 1 }, loss)
 
 (*****************************************************************************)
 (* The loop *)
@@ -139,24 +165,30 @@ let run (s : ('state, 'move) setup) ~(fresh : unit -> Policy_value.t) ~(out : st
   Printf.printf "%d numbers; from iteration %d; %d processes\n%!" (Policy_value.parameters net) done_before workers;
   let t0 = Unix.gettimeofday () in
   let learner = ref { (Alphazero.learner ~seed:5 net) with iteration = done_before } in
+  (* the newest lessons, newest first *)
+  let remembered = ref [||] in
   let measured = ref (s.measure net) in
   Printf.printf "before: %s\n%!" !measured;
   for _ = 1 to iterations do
     let began = Unix.gettimeofday () in
     let fresh = games s !learner.net (!learner.iteration + 1) in
     let played = Unix.gettimeofday () in
+    let all = Array.append (Array.of_list fresh) !remembered in
+    remembered := Array.sub all 0 (min s.remembered (Array.length all));
     let (l, loss) =
-      if s.learners > 1 then learn_apart s !learner fresh
+      if s.learners > 1 then learn_apart s !learner !remembered
       else
+        (* one learner, in this process: the loop's own, which
+         * remembers for itself, and whole *)
         Alphazero.learn
           ~schedule:{ games = s.games; steps = s.steps; batch = s.batch; remembered = s.remembered }
-          !learner fresh
+          !learner (List.map lesson fresh)
     in
     learner := l;
     Printf.printf "iteration %3d  %5.0f s  (its games %.0f s, its steps %.0f s)  loss %.3f  %d lessons\n%!" l.iteration
       (Unix.gettimeofday () -. t0) (played -. began)
       (Unix.gettimeofday () -. played)
-      loss (Array.length l.lessons);
+      loss (Array.length !remembered);
     if l.iteration mod s.every = 0 then (
       measured := s.measure l.net;
       Printf.printf "  %s\n%!" !measured);

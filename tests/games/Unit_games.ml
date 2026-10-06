@@ -2924,6 +2924,36 @@ let chess_ordering () =
   Alcotest.(check (float 0.)) "the same value" u.value o.value;
   Alcotest.(check bool) "fewer positions" true (o.nodes < u.nodes)
 
+(* as a network reads it: black sees what white would see of the same
+ * position with the colours exchanged, a legal move has a place of
+ * its own, and a game stopped is given to whoever is a piece ahead *)
+let chess_network () =
+  let open AiChess in
+  (* after 1. e4, black to play; and the same with the colours
+   * exchanged, white to play after ... e5 *)
+  let black = of_fen "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1" in
+  let white = of_fen "rnbqkbnr/pppp1ppp/8/4p3/8/8/PPPPPPPP/RNBQKBNR w KQkq e6 0 1" in
+  Alcotest.(check bool) "the same planes from either side" true (encode black = encode white);
+  Alcotest.(check int) "1,088 numbers" (17 * 64) (Array.length (encode start));
+  Alcotest.(check (float 0.)) "32 pieces, 4 rights to castle" (32. +. (4. *. 64.)) (Array.fold_left ( +. ) 0. (encode start));
+  (* e7-e5 for black is where e2-e4 is for white *)
+  Alcotest.(check int) "a move from either side" (index start { from = 52; dest = 36; promotion = None })
+    (index black { from = 12; dest = 28; promotion = None });
+  (* Kiwipete, and a position of promotions: each move its own place *)
+  List.iter
+    (fun fen ->
+      let p = of_fen fen in
+      let places = List.map (index p) (queening.moves p) in
+      Alcotest.(check int) "no two moves in one place" (List.length places) (List.length (List.sort_uniq compare places)))
+    [ "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
+      "r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 b kq - 0 1" ];
+  (* stopped at once: a queen ahead wins, a pawn ahead draws *)
+  let b = board ~longest:0 in
+  Alcotest.(check bool) "no move left" true (b.game.moves b.start = []);
+  Alcotest.(check bool) "a queen ahead" true (b.game.score (of_fen "4k3/8/8/8/8/8/8/3QK3 w - - 0 1", 0) > 0.);
+  Alcotest.(check bool) "black a rook ahead" true (b.game.score (of_fen "r3k3/8/8/8/8/8/8/4K3 w - - 0 1", 0) < 0.);
+  Alcotest.(check (float 0.)) "a pawn ahead" 0. (b.game.score (of_fen "4k3/8/8/8/8/8/P7/4K3 w - - 0 1", 0))
+
 (*****************************************************************************)
 (* TinyTron (the light cycles kit) *)
 (*****************************************************************************)
@@ -7993,6 +8023,7 @@ let tests =
       t "AiChess, mates in one and a hanging queen" chess_search;
       t "AiChess, quiescence against the horizon effect" chess_quiescence;
       t "AiChess, move ordering" chess_ordering;
+      t "AiChess, as a network reads it" chess_network;
       t "TinyTron, the computer outlasts a straight line" tron_computer;
       t "TinyTron, the Voronoi partition" tron_voronoi;
       t "TinyTron, four riders at HARD" tron_four;

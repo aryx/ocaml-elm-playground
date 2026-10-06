@@ -15,7 +15,7 @@ type ('state, 'move) board = {
   inputs : int;
   moves : int;
   encode : 'state -> float array;
-  index : 'move -> int;
+  index : 'state -> 'move -> int;
 }
 
 (*****************************************************************************)
@@ -41,8 +41,8 @@ let guides (b : ('state, 'move) board) (net : Policy_value.t) :
     (* only the legal moves, their shares made to sum to 1 again: the
      * network is never asked to learn the rules *)
     let legal = b.game.moves state in
-    let total = List.fold_left (fun sum m -> sum +. p.(b.index m)) 0. legal in
-    List.map (fun m -> (m, if total > 0. then p.(b.index m) /. total else 1. /. float_of_int (List.length legal))) legal
+    let total = List.fold_left (fun sum m -> sum +. p.(b.index state m)) 0. legal in
+    List.map (fun m -> (m, if total > 0. then p.(b.index state m) /. total else 1. /. float_of_int (List.length legal))) legal
   in
   let evaluate (state : 'state) : float =
     let (_, v) = opinion state in
@@ -123,7 +123,7 @@ let play ?(settings = default) ~(seed : int) (b : ('state, 'move) board) (net : 
         let tried = visits ~noise:settings.noise ~seed:((seed * 1000) + n) ~playouts:settings.playouts b net state in
         let total = float_of_int (List.fold_left (fun sum (_, k) -> sum + k) 0 tried) in
         let policy = Array.make b.moves 0. in
-        List.iter (fun (m, k) -> policy.(b.index m) <- float_of_int k /. total) tried;
+        List.iter (fun (m, k) -> policy.(b.index state m) <- float_of_int k /. total) tried;
         let move =
           if n < settings.exploring then
             (* early on, any move the search spent time on, as often as

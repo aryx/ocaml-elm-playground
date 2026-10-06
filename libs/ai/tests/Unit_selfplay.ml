@@ -14,7 +14,7 @@
 let t = Testo.create
 
 let board : (Tictactoe.position, int) Alphazero.board =
-  { game = Tictactoe.game; start = Tictactoe.start; inputs = 18; moves = 9; encode = Tictactoe.encode; index = (fun m -> m) }
+  { game = Tictactoe.game; start = Tictactoe.start; inputs = 18; moves = 9; encode = Tictactoe.encode; index = (fun _ m -> m) }
 
 (* the truth: minimax to the end of the game *)
 let perfect : (Tictactoe.position, int) Arena.player =
@@ -76,7 +76,7 @@ let test_network () =
 (* the same game, the network reading the board as a board: three by
    three, two planes (mine, the other's), convolutions *)
 let test_board_network () =
-  let board : Policy_value.board = { planes = 2; height = 3; width = 3; channels = 8; layers = 2 } in
+  let board : Policy_value.board = { planes = 2; height = 3; width = 3; channels = 8; layers = 2; per_square = 0 } in
   let net = Policy_value.make ~seed:1 ~board ~inputs:18 ~moves:9 () in
   let position = Tictactoe.of_string "xx.oo...." in
   let input = Tictactoe.encode position in
@@ -106,7 +106,28 @@ let test_board_network () =
      that sizes that do not fit are refused *)
   Alcotest.check_raises "planes and squares that are not the inputs"
     (Invalid_argument "Policy_value.make: the board's planes and squares are not the inputs") (fun () ->
-      ignore (Policy_value.make ~seed:1 ~board ~inputs:20 ~moves:9 ()))
+      ignore (Policy_value.make ~seed:1 ~board ~inputs:20 ~moves:9 ()));
+  (* the policy read off the squares: a score a square, tic-tac-toe's
+     nine moves being its nine squares. No layer over the whole board,
+     the same two passes agreeing, the same lesson learned, the shape
+     back from a file *)
+  let board = { board with per_square = 1 } in
+  let net = Policy_value.make ~seed:1 ~board ~inputs:18 ~moves:9 () in
+  Alcotest.(check bool) "no layer over the whole board" true (not (List.mem_assoc "policy.w" net.matrices));
+  let (p, v) = Policy_value.opinion net input and (p', v') = Policy_value.opinion_by_graph net input in
+  Alcotest.(check (array (float 1e-12))) "per square, the plain pass and the graph: the same policy" p' p;
+  Alcotest.(check (float 1e-12)) "and the same value" v' v;
+  let taught = learn net 150 in
+  let (p, _) = Policy_value.opinion taught input in
+  Alcotest.(check bool) "per square, the move it was shown" true (p.(2) > 0.9);
+  (match Result.bind (Weights.of_string (Weights.to_string (Policy_value.to_weights taught))) Policy_value.of_weights with
+  | Error why -> Alcotest.fail why
+  | Ok back ->
+      Alcotest.(check bool) "per square, its shape" true (back.shape = Policy_value.Board board);
+      Alcotest.(check (array (float 1e-5))) "the same opinion, from a file" p (fst (Policy_value.opinion back input)));
+  Alcotest.check_raises "moves that are not so many a square"
+    (Invalid_argument "Policy_value.make: the moves are not so many a square") (fun () ->
+      ignore (Policy_value.make ~seed:1 ~board ~inputs:18 ~moves:10 ()))
 
 let test_a_game () =
   let net = Policy_value.make ~seed:1 ~inputs:18 ~moves:9 () in

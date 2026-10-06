@@ -4,7 +4,7 @@
 ; from the repository's root, never by a build or a test; each one's
 ; header says how, and how long it takes. measure_gpt writes nothing:
 ; it prints the table of Gpt.mli. Alphazero_trainer is what the trainers
-; of the networks that play share (train_connect4, train_go): the
+; of the networks that play share (train_connect4, train_go, train_chess): the
 ; loop, its processes, its file. In no opam package.
 ; scripts/README.md, plan_ai_zero_to_hero.md (decision D3).
 ; what the trainers share to run many processes at once
@@ -15,7 +15,7 @@
  (libraries unix))
 
 (executables
- (names train_names train_names_gpt measure_gpt train_connect4 train_go)
+ (names train_names train_names_gpt measure_gpt train_connect4 train_go train_chess)
  (modules :standard \ Processes train_breakout Breakout_env TinyBreakout)
  (libraries train_processes ai_language ai_learning ai_search ai_selfplay kit_boards data_names random unix))
 

@@ -98,7 +98,7 @@ let () =
     if as_board then
       (* the board as a board: 7 columns of 6, two planes *)
       let shape : Policy_value.board =
-        { planes = 2; height = Connect4.columns; width = Connect4.rows; channels = 16; layers = 2 }
+        { planes = 2; height = Connect4.columns; width = Connect4.rows; channels = 16; layers = 2; per_square = 0 }
       in
       Policy_value.make ~seed ~rate:0.003 ~board:shape ~inputs:board.inputs ~moves:board.moves ()
     else Policy_value.make ~seed ~hidden:128 ~rate:0.003 ~inputs:board.inputs ~moves:board.moves ()
@@ -108,6 +108,7 @@ let () =
       board;
       settings = { Alphazero.default with playouts; exploring = 8 };
       games = 480;
+      source = None;
       remembered = 100_000;
       also = (fun l -> [ mirrored l ]);
       steps = (if as_board then 300 else 600);

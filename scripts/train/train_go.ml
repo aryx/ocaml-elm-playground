@@ -80,13 +80,14 @@ let () =
   let iterations = if Array.length Sys.argv > 2 then int_of_string Sys.argv.(2) else 100 in
   let from = if Array.length Sys.argv > 3 then Some Sys.argv.(3) else None in
   let seed = 1 in
-  let shape : Policy_value.board = { planes = 3; height = Go9.size; width = Go9.size; channels = 16; layers = 2 } in
+  let shape : Policy_value.board = { planes = 3; height = Go9.size; width = Go9.size; channels = 16; layers = 2; per_square = 0 } in
   Alphazero_trainer.run ~out ~iterations ~from
     ~fresh:(fun () -> Policy_value.make ~seed ~rate:0.003 ~board:shape ~inputs:board.inputs ~moves:board.moves ())
     {
       board;
       settings = { Alphazero.default with playouts; exploring = 16 };
       games = 192;
+      source = None;
       remembered = 300_000;
       also = (fun l -> [ Go9.lesson_turned 1 l; Go9.lesson_turned 2 l; Go9.lesson_turned 4 l ]);
       steps = 300;

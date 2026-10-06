@@ -73,8 +73,11 @@ type ('state, 'move) board = {
   moves : int; (* how many different moves there are in all *)
   (* the position from the side of whoever is to play *)
   encode : 'state -> float array;
-  (* a move's place among the policy's scores, 0 to [moves] - 1 *)
-  index : 'move -> int;
+  (* a move's place among the policy's scores, 0 to [moves] - 1, in
+   * the position it is made in: where the board is shown from the
+   * side of whoever is to play, as chess's is, a move's place depends
+   * on who makes it *)
+  index : 'state -> 'move -> int;
 }
 
 (* the network as the two guesses [Mcts] takes, [prior] and

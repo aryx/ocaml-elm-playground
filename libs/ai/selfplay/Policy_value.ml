@@ -15,6 +15,7 @@ type board = {
   width : int;
   channels : int; (* what each layer makes of a square *)
   layers : int; (* convolutions, one after the other *)
+  per_square : int; (* the policy's scores a square; 0: over the whole board *)
 }
 
 type shape =
@@ -28,7 +29,8 @@ type t = {
   (* Flat: "body1.w", "body1.b", "body2.w", "body2.b", "policy.w",
    * "policy.b", "value.w", "value.b".
    * Board: "conv0.w", "conv0.b", ..., then "policy.conv.w", ".b",
-   * "policy.w", ".b", "value.conv.w", ".b", "value.hidden.w", ".b",
+   * "policy.w", ".b" (not with [per_square]), "value.conv.w", ".b",
+   * "value.hidden.w", ".b",
    * "value.w", ".b" *)
   matrices : (string * Matrix.t) list;
   adam : Adam.t;
@@ -64,12 +66,16 @@ let make ~(seed : int) ?(hidden = 64) ?(rate = 0.003) ?board ~(inputs : int) ~(m
     | Some (b : board) ->
         let squares = b.height * b.width in
         if inputs <> b.planes * squares then invalid_arg "Policy_value.make: the board's planes and squares are not the inputs";
+        if b.per_square > 0 && moves <> b.per_square * squares then
+          invalid_arg "Policy_value.make: the moves are not so many a square";
         ( Board b,
           List.concat
             (List.init b.layers (fun l ->
                  layer_of (seed + l) (Printf.sprintf "conv%d" l) b.channels (9 * if l = 0 then b.planes else b.channels)))
-          @ layer_of (seed + 100) "policy.conv" policy_channels b.channels
-          @ layer_of (seed + 101) "policy" moves (policy_channels * squares)
+          @ (if b.per_square > 0 then layer_of (seed + 100) "policy.conv" b.per_square b.channels
+             else
+               layer_of (seed + 100) "policy.conv" policy_channels b.channels
+               @ layer_of (seed + 101) "policy" moves (policy_channels * squares))
           @ layer_of (seed + 102) "value.conv" 1 b.channels
           @ layer_of (seed + 103) "value.hidden" value_hidden squares
           @ layer_of (seed + 104) "value" 1 value_hidden )
@@ -121,9 +127,15 @@ let board_heads (b : board) (g : graph) (x : Tensor.t) : Tensor.t * Tensor.t =
   (* each head first squeezes the channels of a square into a couple
    * of numbers (a layer on each square alone), then reads the whole
    * board laid end to end *)
-  let policy = Tensor.reshape (Tensor.relu (layer g "policy.conv" x)) 1 (policy_channels * squares) in
+  let policy =
+    if b.per_square > 0 then
+      (* or the policy is read off the squares themselves: the layer on
+       * each square gives that square's scores, one after the other *)
+      Tensor.reshape (layer g "policy.conv" x) 1 (b.per_square * squares)
+    else layer g "policy" (Tensor.reshape (Tensor.relu (layer g "policy.conv" x)) 1 (policy_channels * squares))
+  in
   let value = Tensor.reshape (Tensor.relu (layer g "value.conv" x)) 1 squares in
-  (layer g "policy" policy, Tensor.tanh_ (layer g "value" (Tensor.relu (layer g "value.hidden" value))))
+  (policy, Tensor.tanh_ (layer g "value" (Tensor.relu (layer g "value.hidden" value))))
 
 (* the two losses added: how far the policy is from the search's
  * visits, and the square of how far the value is from the result *)
@@ -195,8 +207,9 @@ let opinion (n : t) (input : float array) : float array * float =
           body (l + 1) (if l = 0 then found else Matrix.add found x)
       in
       let x = body 0 (squares_of b input) in
-      let policy = row (relu (layer "policy.conv" x)) and value = row (relu (layer "value.conv" x)) in
-      (softmax (layer "policy" policy).data, tanh (layer "value" (relu (layer "value.hidden" value))).data.(0))
+      let policy = if b.per_square > 0 then layer "policy.conv" x else layer "policy" (row (relu (layer "policy.conv" x))) in
+      let value = row (relu (layer "value.conv" x)) in
+      (softmax policy.data, tanh (layer "value" (relu (layer "value.hidden" value))).data.(0))
 
 let loss (n : t) (lessons : lesson array) : float = Tensor.number (loss_of n (graph_of n) lessons)
 
@@ -233,7 +246,12 @@ let to_weights ?(notes = []) (n : t) : Weights.t =
   let shape =
     match n.shape with
     | Flat -> [ ("shape", "flat") ]
-    | Board b -> [ ("shape", Printf.sprintf "board %d %d %d %d %d" b.planes b.height b.width b.channels b.layers) ]
+    | Board b ->
+        (* a sixth number only when there is one to say: the files
+         * written before it are read as they were *)
+        [ ( "shape",
+            Printf.sprintf "board %d %d %d %d %d" b.planes b.height b.width b.channels b.layers
+            ^ if b.per_square > 0 then Printf.sprintf " %d" b.per_square else "" ) ]
   in
   { notes = shape @ notes; matrices = n.matrices }
 
@@ -251,16 +269,22 @@ let of_weights (w : Weights.t) : (t, string) result =
   match Option.map (String.split_on_char ' ') (Weights.note w "shape") with
   | Some ("board" :: sizes) -> (
       match List.map int_of_string_opt sizes with
-      | [ Some planes; Some height; Some width; Some channels; Some layers ] ->
-          let b = { planes; height; width; channels; layers } in
+      | Some planes :: Some height :: Some width :: Some channels :: Some layers :: rest
+        when rest = [] || (match rest with [ Some _ ] -> true | _ -> false) ->
+          let per_square = match rest with [ Some k ] -> k | _ -> 0 in
+          let b = { planes; height; width; channels; layers; per_square } in
           let names =
             List.concat (List.init layers (fun l -> [ Printf.sprintf "conv%d.w" l; Printf.sprintf "conv%d.b" l ]))
-            @ [ "policy.conv.w"; "policy.conv.b"; "policy.w"; "policy.b"; "value.conv.w"; "value.conv.b";
-                "value.hidden.w"; "value.hidden.b"; "value.w"; "value.b" ]
+            @ [ "policy.conv.w"; "policy.conv.b"; "value.conv.w"; "value.conv.b"; "value.hidden.w"; "value.hidden.b";
+                "value.w"; "value.b" ]
+            @ if per_square > 0 then [] else [ "policy.w"; "policy.b" ]
           in
           if not (found names) then Error "not a board network's weights: a matrix is missing"
-          else finish (planes * height * width) (Option.get (Weights.matrix w "policy.w")).rows (Board b)
-      | _ -> Error "a board network's sizes are not five numbers")
+          else
+            finish (planes * height * width)
+              (if per_square > 0 then per_square * height * width else (Option.get (Weights.matrix w "policy.w")).rows)
+              (Board b)
+      | _ -> Error "a board network's sizes are not five or six numbers")
   (* a file that does not say is flat *)
   | Some [ "flat" ] | None ->
       let names = [ "body1.w"; "body1.b"; "body2.w"; "body2.b"; "policy.w"; "policy.b"; "value.w"; "value.b" ] in

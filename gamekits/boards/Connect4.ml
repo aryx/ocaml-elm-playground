@@ -117,7 +117,7 @@ let encode (p : position) : float array =
       if i < squares then if p.board.(i) = p.turn then 1. else 0. else if p.board.(i -.. squares) = other then 1. else 0.)
 
 let board : (position, int) Alphazero.board =
-  { game = connect4; start; inputs = 2 *.. columns *.. rows; moves = columns; encode; index = (fun c -> c) }
+  { game = connect4; start; inputs = 2 *.. columns *.. rows; moves = columns; encode; index = (fun _ c -> c) }
 
 (*****************************************************************************)
 (* A player that searches *)

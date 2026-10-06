@@ -12,7 +12,9 @@
  * You are white: click a piece, then where it goes (or move the cursor
  * with the arrows, and space twice); a pawn reaching the last rank
  * becomes a queen. u takes back your last move and the computer's
- * answer; space after the end plays again.
+ * answer; space after the end plays again. "a" changes who plays
+ * black: this computer, or a network that taught itself the game (its
+ * section below).
  *
  * Chess is the game the field was named for. Claude Shannon's
  * "Programming a Computer for Playing Chess" (1950) set out minimax
@@ -79,8 +81,11 @@
  * AiOthello's table of squares. A checkmate is worth more than any
  * material, and more the sooner it comes ([mate]).
  *
- * What it uses: ai/'s Minimax (alpha-beta: the ordering is the order
- * of [moves], the quiescence its [leaf]), Scene2d (the
+ * What it uses: the boards kit's Chess (the rules and the computer,
+ * shared with the trainer), ai/'s Minimax (alpha-beta: the ordering is
+ * the order of [moves], the quiescence its [leaf]), Alphazero,
+ * Policy_value and Mcts for the other computer, whose weights are a
+ * file of data/weights, Scene2d (the
  * keys pressed). Not the puzzle kit, nor Tilemap: a board of 64
  * squares is an array. Positions can be written in FEN, chess's own
  * text format ([of_fen]), which is how the tests set them up.
@@ -94,367 +99,57 @@
  *)
 open Playground
 
-(*****************************************************************************)
-(* The rules *)
-(*****************************************************************************)
-
-type color = White | Black
-type kind = Pawn | Knight | Bishop | Rook | Queen | King
-type piece = { color : color; kind : kind }
-
-(* the 64 squares, row by row from the top: 0 is a8, 63 is h1 *)
-type position = {
-  board : piece option array;
-  turn : color;
-  (* who may still castle, king side and queen side *)
-  white_short : bool;
-  white_long : bool;
-  black_short : bool;
-  black_long : bool;
-  (* the square a pawn just jumped over, where it can be taken *)
-  en_passant : int option;
-  ply : int; (* the half-moves played *)
-}
-
-type move = { from : int; dest : int; promotion : kind option }
-
-let other = function White -> Black | Black -> White
-let row (i : int) = i / 8
-let col (i : int) = i mod 8
-let on_board r c = r >= 0 && r < 8 && c >= 0 && c < 8
-
-(* which way a pawn walks: white up the board, to row 0 *)
-let forward = function White -> -1 | Black -> 1
-
-let name (i : int) : string = Printf.sprintf "%c%d" (Char.chr (Char.code 'a' + col i)) (8 - row i)
-
-let knight_jumps = [ (-2, -1); (-2, 1); (-1, -2); (-1, 2); (1, -2); (1, 2); (2, -1); (2, 1) ]
-let straight = [ (-1, 0); (1, 0); (0, -1); (0, 1) ]
-let diagonal = [ (-1, -1); (-1, 1); (1, -1); (1, 1) ]
-let around = straight @ diagonal
-
-(* FEN, e.g. the start: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w
- * KQkq - 0 1": the rows from the top, a digit for empty squares, white
- * in capitals; who plays; who may castle; the en passant square *)
-let of_fen (fen : string) : position =
-  let fields = String.split_on_char ' ' fen in
-  let field n = match List.nth_opt fields n with Some f -> f | None -> "-" in
-  let board = Array.make 64 None in
-  let i = ref 0 in
-  String.iter
-    (fun ch ->
-      match ch with
-      | '/' -> ()
-      | '1' .. '8' -> i := !i + (Char.code ch - Char.code '0')
-      | _ ->
-          let color = if Char.uppercase_ascii ch = ch then White else Black in
-          let kind =
-            match Char.lowercase_ascii ch with
-            | 'p' -> Pawn | 'n' -> Knight | 'b' -> Bishop | 'r' -> Rook | 'q' -> Queen | _ -> King
-          in
-          board.(!i) <- Some { color; kind };
-          incr i)
-    (field 0);
-  let rights = field 2 in
-  let en_passant =
-    match field 3 with
-    | "-" -> None
-    | s -> Some (((8 - (Char.code s.[1] - Char.code '0')) * 8) + (Char.code s.[0] - Char.code 'a'))
-  in
-  { board; turn = (if field 1 = "b" then Black else White);
-    white_short = String.contains rights 'K'; white_long = String.contains rights 'Q';
-    black_short = String.contains rights 'k'; black_long = String.contains rights 'q';
-    en_passant; ply = 0 }
-
-let start = of_fen "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-
-(* is square [i] attacked by [by]'s pieces? Looked at from the square:
- * a knight's jump away, a king's step, a pawn's diagonal, and along
- * each line up to the first piece *)
-let attacked (board : piece option array) (i : int) (by : color) : bool =
-  let r = row i and c = col i in
-  let is r c kinds =
-    on_board r c && match board.((r * 8) + c) with Some p -> p.color = by && List.mem p.kind kinds | None -> false
-  in
-  let steps deltas kinds = List.exists (fun (dr, dc) -> is (r + dr) (c + dc) kinds) deltas in
-  let rec ray r c (dr, dc) kinds =
-    let r = r + dr and c = c + dc in
-    on_board r c && match board.((r * 8) + c) with None -> ray r c (dr, dc) kinds | Some _ -> is r c kinds
-  in
-  steps knight_jumps [ Knight ]
-  || steps around [ King ]
-  || is (r - forward by) (c - 1) [ Pawn ]
-  || is (r - forward by) (c + 1) [ Pawn ]
-  || List.exists (fun d -> ray r c d [ Rook; Queen ]) straight
-  || List.exists (fun d -> ray r c d [ Bishop; Queen ]) diagonal
-
-let king_square (board : piece option array) (color : color) : int =
-  let rec find i = if i = 64 || board.(i) = Some { color; kind = King } then i else find (i + 1) in
-  find 0
-
-let in_check (p : position) : bool = attacked p.board (king_square p.board p.turn) (other p.turn)
-
-(* every move of the player to play, its own king forgotten *)
-let pseudo_moves (p : position) : move list =
-  let b = p.board and me = p.turn in
-  let moves = ref [] in
-  let add from dest = moves := { from; dest; promotion = None } :: !moves in
-  let add_pawn from dest =
-    if row dest = 0 || row dest = 7 then
-      List.iter (fun k -> moves := { from; dest; promotion = Some k } :: !moves) [ Knight; Bishop; Rook; Queen ]
-    else add from dest
-  in
-  let enemy i = match b.(i) with Some q -> q.color <> me | None -> false in
-  for i = 0 to 63 do
-    match b.(i) with
-    | Some { color; kind } when color = me -> (
-        let r = row i and c = col i in
-        let steps deltas =
-          List.iter
-            (fun (dr, dc) ->
-              let r' = r + dr and c' = c + dc in
-              if on_board r' c' then
-                let j = (r' * 8) + c' in
-                if b.(j) = None || enemy j then add i j)
-            deltas
-        in
-        let slide dirs =
-          List.iter
-            (fun (dr, dc) ->
-              let rec go r c =
-                let r = r + dr and c = c + dc in
-                if on_board r c then begin
-                  let j = (r * 8) + c in
-                  if b.(j) = None then (add i j; go r c) else if enemy j then add i j
-                end
-              in
-              go r c)
-            dirs
-        in
-        match kind with
-        | Pawn ->
-            let f = forward me in
-            let one = ((r + f) * 8) + c in
-            if on_board (r + f) c && b.(one) = None then begin
-              add_pawn i one;
-              let home = if me = White then 6 else 1 in
-              let two = ((r + (2 * f)) * 8) + c in
-              if r = home && b.(two) = None then add i two
-            end;
-            List.iter
-              (fun dc ->
-                if on_board (r + f) (c + dc) then
-                  let j = ((r + f) * 8) + c + dc in
-                  if enemy j || p.en_passant = Some j then add_pawn i j)
-              [ -1; 1 ]
-        | Knight -> steps knight_jumps
-        | Bishop -> slide diagonal
-        | Rook -> slide straight
-        | Queen -> slide around
-        | King ->
-            steps around;
-            (* castling: the squares between empty, and the king neither
-             * in check nor crossing an attacked square (where it lands
-             * is [legal]'s business, as for any move) *)
-            let home = if me = White then 60 else 4 in
-            let short, long = if me = White then (p.white_short, p.white_long) else (p.black_short, p.black_long) in
-            let free js = List.for_all (fun j -> b.(j) = None) js in
-            let safe js = List.for_all (fun j -> not (attacked b j (other me))) js in
-            if i = home then begin
-              if short && free [ i + 1; i + 2 ] && safe [ i; i + 1 ] then add i (i + 2);
-              if long && free [ i - 1; i - 2; i - 3 ] && safe [ i; i - 1 ] then add i (i - 2)
-            end)
-    | _ -> ()
-  done;
-  List.rev !moves
-
-let play (p : position) (m : move) : position =
-  let b = Array.copy p.board in
-  let piece = Option.get b.(m.from) in
-  (* en passant: the pawn taken is beside, not on the square moved to *)
-  if piece.kind = Pawn && p.en_passant = Some m.dest && col m.from <> col m.dest then
-    b.((row m.from * 8) + col m.dest) <- None;
-  b.(m.dest) <- Some (match m.promotion with Some kind -> { piece with kind } | None -> piece);
-  b.(m.from) <- None;
-  (* castling: the king moved two squares, the rook jumps over it *)
-  if piece.kind = King && abs (col m.dest - col m.from) = 2 then begin
-    let r = row m.from in
-    let rook_from, rook_dest = if col m.dest = 6 then ((r * 8) + 7, (r * 8) + 5) else (r * 8, (r * 8) + 3) in
-    b.(rook_dest) <- b.(rook_from);
-    b.(rook_from) <- None
-  end;
-  (* the rights to castle go when the king moves, or a rook leaves (or
-   * is taken on) its corner *)
-  let untouched corner = m.from <> corner && m.dest <> corner in
-  let king_stays color = not (piece.kind = King && piece.color = color) in
-  { board = b;
-    turn = other p.turn;
-    white_short = p.white_short && king_stays White && untouched 63;
-    white_long = p.white_long && king_stays White && untouched 56;
-    black_short = p.black_short && king_stays Black && untouched 7;
-    black_long = p.black_long && king_stays Black && untouched 0;
-    en_passant = (if piece.kind = Pawn && abs (row m.dest - row m.from) = 2 then Some ((m.from + m.dest) / 2) else None);
-    ply = p.ply + 1 }
-
-(* a move that doesn't leave your own king attacked *)
-let is_legal (p : position) (m : move) : bool =
-  let q = play p m in
-  not (attacked q.board (king_square q.board p.turn) q.turn)
-
-let legal (p : position) : move list = List.filter (is_legal p) (pseudo_moves p)
-
-(* whether there is one: the first found is enough *)
-let can_move (p : position) : bool = List.exists (is_legal p) (pseudo_moves p)
-
-(* the positions [depth] moves ahead: the move generator's test *)
-let rec perft (p : position) (depth : int) : int =
-  if depth = 0 then 1 else List.fold_left (fun n m -> n + perft (play p m) (depth - 1)) 0 (legal p)
+(* the rules and the computer, checked by perft and the tests: the
+ * boards kit's Chess, shared with the program that trains a network
+ * to play (scripts/train/train_chess) *)
+include Chess
 
 (*****************************************************************************)
-(* The computer *)
+(* The other computer: a network that taught itself (ai=network) *)
 (*****************************************************************************)
+(* The computer above was told what a position is worth: the table of
+ * [static], a century of players' judgment in a few hundred numbers.
+ * This one was told the rules, and that pieces are worth having; it
+ * played against itself (Alphazero.mli, notes_ai_learning.md section
+ * 16) and learned a guess at which moves matter and a guess at who is
+ * winning, which guide a search (Mcts.mli) in the place of alpha-beta.
+ * It is AlphaZero (DeepMind, 2017), which after nine hours of such
+ * games beat the best alpha-beta program there was -- in miniature,
+ * and the miniature is the lesson: theirs was 44 million games on
+ * thousands of processors, this one a few thousand games on a desk.
+ * scripts/train/train_chess did it, and data/weights' README says how
+ * it fares against the computer above. Do not expect it to win.
+ *
+ * "a" changes who plays black, and the flag ai= who starts: classic
+ * (alpha-beta, the default), network (the search guided by the
+ * network), policy (the network alone, its first idea, no search). *)
 
-let value = function Pawn -> 100 | Knight -> 320 | Bishop -> 330 | Rook -> 500 | Queen -> 900 | King -> 20000
+type engine = Classic | Network | Policy
 
-(* what each square is worth to a white piece, row 0 the far side;
- * black's are the same, upside down *)
-let table = function
-  | Pawn ->
-      [| 0; 0; 0; 0; 0; 0; 0; 0;
-         50; 50; 50; 50; 50; 50; 50; 50;
-         10; 10; 20; 30; 30; 20; 10; 10;
-         5; 5; 10; 25; 25; 10; 5; 5;
-         0; 0; 0; 20; 20; 0; 0; 0;
-         5; -5; -10; 0; 0; -10; -5; 5;
-         5; 10; 10; -20; -20; 10; 10; 5;
-         0; 0; 0; 0; 0; 0; 0; 0 |]
-  | Knight ->
-      [| -50; -40; -30; -30; -30; -30; -40; -50;
-         -40; -20; 0; 0; 0; 0; -20; -40;
-         -30; 0; 10; 15; 15; 10; 0; -30;
-         -30; 5; 15; 20; 20; 15; 5; -30;
-         -30; 0; 15; 20; 20; 15; 0; -30;
-         -30; 5; 10; 15; 15; 10; 5; -30;
-         -40; -20; 0; 5; 5; 0; -20; -40;
-         -50; -40; -30; -30; -30; -30; -40; -50 |]
-  | Bishop ->
-      [| -20; -10; -10; -10; -10; -10; -10; -20;
-         -10; 0; 0; 0; 0; 0; 0; -10;
-         -10; 0; 5; 10; 10; 5; 0; -10;
-         -10; 5; 5; 10; 10; 5; 5; -10;
-         -10; 0; 10; 10; 10; 10; 0; -10;
-         -10; 10; 10; 10; 10; 10; 10; -10;
-         -10; 5; 0; 0; 0; 0; 5; -10;
-         -20; -10; -10; -10; -10; -10; -10; -20 |]
-  | Rook ->
-      [| 0; 0; 0; 0; 0; 0; 0; 0;
-         5; 10; 10; 10; 10; 10; 10; 5;
-         -5; 0; 0; 0; 0; 0; 0; -5;
-         -5; 0; 0; 0; 0; 0; 0; -5;
-         -5; 0; 0; 0; 0; 0; 0; -5;
-         -5; 0; 0; 0; 0; 0; 0; -5;
-         -5; 0; 0; 0; 0; 0; 0; -5;
-         0; 0; 0; 5; 5; 0; 0; 0 |]
-  | Queen ->
-      [| -20; -10; -10; -5; -5; -10; -10; -20;
-         -10; 0; 0; 0; 0; 0; 0; -10;
-         -10; 0; 5; 5; 5; 5; 0; -10;
-         -5; 0; 5; 5; 5; 5; 0; -5;
-         0; 0; 5; 5; 5; 5; 0; -5;
-         -10; 5; 5; 5; 5; 5; 0; -10;
-         -10; 0; 5; 0; 0; 0; 0; -10;
-         -20; -10; -10; -5; -5; -10; -10; -20 |]
-  | King ->
-      [| -30; -40; -40; -50; -50; -40; -40; -30;
-         -30; -40; -40; -50; -50; -40; -40; -30;
-         -30; -40; -40; -50; -50; -40; -40; -30;
-         -30; -40; -40; -50; -50; -40; -40; -30;
-         -20; -30; -30; -40; -40; -30; -30; -20;
-         -10; -20; -20; -20; -20; -20; -20; -10;
-         20; 20; 0; 0; 0; 0; 20; 20;
-         20; 30; 10; 0; 0; 10; 30; 20 |]
+let engine_of (flags : (string * string) list) : engine =
+  match List.assoc_opt "ai" flags with Some "network" -> Network | Some "policy" -> Policy | _ -> Classic
 
-let tables = List.map (fun k -> (k, table k)) [ Pawn; Knight; Bishop; Rook; Queen; King ]
+let engine_name (e : engine) : string =
+  match e with
+  | Classic -> "alpha-beta, 3 moves ahead"
+  | Network -> "a network that taught itself, and a search"
+  | Policy -> "the network alone, no search"
 
-(* the board alone, for white: its material and squares, minus black's *)
-let static (p : position) : int =
-  let total = ref 0 in
-  Array.iteri
-    (fun i sq ->
-      match sq with
-      | Some { color = White; kind } -> total := !total + value kind + (List.assoc kind tables).(i)
-      | Some { color = Black; kind } ->
-          total := !total - value kind - (List.assoc kind tables).(((7 - row i) * 8) + col i)
-      | None -> ())
-    p.board;
-  !total
+let net : Policy_value.t Lazy.t =
+  lazy
+    (match Result.bind (Weights.of_string Weights_chess.bytes) Policy_value.of_weights with
+    | Ok net -> net
+    | Error why -> failwith ("chess.weights: " ^ why))
 
-(* MVV-LVA: the most valuable victim first, by the least valuable
- * attacker; a promotion as a capture of a queen; quiet moves last *)
-let order (p : position) (moves : move list) : move list =
-  let key m =
-    let victim =
-      match p.board.(m.dest) with
-      | Some q -> value q.kind
-      | None -> if p.en_passant = Some m.dest && (Option.get p.board.(m.from)).kind = Pawn then value Pawn else 0
-    in
-    let promoted = match m.promotion with Some k -> value k | None -> 0 in
-    let attacker = value (Option.get p.board.(m.from)).kind in
-    if victim + promoted = 0 then 0 else ((victim + promoted) * 10) - (attacker / 10)
-  in
-  List.stable_sort (fun a b -> compare (key b) (key a)) moves
+(* the game as the network was taught it, never stopped: a position
+ * and the half-moves played *)
+let learned : (position * int, move) Alphazero.board = Chess.board ~longest:max_int
 
-let is_capture (p : position) (m : move) : bool =
-  p.board.(m.dest) <> None || m.promotion <> None
-  || (p.en_passant = Some m.dest && (Option.get p.board.(m.from)).kind = Pawn)
-
-(* the captures played on until the board is quiet: alpha-beta over
- * captures only, for the player to play ("negamax": each side's score
- * is the other's, negated), where standing pat -- capturing nothing --
- * is always allowed; at most [limit] captures deep *)
-let rec quiesce (p : position) (alpha : int) (beta : int) (limit : int) : int =
-  let stand = if p.turn = White then static p else -static p in
-  if stand >= beta || limit = 0 then stand
-  else
-    let rec loop alpha = function
-      | [] -> alpha
-      | m :: rest ->
-          let v = -quiesce (play p m) (-beta) (-alpha) (limit - 1) in
-          if v >= beta then v else loop (max alpha v) rest
-    in
-    (* the captures only, checked for legality only them *)
-    loop (max alpha stand) (order p (List.filter (is_legal p) (List.filter (is_capture p) (pseudo_moves p))))
-
-let mate = 100000
-
-(* for white, MAX, a game over: a checkmate beats everything, the
- * sooner the better; a stalemate is a draw *)
-let ended (p : position) : float =
-  if in_check p then float_of_int (if p.turn = White then -(mate - p.ply) else mate - p.ply) else 0.
-
-let score (p : position) : float = if can_move p then float_of_int (static p) else ended p
-
-(* the leaves searched on, captures only, within the window alpha-beta
- * has there (Minimax.alphabeta's [leaf]): turned round for black,
- * since [quiesce] counts for the player to play *)
-let quiet (p : position) ~(alpha : float) ~(beta : float) : float =
-  if not (can_move p) then ended p
-  else
-    let bound x = if x >= float_of_int mate then mate else if x <= float_of_int (-mate) then -mate else int_of_float x in
-    if p.turn = White then float_of_int (quiesce p (bound alpha) (bound beta) 6)
-    else -.float_of_int (quiesce p (-bound beta) (-bound alpha) 6)
-
-let chess ~(ordered : bool) : (position, move) Minimax.game =
-  { moves = (fun p -> if ordered then order p (legal p) else legal p);
-    play;
-    score;
-    max_to_play = (fun p -> p.turn = White) }
-
-let depth = 3
-
-let search ~(ordered : bool) ~(quiescence : bool) ~(depth : int) (p : position) : move Minimax.result =
-  if quiescence then Minimax.alphabeta ~leaf:quiet (chess ~ordered) ~depth p
-  else Minimax.alphabeta (chess ~ordered) ~depth p
+(* a playout is a pass through the network, a few milliseconds: so
+ * many a frame, and so many before it moves, a second or two. The
+ * search is anytime (Mcts.mli's think), so the game goes on drawing *)
+let network_playouts = 240
+let playouts_a_frame = 4
 
 (*****************************************************************************)
 (* The model *)
@@ -470,13 +165,18 @@ type game = {
   nodes : int option; (* the positions its last search visited *)
   ordered : bool;
   quiescence : bool;
+  engine : engine option; (* who plays black; None until the flags are seen *)
+  (* the network's search, while it is black's turn, and its playouts
+   * so far *)
+  mind : (position * int, move) Mcts.thinking option;
+  thought : int;
 }
 
 type model = game Scene2d.t
 
 let new_game () : game =
   { position = start; before = []; cursor = 52; selected = None; last = None; wait = 0; nodes = None;
-    ordered = true; quiescence = true }
+    ordered = true; quiescence = true; engine = None; mind = None; thought = 0 }
 
 let initial_model : model = Scene2d.start (new_game ())
 
@@ -508,19 +208,46 @@ let update_game (computer : computer) (scenes : model) (g : game) : game =
   let g = if key "c" then { g with quiescence = not g.quiescence } else g in
   let g =
     match g.before with
-    | p :: rest when key "u" -> { g with position = p; before = rest; selected = None; last = None; wait = 0 }
+    | p :: rest when key "u" ->
+        { g with position = p; before = rest; selected = None; last = None; wait = 0; mind = None; thought = 0 }
     | _ -> g
   in
+  let engine = match g.engine with Some e -> e | None -> engine_of computer.flags in
+  let engine = if key "a" then (match engine with Classic -> Network | Network -> Policy | Policy -> Classic) else engine in
+  let g = { g with engine = Some engine } in
   let g = { g with wait = max 0 (g.wait - 1) } in
   let p = g.position in
   if over p then g
   else if p.turn = Black then
     if g.wait > 0 then g
     else
-      let a = search ~ordered:g.ordered ~quiescence:g.quiescence ~depth p in
-      match a.best with
-      | Some mv -> { g with position = play p mv; last = Some mv; nodes = Some a.nodes }
-      | None -> g
+      match engine with
+      | Classic -> (
+          let a = search ~ordered:g.ordered ~quiescence:g.quiescence ~depth p in
+          match a.best with
+          | Some mv -> { g with position = play p mv; last = Some mv; nodes = Some a.nodes; mind = None; thought = 0 }
+          | None -> g)
+      | Policy -> (
+          match Alphazero.instinct learned (Lazy.force net) (p, 0) with
+          | Some mv -> { g with position = play p mv; last = Some mv; nodes = None; mind = None; thought = 0 }
+          | None -> g)
+      | Network -> (
+          (* a frame's worth of the search; when it has had enough, the
+             move its tree visited most *)
+          let t =
+            match g.mind with
+            | Some t -> t
+            | None ->
+                let (prior, evaluate) = Alphazero.guides learned (Lazy.force net) in
+                Mcts.start ~seed:p.ply ~prior ~evaluate learned.game (p, 0)
+          in
+          let t = Mcts.think ~playouts:playouts_a_frame t in
+          let thought = g.thought + playouts_a_frame in
+          if thought < network_playouts then { g with mind = Some t; thought }
+          else
+            match (Mcts.plan t).best with
+            | Some mv -> { g with position = play p mv; last = Some mv; nodes = None; mind = None; thought = 0 }
+            | None -> g)
   else
     (* the cursor: the mouse when it moves, the arrows *)
     let r = row g.cursor and c = col g.cursor in
@@ -595,7 +322,7 @@ let view (computer : computer) (s : model) : shape list =
     | _ ->
         let check = if in_check p then "check! " else "" in
         if p.turn = White then check ^ (if g.selected = None then "your move: pick a piece" else "your move: where to?")
-        else check ^ "the computer thinks..."
+        else check ^ (if g.thought > 0 then Printf.sprintf "the computer thinks... %d" g.thought else "the computer thinks...")
   in
   let targets = match g.selected with Some from -> List.filter (fun m -> m.from = from) moves | None -> [] in
   let light = rgb 238 216 180 and dark = rgb 180 135 100 in
@@ -615,7 +342,10 @@ let view (computer : computer) (s : model) : shape list =
      else [])
   @ List.init 8 (fun k -> text (rgb 200 190 170) 2. (String.make 1 (Char.chr (Char.code 'a' + k))) |> move (-350. +. (100. *. float_of_int k)) (-415.))
   @ List.init 8 (fun k -> text (rgb 200 190 170) 2. (string_of_int (8 - k)) |> move (-418.) (350. -. (100. *. float_of_int k)))
-  @ [ text white 3. "you (white) against the computer (black)" |> move_y 450.;
+  @ [ text white 3. "you (white) against the computer (black)" |> move_y 460.;
+      text (rgb 200 190 170) 1.5
+        ("black is " ^ engine_name (match g.engine with Some e -> e | None -> engine_of computer.flags) ^ "   (a: another)")
+      |> move_y 425.;
       text white 2.5 (match g.last with Some mv -> status ^ Printf.sprintf "   last: %s-%s" (name mv.from) (name mv.dest) | None -> status)
       |> move_y (-445.);
       text (rgb 200 220 200) 1.8
@@ -625,4 +355,4 @@ let view (computer : computer) (s : model) : shape list =
       |> move_y (-478.) ]
 
 let app = game view update initial_model
-let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app app)
+let main = Program.main __MODULE__ (fun () -> Playground_platform.run_app ~flags:(Playground_platform.flags ()) app)

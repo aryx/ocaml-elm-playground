@@ -3,9 +3,11 @@
 ; Connect4 (the rules, what a position is worth, the hints a search is
 ; given, and the position as a network reads it) and Go9 (Go on 9 by
 ; 9: the rules, the counting, the random playout, the position as a
-; network reads it and the board's eight symmetries). Used by
-; AiConnect4 and AiGo, and by scripts/train/train_connect4 and
-; train_go. No drawing: it is on the libraries
+; network reads it and the board's eight symmetries) and Chess (the
+; rules, alpha-beta with its ordering and quiescence, the position and
+; a move as a network reads them). Used by AiConnect4, AiGo and
+; AiChess, and by scripts/train/train_connect4, train_go and
+; train_chess. No drawing: it is on the libraries
 ; only. In the package elm_playground_gamekits, as
 ; elm_playground_gamekits.kit_boards.
 (library
