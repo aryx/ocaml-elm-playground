@@ -11,6 +11,11 @@
 
 type t
 
+(* true: the game as it is played, its effects on; false (as it is
+ * learned): the dry game. To measure what a learner taught on one
+ * does on the other. *)
+val juice : bool ref
+
 (* the title screen, before the first serve *)
 val start : unit -> t
 

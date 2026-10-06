@@ -14,6 +14,7 @@
  *   dune exec scripts/train/train_breakout.exe -- pixels 50 out.weights out.weights   (go on from a file)
  *   RATE=0.0003 dune exec ... pixels 300 more.weights out.weights.best            (with smaller steps)
  *   dune exec scripts/train/train_breakout.exe -- screen 40 seen.pgm               (what it sees, after 40 steps)
+ *   dune exec scripts/train/train_breakout.exe -- measure out.weights [juice]      (40 games; on the game with its effects)
  *   dune exec scripts/train/train_breakout.exe -- follow 20 out.weights            (can it see the ball? a check)
  *
  * [numbers]: the check of the learner before it is given the screen.
@@ -186,8 +187,13 @@ let game_of (net : Dqn.t) (seed : int) : int =
   in
   go (Breakout_env.start ()) [| s0; s0; s0; s0 |] 0 0
 
-let actors = 48
-let lived_each = 200
+(* few actors and long runs, not many and short: a run always starts
+ * at the title, and what comes late in a game (the ball faster after
+ * 4 hits and 12, the paddle halved once the wall is pierced) has to
+ * be lived to be learned. With 200 steps each, thirteen seconds of
+ * game, the score stopped at what thirteen seconds can hold *)
+let actors = 24
+let lived_each = 500
 (* a step's batch is [slicers] slices of [slice] steps lived *)
 let slicers = 16
 let slice = 2
@@ -311,11 +317,28 @@ let screen_to (path : string) (steps : int) : unit =
   output_bytes oc s;
   close_out oc
 
+(* a network from a file, measured: the mean of [games] games of three
+ * balls, each in a process of its own *)
+let measure (path : string) (games : int) : unit =
+  match Result.bind (Weights.of_string (read path)) Dqn.of_weights with
+  | Error why -> failwith why
+  | Ok net ->
+      let scores = Processes.together (List.init games (fun g () -> game_of net (900 + g))) in
+      Printf.printf "%s, the game %s: %.1f points a game over %d (from %d to %d)\n" (Filename.basename path)
+        (if !Breakout_env.juice then "with its effects" else "dry")
+        (mean scores) games
+        (List.fold_left min max_int scores)
+        (List.fold_left max 0 scores)
+
 let () =
   (* no one is listening *)
   Audio.silently (fun () ->
       match Array.to_list Sys.argv with
       | [ _; "numbers"; steps ] -> numbers (int_of_string steps)
+      | [ _; "measure"; path ] -> measure path 40
+      | [ _; "measure"; path; "juice" ] ->
+          Breakout_env.juice := true;
+          measure path 40
       | [ _; "screen"; steps; out ] -> screen_to out (int_of_string steps)
       | [ _; "pixels"; iterations; out ] -> pixels ~iterations:(int_of_string iterations) ~out ~from:None ()
       | [ _; "pixels"; iterations; out; from ] -> pixels ~iterations:(int_of_string iterations) ~out ~from:(Some from) ()

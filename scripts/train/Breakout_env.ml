@@ -22,12 +22,14 @@ let start () : t = { model = TinyBreakout.initial_model; frame = 0 }
 (* the dry game (juice=off): the original's, no effect shaking the
  * screen or flashing it. A learner comparing one frame with the next
  * to find a ball of one pixel has no use for either *)
+let juice = ref false
+
 let computer (frame : int) (keyboard : keyboard) : computer =
   { initial_computer with
     keyboard;
     time = Time (float_of_int frame /. 60.);
     screen = to_screen 1000. 1000.;
-    flags = [ ("juice", "off") ] }
+    flags = (if !juice then [] else [ ("juice", "off") ]) }
 
 let game (e : t) : TinyBreakout.game option =
   match e.model.scenes.scene with TinyBreakout.Playing g -> Some g | Title | Game_over _ -> None

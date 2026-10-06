@@ -709,6 +709,15 @@ trainer. A paddle that meets the ball a few times, not one that
 clears a wall: going on from the best network, with smaller steps, is
 next, and the assistant waits for a network worth showing.
 
+Going on from the best (2026-10-06): seventy iterations with smaller
+steps stayed at 20 points; the actors played 200 steps each from the
+title, a dozen hits, and the game after a dozen hits (the ball
+faster, the paddle halved) was never lived. With 24 actors of 500
+steps: 250 iterations, six hours, to 69 points a game (the mean of
+12; 61.8 over 40), the best single game 142, still rising. And on
+the game with its effects, which it never saw: 66.7 over 40. It
+generalizes; the assistant can play the game as it is.
+
 On the game's side, decided by the author (2026-10-05): the assistant
 on the native platforms only, as little changed as can be for it, and
 the network made to bear another renderer's pixels rather than the

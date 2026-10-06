@@ -383,6 +383,39 @@ And the curve, once it rose, did what the cliff's did: 23 points at
 iteration 90, 10 to 20 for the fifty after. The best network was
 kept as it went, which is the only reason there is one to show.
 
+**It could not learn what it never lived** (DQN on TinyBreakout,
+going on). Taught further from its best network with smaller steps,
+the score sat at 20 points a game for seventy iterations. Twenty
+points is about a dozen bricks. And a dozen hits is what fits in the
+200 steps, thirteen seconds of game, that each of the 48 actors
+played before stopping; every actor started again from the title.
+After a dozen hits the game is another game: the ball has sped up
+twice, then the paddle is halved. The network had got good enough to
+reach that game when measured, and had never once been there when
+taught.
+
+Twenty-four actors of 500 steps instead, the same count of steps
+lived: 36 points at the thirtieth iteration, 47 at the eightieth, 69
+at the last of 250, the best single game 105. The plateau had been
+the shape of the training, not a limit of the learner.
+
+*A learner's score is capped by the states its training reaches.*
+When a curve goes flat, compare what it meets when measured with what
+it meets when taught: an episode cut short, a start always the same,
+are limits nobody decided on.
+
+**A prediction, measured, and wrong** (the game's effects). The
+network learned on the dry game, its effects off, because the first
+runs had drowned in them. Asked whether it would then play the game
+as it is, shaking and flashing, I said no: such a network learns its
+pictures and little else, and the shake moves every pixel. Measured
+over 40 games each: 61.8 points a game dry, 66.7 with the effects.
+No loss at all. Averaging the screen down to 64 by 64 had already
+taken out most of what the effects add, which is what it was for.
+*Measure before explaining, and the more so when sure*: the
+explanation was plausible, and would have cost a second training for
+nothing.
+
 ## The pattern
 
 Each mistake was invisible at the size where the code was written and
