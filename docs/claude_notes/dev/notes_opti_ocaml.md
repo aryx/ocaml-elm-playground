@@ -753,6 +753,214 @@ copies, not to the product. What is left to try, in OCaml: the product
 blocked for matrices that do not fit the cache, and `Bigarray`s of
 32-bit floats, half the memory to read.
 
+## 22. The whole of it, every time: a linker that loads all the library
+
+**Symptom**: ix built by ix (62 programs, each linked by mini-ld) took
+91 s on 64 processors, and on a machine of 16 GB and 4 processors was
+killed for its memory: 60 links at once, each holding 130 MB (OCaml's
+mini-ld) to 1 GB (mini-ml's, whose collector keeps two halves). One
+link of `mini-rm`, a program of a page: 4.9 s, 1.4 GB allocated
+(OCAMLRUNPARAM=v=0x400), 54 MB alive at its end, for 885 KB of
+executable. callgrind: 70% of the instructions the collector's, 18%
+`compare`'s; the linker's own code a remainder.
+
+**Why**: three things, each "all of it, again":
+
+- every program was given the stdlib's 69 objects by name, and its
+  start code (the units' initializations, their roots for the
+  collector) named all 69: ocamlopt's `-linkall`, without having asked
+  for it. `rm` uses 30 of them.
+- a library was one marshalled value, read whole to take a member.
+- the instructions were one list, and each object's were added with
+  `List.rev_append (List.rev all) its`: the whole list made again,
+  twice, for each of 71 objects.
+
+**Fix**: the stdlib a library (`lib_core.a`), and the linker's own rule
+for one (a member is taken when it defines a name left undefined). The
+start code must still name every unit, in the order of initialization,
+without that naming being a need: a weak name (a flag of GLOBL's; C's
+weak symbol, which 5l has not), for which no member is taken, a call to
+it no call when nothing defines it, its address 0. ocamlopt does the
+other thing, the units needed computed by its driver from their
+imports before the start code is written: more code in the compiler,
+and every build line changed; the weak name is 40 lines in the linker
+and none in the 28 mkfiles. A member is kept as its object's bytes and
+read when taken. The list is built last first and turned over once.
+
+| one link of mini-rm | time | memory |
+|---|---:|---:|
+| OCaml's mini-ld, before | 4.9 s | 136 MB |
+| after | 0.9 s | 83 MB |
+| mini-ml's mini-ld, before | 7.5 s | 267 MB |
+| after | 2.6 s | 262 MB |
+
+ix built by ix: 91 s to 23. In 16 GB: the first build's peak 9.9 GB to
+3.9, the second's (mini-ml's programs) killed at 16 to 13.1. mini-ml's
+memory did not move for this link although what is alive went from 54
+MB to 35: its heap doubles, and 37 MB alive at the peak asks for more
+than a half of 64, so 128 either way.
+
+**Tried, worked, not kept**: the collector giving the emptied half back
+to the system after a collection (`madvise`, MADV_DONTNEED): 267 MB to
+192 for 10% of time in page faults. One system's call and conditionals
+in the collector, for a problem that was the build's (the author: "not
+a fan of this madvise thing that is working just for Linux").
+
+**Where**: ix's linker/Link.ml (`weak`, `members`, `add_object`),
+languages/ml/simple/Gen.ml (`startup`), mkfiles/mkconfig (`STDOBJS`),
+2026-10-09. The lesson: before the collector or the code, count what
+the program is given. A profile that is all collector says the program
+allocates, not why; the allocation's size against the output's (1.4 GB
+for 885 KB) says it is doing the whole of something many times.
+
+## 23. A value asked the same question every frame: mini-office's page
+
+ix's mini-office (`apps/office/`, the playground's TinyOffice), in a
+window on Linux drawn by the program's own pixels and on mini-9pi by
+the draw device, where the playground's is Cairo's: "moving around a
+sheet inside a Word document is really slow" (the author, 2026-10-09).
+
+**Symptom.** No profile needed, three timers (callgrind's inclusive
+costs are of no use through `List`'s recursion). A page of text is
+7,942 shapes, a letter's strokes each. A frame of a document nobody
+touches: 5 ms of update and view (17 by mini-ml's code on the same
+arm64 machine), then 17 ms for the platform to find that nothing
+changed (`Redraw`: a table of the last frame's shapes, by their
+contents), then no pixel. 25 ms for nothing, on a machine a Pi1 is far
+from.
+
+**Why.** The view is a function of the model, called every frame, and
+it lays the text out and makes its shapes each time; the update asks
+the layout several times more (a point's object, the pages' number).
+Elm's answer to itself is `Html.Lazy`: the same argument, the same
+record, gives the result kept.
+
+**The fix.** A document is a value: an edit makes another record, no
+edit leaves the same one. `Office_page.kept f`: `f`'s last argument
+and result, given again when the argument is `==` the last. Used for
+the objects' places, the layout, the pages; `Office_view.glyphs_at`
+the same for the letters' shapes (the same page, ink and place).
+Behind `Opti.enabled`, the simple functions kept (`placed_simple`...).
+And in `Redraw`, the shapes two frames start and end with alike are
+left out before the table is made: with the list of letters the very
+same list, that is pointers compared.
+
+**What it bought.** A still page: 25 ms a frame to 1.5 (OCaml's code,
+drawn by what changed), update and view 5.4 to 1.0; by mini-ml's code
+17 to 1.4. The 16 recorded sessions give the same frames. **Not
+bought:** the sheet dragged, where each frame is another document: 6
+ms of update and view (15 by mini-ml's) and the pixels of a page whose
+text flows again, 60 ms by the program's own; that is the letters'
+cost, and the next thing to look at.
+
+The lesson: before making a computation faster, ask how often its
+answer changes.
+
+## 24. An interpreter's step: what each instruction pays for nothing (ix's tiny-machine)
+
+ix's `tiny/TinyLibCPU.ml` and `TinyLibMachine.ml`: a CPU of 16
+registers and the machine around it, wanted at 8 million instructions
+a second in a web page (js_of_ocaml), and giving 4.5 under node, 11.5
+natively. Three things, each found by node's profile
+(`tiny/tests/TinyMachine_bench.sh -prof`), in the order they were
+fixed; the recorded sessions (the screen at the halt, which depends on
+the instruction an interrupt is taken at) have the same sums after
+each.
+
+**A function that returns a function.** `let load m = function W ->
+fun a -> ... | B -> fun a -> ...`, called `load m s a`: a closure made
+at every load and every fetch. Natively too: ocamlopt does not see
+through it. `let load m s a = match s with ...`: 4.5 to 5.2 under
+node, 11.5 to 13.5 natively. The same for a helper defined inside the
+step (`let set d v = ... r.(d) <- ...`, closing over `r`): ocamlopt
+inlines it, js_of_ocaml allocates it each step; and `let set = set r
+in` to shorten the calls is the same closure again, a partial
+application. Section 5's lesson, where the cost is JavaScript's.
+
+**A value made to be matched once.** `decode w` gives `Some (Alu (op,
+d, a, b))`, matched and dropped. A pure function of the word: its
+answers kept in a table by the word (16,384 places, the word's bits
+folded), with nothing ever to forget, since no store in memory changes
+what a word means. 6.8 to 8.1 under node; natively 21.3 to 22.0, an
+allocation there being three instructions. Behind a switch
+(`keep_decoded`).
+
+**Looking, every instruction, at what changes rarely.** Before each
+instruction the machine asked: is a recorded event due, is any of four
+interrupt sources pending, are interrupts on? The answers change only
+when the time reaches a known value (the next event's, the timer's),
+when an instruction touches a device or a control register (a flag,
+set there), or between two calls from the host. So: one full look,
+then the count of instructions to the nearest of those, run as bare
+steps. 6.8 to 8.1 under node, 15.2 to 22.0 natively, behind a switch
+(`batched`), the simple `tick` kept as the definition. What made it
+safe to do is that the test is exact: an interrupt one instruction
+late gives another screen.
+
+Together: 4.5 to 8.1 under node, 11.5 to 22.0 natively; the page went
+from 61% to 92% of the machine's speed in Chrome. Not done: the
+address translation at each fetch (30% of what is left), and pages
+(tiny-os v6 walks two tables an access: 39% in the page).
+
+## 25. Around the engine, not in it: a page's load (ix's mini-netscape)
+
+The Wikipedia article with its scripts took 16 s, 13 of them the
+processor's, and "the scripts are slow" was the guess: mini-chrome's
+plan (`plan_js_speed.md`) had already said that its own gains came
+"mostly by removing lists where tables were wanted, in the engine's
+library and in the DOM, not by a faster evaluator". Measured before
+anything was touched, the scripts ran in 1.2 s. In the order of what
+each gave for its lines (ix, 2026-10-11; `browsers/netscape/tests/perf.sh`
+runs each with its switch off):
+
+**Timers first, the profiler second.** A `Sys.time` round each kind of
+work in the tab (twelve lines, taken out after) said in one run what
+callgrind could not: the page was styled and laid out again after each
+task of its scripts, 13 times, 0.6 s each. callgrind's inclusive costs
+are not to be read where everything is recursive (a lexer's loop was
+"511,189%" of the program), and its callers of a tail-called function
+are the wrong ones; its own costs by function are right, and a count
+of calls is.
+
+**The work owed, done once** (`Tab.settle`, mini-chrome's
+`Browser_tab.settle`): a script's change of the tree marks a layout as
+owed; it is made when the page's work is done, before a click is
+looked at, or after half a second. 13.2 s of processor to 5.4, twenty
+lines, switch `settle=off`. Section 17's lesson, at the scale of a
+page.
+
+**What is not shown, not built** (`Browser_draw.later`): a line of
+text is its letters' strokes, ten to twenty shapes each, and a layout
+built them for every line of a page whose window shows forty: 0.24 s
+of each layout, the boxes themselves 0.03. A line's shapes are made
+when a frame first shows it. mini-chrome has a `Lazy.t` there;
+mini-ml has none, and a record with a mutable option is the same in
+six lines. 4.7 s to 3.9, switch `draw=all`.
+
+**The same frame given back** (`Netscape.view`): a window at rest
+listed the page's shapes in view and the platform compared them all
+with the frame's before, 1.9 ms sixty times a second. The view keeps
+what it read (the page by `==`, the scroll, the field's text) and
+gives back the very list when it is the same: 0.02 ms, the platform's
+own `==` then drawing nothing. Switch `view=each`.
+
+**The comparison of any two values, again** (section 20's family).
+`List.mem name inherited` and `List.assoc_opt name attributes` on
+strings call `caml_compare` at each element: 5.4 million and 7.9
+million calls, with `caml_page_table_lookup` under them (OCaml 4.14's
+check that a pointer is in the heap), a fifth of the profile. A
+`match name with "color" | "font-size" | ... -> true` for the fixed
+list, a loop on `String.equal` for the attributes
+(`Dom.assoc`, mini-chrome's), a class looked for in the attribute's
+text without cutting it in words (`Selectors.has_word`). And a list
+reversed and searched at each property read (`Computed.get`, 690,000
+times): a `Hashtbl` made once an element. 14% of a local load's
+instructions.
+
+Together: 16.1 s to 5.9 (the processor's 13.2 to 3.4); by mini-ml's
+code 48 s to 16.6. What is left is flat: the scripts, the styles, three
+TLS handshakes, and the network's waits, one request at a time.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the
