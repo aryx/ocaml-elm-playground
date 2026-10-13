@@ -79,9 +79,9 @@
  * by side (the original had two trackballs), the mouse captured
  * (Playground3d_platform's capture_mouse) for an endless trackball, the
  * marble flying off crests (drop [step_down] and see; physics=engine
- * does it already), a board tilted
- * rather than a ball pushed (Super Monkey Ball, 2001; see TinyCameltry
- * for the same idea in 2D).
+ * does it already). A board tilted
+ * rather than a ball pushed is TinySuperMonkeyBall.ml (and
+ * TinyCameltry.ml in 2D).
  *)
 open Playground
 open Playground3d

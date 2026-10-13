@@ -1703,6 +1703,248 @@ let marble_engine_five_sevenths () =
   Alcotest.(check bool) "5/7 g sin(a), within 3%" true (Float.abs (measured -. expected) < 0.03 *. expected)
 
 (*****************************************************************************)
+(* TinySuperMonkeyBall *)
+(*****************************************************************************)
+
+(* up_of's worked example: going north, the stick up leans the vertical
+ * back (south, +z) by 20 degrees; going east, the stick right leans it
+ * left, which is north *)
+let monkey_up () =
+  let open TinySuperMonkeyBall in
+  let c = cos (rad max_tilt) and s = sin (rad max_tilt) in
+  let check name (ex, ey, ez) (x, y, z) =
+    Alcotest.(check (float 1e-9)) (name ^ ", x") ex x;
+    Alcotest.(check (float 1e-9)) (name ^ ", y") ey y;
+    Alcotest.(check (float 1e-9)) (name ^ ", z") ez z
+  in
+  check "north, stick up" (0., c, s) (up_of 0. (1., 0.));
+  check "east, stick right" (0., c, -.s) (up_of 90. (0., 1.));
+  check "level" (0., 1., 0.) (up_of 37. (0., 0.))
+
+(* the trick, measured: on the first stage's level floor, under a
+ * gravity leaned 20 degrees, the ball gains speed as on a slope of 20
+ * degrees -- 5/7 g sin(20), less a little drag: nothing tilted *)
+let monkey_tilted_gravity () =
+  let open TinySuperMonkeyBall in
+  let w = ref (Physics3d.world (stages.(0).slabs @ [ new_ball ])) in
+  let speed () = Physics3d.speed (List.nth !w.bodies (List.length !w.bodies - 1)) in
+  for _ = 1 to 30 do w := roll (0., 1., 0.) !w done;
+  let v0 = speed () in
+  Alcotest.(check bool) (Printf.sprintf "at rest on a level floor: %.3f" v0) true (v0 < 0.05);
+  for _ = 1 to 15 do w := roll (up_of 0. (1., 0.)) !w done;
+  let measured = (speed () -. v0) /. (15. /. 60.) in
+  let expected = 5. /. 7. *. gravity *. sin (rad max_tilt) in
+  Alcotest.(check bool)
+    (Printf.sprintf "5/7 g sin(20) = %.2f, within 5%%: %.2f" expected measured)
+    true
+    (Float.abs (measured -. expected) < 0.05 *. expected)
+
+(* A robot with the four arrows: it aims at waypoints, braking by
+ * aiming behind where its speed takes it, and reads its stick from
+ * behind the ball as the player does. [keys p] is its keyboard. *)
+let monkey_keys (todo : (number * number) list ref) (p : TinySuperMonkeyBall.play) : keyboard =
+  let open TinySuperMonkeyBall in
+  let b = ball p in
+  (match !todo with
+  | (tx, tz) :: (_ :: _ as rest) when Float.hypot (tx -. b.x) (tz -. b.z) < 1.2 -> todo := rest
+  | _ -> ());
+  let tx, tz = List.hd !todo in
+  let wx = tx -. b.x -. (0.6 *. b.vx) and wz = tz -. b.z -. (0.6 *. b.vz) in
+  let n = Float.max 1e-6 (Float.hypot wx wz) in
+  let fx, fz = Camera3d.forward p.heading in
+  let fwd = ((wx *. fx) +. (wz *. fz)) /. n and right = ((wz *. fx) -. (wx *. fz)) /. n in
+  { initial_computer.keyboard with kup = fwd > 0.35; kdown = fwd < -0.35; kright = right > 0.35; kleft = right < -0.35 }
+
+(* every stage can be won, by the same robot, with 45 seconds to
+ * spare: the bridge crossed, the hairpins turned, the valley climbed
+ * out of, the gap leapt *)
+let monkey_robot () =
+  let open TinySuperMonkeyBall in
+  let routes =
+    [| [ (0., -15.) ];
+       [ (0., -6.); (0., -18.); (0., -25.) ];
+       [ (0., -9.); (9.5, -10.5); (10., -22.); (0.5, -24.); (0., -35.) ];
+       [ (0., -6.); (0., -22.); (0., -30.); (0., -37.) ];
+       [ (0., -6.); (0., -40.) ] |]
+  in
+  Array.iteri
+    (fun stage route ->
+      let s = ref (Scene2d.start (Playing (start ~stage ~bananas:0 ~monkeys:3))) and todo = ref route and i = ref 0 in
+      while !i < 60 * 20 && (match !s.scene with Playing _ -> true | _ -> false) do
+        incr i;
+        let keyboard = match !s.scene with Playing p -> monkey_keys todo p | _ -> initial_computer.keyboard in
+        s := update (computer ~keyboard !i) !s
+      done;
+      match !s.scene with
+      | Ended (Goal, p) -> Alcotest.(check bool) (stages.(stage).name ^ ", 45 seconds to spare") true (p.time_left > 45 * 60)
+      | _ -> Alcotest.fail (stages.(stage).name ^ ": not through the goal"))
+    routes
+
+(* no rail: the stick held right on the bridge's first island, and the
+ * ball is out; the stage starts again with a monkey less, the bananas
+ * back *)
+let monkey_fall_out () =
+  let open TinySuperMonkeyBall in
+  let s = ref (Scene2d.start (Playing (start ~stage:1 ~bananas:0 ~monkeys:3))) in
+  let keyboard = { initial_computer.keyboard with kright = true } in
+  let fell = ref false in
+  for i = 1 to 60 * 8 do
+    (match !s.scene with Ended (Fall_out, _) -> fell := true | _ -> ());
+    if not !fell then s := update (computer ~keyboard i) !s else s := update (computer i) !s
+  done;
+  Alcotest.(check bool) "fell out" true !fell;
+  match !s.scene with
+  | Playing p ->
+      Alcotest.(check int) "a monkey less" 2 p.monkeys;
+      Alcotest.(check int) "the same stage" 1 p.stage;
+      Alcotest.(check int) "its bananas back" 5 (List.length p.left)
+  | _ -> Alcotest.fail "not playing again"
+
+(*****************************************************************************)
+(* TinyMetalSlug *)
+(*****************************************************************************)
+
+(* the header's worked examples: the aim turned the short way round,
+ * the second step of the first hill *)
+let slug_examples () =
+  let open TinyMetalSlug in
+  Alcotest.(check (float 1e-9)) "a step of 15 towards up" 15. (turn_toward 15. 90. 0.);
+  Alcotest.(check (float 1e-9)) "the short way, through 360" 355. (turn_toward 15. 0. 340.);
+  Alcotest.(check (float 1e-9)) "there" 90. (turn_toward 15. 90. 80.);
+  Alcotest.(check (float 1e-9)) "the hill's second step" (base +. 24.) (ground 940.)
+
+(* nobody wrote the arc: fire held with the heavy machine gun while up
+ * is pressed, and the rounds leave at the angles the aim goes through,
+ * from ahead (0) to up (90), 15 degrees a frame and a round every 4 *)
+let slug_arc () =
+  let open TinyMetalSlug in
+  let g = new_game () in
+  let g = ref { g with hero = { g.hero with heavy = 200 } } in
+  let keyboard = { initial_computer.keyboard with kspace = true; kup = true } in
+  for _ = 1 to 9 do g := update_game keyboard ~jump:false ~throw:false !g done;
+  let angles = List.rev_map (fun (s : shot) -> Float.round (Shots.angle s.at)) !g.mine in
+  (* each round 2.5 degrees off the gun's line, to one side then the other *)
+  Alcotest.(check (list (float 1e-9))) "ahead, half way up, up" [ 18.; 73.; 93. ] angles
+
+(* the tank takes three hits for him, the third blows it up and throws
+ * him out, on foot and alive; the fourth hit is his *)
+let slug_armour () =
+  let open TinyMetalSlug in
+  let g = new_game () in
+  let unsafe (g : game) = { g with hero = { g.hero with safe = 0 } } in
+  let g = hit { g with slug = Riding 3 } in
+  Alcotest.(check bool) "two left" true (g.slug = Riding 2);
+  let g = hit (unsafe (hit (unsafe g))) in
+  Alcotest.(check bool) "wrecked" true (g.slug = Wrecked);
+  Alcotest.(check bool) "thrown up, alive" true (g.hero.vy > 0. && g.hero.dead = 0);
+  let g = hit (unsafe g) in
+  Alcotest.(check bool) "on foot, one hit" true (g.hero.dead > 0)
+
+(* A robot through the mission: it runs right firing, turns on whoever
+ * comes from behind, jumps the bullets and the walls, throws grenades
+ * at groups, and under the helicopter fires up and steps away from its
+ * bombs. It frees the three prisoners, drives the tank, and wins
+ * without losing a life: the mission can be done. *)
+let slug_robot () =
+  let open TinyMetalSlug in
+  let g = ref (new_game ()) and i = ref 0 and last_x = ref 0. and stuck = ref 0 and rode = ref false in
+  while (not (won !g)) && !g.lives > 0 && !i < 60 * 120 do
+    incr i;
+    let h = !g.hero in
+    let chopper = List.find_opt (fun e -> e.kind = Chopper) !g.enemies in
+    let bullet = List.exists (fun (s : shot) -> (not s.arc) && Float.abs (s.at.x -. h.x) < 70. && (s.at.x -. h.x) *. s.at.vx < 0.) !g.theirs in
+    let bomb = List.find_opt (fun (s : shot) -> s.arc && Float.abs (s.at.x -. h.x) < 95.) !g.theirs in
+    stuck := if Float.abs (h.x -. !last_x) < 0.1 then !stuck + 1 else 0;
+    last_x := h.x;
+    let ahead = List.length (List.filter (fun e -> soldier e && e.ex > h.x && e.ex -. h.x < 220.) !g.enemies) in
+    let behind = List.exists (fun e -> soldier e && e.ex < h.x) !g.enemies in
+    let right, left =
+      match (bomb, chopper) with
+      | Some s, _ -> let away = s.at.x <= h.x in (away, not away)
+      | None, Some c -> (c.ex > h.x +. 30., c.ex < h.x -. 30.)
+      | None, None -> (not behind, behind)
+    in
+    let keyboard = { initial_computer.keyboard with kright = right; kleft = left; kup = chopper <> None; kspace = true } in
+    g := update_game keyboard ~jump:((bullet && not (riding !g)) || !stuck > 20) ~throw:(ahead >= 2 && !i mod 30 = 0) !g;
+    if riding !g then rode := true
+  done;
+  Alcotest.(check bool) "mission complete" true (won !g);
+  Alcotest.(check int) "no life lost" 3 !g.lives;
+  Alcotest.(check bool) "drove the tank" true !rode;
+  Alcotest.(check int) "every soldier, the helicopter, three prisoners" 10000 !g.score
+
+(*****************************************************************************)
+(* TinyQix *)
+(*****************************************************************************)
+
+(* the header's picture: a Stix down column 20, from the top edge to
+ * the bottom one. With the Qix on its right, the 19 columns on its
+ * left are claimed (19 x 79 cells); with the Qix on its left, the 59
+ * on its right. The Stix is a line after either. *)
+let qix_claim () =
+  let open TinyQix in
+  let cut = List.fold_left (fun g r -> set g (20, r) 'a') start_grid (List.init (n - 2) (fun r -> r + 1)) in
+  let g, cells = claim cut (40, 40) 'f' in
+  Alcotest.(check int) "the left of it" (19 * 79) cells;
+  Alcotest.(check char) "claimed" 'f' (get g (10, 40));
+  Alcotest.(check char) "the Stix, a line" '#' (get g (20, 40));
+  Alcotest.(check char) "the Qix's side, open" ' ' (get g (40, 40));
+  Alcotest.(check int) "25%, the line counted" 25 (percent g);
+  Alcotest.(check bool) "the new line is live" true (live g (20, 40));
+  Alcotest.(check bool) "the left edge is dead" false (live g (0, 40));
+  Alcotest.(check bool) "the top edge dead left of the cut, live right of it" true ((not (live g (10, 0))) && live g (30, 0));
+  Alcotest.(check (pair int int)) "a Sparx left on the dead edge turns up on the cut" (20, 40) (nearest_live g (0, 40));
+  let _, cells = claim cut (10, 40) 's' in
+  Alcotest.(check int) "the right of it" (59 * 79) cells
+
+(* the same cut, walked: 20 cells left along the bottom edge, then up
+ * with space held (or x, slowly: twice the points) until the top edge
+ * closes the Stix. Only [walk]: the Qix stays where it starts, in the
+ * middle. *)
+let qix_walk () =
+  let open TinyQix in
+  let cut key =
+    let keys held = List.fold_left (fun k key -> press key k) initial_computer.keyboard held in
+    let g = ref (new_game ~stage:1 ~score:0 ~lives:3) in
+    for _ = 1 to 20 do g := walk { (keys []) with kleft = true } !g done;
+    Alcotest.(check (pair int int)) "along the edge" (20, 80) !g.me;
+    g := walk { (keys []) with kup = true } !g;
+    Alcotest.(check (pair int int)) "not into the field without a button" (20, 80) !g.me;
+    for _ = 1 to 40 do g := walk { (keys [ key ]) with kup = true; kspace = key = " " } !g done;
+    Alcotest.(check int) "a Stix of 40 cells" 40 (match !g.stix with Some s -> List.length s.cells | None -> 0);
+    for _ = 1 to 40 do g := walk { (keys []) with kup = true } !g done;
+    Alcotest.(check bool) "closed" true (!g.stix = None);
+    Alcotest.(check (pair int int)) "on the top edge" (20, 0) !g.me;
+    !g.score
+  in
+  Alcotest.(check int) "fast: 4 a cell" (4 * 19 * 79) (cut " ");
+  Alcotest.(check int) "slow: 8 a cell" (8 * 19 * 79) (cut "x")
+
+(* stopping on a Stix lights its fuse: three cells out and no key, and
+ * a life is gone within the second, the Stix erased, the marker back
+ * on the edge *)
+let qix_fuse () =
+  let open TinyQix in
+  let g = ref (new_game ~stage:1 ~score:0 ~lives:3) in
+  for _ = 1 to 3 do g := walk { initial_computer.keyboard with kup = true; kspace = true } !g done;
+  Alcotest.(check (pair int int)) "three cells out" (40, 77) !g.me;
+  for _ = 1 to 20 do g := update_game initial_computer.keyboard !g done;
+  Alcotest.(check int) "a life less" 2 !g.lives;
+  Alcotest.(check (pair int int)) "back on the edge" (40, 80) !g.me;
+  Alcotest.(check char) "the Stix erased" ' ' (get !g.grid (40, 78))
+
+(* the edge is no place to rest: the two Sparx leave the top, one each
+ * way round, and meet the marker standing at the bottom: half the way
+ * round is 160 cells, 4 frames each *)
+let qix_sparx () =
+  let open TinyQix in
+  let g = ref (new_game ~stage:1 ~score:0 ~lives:3) in
+  for _ = 1 to 630 do g := update_game initial_computer.keyboard !g done;
+  Alcotest.(check int) "not yet" 3 !g.lives;
+  for _ = 1 to 20 do g := update_game initial_computer.keyboard !g done;
+  Alcotest.(check int) "caught" 2 !g.lives
+
+(*****************************************************************************)
 (* TinyXpilot *)
 (*****************************************************************************)
 
@@ -7964,6 +8206,18 @@ let tests =
       t "TinyMarbleMadness, physics=engine: the boxes are the course" marble_engine_course;
       t "TinyMarbleMadness, physics=engine: 5/7 by itself" marble_engine_five_sevenths;
       t "TinyMarbleMadness, physics=engine: the robot wins too" marble_engine_robot;
+      t "TinySuperMonkeyBall, the tilted vertical" monkey_up;
+      t "TinySuperMonkeyBall, a level floor under a leaning gravity is a slope" monkey_tilted_gravity;
+      t "TinySuperMonkeyBall, a robot wins every stage" monkey_robot;
+      t "TinySuperMonkeyBall, falling out costs a monkey" monkey_fall_out;
+      t "TinyMetalSlug, the aim and the ground" slug_examples;
+      t "TinyMetalSlug, the heavy machine gun sprays the arc" slug_arc;
+      t "TinyMetalSlug, the tank's armour" slug_armour;
+      t "TinyMetalSlug, a robot completes the mission" slug_robot;
+      t "TinyQix, the side without the Qix" qix_claim;
+      t "TinyQix, a Stix walked across the field" qix_walk;
+      t "TinyQix, the fuse" qix_fuse;
+      t "TinyQix, the Sparx come round" qix_sparx;
       t "TinyXpilot, cannons aim ahead" xpilot_intercept;
       t "TinyXpilot, the rope pulls when stretched" xpilot_rope;
       t "TinyXpilot, landing vs. crashing" xpilot_crash;

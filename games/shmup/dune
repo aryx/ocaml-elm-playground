@@ -3,8 +3,10 @@
 ; the software rasterizers in software/, in the browser in web/.
 (executables
   (names Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
+    TinyMetalSlug
     TinyMissileCommand TinyRType TinyRobotron TinyZaxxon)
   (modules Asteroid TinyDefender TinyGalaga TinyGradius TinyInvaders
+    TinyMetalSlug
     TinyMissileCommand TinyRType TinyRobotron TinyZaxxon)
   (libraries
     unix ; Asteroid's clock

@@ -432,6 +432,11 @@ let scenes : Golden_scene.scene list =
     ("games/adventure/software/TinyJourney", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
+    (* claude: the empty field, the Qix in the middle, the marker at
+     * the bottom and the two Sparx leaving the top *)
+    ("games/arcade/software/TinyQix", "", 5);
+    (* claude: the hero beside the parked tank, behind the title *)
+    ("games/shmup/software/TinyMetalSlug", "", 5);
     ("games/adventure/software/TinyAdventure", "", 5);
     ("games/adventure/software/TinyZelda", "", 5);
     ("games/adventure/software/TinyZeldaLinkPast", "", 5);
@@ -989,6 +994,14 @@ let scripted : Golden_scene.scripted list =
     ("games/shmup/software/TinyGalaga", "waves", 200, "space:1");
     ("games/shmup/software/TinyGalaga", "formation", 1100, "space:1,space:900,space:930,left:950-980,space:990");
     (* the first waves, a turret firing; later, a red one shot down *)
+    (* a box drawn fast from the bottom edge and claimed, blue (the Qix
+     * was outside it); then a slow Stix, orange, on its way from the
+     * box's corner *)
+    ("games/arcade/software/TinyQix", "stix", 380, "space:1,left:5-40,up:45-85,space:45-200,right:86-170,down:171-215,x:230-400,up:230-330,right:331-400");
+    (* the first prisoner freed and his heavy machine gun taken, two
+     * soldiers down; fire held while the aim goes up: the rounds fan
+     * out over the arc, and a grenade is in the air *)
+    ("games/shmup/software/TinyMetalSlug", "arc", 168, "space:1,right:5-108,space:20-400,up:160-170,z:150");
     ("games/shmup/software/TinyGradius", "waves", 200, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150");
     ("games/shmup/software/TinyGradius", "later", 600, "space:1,right:5-30,space:40,space:60,space:80,space:100,space:130,space:150,space:170,space:190,up:120-150,space:220,space:240,space:260,space:300,space:330");
     (* before the gold castle, its portcullis down; two rooms on, the

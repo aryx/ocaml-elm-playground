@@ -135,6 +135,9 @@ let scenes : Golden_scene.scene list =
     ("games/platform/software/TinyMario64", "", 5);
     ("games/platform/software/TinyMarioGalaxy", "", 5);
     ("games/arcade/software/TinyMarbleMadness", "", 5);
+    (* claude: the hairpins turning under the title, the gate at the
+     * far end *)
+    ("games/arcade/software/TinySuperMonkeyBall", "", 5);
     (* claude: the same view as TinyDoom's golden frame, in 3D *)
     ("games/fps/software/TinyDoom3d", "", 5);
     (* claude: "r" twice: a third of the resolution, 3x3 pixels (Pixelate) *)
@@ -295,6 +298,9 @@ let scripted : Golden_scene.scripted list =
      * first ramp, its band turned; then on over the cliff, broken *)
     ("games/arcade/software/TinyMarbleMadness", "ramp", 45, "space:1,down:2-200,left:2-200");
     ("games/arcade/software/TinyMarbleMadness", "broken", 125, "space:1,down:2-200,left:2-200");
+    (* the stick up, then right as well: the first stage leaning away
+     * and to the right under the ball, the horizon with it *)
+    ("games/arcade/software/TinySuperMonkeyBall", "tilt", 150, "space:1,up:95-400,right:120-160");
     (* the same walks as TinyDoom's *)
     ("games/fps/software/TinyDoom3d", "stairs", 80, "left:1-10,up:11-80");
     ("games/fps/software/TinyDoom3d", "window", 60, "right:1-5,up:6-55");
@@ -437,4 +443,6 @@ let scripted_flagged : Golden_scene.scripted_flagged list =
     (* claude: the second arena, the river: its two bridges, the narrow
      * stretch between them, the terraces on the banks, and you in the
      * middle of a jump, your shadow on the grass below *)
-    ("games/arcade/software/TinyBoomerangFu", "river", 50, "space:1,down:5-50,z:40", [ "map=river" ]) ]
+    ("games/arcade/software/TinyBoomerangFu", "river", 50, "space:1,down:5-50,z:40", [ "map=river" ]);
+    (* the last stage: off the kicker, in the air over the gap *)
+    ("games/arcade/software/TinySuperMonkeyBall", "leap", 272, "space:1,up:95-400", [ "stage=5" ]) ]

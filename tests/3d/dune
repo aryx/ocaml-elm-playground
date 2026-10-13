@@ -61,6 +61,7 @@
    %{project_root}/games/platform/software/TinyMario64.exe
    %{project_root}/games/platform/software/TinyMarioGalaxy.exe
    %{project_root}/games/arcade/software/TinyMarbleMadness.exe
+   %{project_root}/games/arcade/software/TinySuperMonkeyBall.exe
    %{project_root}/games/fps/software/TinyDoom3d.exe
    %{project_root}/games/flight/software/TinyComanche3d.exe
    %{project_root}/games/flight/software/TinyDescent3d.exe

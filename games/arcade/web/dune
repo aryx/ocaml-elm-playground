@@ -4,10 +4,10 @@
 
 (executables
   (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinySoldat TinySpacewar
+    TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinyQix TinySoldat TinySpacewar
     TinyTron TinyTronscroll)
   (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
-    TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinySoldat TinySpacewar
+    TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinyQix TinySoldat TinySpacewar
     TinyTron TinyTronscroll)
   (libraries
     unix
@@ -25,8 +25,8 @@
 )
 
 (executables
-  (names TinyBoomerangFu TinyMarbleMadness TinyTron3d)
-  (modules TinyBoomerangFu TinyMarbleMadness TinyTron3d)
+  (names TinyBoomerangFu TinyMarbleMadness TinySuperMonkeyBall TinyTron3d)
+  (modules TinyBoomerangFu TinyMarbleMadness TinySuperMonkeyBall TinyTron3d)
   (libraries
     elm_core
     kit_lightcycles

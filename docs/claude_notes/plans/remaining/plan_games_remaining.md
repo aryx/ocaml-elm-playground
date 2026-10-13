@@ -61,10 +61,10 @@ Genres as in `CATALOG.md`; the 3D twins (TinyDoom3d, ...) left out,
 
 | Genre | P0 (-1976) | P1 (1977-84) | P2 (1985-94) | P3 (1995-2004) | P4 (2005-14) | P5 (2015-) |
 |---|---|---|---|---|---|---|
-| Shoot 'em up | | Invaders, Asteroid, MissileCommand, Galaga, Defender, Robotron, Zaxxon, **Centipede**, **Tempest** | Gradius, RType, StarFox | **Touhou** | | **VampireSurvivors** |
+| Shoot 'em up | | Invaders, Asteroid, MissileCommand, Galaga, Defender, Robotron, Zaxxon, **Centipede**, **Tempest** | Gradius, RType, StarFox | MetalSlug, **Touhou** | | **VampireSurvivors** |
 | Fighting | | | FinalFight, StreetFighter, VirtuaFighter | **SmashBros** | | |
 | Platform | | DonkeyKong, Joust, LodeRunner, **Pitfall** | Mario, Metroid, Rick, PrinceOfPersia, MarioWorld, Sonic | Mario64 | **Braid** | Celeste |
-| Arcade, party | Spacewar, Pong, Breakout, Snake | LunarLander, Pacman, Frogger, Tron, Bomberman, MarbleMadness, **Qbert**, **BoulderDash** | Cameltry | Soldat | FlappyBird | BoomerangFu |
+| Arcade, party | Spacewar, Pong, Breakout, Snake | LunarLander, Pacman, Frogger, Tron, Bomberman, MarbleMadness, Qix, **Qbert**, **BoulderDash** | Cameltry | SuperMonkeyBall, Soldat | FlappyBird | BoomerangFu |
 | Puzzle, board | Chess, Othello | Sokoban, Tetris | Blockout, Lemmings, IncredibleMachine, PuzzleBobble, **Minesweeper** | **Bejeweled** | Portal2D, Portal, Slingshot, MonumentValley | BabaIsYou, **Wordle** |
 | Cards | | FreeCell | Solitaire | | | **SlayTheSpire** |
 | Adventure | **ColossalCave** | **Zork** | Zelda, AloneInTheDark, **ManiacMansion**, **MetalGear**, **Myst** | TombRaider, **ZeldaOcarina**, **GTA** | | |

@@ -171,6 +171,11 @@
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
+ (target TinySuperMonkeyBall.ml)
+ (deps (:src %{project_root}/games/arcade/TinySuperMonkeyBall.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
  (target TinyXpilot.ml)
  (deps (:src %{project_root}/games/flight/TinyXpilot.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
@@ -193,6 +198,16 @@
 (rule
  (target TinyRick.ml)
  (deps (:src %{project_root}/games/platform/TinyRick.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyQix.ml)
+ (deps (:src %{project_root}/games/arcade/TinyQix.ml))
+ (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
+
+(rule
+ (target TinyMetalSlug.ml)
+ (deps (:src %{project_root}/games/shmup/TinyMetalSlug.ml))
  (action (with-stdout-to %{target} (run sed "s/^let main =/let main () =/" %{src}))))
 
 (rule
