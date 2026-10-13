@@ -1945,6 +1945,96 @@ let qix_sparx () =
   Alcotest.(check int) "caught" 2 !g.lives
 
 (*****************************************************************************)
+(* TinyBoulderDash *)
+(*****************************************************************************)
+
+(* a small cave for the rules: the picture's rows in the middle of a
+ * cave of dirt, its top left corner at (1, 1) *)
+let dash_cave (picture : string list) : TinyBoulderDash.cave =
+  let open TinyBoulderDash in
+  Array.init rows (fun r ->
+      String.init cols (fun c ->
+          if r = 0 || c = 0 || r = rows - 1 || c = cols - 1 then '#'
+          else match List.nth_opt picture (r - 1) with Some row when c - 1 < String.length row -> row.[c - 1] | _ -> '.'))
+
+(* the picture back, [w] by [h], after [n] ticks with no key *)
+let dash_after ?(dir : (int * int) option) (n : int) (w : int) (picture : string list) : string list =
+  let cave = ref (dash_cave picture) in
+  for _ = 1 to n do cave := fst (TinyBoulderDash.scan dir false !cave) done;
+  List.init (List.length picture) (fun r -> String.sub !cave.(r + 1) 1 w)
+
+let strings = Alcotest.(list string)
+
+(* the header's pictures: a boulder over nothing falls, a cell a tick,
+ * and is a falling one ('O') until it lands; on another boulder it
+ * rolls off, to the left first *)
+let dash_falls () =
+  Alcotest.check strings "falling" [ " "; "O"; " "; "." ] (dash_after 1 1 [ "o"; " "; " "; "." ]);
+  Alcotest.check strings "landed, falling still" [ " "; " "; "O"; "." ] (dash_after 2 1 [ "o"; " "; " "; "." ]);
+  Alcotest.check strings "at rest" [ " "; " "; "o"; "." ] (dash_after 3 1 [ "o"; " "; " "; "." ]);
+  Alcotest.check strings "rolls off, left: sideways first" [ "O  "; " o "; "..." ] (dash_after 1 3 [ " o "; " o "; "..." ]);
+  Alcotest.check strings "right, when the left is taken" [ ". O"; ".o "; "..." ] (dash_after 1 3 [ ".o "; ".o "; "..." ]);
+  Alcotest.check strings "not off dirt" [ " o "; " . "; "   " ] (dash_after 3 3 [ " o "; " . "; "   " ])
+
+(* the one bit: Rockford under a boulder at rest lives for ever; under
+ * one that fell a cell, he is the middle of an explosion, and of
+ * nothing a tick later *)
+let dash_crush () =
+  Alcotest.check strings "at rest over him" [ "o"; "R"; "." ] (dash_after 5 1 [ "o"; "R"; "." ]);
+  Alcotest.check strings "fallen on him" [ ". ."; "!!!"; "!!!"; "!!!" ] (dash_after 2 3 [ ".o."; ". ."; ".R."; "..." ]);
+  Alcotest.check strings "the smoke gone" [ ". ."; "   "; "   "; "   " ] (dash_after 3 3 [ ".o."; ". ."; ".R."; "..." ]);
+  Alcotest.(check bool) "and he is" false (TinyBoulderDash.has 'R' (fst (TinyBoulderDash.scan None false (dash_cave [ ".O."; ".R."; "..." ]))))
+
+(* a firefly in an empty room 3 by 3, its left hand on the wall, goes
+ * round it clockwise: 8 cells and a tick to turn at each corner, back
+ * in 12; a butterfly, its right hand on it, the other way. Started with
+ * the hand off the wall, a firefly spins on four cells. *)
+let dash_flies () =
+  let room ch = [ ch ^ "  "; "   "; "   " ] in
+  Alcotest.check strings "along the top wall" [ "  1"; "   "; "   " ] (dash_after 2 3 (room "1"));
+  Alcotest.check strings "a tick to turn at the corner" [ "  2"; "   "; "   " ] (dash_after 3 3 (room "1"));
+  Alcotest.check strings "down the right wall" [ "   "; "  2"; "   " ] (dash_after 4 3 (room "1"));
+  Alcotest.check strings "back in 12" [ "1  "; "   "; "   " ] (dash_after 12 3 (room "1"));
+  Alcotest.check strings "a butterfly, down the left wall" [ "   "; "6  "; "   " ] (dash_after 1 3 (room "6"));
+  Alcotest.check strings "back in 12 too" [ "6  "; "   "; "   " ] (dash_after 12 3 (room "6"));
+  Alcotest.check strings "off the wall: a spin" [ "3  "; "   "; "   " ] (dash_after 4 3 (room "3"))
+
+(* a boulder dropped on a butterfly: nine diamonds, which then fall *)
+let dash_butterfly () =
+  let picture = [ "..o.."; ".   ."; ". 4 ."; ".   ."; "....." ] in
+  (* held in place: a butterfly with no room to move only turns *)
+  let picture = List.map (String.map (fun ch -> if ch = ' ' then '.' else ch)) picture in
+  let picture = List.mapi (fun r row -> if r = 1 then "..O.." else row) (List.mapi (fun r row -> if r = 0 then "....." else row) picture) in
+  Alcotest.check strings "the explosion" [ "....."; ".$$$."; ".$$$."; ".$$$."; "....." ] (dash_after 1 5 picture);
+  Alcotest.check strings "nine diamonds" [ "....."; ".***."; ".***."; ".***."; "....." ] (dash_after 2 5 picture)
+
+(* Rockford: digs, takes a diamond, pushes a boulder that has room,
+ * not one that has none; with the reach, stays where he is *)
+let dash_rockford () =
+  let open TinyBoulderDash in
+  let go ?(grab = false) picture = let cave, news = scan (Some (1, 0)) grab (dash_cave picture) in (String.sub cave.(1) 1 (String.length (List.hd picture)), news.diamonds) in
+  Alcotest.(check (pair string int)) "digs" (" R", 0) (go [ "R." ]);
+  Alcotest.(check (pair string int)) "takes" (" R", 1) (go [ "R*" ]);
+  Alcotest.(check (pair string int)) "pushes" (" Ro", 0) (go [ "Ro " ]);
+  Alcotest.(check (pair string int)) "not against dirt" ("Ro.", 0) (go [ "Ro." ]);
+  Alcotest.(check (pair string int)) "not steel" ("R#", 0) (go [ "R#" ]);
+  Alcotest.(check (pair string int)) "reaches" ("R ", 1) (go ~grab:true [ "R*" ])
+
+(* the caves are what their commands say, the same at every start, and
+ * each has the diamonds it asks for -- cave C's are still butterflies *)
+let dash_caves () =
+  let open TinyBoulderDash in
+  let count p cave = Array.fold_left (fun n row -> String.fold_left (fun n ch -> if p ch then n + 1 else n) n row) 0 cave in
+  Array.iter
+    (fun (l : level) ->
+      let cave = build l in
+      Alcotest.(check bool) (l.name ^ ", the same again") true (cave = build l);
+      Alcotest.(check int) (l.name ^ ", one Rockford") 1 (count (( = ) 'R') cave);
+      Alcotest.(check int) (l.name ^ ", one exit") 1 (count (( = ) 'E') cave);
+      Alcotest.(check bool) (l.name ^ ", enough diamonds") true (count (( = ) '*') cave + (9 * count is_butterfly cave) >= l.needed))
+    levels
+
+(*****************************************************************************)
 (* TinyXpilot *)
 (*****************************************************************************)
 
@@ -8218,6 +8308,12 @@ let tests =
       t "TinyQix, a Stix walked across the field" qix_walk;
       t "TinyQix, the fuse" qix_fuse;
       t "TinyQix, the Sparx come round" qix_sparx;
+      t "TinyBoulderDash, boulders fall and roll" dash_falls;
+      t "TinyBoulderDash, at rest or falling: the one bit" dash_crush;
+      t "TinyBoulderDash, a hand on the wall" dash_flies;
+      t "TinyBoulderDash, a butterfly makes nine diamonds" dash_butterfly;
+      t "TinyBoulderDash, Rockford digs, takes, pushes, reaches" dash_rockford;
+      t "TinyBoulderDash, the caves" dash_caves;
       t "TinyXpilot, cannons aim ahead" xpilot_intercept;
       t "TinyXpilot, the rope pulls when stretched" xpilot_rope;
       t "TinyXpilot, landing vs. crashing" xpilot_crash;

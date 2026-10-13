@@ -64,7 +64,7 @@ Genres as in `CATALOG.md`; the 3D twins (TinyDoom3d, ...) left out,
 | Shoot 'em up | | Invaders, Asteroid, MissileCommand, Galaga, Defender, Robotron, Zaxxon, **Centipede**, **Tempest** | Gradius, RType, StarFox | MetalSlug, **Touhou** | | **VampireSurvivors** |
 | Fighting | | | FinalFight, StreetFighter, VirtuaFighter | **SmashBros** | | |
 | Platform | | DonkeyKong, Joust, LodeRunner, **Pitfall** | Mario, Metroid, Rick, PrinceOfPersia, MarioWorld, Sonic | Mario64 | **Braid** | Celeste |
-| Arcade, party | Spacewar, Pong, Breakout, Snake | LunarLander, Pacman, Frogger, Tron, Bomberman, MarbleMadness, Qix, **Qbert**, **BoulderDash** | Cameltry | SuperMonkeyBall, Soldat | FlappyBird | BoomerangFu |
+| Arcade, party | Spacewar, Pong, Breakout, Snake | LunarLander, Pacman, Frogger, Tron, Bomberman, MarbleMadness, Qix, BoulderDash, **Qbert** | Cameltry | SuperMonkeyBall, Soldat | FlappyBird | BoomerangFu |
 | Puzzle, board | Chess, Othello | Sokoban, Tetris | Blockout, Lemmings, IncredibleMachine, PuzzleBobble, **Minesweeper** | **Bejeweled** | Portal2D, Portal, Slingshot, MonumentValley | BabaIsYou, **Wordle** |
 | Cards | | FreeCell | Solitaire | | | **SlayTheSpire** |
 | Adventure | **ColossalCave** | **Zork** | Zelda, AloneInTheDark, **ManiacMansion**, **MetalGear**, **Myst** | TombRaider, **ZeldaOcarina**, **GTA** | | |

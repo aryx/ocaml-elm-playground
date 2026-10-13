@@ -432,6 +432,8 @@ let scenes : Golden_scene.scene list =
     ("games/adventure/software/TinyJourney", "", 5);
     ("games/platform/software/TinyPrinceOfPersia", "", 5);
     ("games/shmup/software/TinyGradius", "", 5);
+    (* claude: the first cave behind the title, as its seed made it *)
+    ("games/arcade/software/TinyBoulderDash", "", 5);
     (* claude: the empty field, the Qix in the middle, the marker at
      * the bottom and the two Sparx leaving the top *)
     ("games/arcade/software/TinyQix", "", 5);
@@ -994,6 +996,10 @@ let scripted : Golden_scene.scripted list =
     ("games/shmup/software/TinyGalaga", "waves", 200, "space:1");
     ("games/shmup/software/TinyGalaga", "formation", 1100, "space:1,space:900,space:930,left:950-980,space:990");
     (* the first waves, a turret firing; later, a red one shot down *)
+    (* Rockford gone right along his row, up against a boulder with no
+     * room to be pushed; the boulder and the diamond that were held up
+     * by the dirt he dug have come down *)
+    ("games/arcade/software/TinyBoulderDash", "dig", 100, "space:1,right:5-200");
     (* a box drawn fast from the bottom edge and claimed, blue (the Qix
      * was outside it); then a slow Stix, orange, on its way from the
      * box's corner *)
@@ -2211,4 +2217,7 @@ let scripted_flagged : Golden_scene.scripted_flagged list =
       80,
       "at(400;410):1-3,click:2,at(-300;-180):4-6,click:5,at(0;-170):7-9,click:8,at(20;-320):10-12,click:11,at(-310;-300):13-15,click:14,at(-300;-180):16-18,click:17,at(400;-8):19-21,click:20,at(400;220):22-24,click:23,at(-150;-175):25-27,click:26,at(400;182):28-30,click:29,at(-305;-240):31-33,click:32,at(400;68):34-36,click:35,at(-150;-175):37-39,click:38,at(-143;-310):40-42,click:41,at(400;144):43-45,click:44,at(-150;-175):46-48,click:47,at(-143;-310):49-51,click:50,at(250;300):52-80",
       [ "sheet=b" ] );
+    (* claude: the second cave a second in: four dens, a firefly on its
+     * round in each, the diamonds in the middle *)
+    ("games/arcade/software/TinyBoulderDash", "fireflies", 60, "space:1", [ "cave=2" ]);
   ]

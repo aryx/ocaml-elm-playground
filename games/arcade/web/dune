@@ -3,10 +3,10 @@
 (copy_files ../*.ml)
 
 (executables
-  (names Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
+  (names Pong Snake TinyBomberman TinyBoulderDash TinyBreakout TinyCameltry TinyFlappyBird
     TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinyQix TinySoldat TinySpacewar
     TinyTron TinyTronscroll)
-  (modules Pong Snake TinyBomberman TinyBreakout TinyCameltry TinyFlappyBird
+  (modules Pong Snake TinyBomberman TinyBoulderDash TinyBreakout TinyCameltry TinyFlappyBird
     TinyFrogger TinyLunarLander TinyPacman TinyPang TinyPong TinyQix TinySoldat TinySpacewar
     TinyTron TinyTronscroll)
   (libraries
