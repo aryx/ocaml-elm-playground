@@ -961,6 +961,54 @@ Together: 16.1 s to 5.9 (the processor's 13.2 to 3.4); by mini-ml's
 code 48 s to 16.6. What is left is flat: the scripts, the styles, three
 TLS handshakes, and the network's waits, one request at a time.
 
+## 26. The general path for the commonest case: a picture shown as it is (ix's mini-doom)
+
+mini-doom on Linux was "not super smooth" (the author: "this machine
+is 100x faster than a 486Dx66 from 1995 where doom was running
+smoothly"). Doom's renderer took 2.3 ms a frame; the window got 6
+frames a second. A copy of the SDL platform with three timers
+(ix, 2026-10-22; `docs/plans/plan_doom.md`, its Status) said where the
+time went, where a guess would have blamed the renderer:
+
+**A flag said but not read.** The program asked the platform for a
+window of 640 (`size=`) so its 640 by 400 picture would be shown as
+it is; the SDL platform read `size=` from the command line only. The
+window was ~1000 and the picture was blended up to it every frame, in
+OCaml: 167 ms. Nothing failed, nothing was said; only the clock showed
+it.
+
+**One pixel, the general way.** At 1:1, `Blit.draw_fast` still mapped
+each pixel by the inverse transform in floats and stored it by
+`Framebuffer.plot`, which clips the one-pixel span and tests the
+alpha: 21 ms for 256,000 pixels, 80 ns each. The draw platform already
+knew the case (a transform of 1, 0, 0, 1 and whole pixels). Taking
+it in `Blit.draw` (`draw_copy`: a row's range clipped once, an image
+pixel at `x - tx`, four bytes stored, `plot` only for one not opaque)
+made it 1.7 ms, the same pixels (every frames' test unchanged), the
+switch `Opti.enabled`. Section 13's lesson again: the one general loop
+is right, and the case that is most of the work gets its own.
+
+**Then the frame's rhythm.** On time at last, the walk still went by
+small jerks: Doom thinks 35 times a second and the window shows 60, so
+a frame moved the eye or did not. The eye is drawn between its last
+two tics, as far as the time since the last says (`Doom.eye`, the
+ports' "uncapped frame rate"): no faster, and smooth. A frame's cost is
+not all of what a viewer sees.
+
+Together: 6 frames a second to 60, each on its tick (the view 3.9 ms,
+the showing 4.6).
+
+**A hash that reads a megabyte.** Redraw counts the shapes of two
+frames in a `Hashtbl` keyed by the shapes. `Hashtbl.hash` stops after
+ten numbers and strings, which sounds bounded; but a string is one of
+the ten, read whole, and a top-level `Bitmap`'s tenth is its bytes:
+0.56 ms a hash of mini-doom's picture, four in a frame. The table is
+now keyed by a hash of the picture's place and size, `compare`
+telling two apart at their first pixel that differs
+(`Redraw.hash`): a frame where a message comes or goes, 5.45 ms to
+2.05. lib_core's `Hashtbl` (mini-ml's) has no `Make`, so the table's
+key is that int, a bucket of shapes under it.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the
