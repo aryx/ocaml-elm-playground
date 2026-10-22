@@ -1009,6 +1009,56 @@ telling two apart at their first pixel that differs
 2.05. lib_core's `Hashtbl` (mini-ml's) has no `Make`, so the table's
 key is that int, a bucket of shapes under it.
 
+## 27. A compiler's back end, step by step, measured by the loops (ix's mini-ml)
+
+The profiler of section 26's machine (ix's mini-prof, an emulator
+counting every instruction) showed mini-doom's palette loop at 55 arm
+instructions a pixel: every variable in the frame, read and stored at
+each use, a comparison made a boolean then compared with true. ix's
+mini-ml had a second back end in SSA form beside its stack machine,
+with registers on arm64 only, and slower than the first. Five steps
+(ix, 2026-10-22; `docs/plans/variants/ssa.md`), each counted on three
+loops taken from ix's programs (bytes: the palette; integers in
+arrays: a Montgomery product; floats: a synthesizer's voice) and four
+small ones, the instructions as a share of the stack machine's:
+
+**What the old path did in place, first.** The SSA back end turned a
+string's byte, a float's arithmetic and an allocation into calls of
+the runtime's C, where the stack machine had learned to do them in
+place: 3.26 times its instructions on the bytes' loop. The new path
+must first catch up with what the old one already knows.
+
+**An optimization that makes things worse alone.** A `ref` that never
+escapes made a variable (OCaml's Simplif.eliminate_ref, here on the
+stack code) is the textbook win; with it the SSA path got slower (the
+bytes 1.28 to 1.51 on arm64), because each such variable is a phi at
+its loop's head and the phis were copied through memory. The next
+step (parallel copies, register to register) is what made it pay.
+Measure each step, and do not judge one alone.
+
+**Registers that were free all along.** "arm has none free" kept arm's
+values in memory: the argument registers R4-R8 are free between calls,
+since no value lives in a register across one (the collector's rule).
+Only a call's arguments then need care: loaded as a parallel move, not
+one after another. And a constant needs no register at all: made where
+it is read.
+
+**Who gets the registers.** Coloring in the dominator tree's order
+gave the outer loop's values the five registers and left the inner
+loop's in memory. Choosing first by weight (a use in a loop 8 times
+one outside it) while no point has more chosen values live than there
+are registers, then coloring: for SSA that coloring cannot fail (its
+interference graph is chordal). The bytes on arm 1.00 to 0.82.
+
+**ocamlopt's Selection, two cases.** A comparison read only by its
+branch is the branch's (CMP, B.cond: 7 instructions a loop's test, 3),
+and a small constant goes in the instruction. 0.82 to 0.67.
+
+At the end, on arm: bytes 0.67, integers 0.64, the scheduler 0.74,
+fib 0.82; mini-doom's frame (its own code only) 13% fewer; 262 lines.
+Floats got nothing: each is a block, an allocation a safepoint, every
+value live across one in memory. Unboxing them is its own step.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the
