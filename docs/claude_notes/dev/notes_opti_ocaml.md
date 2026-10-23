@@ -1059,6 +1059,42 @@ fib 0.82; mini-doom's frame (its own code only) 13% fewer; 262 lines.
 Floats got nothing: each is a block, an allocation a safepoint, every
 value live across one in memory. Unboxing them is its own step.
 
+## 28. A compiler's runtime: a young generation (ix's mini-ml)
+
+**The symptom.** mini-prof on mini-ml compiling one of its units: a
+quarter of the instructions in the copying collector, `copy` and
+`collect`; in mini-doom's frame a fifth, "the WAD's data copied at each
+collection". One generation, Cheney's two halves: every collection
+copies everything alive, the interfaces read and the level's data
+included, again and again.
+
+**The fix.** OCaml's: a young generation (1M words) where blocks are
+born, the inline allocation's pointer now its; a minor collection
+copies its survivors into the half, after its last block; the half is
+collected (Cheney, both generations at once) only when it is full. The
+roots of a minor are the major's and the old fields that point to a
+young block, which a write barrier remembers: each store of a block in
+a field (`SetField`, `SetIndex`) tests the value (an integer: nothing),
+then calls `ml_modify`, a dozen instructions of assembly in the start
+object that touch only two registers (the code around keeps its values
+in the others). A store into a block made since the last safepoint
+needs nothing: it is young (a closure's environment, a big record).
+
+**What it bought.** mini-doom's frame 0.64, mini-quake's 0.78,
+cameltry's 0.58, a map's benchmark 0.65; mini-ml compiling 0.96 only:
+a compiler keeps most of what it makes (the trees, the types, the
+code), so the survivors are many and are copied once anyway; 109 minor
+collections and 3 major where there were 28. The barrier's cost: a
+loop storing integers in an array 1.06 (the inline test), a float
+array 1.04 (each new float remembered). Tried and not kept: the
+collector's scan calling `copy` only for a young pointer (C's test
+costs what the call did).
+
+**Lesson.** Generations help what keeps big data alive and makes many
+short-lived blocks (a game: its level, a frame's floats); a compiler,
+whose data lives until the end of the unit, gains little. Measure the
+survivors before the barrier.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the
