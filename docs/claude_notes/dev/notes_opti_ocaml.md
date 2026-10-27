@@ -1095,6 +1095,45 @@ short-lived blocks (a game: its level, a frame's floats); a compiler,
 whose data lives until the end of the unit, gains little. Measure the
 survivors before the barrier.
 
+## 29. A float, a block: unboxing, and the code that keeps them flat (ix's mini-ml and mini-rebirth)
+
+**The symptom.** mini-rebirth, a TB-303 and drum machines from the
+Playground's lib_audio, compiled by mini-ml: 5.5 thousand million
+instructions (arm) for a second of sound. mini-prof: the collector,
+`ml_modify` and the allocations 29%; the diode ladder's `solve` made a
+4 x 4 matrix and three vectors for each sample (25 arrays); the
+spectrum's 90 bars each looked at every bin. In mini-ml, as in
+ocamlopt without flambda, a float is a block wherever it is a value:
+in a mutable field, in an `array` that is not known to be a float one,
+returned by a function not inlined, passed to C.
+
+**The fix.** Two halves. In the compiler: the doubles of a function in
+floating-point registers, a block only where one leaves as a word
+(ssa/Unbox); `-.x`, `abs`, `floor`, a comparison read by its branch,
+and C's `exp`, `pow`, `tanh` on the registers, no block for the
+argument nor the result. In the program: the state in `Float.Array`
+(flat, the doubles in the block, no barrier), or in local refs while a
+block of samples is made (a ref that does not escape is a variable);
+what does not change done once (a filter's `tan` when its cutoff does
+not move, a gain when its knob stays, each envelope once a sample); an
+iterative FFT on two flat arrays with its tables made once; the bars
+in one pass over the bins. Every arithmetic step the same and in the
+same order: the sound the same bytes.
+
+**What it bought.** The second of sound 5.54 thousand million to 1.69
+(0.30), most of it the program's own; mini-virtuaracing's frame 0.55
+then 0.84 from the compiler alone, mini-quake's 0.80.
+
+**Lesson.** In OCaml too, a float that crosses a function boundary or
+sits in a mutable field is an allocation; `Float.Array` and local refs
+keep it flat on any compiler. Watch for a value of another unit used as
+an operator: lib_playground's Basics makes `+` the floats' (`let ( + )
+= ( +. )`), so every `+` of a program that opened it was a call of
+that closure with its floats boxed, until its .mli said `external ( +
+) : float -> float -> float = "%addfloat"`. A
+primitive is inlined everywhere; a function only where the compiler
+can see it.
+
 ## Not done, deliberately
 
 - `-unsafe` or `Bytes.unsafe_get`: bounds checks are cheap next to the
