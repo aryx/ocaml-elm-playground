@@ -45,9 +45,11 @@ val decibels : float -> float
 (* [of_decibels db]: the amplitude ratio: 0.1 for -20 *)
 val of_decibels : float -> float
 
-(* one sample kept within [-1, 1]: cut flat, or bent by tanh *)
+(* one sample kept within [-1, 1]: cut flat, or bent by tanh (a
+ * rational function near it, unless [exact_tanh]: libc's) *)
 val clip : float -> float
 val soft_clip : float -> float
+val exact_tanh : bool ref
 
 (* [limit ?soft s]: every sample clipped, hard by default *)
 val limit : ?soft:bool -> Signal.t -> Signal.t

@@ -22,5 +22,19 @@ let then_ (a : Signal.t) (b : Signal.t) : Signal.t = Array.append a b
 let decibels (ratio : float) : float = 20. *. log10 ratio
 let of_decibels (db : float) : float = 10. ** (db /. 20.)
 let clip (x : float) : float = Float.max (-1.) (Float.min 1. x)
-let soft_clip (x : float) : float = tanh x
+(* OPTIMIZATION (rational): tanh as a ratio of two polynomials (its
+ * continued fraction cut at x^7, a Pade approximant): within 1e-4 of
+ * libc's, exactly 1 past 4.97 where it reaches it; libc's is two
+ * exp, about 130 instructions on arm, and every mixed sample of
+ * every channel takes one (Mixer). old: tanh x, exact_tanh *)
+let exact_tanh = ref false
+
+let soft_clip (x : float) : float =
+  if !exact_tanh then tanh x
+  else if x >= 4.97 then 1.
+  else if x <= -4.97 then -1.
+  else
+    let x2 = x *. x in
+    x *. (135135. +. (x2 *. (17325. +. (x2 *. (378. +. x2)))))
+    /. (135135. +. (x2 *. (62370. +. (x2 *. (3150. +. (28. *. x2))))))
 let limit ?(soft = false) (s : Signal.t) : Signal.t = Array.map (if soft then soft_clip else clip) s
