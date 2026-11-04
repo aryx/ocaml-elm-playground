@@ -2,6 +2,294 @@
 
 * Last
 
+** Last2
+
+*** port to plan9: add mkfiles, run games under plan9 with libdraw?
+
+*** integrate to xix? make it work with ocaml-light? add doom there too?
+
+*** more games
+
+- digger
+- disc
+- track mania
+- micro machine 3d (v4?)
+- better ssx!
+- better tomb raider
+
+*** ANN tiny_libs (graphics 2d/3d, physics, game engine, audio/video codecs, ai, gui)
+# juice, networking, terminal, audio synthesis, compression, crypto
+
+enough for 150 games (web page) and 50 apps (web page) of the tinybox (link)
+
+mention elm_playground 3.0 using it? or separate?
+
+link to odoc
+link to examples
+
+**** less: change .mli in playground to use ocamldoc syntax, so they
+appear later on 
+https://aryx.github.io/ocaml-elm-playground/elm_playground/index.html
+and can maybe add an intro to the lib or something
+
+**** less: ANN tiny_languages
+maybe pack with tiny_libs announce
+
+*** ANN elm_playground 3.0, Evan's style on top of tiny-libs
+#need make good .mli out of it first
+
+verb and combinators
+
+see Audio.mli, Ai.mli
+
+**** alt: still? refine [ANN] on playground 0.2.1
+=> refine to announcement discuss for opam package
+
+An OCaml port of Evan Czaplicki's elm-playground — and, built on it,
+how interactive software works, rebuilt small: software rasterizers in
+2D and 3D, a physics engine, a synthesizer, game AI, ~50 games, and
+the notes that explain all of it."
+
+*** --------------------------------------------------------------
+
+*** mobile-friendly version? plan for it?
+answer request on github for it
+
+*** tinybox ocaml: start PA for def-vs-use navigation and deps
+also maybe finer grained deps, so for TinyMosaic it will have less
+relevant file because it does not use all the browser/layout directory maybe
+
+put fields in Window a bigger font because field often used for instance
+in orio
+
+**** less: use SCIP naming scheme for entity?
+
+*** generate more .codemapconfig from from the Codemap facebook archive wiki
+on more projects, to showcase! maybe a codemapv2 spinoff repo ?
+with links to those bundle?
+=> new post
+
+*** ---------------------------------------------------------------------
+
+*** codemap: still? take inspiration from cool past LightTable? CodeCanvas?
+published in ICSE with canvas spirit
+
+*** less: look at his jsonnet evaluator! finally one working :) maybe I can learn :)
+
+*** less: tinybox: can even embed video from my ROMS/ ? :) jacket too ?
+run claude from my macbook at nonna and try!
+
+at least the jackets of the game ?
+
+**** less: maybe can even do refs to the retrogames cover+original graphics,
+like what I have in my ROMS :) 
+add in assets the video! or youtube link, probably claude can find link
+to original video of the game and scrap one for the website
+
+*** less: tinybox: opti: can use threads and do render of preview before render of codemap
+from the main menu?
+
+*** ---------------------------------------
+
+*** LATER compare tinygl to graphics/3d/, and memdraw/memlayer to graphics/2d/ ?
+ask Claude! 
+
+*** LATER add even better texture to the apps/music/ ? via TinyAsperite :)
+
+*** LATER test network! with giogio's laptop :) locally it works at least?
+can play xpilot network, cybersled network, etc.
+
+*** LATER playground3d shadows! and flexible lights? see limitations in README-3d.md
+
+*** ----------------------------------------------
+
+*** RELAX see cdutils listings, and also more apps see
+https://packages.gentoo.org/categories
+also games in it
+
+*** RELAX see cdpad jeux listings :) for more games and apps!
+
+games:
+
+apps:
+------
+devtools: asmlab :)
+graphics: acdsee 
+education: biology chemistry electronics maths
+  see gentoo sci-xxx categories
+
+*** RELAX see-also: todos/playground.txt and maybe clean it
+*** RELAX #SEMI look also my ~/software-src/LANG-XXX/*/games/*  especially haskell/ocaml/go/elm
+
+*** FUN playground: more TinyXxx games
+
+Toad 3d solving game in space or redundant with Fez?
+MarioParty (basic 2d too, 3d?) but so many minigames, 4 players like boat race is great :) mini
+ bomberman paint, etc.
+
+GreatCourts2 (2.5d?)
+Limbo? and other one before? Another world? same style a bit.
+TinyWarcraft2v2 too? 2.5d graphics?
+
+Centipede, Houhou
+ChaosEngine, IkariWarriors
+MonkeyIsland (Manoir de Morteveille)
+less: TinySpaceHarrier? TinyDriller (Claude proposed it)
+
+battlefield?
+
+PES?
+
+car time contest game, big community
+
+Rez?
+!!!Civ???? Col (colonization)
+DoomNetwork
+Warcraft 2
+WoW
+Tetris 99?
+
+chatroom server!
+
+*** playground: more TinyXxx apps!!
+
+Eclipse? seminal?
+
+SoundEditor of lur durum suggested in dune file sfxr something
+
+3dsmax, Maya
+
+Prezi! :)
+
+weather
+maps (google maps? would be cool, need fetch data though)
+???
+FastTracker? Cubase?
+
+*** FUN more apps, written by me, or add notes on the TinyXxx
+Calculatrice graphique! via gui.mli, to learn immediate mode
+
+*** FUN more games, written by me, or add notes on the TinyXxx
+do it myself!!! good mental exercise :)
+
+hangman with giogio! maybe work with TinyTerminal? a "ways/" ? reversed history :)
+
+minesweeper
+/home/pad/software-src/LANG-XXX/lang-ocaml/games/misc/demineur.ml mine?
+  in caml book leroy?
+use Tilemap! and more helpers!
+https://github.com/ocsigen/js_of_ocaml/tree/master/examples/minesweeper
+https://caml.inria.fr/pub/docs/oreilly-book/html/book-ora059.html
+https://edwinans.github.io/camel-finder/ (with ocaml-vdom)
+
+memory (with giogio!!!!)
+
+bingo with giogio!!
+
+scorched earth, physics!
+
+15 puzzle
+
+Rubikube 3d! Hanoi generalization? to solve!
+
+2048
+https://github.com/ocamllabs/2048-tutorial
+
+sudoku
+
+wordle?
+
+https://people.mpi-sws.org/~rossberg/boulderdash/
+
+
+Fabien senglar - Wolfenstein?
+
+SEMI http://nicktasios.nl/posts/space-invaders-from-scratch-part-5.html
+
+DONE tiny minecraft 900 LOC (see ~/software-src/game
+https://www.youtube.com/watch?v=kC3lwK631X8
+but need openGL, so would need 3d in playground or 3d renderer
+
+Shanon Chess paper.
+
+alt game tutorial in ocaml:
+http://decapode314.free.fr/re/tut/ocaml-re-tut.html
+
+https://github.com/dbuenzli/react/blob/master/test/breakout.ml
+
+https://github.com/art-w/gamelle/
+
+https://playground.z0.lv/
+shmup and jumpgun games to imitate? but coded in elm? where did I find this link?
+
+*** RELAX playground3d: read notes_[23]d*.md generated by Claude, to learn!
+lots of notes written by Claude in the last 2 days! a mine of information
+to learn from (and maybe to help for an OGraphics.nw book or OGames.nw)
+
+see also principia/.../TODO-refs.txt and refs/
+
+*** ---------------------------------------------------------
+
+*** execute inspect/debugger: a key to slow down things, useful for tron for instance,
+or BoomerangFu
+see also AudioDebug, AiDebug,  TODO a PhysicsDebug? GraphicdDebug (magnifier)
+
+*** FUN execute plan inspect
+# seeing, creative, tooling, liveness, tweeakable, time travel debugger, overlay
+Bret Victor!
+teaching context!
+
+*** ----------------------------------------------
+
+*** port from other sources
+
+SEMI https://github.com/videogamepreservation
+  source code of old commercial games (e.g., doom, descent3, etc.)
+https://osgameclones.com/
+  huge list
+https://archive.org/details/gamesourcecode
+  long list too
+DONE https://github.com/rofrol/elm-games
+     not updated in 5 years, and almost all covered by the TinyXxx
+DONE https://github.com/games50
+     just a few classic (pong, zelda, mario)
+
+**** SEMI BASIC computer games - classic.
+see remarkable and my pdf book
+
+see also Game engine pattern book?
+
+and Code classics books?
+
+update: Ahl basic games and a few one are there in TinyBasic.ml
+And Basic_disk.ml
+
+**** LATER FUN port the example in Haskell school of expression to Playground API
+# opportunity to reread the book
+maybe put in examples/
+
+**** LATER FUN port the example in Haskell school of music to Audio API
+# opportunity to read the book
+
+**** LATER port mini games from raylib? pico-8? pygame 0?
+# see similar-projects.md
+
+**** LATER look at Chip-8 scene? target that with playground too?
+see also
+https://github.com/Tackx/c8-ass
+
+**** port unity toy games to playground3d! see how shorter than unity!
+https://github.com/topics/unity-game
+
+*** ----------------------------------------------------------------------
+
+*** still? try wasm_of_ocaml instead of jsoo? far faster?
+can help for m-ix and t-ix ?
+
+*** LATER generate automatically a Playground.nw from all the
+libs, games, etc. using principia and xix books as model! but automatic!
+
+
 ** Last1
 
 *** switch Playground.image's string src to Uri.t?
