@@ -470,6 +470,86 @@ The tools, still to fix (xix's reports):
 - Headers of 150 lines or more (`mlvalues.h`) are never asked for a
   skeleton.
 
+### What ~/ix's second pass taught (2026-11-04)
+
+A month and 1,400 commits after the first pass, -check said 71
+configs, 316 mistakes, 313 warnings, 3,501 missing (11,700 before the
+build copies were ignored). Twelve agents, an area of 30 to 40k lines
+each, from a brief (`codemap_brief_ix.md`, beside this file), brought
+it to 426 configs, 0 mistakes, 0 missing in about half an hour. Their
+reports:
+
+- **Ignore the build copies first.** `.gitignore` is not read: ~/ix's
+  `kernels/9pi/build/self/src/` (a copy of the whole tree, untracked)
+  was three quarters of the "missing" and doubled the check's time.
+  Before splitting, `git ls-files` against what the map reads: every
+  untracked `build/`, `_build*/`, `_mk/` gets its `.codemapignore`
+  line.
+- **A second pass is mostly moves.** The stale configs failed where code
+  moved: a module split (Asm.mli into Show_asm, P9 into P9_wire), a
+  folder made (lib_core's root into `commons/`), a file into a
+  subfolder. The first pass had described subfolders' files from the
+  parent; splitting a parent's `files:` into the subfolders' configs by
+  path prefix, with a script, was the work of every area.
+- **Twelve areas can't fork.** The session's limit is twenty subagents
+  at once: with twelve areas, every "fork two" was refused. Twelve
+  agents alone took 15 to 30 minutes each; the largest (9pi) half an
+  hour.
+- **The commonest mistake, by far: an unclosed `comment:"...`** quote,
+  written when the phrase stops before an apostrophe (every agent, three
+  to six times). The check says `no comment saying "\"words"`: the
+  stray `\"` is the clue. A phrase wrapping across two comment lines
+  fails too. Grep each phrase (`grep -F`) before the minute-long check.
+- **`-check <subdir>`** takes seconds, not minutes, and checks every
+  anchor: use it after each config. But it ignores the root's
+  `.codemapignore` (reports `tests/`), says "no anatomy rules", and
+  calls bones outside it "not a source here": the whole check judges.
+- **Digests are md5's first 12 hex digits**: a script filling `digest:
+  ''` from md5sum, or copying "now" out of -check's warnings, saved most
+  of the stale-digest work.
+- **Shapes asked for, now in ~/ix's libsonnet**: `prog` (a tiny program
+  starts at `TinyLibSystem.main`, not `Cap.main`), `mvu` (a Playground
+  program is `let () = Cap.main` around `game`, no `def:main`: its bone
+  is `code:"Cap.main"`). Still wanted: one interface whose
+  implementation the build chooses (`netscape/spawn`, `tcp/plan9`); a
+  folder of independent programs over one library (`singularity/
+  programs`, 13 one-file processes); pim's windows (state, load,
+  update, command, view).
+- **Anchors**:
+  - `\\"` in a single-quoted jsonnet string never matches: one
+    backslash (`code:"| \"44\""`), or words with no quotes.
+  - C: `def:` misses a function only in an `#else` branch and may land
+    on the other branch's `#define`; `code:"static void name"`.
+  - Plan 9 `.s`: `code:"TEXT name"` reaches a function; `code:"#include"`
+    does not.
+  - Symlinked sources (the kernel steps' `libc.c`, `kernel.ld`) are "no
+    such source": anchor the real file.
+  - `line:` anchors broke as headers grew; `code:"let () ="` holds.
+  - `.mly` rules anchor (`Pic_parser.mly:def:picture`); a `.mly` header
+    is no comment.
+- **The tools, still to fix** (the reports):
+  - an anchor with an unbalanced quote could be refused at once, before
+    the anchors are searched;
+  - a whole-file bone did not count as a module's skeleton once
+    (Memdata.ml); a `let () =` not reading argv is no program, so
+    tiny-kernel's `user/*.ml` wrappers are never demanded;
+  - a `.mli` that does not compile (a lone `"` in a comment:
+    TinyLibCore's `Printf.mli`) makes the map's lexer read the rest as
+    comment: its definitions vanish without a word;
+  - a library naming its modules after the stdlib's (TinyLibCore's
+    `List`) is credited with every stdlib use ("named by 968 files"); two
+    `Physics` (the playground's and Quake's) are confused;
+  - an invalid config hides its files' warnings: raspberry/'s digests
+    were found stale only once it parsed;
+  - `-facts <dir>/.` gives 0 files; `-facts` of several directories at
+    once would spare a dozen agents a whole analysis each;
+  - the totals line can be glued to another line of -check's output:
+    grep `configs,`.
+- **The code's findings**: each area found stale comments (a layout
+  pass cut but described, "no cookie" over a cookie jar, a CLI's "not
+  yet" done) and a few bugs (a `trace` shadowed, a file that does not
+  compile): an important line each, and a list for the author.
+
 ### Centrality, not size (the author, 2026-09-29)
 
 "Playground.computer, Playground.game ... are arguably the most
